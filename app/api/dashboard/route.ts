@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server';
-import { dashboardData } from '@/lib/data';
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  return NextResponse.json(dashboardData);
+  return NextResponse.json({ message: "JobApp API — em breve" });
 }

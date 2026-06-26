@@ -1,44 +1,29 @@
-export interface Idea {
+export type JobStatus = "agendado" | "confirmado" | "concluído" | "cancelado";
+export type Modalidade = "presencial" | "online";
+export type PeriodoMeta = "dia" | "mes" | "ano";
+export type TabId = "home" | "jobs" | "financeiro" | "cofre" | "ajustes";
+
+export interface Job {
   id: string;
-  title: string;
-  description: string;
-  category: string;
+  clienteNome: string;
+  data: string; // YYYY-MM-DD
+  hora: string; // HH:MM
+  valor: number; // BRL
+  modalidade: Modalidade;
+  local?: string; // obrigatório se presencial
+  status: JobStatus;
+  observacoes?: string;
+  criadoEm: string; // ISO timestamp
 }
 
-export interface Task {
-  id: string;
-  title: string;
-  status: string;
-  due: string;
-  project: string;
+export interface Meta {
+  periodo: PeriodoMeta;
+  valorAlvo: number;
 }
 
-export interface Project {
+export interface Usuario {
   id: string;
-  title: string;
-  progress: number;
-  stage: string;
-}
-
-export interface FinanceMetric {
-  id: string;
-  label: string;
-  value: string;
-  trend: string;
-  note: string;
-}
-
-export interface ActivityEvent {
-  id: string;
-  event: string;
-  time: string;
-  type: 'update' | 'capture' | 'finance';
-}
-
-export interface DashboardData {
-  ideas: Idea[];
-  tasks: Task[];
-  projects: Project[];
-  finance: FinanceMetric[];
-  activity: ActivityEvent[];
+  nome: string; // user_metadata.full_name do Google
+  email: string;
+  avatarUrl?: string;
 }
