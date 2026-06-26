@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "prisma": "prisma"
+    "typecheck": "tsc --noEmit",
+    "prisma": "prisma",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
@@ -25,7 +27,10 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "postcss": "^8.4.39",
+    "prettier": "^3.8.4",
     "prisma": "^5.13.1",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.4"
