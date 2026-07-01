@@ -36,13 +36,19 @@ interface Props {
   activeTab: TabId;
   open: boolean;
   onToggle: () => void;
+  onAction?: () => void;
 }
 
-export function FAB({ activeTab, open, onToggle }: Props) {
+export function FAB({ activeTab, open, onToggle, onAction }: Props) {
   const action = SHEET_ACTIONS[activeTab];
   if (!action) return null;
 
   const { label, description, Icon } = action;
+
+  function handleActionClick() {
+    onToggle();
+    onAction?.();
+  }
 
   return (
     <>
@@ -91,7 +97,7 @@ export function FAB({ activeTab, open, onToggle }: Props) {
             background: "var(--surface)",
             border: "1px solid var(--border-color)",
           }}
-          onClick={onToggle}
+          onClick={handleActionClick}
         >
           <div
             className="p-2.5 rounded-xl shrink-0"

@@ -32,27 +32,33 @@ export function GreetingHeader({ usuario }: Props) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-xl font-bold" style={{ color: "var(--text)" }}>
+        <h1
+          className="font-extrabold leading-none"
+          style={{
+            fontSize: "27px",
+            letterSpacing: "-0.03em",
+            color: "var(--text)",
+          }}
+        >
           {greeting}, {firstName}!
-        </p>
+        </h1>
         <p
-          className="text-sm capitalize mt-0.5"
-          style={{ color: "var(--text-muted)" }}
+          className="capitalize font-medium mt-1.5"
+          style={{ fontSize: "13px", color: "var(--text-muted)" }}
         >
           {date}
         </p>
       </div>
 
+      {/* Avatar with accent glow ring */}
       <div
-        className="flex items-center justify-center rounded-full shrink-0 text-sm font-bold overflow-hidden"
+        className="relative flex items-center justify-center rounded-full shrink-0 overflow-hidden"
         style={{
-          width: "44px",
-          height: "44px",
-          background: usuario.avatarUrl
-            ? "transparent"
-            : "rgb(var(--accent-rgb) / 0.15)",
-          border: "2px solid var(--border-color)",
-          color: "var(--accent)",
+          width: "46px",
+          height: "46px",
+          border: "1.5px solid var(--accent)",
+          boxShadow:
+            "0 0 0 3px rgb(var(--accent-rgb) / 0.1), 0 0 16px rgb(var(--accent-rgb) / 0.28)",
         }}
       >
         {usuario.avatarUrl ? (
@@ -63,7 +69,12 @@ export function GreetingHeader({ usuario }: Props) {
             className="w-full h-full object-cover"
           />
         ) : (
-          firstName.charAt(0).toUpperCase()
+          <span
+            className="text-sm font-bold"
+            style={{ color: "var(--accent)" }}
+          >
+            {firstName.charAt(0).toUpperCase()}
+          </span>
         )}
       </div>
     </div>

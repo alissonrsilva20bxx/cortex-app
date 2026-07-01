@@ -5,98 +5,140 @@
 /* ── Pink Neon ──────────────────────────────────────────────────── */
 :root,
 [data-theme="pink-neon"] {
-  --bg: #0d0008;
-  --bg-rgb: 13 0 8;
+  --bg: #0a0007;
+  --bg-rgb: 10 0 7;
   --accent: #ff2d78;
   --accent-rgb: 255 45 120;
   --accent-soft: #ff80ab;
   --surface: rgba(255, 45, 120, 0.05);
-  --surface-2: rgba(255, 45, 120, 0.09);
-  --border-color: rgba(255, 45, 120, 0.18);
-  --text: #f5e6ed;
-  --text-muted: rgba(245, 230, 237, 0.45);
+  --surface-2: rgba(255, 45, 120, 0.085);
+  --border-color: rgba(255, 45, 120, 0.14);
+  --divider: rgba(255, 45, 120, 0.08);
+  --text: #faeef5;
+  --text-2: rgba(250, 238, 245, 0.7);
+  --text-muted: rgba(250, 238, 245, 0.38);
   --body-bg:
     radial-gradient(
-      ellipse 80% 40% at 50% 0%,
-      rgba(255, 45, 120, 0.22) 0%,
-      transparent 100%
+      ellipse 100% 55% at 50% -5%,
+      rgba(255, 45, 120, 0.3) 0%,
+      transparent 70%
     ),
     radial-gradient(
-      ellipse 60% 30% at 80% 100%,
+      ellipse 55% 40% at 85% 105%,
       rgba(255, 45, 120, 0.1) 0%,
-      transparent 100%
+      transparent 70%
     ),
-    #0d0008;
-  --glow: 0 0 24px rgba(255, 45, 120, 0.35);
+    radial-gradient(
+      ellipse 40% 30% at 8% 85%,
+      rgba(200, 0, 70, 0.07) 0%,
+      transparent 70%
+    ),
+    #0a0007;
+  --glow: 0 0 28px rgba(255, 45, 120, 0.5), 0 0 6px rgba(255, 45, 120, 0.3);
+  --glow-sm: 0 0 14px rgba(255, 45, 120, 0.4);
   --selection-bg: rgba(255, 45, 120, 0.35);
+  --card-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 55%
+  );
 }
 
 /* ── Purple ─────────────────────────────────────────────────────── */
 [data-theme="purple"] {
-  --bg: #07000f;
-  --bg-rgb: 7 0 15;
+  --bg: #050010;
+  --bg-rgb: 5 0 16;
   --accent: #9b5cf6;
   --accent-rgb: 155 92 246;
   --accent-soft: #c4b5fd;
   --surface: rgba(155, 92, 246, 0.05);
-  --surface-2: rgba(155, 92, 246, 0.09);
-  --border-color: rgba(155, 92, 246, 0.18);
-  --text: #ede0ff;
-  --text-muted: rgba(237, 224, 255, 0.45);
+  --surface-2: rgba(155, 92, 246, 0.085);
+  --border-color: rgba(155, 92, 246, 0.14);
+  --divider: rgba(155, 92, 246, 0.08);
+  --text: #f0e8ff;
+  --text-2: rgba(240, 232, 255, 0.7);
+  --text-muted: rgba(240, 232, 255, 0.38);
   --body-bg:
     radial-gradient(
-      ellipse 80% 40% at 50% 0%,
-      rgba(155, 92, 246, 0.22) 0%,
-      transparent 100%
+      ellipse 100% 55% at 50% -5%,
+      rgba(155, 92, 246, 0.3) 0%,
+      transparent 70%
     ),
     radial-gradient(
-      ellipse 60% 30% at 80% 100%,
+      ellipse 55% 40% at 85% 105%,
       rgba(155, 92, 246, 0.1) 0%,
-      transparent 100%
+      transparent 70%
     ),
-    #07000f;
-  --glow: 0 0 24px rgba(155, 92, 246, 0.35);
+    radial-gradient(
+      ellipse 40% 30% at 8% 85%,
+      rgba(100, 40, 220, 0.07) 0%,
+      transparent 70%
+    ),
+    #050010;
+  --glow: 0 0 28px rgba(155, 92, 246, 0.5), 0 0 6px rgba(155, 92, 246, 0.3);
+  --glow-sm: 0 0 14px rgba(155, 92, 246, 0.4);
   --selection-bg: rgba(155, 92, 246, 0.35);
+  --card-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 55%
+  );
 }
 
 /* ── Crimson ────────────────────────────────────────────────────── */
 [data-theme="crimson"] {
-  --bg: #0f0003;
-  --bg-rgb: 15 0 3;
+  --bg: #0e0002;
+  --bg-rgb: 14 0 2;
   --accent: #dc143c;
   --accent-rgb: 220 20 60;
   --accent-soft: #ff6b8a;
   --surface: rgba(220, 20, 60, 0.05);
-  --surface-2: rgba(220, 20, 60, 0.09);
-  --border-color: rgba(220, 20, 60, 0.18);
-  --text: #ffe0e5;
-  --text-muted: rgba(255, 224, 229, 0.45);
+  --surface-2: rgba(220, 20, 60, 0.085);
+  --border-color: rgba(220, 20, 60, 0.14);
+  --divider: rgba(220, 20, 60, 0.08);
+  --text: #ffe8ed;
+  --text-2: rgba(255, 232, 237, 0.7);
+  --text-muted: rgba(255, 232, 237, 0.38);
   --body-bg:
     radial-gradient(
-      ellipse 80% 40% at 50% 0%,
-      rgba(220, 20, 60, 0.22) 0%,
-      transparent 100%
+      ellipse 100% 55% at 50% -5%,
+      rgba(220, 20, 60, 0.3) 0%,
+      transparent 70%
     ),
     radial-gradient(
-      ellipse 60% 30% at 80% 100%,
+      ellipse 55% 40% at 85% 105%,
       rgba(220, 20, 60, 0.1) 0%,
-      transparent 100%
+      transparent 70%
     ),
-    #0f0003;
-  --glow: 0 0 24px rgba(220, 20, 60, 0.35);
+    radial-gradient(
+      ellipse 40% 30% at 8% 85%,
+      rgba(180, 0, 40, 0.07) 0%,
+      transparent 70%
+    ),
+    #0e0002;
+  --glow: 0 0 28px rgba(220, 20, 60, 0.5), 0 0 6px rgba(220, 20, 60, 0.3);
+  --glow-sm: 0 0 14px rgba(220, 20, 60, 0.4);
   --selection-bg: rgba(220, 20, 60, 0.35);
+  --card-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 55%
+  );
 }
 
 /* ── Base ───────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;
   font-family:
+    var(--font-jakarta),
+    "Plus Jakarta Sans",
     Inter,
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  font-feature-settings: "cv11", "ss01";
 }
 
 html {
@@ -115,6 +157,7 @@ body {
   background: var(--body-bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
@@ -128,7 +171,6 @@ textarea,
 select {
   font: inherit;
 }
-
 input,
 button,
 textarea,
@@ -139,4 +181,103 @@ select {
 ::selection {
   background: var(--selection-bg);
   color: #ffffff;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── Glass card ─────────────────────────────────────────────────── */
+.glass-card {
+  position: relative;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgb(var(--bg-rgb) / 0.42);
+  border: 1px solid rgb(var(--accent-rgb) / 0.11);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 2px 1px rgb(0 0 0 / 0.12),
+    0 8px 28px rgb(0 0 0 / 0.24),
+    0 0 0 0.5px rgb(var(--accent-rgb) / 0.06);
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--card-shine);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.glass-card:active {
+  background: rgb(var(--bg-rgb) / 0.55);
+  border-color: rgb(var(--accent-rgb) / 0.2);
+}
+
+/* ── Section label ──────────────────────────────────────────────── */
+.section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Progress bar with neon glow ────────────────────────────────── */
+.progress-track {
+  height: 5px;
+  border-radius: 99px;
+  background: rgb(var(--accent-rgb) / 0.1);
+  overflow: visible;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%);
+  box-shadow:
+    0 0 6px rgb(var(--accent-rgb) / 0.8),
+    0 0 18px rgb(var(--accent-rgb) / 0.35),
+    0 0 32px rgb(var(--accent-rgb) / 0.12),
+    inset 0 1px 0 rgb(255 255 255 / 0.3);
+  transition: width 0.85s cubic-bezier(0.34, 1.15, 0.64, 1);
+  position: relative;
+}
+
+/* ── Animations ─────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

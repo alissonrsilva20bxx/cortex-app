@@ -3,7 +3,7 @@ export type Modalidade = "presencial" | "online";
 export type PeriodoMeta = "dia" | "mes" | "ano";
 export type Tema = "pink-neon" | "purple" | "crimson";
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       jobs: {
@@ -46,6 +46,7 @@ export interface Database {
           observacoes?: string | null;
           atualizado_em?: string;
         };
+        Relationships: [];
       };
       metas: {
         Row: {
@@ -63,6 +64,7 @@ export interface Database {
         Update: {
           valor_alvo?: number;
         };
+        Relationships: [];
       };
       notas: {
         Row: {
@@ -83,6 +85,7 @@ export interface Database {
           conteudo?: string;
           atualizado_em?: string;
         };
+        Relationships: [];
       };
       configuracoes: {
         Row: {
@@ -99,7 +102,20 @@ export interface Database {
           tema?: Tema;
           pin_hash?: string | null;
         };
+        Relationships: [];
       };
     };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
-}
+};
