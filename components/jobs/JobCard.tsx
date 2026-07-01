@@ -2,7 +2,7 @@
 
 import { MapPin, Video, Clock } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import type { Job } from "@/lib/types";
+import type { Job, JobStatus } from "@/lib/types";
 
 const formatBRL = (v: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -17,6 +17,13 @@ const formatDate = (data: string) =>
     month: "short",
   });
 
+const STATUS_STRIP: Record<JobStatus, string> = {
+  agendado: "#64b4ff",
+  confirmado: "#50dc78",
+  concluído: "var(--accent)",
+  cancelado: "#ff5050",
+};
+
 interface Props {
   job: Job;
   onClick: (job: Job) => void;
@@ -25,14 +32,15 @@ interface Props {
 export function JobCard({ job, onClick }: Props) {
   return (
     <button
-      className="glass-card w-full text-left rounded-2xl p-4 transition-opacity active:opacity-70"
+      className="glass-card w-full text-left rounded-2xl p-4 transition-all active:opacity-70 active:scale-[0.99]"
       onClick={() => onClick(job)}
+      style={{ borderLeft: `3px solid ${STATUS_STRIP[job.status]}` }}
     >
       <div className="flex items-start justify-between gap-3">
         {/* Left: name + time + location */}
         <div className="min-w-0 flex-1">
           <p
-            className="font-semibold text-[15px] truncate"
+            className="font-bold text-[16px] truncate"
             style={{ color: "var(--text)" }}
           >
             {job.clienteNome}
@@ -65,8 +73,11 @@ export function JobCard({ job, onClick }: Props) {
         {/* Right: valor + status */}
         <div className="flex flex-col items-end gap-2 shrink-0">
           <span
-            className="font-bold text-base"
-            style={{ color: "var(--accent)" }}
+            className="font-extrabold text-[17px] tabular-nums"
+            style={{
+              color: "var(--accent)",
+              textShadow: "0 0 18px rgb(var(--accent-rgb) / 0.55)",
+            }}
           >
             {formatBRL(job.valor)}
           </span>

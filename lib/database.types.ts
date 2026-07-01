@@ -1,7 +1,30 @@
 export type JobStatus = "agendado" | "confirmado" | "concluído" | "cancelado";
 export type Modalidade = "presencial" | "online";
 export type PeriodoMeta = "dia" | "mes" | "ano";
-export type Tema = "pink-neon" | "purple" | "crimson";
+export type Tema =
+  | "pink-neon"
+  | "purple"
+  | "crimson"
+  | "ocean"
+  | "gold"
+  | "emerald"
+  | "midnight";
+
+export type DespesaCategoria =
+  | "alimentacao"
+  | "transporte"
+  | "moradia"
+  | "saude"
+  | "educacao"
+  | "lazer"
+  | "vestuario"
+  | "marketing"
+  | "ferramentas"
+  | "equipamentos"
+  | "impostos"
+  | "internet"
+  | "combustivel"
+  | "outros";
 
 export type Database = {
   public: {
@@ -101,6 +124,87 @@ export type Database = {
         Update: {
           tema?: Tema;
           pin_hash?: string | null;
+        };
+        Relationships: [];
+      };
+      despesas: {
+        Row: {
+          id: string;
+          user_id: string;
+          descricao: string;
+          valor: number;
+          categoria: string;
+          data: string;
+          criado_em: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          descricao: string;
+          valor: number;
+          categoria?: string;
+          data?: string;
+          criado_em?: string;
+        };
+        Update: {
+          descricao?: string;
+          valor?: number;
+          categoria?: string;
+          data?: string;
+        };
+        Relationships: [];
+      };
+      receitas_avulsas: {
+        Row: {
+          id: string;
+          user_id: string;
+          descricao: string;
+          valor: number;
+          categoria: string;
+          data: string;
+          criado_em: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          descricao: string;
+          valor: number;
+          categoria?: string;
+          data?: string;
+          criado_em?: string;
+        };
+        Update: {
+          descricao?: string;
+          valor?: number;
+          categoria?: string;
+          data?: string;
+        };
+        Relationships: [];
+      };
+      objetivos: {
+        Row: {
+          id: string;
+          user_id: string;
+          titulo: string;
+          descricao: string | null;
+          categoria: string;
+          concluido: boolean;
+          criado_em: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          titulo: string;
+          descricao?: string | null;
+          categoria?: string;
+          concluido?: boolean;
+          criado_em?: string;
+        };
+        Update: {
+          titulo?: string;
+          descricao?: string | null;
+          categoria?: string;
+          concluido?: boolean;
         };
         Relationships: [];
       };

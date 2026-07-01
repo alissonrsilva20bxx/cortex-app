@@ -43,59 +43,109 @@ export function PinScreen({ pinHash, onUnlock }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-0"
       style={{ background: "var(--body-bg)" }}
     >
-      <p className="text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>
-        JobApp
-      </p>
-      <p className="text-sm mb-10" style={{ color: "var(--text-muted)" }}>
-        {error ? "PIN incorreto" : "Digite seu PIN"}
-      </p>
+      {/* Logo */}
+      <div className="flex flex-col items-center mb-10">
+        <div
+          className="w-16 h-16 rounded-[20px] flex items-center justify-center mb-4"
+          style={{
+            background:
+              "linear-gradient(135deg, rgb(var(--accent-rgb) / 0.25), rgb(var(--accent-rgb) / 0.08))",
+            border: "1px solid rgb(var(--accent-rgb) / 0.3)",
+            boxShadow: "var(--glow-sm)",
+          }}
+        >
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              stroke="var(--accent)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <p
+          className="text-[26px] font-extrabold tracking-tight"
+          style={{
+            color: "var(--text)",
+            letterSpacing: "-0.03em",
+          }}
+        >
+          JobApp
+        </p>
+        <p
+          className="text-sm mt-1 transition-all duration-200"
+          style={{ color: error ? "#ff5050" : "var(--text-muted)" }}
+        >
+          {error ? "PIN incorreto. Tente novamente." : "Digite seu PIN"}
+        </p>
+      </div>
 
       {/* Dots */}
       <div
-        className={`flex gap-5 mb-12 transition-transform ${shake ? "animate-shake" : ""}`}
+        className="flex gap-4 mb-10"
         style={{ animation: shake ? "shake 0.4s ease" : "none" }}
       >
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="w-4 h-4 rounded-full transition-all duration-200"
-            style={{
-              background:
-                digits.length > i
+        {[0, 1, 2, 3].map((i) => {
+          const filled = digits.length > i;
+          return (
+            <div
+              key={i}
+              className="rounded-full transition-all duration-200"
+              style={{
+                width: filled ? "16px" : "13px",
+                height: filled ? "16px" : "13px",
+                background: filled
                   ? error
                     ? "#ff5050"
                     : "var(--accent)"
-                  : "var(--surface-2)",
-              border: "2px solid",
-              borderColor:
-                digits.length > i
-                  ? error
-                    ? "#ff5050"
-                    : "var(--accent)"
-                  : "var(--border-color)",
-              boxShadow: digits.length > i && !error ? "var(--glow)" : "none",
-            }}
-          />
-        ))}
+                  : "transparent",
+                border: `2px solid ${
+                  filled
+                    ? error
+                      ? "#ff5050"
+                      : "var(--accent)"
+                    : "var(--border-color)"
+                }`,
+                boxShadow:
+                  filled && !error
+                    ? "0 0 16px rgb(var(--accent-rgb) / 0.7), 0 0 6px var(--accent)"
+                    : filled && error
+                      ? "0 0 14px rgba(255,80,80,0.6)"
+                      : "none",
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Numpad */}
-      <div className="grid grid-cols-3 gap-4 w-64">
+      <div className="grid grid-cols-3 gap-3 w-72">
         {KEYS.map((key, i) => {
           if (!key) return <div key={i} />;
           return (
             <button
               key={key + i}
               onClick={() => press(key)}
-              className="flex items-center justify-center h-16 rounded-2xl text-xl font-semibold transition-all active:scale-95 active:opacity-70"
+              className="flex items-center justify-center rounded-2xl font-semibold transition-all active:scale-95"
               style={{
-                background: key === "del" ? "transparent" : "var(--surface)",
+                height: "72px",
+                fontSize: key === "del" ? undefined : "22px",
+                background:
+                  key === "del" ? "transparent" : "rgb(var(--bg-rgb) / 0.55)",
                 border:
-                  key === "del" ? "none" : "1px solid var(--border-color)",
+                  key === "del"
+                    ? "none"
+                    : "1px solid rgb(var(--accent-rgb) / 0.14)",
+                backdropFilter: key === "del" ? "none" : "blur(10px)",
                 color: "var(--text)",
+                boxShadow:
+                  key === "del"
+                    ? "none"
+                    : "inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.3)",
               }}
             >
               {key === "del" ? (

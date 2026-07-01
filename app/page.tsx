@@ -6,18 +6,44 @@ import { BottomNav } from "@/components/BottomNav";
 import { FAB } from "@/components/FAB";
 import { GreetingHeader } from "@/components/home/GreetingHeader";
 import { NextJobCard } from "@/components/home/NextJobCard";
-import { GoalsCard } from "@/components/home/GoalsCard";
+import { FinanceSummaryCard } from "@/components/home/FinanceSummaryCard";
+import { IndependenciaCard } from "@/components/home/IndependenciaCard";
+import { ReceitaDespesaCards } from "@/components/home/ReceitaDespesaCards";
+import { ObjetivosCard } from "@/components/home/ObjetivosCard";
 import { JobsTab } from "@/components/jobs/JobsTab";
 import { JobForm } from "@/components/jobs/JobForm";
 import { FinanceiroTab } from "@/components/financeiro/FinanceiroTab";
 import { MetaForm } from "@/components/financeiro/MetaForm";
+import { DespesaForm } from "@/components/financeiro/DespesaForm";
+import { ReceitaForm } from "@/components/financeiro/ReceitaForm";
 import { CofreTab } from "@/components/cofre/CofreTab";
 import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase";
-import type { TabId, Usuario, Job, Meta } from "@/lib/types";
+import type {
+  TabId,
+  Usuario,
+  Job,
+  Meta,
+  Objetivo,
+  Despesa,
+  HomeCardConfig,
+  CardStyleConfig,
+  ChartPrefConfig,
+} from "@/lib/types";
+
+const DEFAULT_HOME_CARDS: HomeCardConfig = {
+  nextJob: true,
+  financeSummary: true,
+  objetivos: true,
+};
+const DEFAULT_CARD_STYLES: CardStyleConfig = {
+  nextJob: "standard",
+  financeSummary: "standard",
+};
+const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
 
 export default function Page() {
   const toast = useToast();
@@ -25,26 +51,46 @@ export default function Page() {
   const [fabOpen, setFabOpen] = useState(false);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
 
-  // Home real data
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
+  const [objetivos, setObjetivos] = useState<Objetivo[]>([]);
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
 
-  // PIN lock
   const [pinHash, setPinHash] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
 
-  // Jobs
   const [jobFormOpen, setJobFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [jobsRefreshKey, setJobsRefreshKey] = useState(0);
 
-  // Financeiro
   const [metaFormOpen, setMetaFormOpen] = useState(false);
+  const [despesaFormOpen, setDespesaFormOpen] = useState(false);
+  const [receitaFormOpen, setReceitaFormOpen] = useState(false);
   const [financeiroRefreshKey, setFinanceiroRefreshKey] = useState(0);
+  const [objetivosRefreshKey, setObjetivosRefreshKey] = useState(0);
 
-  // Cofre
+  const [finInnerTab, setFinInnerTab] = useState("visao");
+
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
+
+  const [homeCards, setHomeCards] =
+    useState<HomeCardConfig>(DEFAULT_HOME_CARDS);
+  const [cardStyles, setCardStyles] =
+    useState<CardStyleConfig>(DEFAULT_CARD_STYLES);
+  const [chartPrefs, setChartPrefs] =
+    useState<ChartPrefConfig>(DEFAULT_CHART_PREFS);
+
+  useEffect(() => {
+    try {
+      const hc = localStorage.getItem("jobapp-home-cards");
+      if (hc) setHomeCards(JSON.parse(hc));
+      const cs = localStorage.getItem("jobapp-card-styles");
+      if (cs) setCardStyles(JSON.parse(cs));
+      const cp = localStorage.getItem("jobapp-chart-prefs");
+      if (cp) setChartPrefs(JSON.parse(cp));
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -58,7 +104,6 @@ export default function Page() {
       };
       setUsuario(u);
 
-      // Check PIN
       supabase
         .from("configuracoes")
         .select("pin_hash")
@@ -111,6 +156,52 @@ export default function Page() {
     });
   }, [usuario, jobsRefreshKey, financeiroRefreshKey]);
 
+  useEffect(() => {
+    if (!usuario) return;
+    supabase
+      .from("objetivos")
+      .select("*")
+      .eq("user_id", usuario.id)
+      .order("criado_em", { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setObjetivos(
+            data.map((r) => ({
+              id: r.id,
+              titulo: r.titulo,
+              descricao: r.descricao ?? undefined,
+              categoria: r.categoria,
+              concluido: r.concluido,
+              criadoEm: r.criado_em,
+            }))
+          );
+        }
+      });
+  }, [usuario, objetivosRefreshKey]);
+
+  useEffect(() => {
+    if (!usuario) return;
+    supabase
+      .from("despesas")
+      .select("*")
+      .eq("user_id", usuario.id)
+      .order("data", { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setDespesas(
+            data.map((d) => ({
+              id: d.id,
+              descricao: d.descricao,
+              valor: d.valor,
+              categoria: d.categoria,
+              data: d.data,
+              criadoEm: d.criado_em,
+            }))
+          );
+        }
+      });
+  }, [usuario, financeiroRefreshKey]);
+
   async function handleSignOut() {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -126,13 +217,22 @@ export default function Page() {
       setEditingJob(null);
       setJobFormOpen(true);
     } else if (activeTab === "financeiro") {
-      setMetaFormOpen(true);
+      if (finInnerTab === "entradas") setReceitaFormOpen(true);
+      else if (finInnerTab === "saidas") setDespesaFormOpen(true);
+      else if (finInnerTab === "metas") setMetaFormOpen(true);
+      else setDespesaFormOpen(true);
     } else if (activeTab === "cofre") {
       setUploadOpen(true);
     }
   }
 
-  // Show PIN screen before anything else
+  async function handleToggleObjetivo(id: string, concluido: boolean) {
+    await supabase.from("objetivos").update({ concluido }).eq("id", id);
+    setObjetivos((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, concluido } : o))
+    );
+  }
+
   if (locked && pinHash) {
     return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
   }
@@ -145,36 +245,78 @@ export default function Page() {
         {activeTab === "home" && usuario && (
           <>
             <GreetingHeader usuario={usuario} />
-            <div className="mt-5 space-y-4">
-              <NextJobCard jobs={jobs} />
-              <GoalsCard jobs={jobs} metas={metas} />
+            <div className="mt-6 space-y-4">
+              {/* Card principal: Independência Financeira */}
+              <IndependenciaCard
+                jobs={jobs}
+                metas={metas}
+                onGoToFinanceiro={() => handleTabChange("financeiro")}
+              />
+
+              {/* Receita e Despesa lado a lado */}
+              <ReceitaDespesaCards
+                jobs={jobs}
+                despesas={despesas}
+                onGoToFinanceiro={() => handleTabChange("financeiro")}
+              />
+
+              {/* Componentes opcionais (clássicos) */}
+              {homeCards.nextJob && (
+                <div className="pt-2">
+                  <NextJobCard jobs={jobs} />
+                </div>
+              )}
+
+              {/* Objetivos/Metas pessoais */}
+              {(homeCards.objetivos ?? true) && (
+                <ObjetivosCard
+                  objetivos={objetivos}
+                  onToggle={handleToggleObjetivo}
+                  onGoToMetas={() => handleTabChange("financeiro")}
+                />
+              )}
             </div>
           </>
         )}
+
         {activeTab === "jobs" && usuario && (
           <JobsTab
             userId={usuario.id}
             refreshTrigger={jobsRefreshKey}
+            chartType={chartPrefs.jobs}
             onEditJob={(job) => {
               setEditingJob(job);
               setJobFormOpen(true);
             }}
           />
         )}
+
         {activeTab === "financeiro" && usuario && (
           <FinanceiroTab
             userId={usuario.id}
             refreshTrigger={financeiroRefreshKey}
+            chartType={chartPrefs.financeiro}
+            onInnerTabChange={setFinInnerTab}
+            onAddDespesa={() => setDespesaFormOpen(true)}
+            onAddReceita={() => setReceitaFormOpen(true)}
+            objetivos={objetivos}
+            onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
+            onToggleObjetivo={handleToggleObjetivo}
           />
         )}
+
         {activeTab === "cofre" && usuario && (
           <CofreTab userId={usuario.id} refreshTrigger={cofreRefreshKey} />
         )}
+
         {activeTab === "ajustes" && usuario && (
           <AjustesTab
             userId={usuario.id}
             onSignOut={handleSignOut}
             onPinHashChange={(h) => setPinHash(h)}
+            onHomeCardsChange={setHomeCards}
+            onCardStylesChange={setCardStyles}
+            onChartPrefsChange={setChartPrefs}
           />
         )}
       </main>
@@ -206,6 +348,24 @@ export default function Page() {
             onSaved={() => {
               setFinanceiroRefreshKey((k) => k + 1);
               toast.success("Meta salva!");
+            }}
+          />
+          <DespesaForm
+            open={despesaFormOpen}
+            userId={usuario.id}
+            onClose={() => setDespesaFormOpen(false)}
+            onSaved={() => {
+              setFinanceiroRefreshKey((k) => k + 1);
+              toast.success("Despesa registrada!");
+            }}
+          />
+          <ReceitaForm
+            open={receitaFormOpen}
+            userId={usuario.id}
+            onClose={() => setReceitaFormOpen(false)}
+            onSaved={() => {
+              setFinanceiroRefreshKey((k) => k + 1);
+              toast.success("Entrada registrada!");
             }}
           />
           <UploadSheet

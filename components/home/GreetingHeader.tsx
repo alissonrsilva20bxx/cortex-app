@@ -40,7 +40,7 @@ export function GreetingHeader({ usuario }: Props) {
             color: "var(--text)",
           }}
         >
-          {greeting}, {firstName}!
+          {greeting}, {firstName}
         </h1>
         <p
           className="capitalize font-medium mt-1.5"

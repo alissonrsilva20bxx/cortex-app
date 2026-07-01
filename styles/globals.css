@@ -126,6 +126,193 @@
   );
 }
 
+/* ── Ocean ──────────────────────────────────────────────────────── */
+[data-theme="ocean"] {
+  --bg: #001a1a;
+  --bg-rgb: 0 26 26;
+  --accent: #00ced1;
+  --accent-rgb: 0 206 209;
+  --accent-soft: #67e8f9;
+  --surface: rgba(0, 206, 209, 0.05);
+  --surface-2: rgba(0, 206, 209, 0.085);
+  --border-color: rgba(0, 206, 209, 0.14);
+  --divider: rgba(0, 206, 209, 0.08);
+  --text: #e0fffe;
+  --text-2: rgba(224, 255, 254, 0.7);
+  --text-muted: rgba(224, 255, 254, 0.38);
+  --body-bg:
+    radial-gradient(
+      ellipse 100% 55% at 50% -5%,
+      rgba(0, 206, 209, 0.28) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 55% 40% at 85% 105%,
+      rgba(0, 206, 209, 0.09) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 8% 85%,
+      rgba(0, 150, 160, 0.07) 0%,
+      transparent 70%
+    ),
+    #001a1a;
+  --glow: 0 0 28px rgba(0, 206, 209, 0.5), 0 0 6px rgba(0, 206, 209, 0.3);
+  --glow-sm: 0 0 14px rgba(0, 206, 209, 0.4);
+  --selection-bg: rgba(0, 206, 209, 0.35);
+  --card-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 55%
+  );
+}
+
+/* ── Gold ───────────────────────────────────────────────────────── */
+[data-theme="gold"] {
+  --bg: #0d0900;
+  --bg-rgb: 13 9 0;
+  --accent: #f59e0b;
+  --accent-rgb: 245 158 11;
+  --accent-soft: #fcd34d;
+  --surface: rgba(245, 158, 11, 0.05);
+  --surface-2: rgba(245, 158, 11, 0.085);
+  --border-color: rgba(245, 158, 11, 0.14);
+  --divider: rgba(245, 158, 11, 0.08);
+  --text: #fff8e6;
+  --text-2: rgba(255, 248, 230, 0.7);
+  --text-muted: rgba(255, 248, 230, 0.38);
+  --body-bg:
+    radial-gradient(
+      ellipse 100% 55% at 50% -5%,
+      rgba(245, 158, 11, 0.28) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 55% 40% at 85% 105%,
+      rgba(245, 158, 11, 0.09) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 8% 85%,
+      rgba(180, 110, 0, 0.07) 0%,
+      transparent 70%
+    ),
+    #0d0900;
+  --glow: 0 0 28px rgba(245, 158, 11, 0.5), 0 0 6px rgba(245, 158, 11, 0.3);
+  --glow-sm: 0 0 14px rgba(245, 158, 11, 0.4);
+  --selection-bg: rgba(245, 158, 11, 0.35);
+  --card-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 55%
+  );
+}
+
+/* ── Emerald ────────────────────────────────────────────────────── */
+[data-theme="emerald"] {
+  --bg: #001a0d;
+  --bg-rgb: 0 26 13;
+  --accent: #10b981;
+  --accent-rgb: 16 185 129;
+  --accent-soft: #6ee7b7;
+  --surface: rgba(16, 185, 129, 0.05);
+  --surface-2: rgba(16, 185, 129, 0.085);
+  --border-color: rgba(16, 185, 129, 0.14);
+  --divider: rgba(16, 185, 129, 0.08);
+  --text: #e0fff4;
+  --text-2: rgba(224, 255, 244, 0.7);
+  --text-muted: rgba(224, 255, 244, 0.38);
+  --body-bg:
+    radial-gradient(
+      ellipse 100% 55% at 50% -5%,
+      rgba(16, 185, 129, 0.28) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 55% 40% at 85% 105%,
+      rgba(16, 185, 129, 0.09) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 8% 85%,
+      rgba(0, 130, 80, 0.07) 0%,
+      transparent 70%
+    ),
+    #001a0d;
+  --glow: 0 0 28px rgba(16, 185, 129, 0.5), 0 0 6px rgba(16, 185, 129, 0.3);
+  --glow-sm: 0 0 14px rgba(16, 185, 129, 0.4);
+  --selection-bg: rgba(16, 185, 129, 0.35);
+  --card-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 55%
+  );
+}
+
+/* ── Midnight ───────────────────────────────────────────────────── */
+[data-theme="midnight"] {
+  --bg: #02021a;
+  --bg-rgb: 2 2 26;
+  --accent: #6366f1;
+  --accent-rgb: 99 102 241;
+  --accent-soft: #a5b4fc;
+  --surface: rgba(99, 102, 241, 0.05);
+  --surface-2: rgba(99, 102, 241, 0.085);
+  --border-color: rgba(99, 102, 241, 0.14);
+  --divider: rgba(99, 102, 241, 0.08);
+  --text: #eef0ff;
+  --text-2: rgba(238, 240, 255, 0.7);
+  --text-muted: rgba(238, 240, 255, 0.38);
+  --body-bg:
+    radial-gradient(
+      ellipse 100% 55% at 50% -5%,
+      rgba(99, 102, 241, 0.28) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 55% 40% at 85% 105%,
+      rgba(99, 102, 241, 0.09) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 8% 85%,
+      rgba(60, 40, 200, 0.07) 0%,
+      transparent 70%
+    ),
+    #02021a;
+  --glow: 0 0 28px rgba(99, 102, 241, 0.5), 0 0 6px rgba(99, 102, 241, 0.3);
+  --glow-sm: 0 0 14px rgba(99, 102, 241, 0.4);
+  --selection-bg: rgba(99, 102, 241, 0.35);
+  --card-shine: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 55%
+  );
+}
+
+/* ── Light Mode Override ─────────────────────────────────────────── */
+[data-mode="light"] {
+  --bg: #f5f5f7;
+  --bg-rgb: 245 245 247;
+  --surface: rgba(0, 0, 0, 0.04);
+  --surface-2: rgba(0, 0, 0, 0.08);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --divider: rgba(0, 0, 0, 0.06);
+  --text: #0f0f0f;
+  --text-2: rgba(15, 15, 15, 0.72);
+  --text-muted: rgba(15, 15, 15, 0.45);
+  --body-bg: linear-gradient(160deg, #f8f8fa 0%, #eeeef2 100%);
+  color-scheme: light;
+}
+
+[data-mode="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.07),
+    0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
 /* ── Base ───────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;

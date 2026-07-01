@@ -19,6 +19,13 @@ const CATS: { id: Categoria; label: string }[] = [
   { id: "pessoal", label: "Pessoal" },
 ];
 
+const CAT_COLORS: Record<string, string> = {
+  comprovantes: "#50dc78",
+  conversas: "#64b4ff",
+  documentos: "var(--accent)",
+  pessoal: "#c084fc",
+};
+
 interface CofreFile {
   name: string;
   path: string;
@@ -29,11 +36,12 @@ interface CofreFile {
 }
 
 function FileIcon({ mime }: { mime?: string }) {
+  const style = { color: "var(--accent)" };
   if (mime?.startsWith("image/"))
-    return <Image size={20} style={{ color: "var(--accent)" }} />;
+    return <Image size={18} style={style} aria-hidden="true" />;
   if (mime?.includes("pdf") || mime?.includes("document"))
-    return <FileText size={20} style={{ color: "var(--accent)" }} />;
-  return <File size={20} style={{ color: "var(--accent)" }} />;
+    return <FileText size={18} style={style} aria-hidden="true" />;
+  return <File size={18} style={style} aria-hidden="true" />;
 }
 
 function formatSize(bytes: number) {
@@ -120,6 +128,7 @@ export function CofreTab({ userId, refreshTrigger }: Props) {
                   : "var(--surface)",
                 border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
                 color: active ? "var(--accent)" : "var(--text-muted)",
+                boxShadow: active ? "var(--glow-sm)" : "none",
               }}
             >
               {label}
@@ -151,33 +160,45 @@ export function CofreTab({ userId, refreshTrigger }: Props) {
             <button
               key={f.path}
               onClick={() => openFile(f.path)}
-              className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-left transition-opacity active:opacity-70"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border-color)",
-              }}
+              className="glass-card flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-left transition-all active:opacity-70 active:scale-[0.99]"
             >
+              {/* File icon with glow container */}
               <div
-                className="p-2 rounded-xl shrink-0"
-                style={{ background: "rgb(var(--accent-rgb) / 0.1)" }}
+                className="p-2.5 rounded-xl shrink-0"
+                style={{
+                  background: "rgb(var(--accent-rgb) / 0.1)",
+                  border: "1px solid rgb(var(--accent-rgb) / 0.15)",
+                  boxShadow: "0 0 10px rgb(var(--accent-rgb) / 0.12)",
+                }}
               >
                 <FileIcon mime={f.mimeType} />
               </div>
 
               <div className="flex-1 min-w-0">
                 <p
-                  className="text-sm font-medium truncate"
+                  className="text-sm font-semibold truncate"
                   style={{ color: "var(--text)" }}
                 >
                   {f.name}
                 </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {CATS.find((c) => c.id === f.categoria)?.label} ·{" "}
-                  {formatSize(f.size)} · {formatDate(f.createdAt)}
-                </p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-px rounded-full"
+                    style={{
+                      background: `${CAT_COLORS[f.categoria] ?? "var(--accent)"}18`,
+                      color: CAT_COLORS[f.categoria] ?? "var(--accent)",
+                      border: `1px solid ${CAT_COLORS[f.categoria] ?? "var(--accent)"}30`,
+                    }}
+                  >
+                    {CATS.find((c) => c.id === f.categoria)?.label}
+                  </span>
+                  <span
+                    className="text-[11px]"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {formatSize(f.size)} · {formatDate(f.createdAt)}
+                  </span>
+                </div>
               </div>
 
               <ExternalLink
