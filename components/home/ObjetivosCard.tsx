@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, ChevronRight } from "lucide-react";
+import { GlassCard } from "@/components/ui/GlassCard";
 import type { Objetivo } from "@/lib/types";
 
 interface Props {
@@ -31,7 +32,7 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   );
 
   return (
-    <div className="glass-card rounded-[22px] p-5">
+    <GlassCard className="p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="section-label">Objetivos</p>
@@ -106,6 +107,6 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
         Ver todos
         <ChevronRight size={13} />
       </button>
-    </div>
+    </GlassCard>
   );
 }

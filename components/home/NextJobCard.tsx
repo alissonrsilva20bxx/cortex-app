@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, MapPin, Video, Clock } from "lucide-react";
+import { GlassCard } from "@/components/ui/GlassCard";
 import type { Job } from "@/lib/types";
 
 interface Props {
@@ -56,15 +57,14 @@ export function NextJobCard({ jobs }: Props) {
   const job = getProximoJob(jobs);
 
   return (
-    <div
-      className="glass-card rounded-[22px] p-5 transition-all duration-300"
+    <GlassCard
+      className="p-5 duration-300"
+      onClick={job ? () => setExpanded((v) => !v) : undefined}
       style={{
-        cursor: job ? "pointer" : "default",
         boxShadow: expanded
           ? `inset 0 1px 0 rgb(255 255 255 / 0.07), 0 2px 1px rgb(0 0 0 / 0.12), 0 12px 40px rgb(0 0 0 / 0.28), var(--glow-sm), 0 0 0 0.5px rgb(var(--accent-rgb) / 0.06)`
           : undefined,
       }}
-      onClick={() => job && setExpanded((v) => !v)}
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
@@ -201,6 +201,6 @@ export function NextJobCard({ jobs }: Props) {
           </div>
         </>
       )}
-    </div>
+    </GlassCard>
   );
 }

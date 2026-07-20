@@ -5,10 +5,8 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { BottomNav } from "@/components/BottomNav";
 import { FAB } from "@/components/FAB";
 import { GreetingHeader } from "@/components/home/GreetingHeader";
+import { HeroCard } from "@/components/home/HeroCard";
 import { NextJobCard } from "@/components/home/NextJobCard";
-import { FinanceSummaryCard } from "@/components/home/FinanceSummaryCard";
-import { IndependenciaCard } from "@/components/home/IndependenciaCard";
-import { ReceitaDespesaCards } from "@/components/home/ReceitaDespesaCards";
 import { ObjetivosCard } from "@/components/home/ObjetivosCard";
 import { JobsTab } from "@/components/jobs/JobsTab";
 import { JobForm } from "@/components/jobs/JobForm";
@@ -28,7 +26,6 @@ import type {
   Job,
   Meta,
   Objetivo,
-  Despesa,
   HomeCardConfig,
   CardStyleConfig,
   ChartPrefConfig,
@@ -54,7 +51,6 @@ export default function Page() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
   const [objetivos, setObjetivos] = useState<Objetivo[]>([]);
-  const [despesas, setDespesas] = useState<Despesa[]>([]);
 
   const [pinHash, setPinHash] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -179,29 +175,6 @@ export default function Page() {
       });
   }, [usuario, objetivosRefreshKey]);
 
-  useEffect(() => {
-    if (!usuario) return;
-    supabase
-      .from("despesas")
-      .select("*")
-      .eq("user_id", usuario.id)
-      .order("data", { ascending: false })
-      .then(({ data }) => {
-        if (data) {
-          setDespesas(
-            data.map((d) => ({
-              id: d.id,
-              descricao: d.descricao,
-              valor: d.valor,
-              categoria: d.categoria,
-              data: d.data,
-              criadoEm: d.criado_em,
-            }))
-          );
-        }
-      });
-  }, [usuario, financeiroRefreshKey]);
-
   async function handleSignOut() {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -246,28 +219,17 @@ export default function Page() {
           <>
             <GreetingHeader usuario={usuario} />
             <div className="mt-6 space-y-4">
-              {/* Card principal: Independência Financeira */}
-              <IndependenciaCard
+              {/* Card-herói: a projeção viva das metas (o coração) */}
+              <HeroCard
                 jobs={jobs}
                 metas={metas}
                 onGoToFinanceiro={() => handleTabChange("financeiro")}
               />
 
-              {/* Receita e Despesa lado a lado */}
-              <ReceitaDespesaCards
-                jobs={jobs}
-                despesas={despesas}
-                onGoToFinanceiro={() => handleTabChange("financeiro")}
-              />
+              {/* Próximo atendimento — o motor diário */}
+              {homeCards.nextJob && <NextJobCard jobs={jobs} />}
 
-              {/* Componentes opcionais (clássicos) */}
-              {homeCards.nextJob && (
-                <div className="pt-2">
-                  <NextJobCard jobs={jobs} />
-                </div>
-              )}
-
-              {/* Objetivos/Metas pessoais */}
+              {/* Objetivos pessoais */}
               {(homeCards.objetivos ?? true) && (
                 <ObjetivosCard
                   objetivos={objetivos}
