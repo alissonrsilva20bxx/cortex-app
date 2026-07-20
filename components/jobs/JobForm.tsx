@@ -57,7 +57,6 @@ const inputStyle: React.CSSProperties = {
   padding: "12px 14px",
   width: "100%",
   outline: "none",
-  colorScheme: "dark",
 };
 
 const labelStyle: React.CSSProperties = {

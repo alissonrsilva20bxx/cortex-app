@@ -500,8 +500,7 @@ export function AjustesTab({
           {/* Aviso de privacidade */}
           <section
             style={{
-              background:
-                "linear-gradient(135deg, rgba(255,45,120,0.12) 0%, rgba(155,92,246,0.08) 100%)",
+              background: "rgb(var(--accent-rgb) / 0.08)",
               border: "1.5px solid rgb(var(--accent-rgb) / 0.2)",
               borderRadius: "16px",
               padding: "14px",
@@ -637,8 +636,8 @@ export function AjustesTab({
           {/* Info */}
           <section
             style={{
-              background: "rgba(155,92,246,0.1)",
-              border: "1px solid rgba(155,92,246,0.2)",
+              background: "rgb(var(--accent-rgb) / 0.07)",
+              border: "1px solid rgb(var(--accent-rgb) / 0.18)",
               borderRadius: "12px",
               padding: "12px",
             }}
@@ -646,7 +645,7 @@ export function AjustesTab({
             <p
               style={{
                 fontSize: "11px",
-                color: "#9b5cf6",
+                color: "var(--accent-soft)",
                 margin: 0,
                 lineHeight: "1.5",
               }}

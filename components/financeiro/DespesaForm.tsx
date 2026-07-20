@@ -168,7 +168,6 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
               background: "var(--surface)",
               border: "1px solid var(--border-color)",
               color: "var(--text)",
-              colorScheme: "dark",
             }}
           />
         </div>

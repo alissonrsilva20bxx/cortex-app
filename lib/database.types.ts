@@ -2,6 +2,7 @@ export type JobStatus = "agendado" | "confirmado" | "concluído" | "cancelado";
 export type Modalidade = "presencial" | "online";
 export type PeriodoMeta = "dia" | "mes" | "ano";
 export type Tema =
+  | "grafite"
   | "pink-neon"
   | "purple"
   | "crimson"

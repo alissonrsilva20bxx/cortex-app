@@ -1,4 +1,5 @@
 export const THEMES = [
+  "grafite",
   "pink-neon",
   "purple",
   "crimson",
@@ -9,12 +10,13 @@ export const THEMES = [
 ] as const;
 export type Theme = (typeof THEMES)[number];
 
-export const DEFAULT_THEME: Theme = "pink-neon";
+export const DEFAULT_THEME: Theme = "grafite";
 export const THEME_STORAGE_KEY = "jobapp-theme";
 export const MODE_STORAGE_KEY = "jobapp-mode";
 
 export const THEME_LABELS: Record<Theme, string> = {
-  "pink-neon": "Pink Neon",
+  grafite: "Grafite",
+  "pink-neon": "Pink",
   purple: "Purple",
   crimson: "Crimson",
   ocean: "Ocean",
@@ -24,6 +26,7 @@ export const THEME_LABELS: Record<Theme, string> = {
 };
 
 export const THEME_ACCENTS: Record<Theme, string> = {
+  grafite: "#a1a1aa",
   "pink-neon": "#FF2D78",
   purple: "#9B5CF6",
   crimson: "#DC143C",
