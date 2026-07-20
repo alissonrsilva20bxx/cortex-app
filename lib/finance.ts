@@ -1,4 +1,10 @@
-import type { Job, Meta, Despesa } from "@/lib/types";
+import type {
+  Job,
+  Meta,
+  Despesa,
+  ReceitaAvulsa,
+  PeriodoMeta,
+} from "@/lib/types";
 
 /**
  * Fonte única da lógica financeira da Home / Financeiro.
@@ -13,6 +19,13 @@ export const formatBRL = (v: number, fractionDigits = 0) =>
     currency: "BRL",
     maximumFractionDigits: fractionDigits,
   }).format(v);
+
+/** "12 jul" — data curta no fuso local. */
+export const formatShortDate = (data: string) =>
+  new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
+    day: "numeric",
+    month: "short",
+  });
 
 /** YYYY-MM-DD no fuso local (evita o off-by-one do toISOString em UTC). */
 function localKey(d: Date): string {
@@ -80,6 +93,117 @@ export function last7DaysSparkline(jobs: Job[], ref = new Date()): number[] {
 
 export function monthMeta(metas: Meta[]): number | null {
   return metas.find((m) => m.periodo === "mes")?.valorAlvo ?? null;
+}
+
+function inPeriod(dateStr: string, periodo: PeriodoMeta, ref: Date): boolean {
+  const d = parseLocal(dateStr);
+  if (periodo === "dia") return d.toDateString() === ref.toDateString();
+  if (periodo === "mes")
+    return (
+      d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear()
+    );
+  return d.getFullYear() === ref.getFullYear();
+}
+
+/**
+ * Entradas totais (jobs concluídos + receitas avulsas) num período.
+ * Diferente de monthEarnings (só jobs) usado no herói da Home: aqui é a
+ * visão completa do Financeiro. Ambos vivem aqui — telas consomem, não
+ * recalculam.
+ */
+export function calcEarnings(
+  jobs: Job[],
+  receitas: ReceitaAvulsa[],
+  periodo: PeriodoMeta,
+  ref = new Date()
+): number {
+  const jobTotal = jobs
+    .filter((j) => isConcluido(j) && inPeriod(j.data, periodo, ref))
+    .reduce((s, j) => s + j.valor, 0);
+  const receitaTotal = receitas
+    .filter((r) => inPeriod(r.data, periodo, ref))
+    .reduce((s, r) => s + r.valor, 0);
+  return jobTotal + receitaTotal;
+}
+
+export type ChartPeriod = "sem" | "mes" | "ano";
+
+/** Série do gráfico de receitas por semana / mês / ano. */
+export function buildChartData(
+  jobs: Job[],
+  receitas: ReceitaAvulsa[],
+  period: ChartPeriod,
+  ref = new Date()
+): { label: string; value: number }[] {
+  const sumBetween = (start: Date, end: Date) => {
+    const jobV = jobs
+      .filter((j) => {
+        if (!isConcluido(j)) return false;
+        const d = parseLocal(j.data);
+        return d >= start && d <= end;
+      })
+      .reduce((s, j) => s + j.valor, 0);
+    const recV = receitas
+      .filter((r) => {
+        const d = parseLocal(r.data);
+        return d >= start && d <= end;
+      })
+      .reduce((s, r) => s + r.valor, 0);
+    return jobV + recV;
+  };
+
+  if (period === "sem") {
+    return Array.from({ length: 8 }, (_, i) => {
+      const end = new Date(ref);
+      end.setDate(end.getDate() - i * 7);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 6);
+      return { label: `S${8 - i}`, value: sumBetween(start, end) };
+    }).reverse();
+  }
+
+  if (period === "mes") {
+    return Array.from({ length: 12 }, (_, i) => {
+      const m = (ref.getMonth() - 11 + i + 12) % 12;
+      const y = ref.getFullYear() - (ref.getMonth() - 11 + i < 0 ? 1 : 0);
+      const label = new Date(y, m, 1).toLocaleDateString("pt-BR", {
+        month: "short",
+      });
+      const start = new Date(y, m, 1);
+      const end = new Date(y, m + 1, 0);
+      return { label, value: sumBetween(start, end) };
+    });
+  }
+
+  // ano
+  const nowY = ref.getFullYear();
+  return Array.from({ length: 5 }, (_, i) => {
+    const y = nowY - 4 + i;
+    return {
+      label: String(y),
+      value: sumBetween(new Date(y, 0, 1), new Date(y, 11, 31)),
+    };
+  });
+}
+
+/** Sparkline dos últimos 30 dias (jobs concluídos + receitas). */
+export function last30DaysSpark(
+  jobs: Job[],
+  receitas: ReceitaAvulsa[],
+  ref = new Date()
+): number[] {
+  return Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(ref);
+    d.setDate(d.getDate() - (29 - i));
+    const ds = localKey(d);
+    const jobV = jobs
+      .filter((j) => isConcluido(j) && j.data === ds)
+      .reduce((s, j) => s + j.valor, 0);
+    const recV = receitas
+      .filter((r) => r.data === ds)
+      .reduce((s, r) => s + r.valor, 0);
+    return jobV + recV;
+  });
 }
 
 export interface Projection {

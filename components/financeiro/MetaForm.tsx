@@ -164,7 +164,7 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
           ))}
 
           {error && (
-            <p className="text-sm" style={{ color: "#ff5050" }}>
+            <p className="text-sm" style={{ color: "var(--danger)" }}>
               {error}
             </p>
           )}
