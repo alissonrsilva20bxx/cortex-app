@@ -300,7 +300,11 @@ export default function Page() {
             onClose={() => setJobFormOpen(false)}
             onSaved={() => {
               setJobsRefreshKey((k) => k + 1);
-              toast.success(editingJob ? "Job atualizado!" : "Job criado!");
+              toast.success(
+                editingJob
+                  ? "Atendimento atualizado!"
+                  : "Atendimento registrado!"
+              );
             }}
           />
           <MetaForm

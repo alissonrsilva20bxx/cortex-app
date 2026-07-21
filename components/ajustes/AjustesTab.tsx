@@ -118,7 +118,7 @@ export function AjustesTab({
   }[] = [
     {
       key: "nextJob",
-      label: "Próximo Job",
+      label: "Próximo atendimento",
       desc: "Card com próximo agendamento",
     },
     {

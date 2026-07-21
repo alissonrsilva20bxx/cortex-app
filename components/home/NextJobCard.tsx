@@ -68,7 +68,7 @@ export function NextJobCard({ jobs }: Props) {
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
-        <p className="section-label">Próximo Job</p>
+        <p className="section-label">Próximo atendimento</p>
         {job && (
           <ChevronDown
             size={15}

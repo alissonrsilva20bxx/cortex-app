@@ -2,13 +2,9 @@
 
 import { MapPin, Video, Clock } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import type { Job, JobStatus } from "@/lib/types";
-
-const formatBRL = (v: number) =>
-  new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(v);
+import { STATUS_META } from "./status";
+import { formatBRL } from "@/lib/finance";
+import type { Job } from "@/lib/types";
 
 const formatDate = (data: string) =>
   new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
@@ -16,13 +12,6 @@ const formatDate = (data: string) =>
     day: "numeric",
     month: "short",
   });
-
-const STATUS_STRIP: Record<JobStatus, string> = {
-  agendado: "#64b4ff",
-  confirmado: "#50dc78",
-  concluído: "var(--accent)",
-  cancelado: "#ff5050",
-};
 
 interface Props {
   job: Job;
@@ -34,7 +23,7 @@ export function JobCard({ job, onClick }: Props) {
     <button
       className="glass-card w-full text-left rounded-2xl p-4 transition-all active:opacity-70 active:scale-[0.99]"
       onClick={() => onClick(job)}
-      style={{ borderLeft: `3px solid ${STATUS_STRIP[job.status]}` }}
+      style={{ borderLeft: `3px solid ${STATUS_META[job.status].color}` }}
     >
       <div className="flex items-start justify-between gap-3">
         {/* Left: name + time + location */}
@@ -79,7 +68,7 @@ export function JobCard({ job, onClick }: Props) {
               textShadow: "0 0 18px rgb(var(--accent-rgb) / 0.55)",
             }}
           >
-            {formatBRL(job.valor)}
+            {formatBRL(job.valor, 2)}
           </span>
           <StatusBadge status={job.status} />
         </div>

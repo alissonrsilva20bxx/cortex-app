@@ -11,13 +11,13 @@ interface SheetAction {
 
 const SHEET_ACTIONS: Partial<Record<TabId, SheetAction>> = {
   home: {
-    label: "Novo Job",
-    description: "Agendar um novo atendimento",
+    label: "Novo atendimento",
+    description: "Registrar um novo atendimento",
     Icon: Briefcase,
   },
   jobs: {
-    label: "Novo Job",
-    description: "Agendar um novo atendimento",
+    label: "Novo atendimento",
+    description: "Registrar um novo atendimento",
     Icon: Briefcase,
   },
   financeiro: {

@@ -171,7 +171,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
             className="font-semibold text-base mt-2"
             style={{ color: "var(--text)" }}
           >
-            {job ? "Editar Job" : "Novo Job"}
+            {job ? "Editar atendimento" : "Novo atendimento"}
           </p>
           <button onClick={onClose} className="p-1 mt-2 active:opacity-70">
             <X size={20} style={{ color: "var(--text-muted)" }} />
@@ -295,7 +295,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
           </div>
 
           {error && (
-            <p className="text-sm" style={{ color: "#ff5050" }}>
+            <p className="text-sm" style={{ color: "var(--danger)" }}>
               {error}
             </p>
           )}
@@ -312,7 +312,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
             className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-50"
             style={{ background: "var(--accent)", color: "white" }}
           >
-            {saving ? "Salvando…" : job ? "Salvar alterações" : "Criar Job"}
+            {saving
+              ? "Salvando…"
+              : job
+                ? "Salvar alterações"
+                : "Registrar atendimento"}
           </button>
         </div>
       </div>

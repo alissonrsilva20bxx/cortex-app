@@ -67,13 +67,14 @@ export function DonutChart({
             cy={cy}
             r={r}
             fill="none"
-            stroke={s.color}
+            stroke="currentColor"
             strokeWidth={strokeW}
             strokeDasharray={`${s.dash} ${s.gap}`}
             strokeDashoffset={-(s.rotation / 360) * circ}
             strokeLinecap="butt"
             style={{
-              filter: `drop-shadow(0 0 3px ${s.color}88)`,
+              color: s.color,
+              filter: "drop-shadow(0 0 3px currentColor)",
               transformOrigin: "50% 50%",
             }}
           />
@@ -128,8 +129,9 @@ export function DonutChart({
                   width: 8,
                   height: 8,
                   borderRadius: 2,
-                  background: s.color,
-                  boxShadow: `0 0 5px ${s.color}88`,
+                  color: s.color,
+                  background: "currentColor",
+                  boxShadow: "0 0 5px currentColor",
                   flexShrink: 0,
                 }}
               />

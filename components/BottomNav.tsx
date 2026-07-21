@@ -1,11 +1,17 @@
 "use client";
 
-import { Home, Briefcase, Wallet, ShieldCheck, Settings } from "lucide-react";
+import {
+  Home,
+  CalendarDays,
+  Wallet,
+  ShieldCheck,
+  Settings,
+} from "lucide-react";
 import type { TabId } from "@/lib/types";
 
 const TABS: { id: TabId; label: string; Icon: typeof Home }[] = [
-  { id: "home", label: "Home", Icon: Home },
-  { id: "jobs", label: "Jobs", Icon: Briefcase },
+  { id: "home", label: "Início", Icon: Home },
+  { id: "jobs", label: "Agenda", Icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", Icon: Wallet },
   { id: "cofre", label: "Cofre", Icon: ShieldCheck },
   { id: "ajustes", label: "Ajustes", Icon: Settings },

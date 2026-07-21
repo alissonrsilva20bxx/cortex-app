@@ -5,8 +5,11 @@ import { ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { MiniBarChart } from "@/components/charts/MiniBarChart";
 import { DonutChart } from "@/components/charts/DonutChart";
+import { FilterChips } from "@/components/ui/FilterChips";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { JobCard } from "./JobCard";
 import { NotasSection } from "./NotasSection";
+import { STATUS_META } from "./status";
 import type { Job, JobStatus } from "@/lib/types";
 
 type Filter = "todos" | JobStatus;
@@ -19,13 +22,6 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "concluído", label: "Concluído" },
   { id: "cancelado", label: "Cancelado" },
 ];
-
-const STATUS_COLORS: Record<JobStatus, string> = {
-  agendado: "#64b4ff",
-  confirmado: "#50dc78",
-  concluído: "var(--accent)",
-  cancelado: "#ff5050",
-};
 
 const PERIOD_OPTS: { id: Period; label: string }[] = [
   { id: "sem", label: "S" },
@@ -150,9 +146,9 @@ export function JobsTab({
     ["agendado", "confirmado", "concluído", "cancelado"] as JobStatus[]
   )
     .map((s) => ({
-      label: s.charAt(0).toUpperCase() + s.slice(1),
+      label: STATUS_META[s].label,
       value: jobs.filter((j) => j.status === s).length,
-      color: STATUS_COLORS[s],
+      color: STATUS_META[s].color,
     }))
     .filter((s) => s.value > 0);
 
@@ -160,7 +156,7 @@ export function JobsTab({
     <div className="pb-4">
       <div className="flex items-baseline gap-2 mb-4">
         <h2 className="text-xl font-bold" style={{ color: "var(--text)" }}>
-          Jobs
+          Atendimentos
         </h2>
         {!loading && (
           <span
@@ -211,36 +207,19 @@ export function JobsTab({
                     segments={donutSegments}
                     size={130}
                     centerValue={String(jobs.length)}
-                    centerLabel="jobs"
+                    centerLabel="atend."
                   />
                 </div>
               ) : (
                 <>
                   {/* Period selector */}
                   <div className="flex justify-end mb-3">
-                    <div
-                      className="flex gap-1 p-0.5 rounded-xl"
-                      style={{ background: "var(--surface-2, var(--surface))" }}
-                    >
-                      {PERIOD_OPTS.map(({ id, label }) => {
-                        const active = period === id;
-                        return (
-                          <button
-                            key={id}
-                            onClick={() => setPeriod(id)}
-                            className="px-3 py-1 rounded-lg text-[11px] font-bold transition-all"
-                            style={{
-                              background: active
-                                ? "var(--accent)"
-                                : "transparent",
-                              color: active ? "#fff" : "var(--text-muted)",
-                            }}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <SegmentedControl
+                      size="sm"
+                      options={PERIOD_OPTS}
+                      value={period}
+                      onChange={setPeriod}
+                    />
                   </div>
                   <MiniBarChart data={periodData} height={100} id="jobs-bar" />
                 </>
@@ -251,28 +230,7 @@ export function JobsTab({
       )}
 
       {/* Filter chips */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar">
-        {FILTERS.map(({ id, label }) => {
-          const active = filter === id;
-          return (
-            <button
-              key={id}
-              onClick={() => setFilter(id)}
-              className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all"
-              style={{
-                background: active
-                  ? "rgb(var(--accent-rgb) / 0.18)"
-                  : "var(--surface)",
-                border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-                color: active ? "var(--accent)" : "var(--text-muted)",
-                boxShadow: active ? "var(--glow-sm)" : "none",
-              }}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
 
       <div className="mt-4 space-y-3">
         {loading ? (
@@ -288,8 +246,8 @@ export function JobsTab({
             style={{ color: "var(--text-muted)" }}
           >
             {filter === "todos"
-              ? "Nenhum job ainda. Toque no + para criar."
-              : `Nenhum job com status "${filter}".`}
+              ? "Nenhum atendimento ainda. Toque no + para registrar."
+              : `Nenhum atendimento "${filter}".`}
           </p>
         ) : (
           filtered.map((job) => (
