@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight, ListChecks } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import type { Objetivo } from "@/lib/types";
 
@@ -19,7 +19,45 @@ const OBJ_CAT_EMOJIS: Record<string, string> = {
 };
 
 export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
-  if (objetivos.length === 0) return null;
+  if (objetivos.length === 0) {
+    return (
+      <GlassCard className="p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className="flex items-center justify-center rounded-xl shrink-0"
+            style={{
+              width: 36,
+              height: 36,
+              background: "rgb(var(--accent-rgb) / 0.12)",
+            }}
+          >
+            <ListChecks size={16} style={{ color: "var(--accent)" }} />
+          </div>
+          <div>
+            <p className="section-label">Objetivos</p>
+            <p
+              className="text-xs mt-0.5"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Afazeres e metas de vida, num só lugar
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onGoToMetas}
+          className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.98]"
+          style={{
+            background: "rgb(var(--accent-rgb) / 0.08)",
+            color: "var(--accent)",
+            border: "1px solid rgb(var(--accent-rgb) / 0.2)",
+          }}
+        >
+          Adicionar objetivo
+          <ChevronRight size={13} />
+        </button>
+      </GlassCard>
+    );
+  }
 
   const pendentes = objetivos.filter((o) => !o.concluido);
   const todos = objetivos.length;

@@ -109,7 +109,7 @@ export function SaidasTab({
           className="text-sm text-center pt-8"
           style={{ color: "var(--text-muted)" }}
         >
-          Nenhuma despesa registrada.
+          Nenhuma despesa registrada ainda. Toque em Nova Saída para começar.
         </p>
       ) : (
         <div className="space-y-2">

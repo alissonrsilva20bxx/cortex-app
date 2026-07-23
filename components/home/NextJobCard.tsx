@@ -86,7 +86,7 @@ export function NextJobCard({ jobs }: Props) {
           className="font-medium"
           style={{ fontSize: "14px", color: "var(--text-muted)" }}
         >
-          Nenhum job agendado
+          Nenhum atendimento agendado ainda. Toque no + para registrar.
         </p>
       ) : (
         <>

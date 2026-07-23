@@ -80,7 +80,7 @@ export function EntradasTab({
           className="text-sm text-center pt-12"
           style={{ color: "var(--text-muted)" }}
         >
-          Nenhuma entrada ainda.
+          Nenhuma entrada ainda. Toque em Nova Entrada para começar.
         </p>
       ) : (
         <div className="space-y-2">
