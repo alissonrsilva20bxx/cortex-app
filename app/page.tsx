@@ -98,8 +98,10 @@ export default function Page() {
         email: data.user.email ?? "",
         avatarUrl: data.user.user_metadata?.avatar_url,
       };
-      setUsuario(u);
 
+      // Só revela o usuário (e libera as buscas de dados sensíveis) depois
+      // de saber se há PIN a cumprir — evita a tela de conteúdo desenhar
+      // (ou pré-carregar dados) antes da trava, mesmo por um instante (§5.2).
       supabase
         .from("configuracoes")
         .select("pin_hash")
@@ -110,12 +112,35 @@ export default function Page() {
             setPinHash(cfg.pin_hash);
             setLocked(true);
           }
+          setUsuario(u);
         });
     });
   }, []);
 
+  // Re-trava ~30s depois de ir para segundo plano (§5.2): "abriu, minimizou,
+  // alguém pegou" fecha aqui. Mede o tempo decorrido ao voltar, sem depender
+  // de um timer rodando em background (que o navegador pode suspender).
   useEffect(() => {
-    if (!usuario) return;
+    if (!pinHash) return;
+    let hiddenAt: number | null = null;
+    function handleVisibility() {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === "visible") {
+        if (hiddenAt !== null && Date.now() - hiddenAt >= 30_000) {
+          setLocked(true);
+        }
+        hiddenAt = null;
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, [pinHash]);
+
+  useEffect(() => {
+    // Não busca dados sensíveis enquanto a trava do PIN está de pé (§5.2).
+    if (!usuario || locked) return;
     Promise.all([
       supabase
         .from("jobs")
@@ -150,10 +175,10 @@ export default function Page() {
         );
       }
     });
-  }, [usuario, jobsRefreshKey, financeiroRefreshKey]);
+  }, [usuario, locked, jobsRefreshKey, financeiroRefreshKey]);
 
   useEffect(() => {
-    if (!usuario) return;
+    if (!usuario || locked) return;
     supabase
       .from("objetivos")
       .select("*")
@@ -173,7 +198,7 @@ export default function Page() {
           );
         }
       });
-  }, [usuario, objetivosRefreshKey]);
+  }, [usuario, locked, objetivosRefreshKey]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();

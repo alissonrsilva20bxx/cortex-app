@@ -74,13 +74,13 @@ export function PinScreen({ pinHash, onUnlock }: Props) {
             letterSpacing: "-0.03em",
           }}
         >
-          JobApp
+          Bom te ver de novo.
         </p>
         <p
           className="text-sm mt-1 transition-all duration-200"
-          style={{ color: error ? "#ff5050" : "var(--text-muted)" }}
+          style={{ color: error ? "var(--danger)" : "var(--text-muted)" }}
         >
-          {error ? "PIN incorreto. Tente novamente." : "Digite seu PIN"}
+          {error ? "PIN incorreto. Tente novamente." : "Seu espaço, só seu."}
         </p>
       </div>
 
@@ -100,13 +100,13 @@ export function PinScreen({ pinHash, onUnlock }: Props) {
                 height: filled ? "16px" : "13px",
                 background: filled
                   ? error
-                    ? "#ff5050"
+                    ? "var(--danger)"
                     : "var(--accent)"
                   : "transparent",
                 border: `2px solid ${
                   filled
                     ? error
-                      ? "#ff5050"
+                      ? "var(--danger)"
                       : "var(--accent)"
                     : "var(--border-color)"
                 }`,
@@ -114,7 +114,7 @@ export function PinScreen({ pinHash, onUnlock }: Props) {
                   filled && !error
                     ? "0 0 16px rgb(var(--accent-rgb) / 0.7), 0 0 6px var(--accent)"
                     : filled && error
-                      ? "0 0 14px rgba(255,80,80,0.6)"
+                      ? "0 0 14px rgb(var(--danger-rgb) / 0.6)"
                       : "none",
               }}
             />
