@@ -18,6 +18,7 @@ import { CofreTab } from "@/components/cofre/CofreTab";
 import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -54,6 +55,12 @@ export default function Page() {
 
   const [pinHash, setPinHash] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
+
+  // Distingue "ainda não sei se ela tem dados" de "confirmei que não tem" —
+  // sem isso, uma usuária antiga com dados reais veria o onboarding piscar
+  // na janela entre revelar `usuario` e o fetch de jobs/metas terminar.
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(false);
 
   const [jobFormOpen, setJobFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
@@ -174,6 +181,7 @@ export default function Page() {
           }))
         );
       }
+      setDataLoaded(true);
     });
   }, [usuario, locked, jobsRefreshKey, financeiroRefreshKey]);
 
@@ -235,12 +243,36 @@ export default function Page() {
     return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
   }
 
+  // 1º uso: sem meta e sem atendimento nenhum, uma vez confirmado (não só
+  // "ainda carregando"). Guia até o "aha" antes de soltar as abas (§6).
+  const isNewUser =
+    !!usuario &&
+    dataLoaded &&
+    jobs.length === 0 &&
+    metas.length === 0 &&
+    !onboardingDone;
+
   return (
     <div className="relative flex flex-col min-h-screen">
-      <LoadingScreen isLoading={!usuario} />
+      <LoadingScreen isLoading={!usuario || !dataLoaded} />
 
       <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6">
-        {activeTab === "home" && usuario && (
+        {isNewUser && usuario && (
+          <OnboardingFlow
+            usuario={usuario}
+            jobs={jobs}
+            metas={metas}
+            onOpenJobForm={() => {
+              setEditingJob(null);
+              setJobFormOpen(true);
+            }}
+            onMetaSaved={() => setFinanceiroRefreshKey((k) => k + 1)}
+            onPinSaved={(h) => setPinHash(h)}
+            onComplete={() => setOnboardingDone(true)}
+          />
+        )}
+
+        {!isNewUser && activeTab === "home" && usuario && (
           <>
             <GreetingHeader usuario={usuario} />
             <div className="mt-6 space-y-4">
@@ -266,7 +298,7 @@ export default function Page() {
           </>
         )}
 
-        {activeTab === "jobs" && usuario && (
+        {!isNewUser && activeTab === "jobs" && usuario && (
           <JobsTab
             userId={usuario.id}
             refreshTrigger={jobsRefreshKey}
@@ -278,7 +310,7 @@ export default function Page() {
           />
         )}
 
-        {activeTab === "financeiro" && usuario && (
+        {!isNewUser && activeTab === "financeiro" && usuario && (
           <FinanceiroTab
             userId={usuario.id}
             refreshTrigger={financeiroRefreshKey}
@@ -292,11 +324,11 @@ export default function Page() {
           />
         )}
 
-        {activeTab === "cofre" && usuario && (
+        {!isNewUser && activeTab === "cofre" && usuario && (
           <CofreTab userId={usuario.id} refreshTrigger={cofreRefreshKey} />
         )}
 
-        {activeTab === "ajustes" && usuario && (
+        {!isNewUser && activeTab === "ajustes" && usuario && (
           <AjustesTab
             userId={usuario.id}
             onSignOut={handleSignOut}
@@ -308,13 +340,17 @@ export default function Page() {
         )}
       </main>
 
-      <FAB
-        activeTab={activeTab}
-        open={fabOpen}
-        onToggle={() => setFabOpen((v) => !v)}
-        onAction={handleFabAction}
-      />
-      <BottomNav activeTab={activeTab} onChange={handleTabChange} />
+      {!isNewUser && (
+        <>
+          <FAB
+            activeTab={activeTab}
+            open={fabOpen}
+            onToggle={() => setFabOpen((v) => !v)}
+            onAction={handleFabAction}
+          />
+          <BottomNav activeTab={activeTab} onChange={handleTabChange} />
+        </>
+      )}
 
       {usuario && (
         <>
