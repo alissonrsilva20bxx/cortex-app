@@ -42,15 +42,24 @@ function parseLocal(data: string): Date {
 
 const isConcluido = (j: Job) => j.status === "concluído";
 
+/** Jobs concluídos num mês/ano específico — base de earningsInMonth e
+ * monthConcludedCount (não duplica o filtro nos dois). */
+function concludedInMonth(jobs: Job[], year: number, month: number): Job[] {
+  return jobs.filter((j) => {
+    if (!isConcluido(j)) return false;
+    const d = parseLocal(j.data);
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+}
+
 /** Ganho (jobs concluídos) num mês/ano específico. */
 function earningsInMonth(jobs: Job[], year: number, month: number): number {
-  return jobs
-    .filter((j) => {
-      if (!isConcluido(j)) return false;
-      const d = parseLocal(j.data);
-      return d.getFullYear() === year && d.getMonth() === month;
-    })
-    .reduce((s, j) => s + j.valor, 0);
+  return concludedInMonth(jobs, year, month).reduce((s, j) => s + j.valor, 0);
+}
+
+/** Nº de atendimentos concluídos num mês específico — pro recap mensal. */
+export function monthConcludedCount(jobs: Job[], ref = new Date()): number {
+  return concludedInMonth(jobs, ref.getFullYear(), ref.getMonth()).length;
 }
 
 /** Quanto ela já construiu este mês (jobs concluídos). */

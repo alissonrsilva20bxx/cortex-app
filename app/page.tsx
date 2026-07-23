@@ -19,6 +19,7 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { RecapSheet } from "@/components/recap/RecapSheet";
 import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -352,6 +353,8 @@ export default function Page() {
           <BottomNav activeTab={activeTab} onChange={handleTabChange} />
         </>
       )}
+
+      {!isNewUser && usuario && dataLoaded && <RecapSheet jobs={jobs} />}
 
       {usuario && (
         <>
