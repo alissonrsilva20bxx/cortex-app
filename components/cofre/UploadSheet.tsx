@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X, FileUp, CheckCircle } from "lucide-react";
+import { FileUp, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { FilterChips } from "@/components/ui/FilterChips";
 
 type Categoria = "comprovantes" | "conversas" | "documentos" | "pessoal";
 
@@ -50,152 +52,92 @@ export function UploadSheet({ open, userId, onClose, onUploaded }: Props) {
   }
 
   return (
-    <>
-      {open && (
-        <div
-          className="fixed inset-0 z-50"
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            background: "rgb(var(--bg-rgb) / 0.5)",
-          }}
-          onClick={handleClose}
-        />
-      )}
-
-      <div
-        className="fixed left-0 right-0 z-50 rounded-t-3xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
-        style={{
-          bottom: 0,
-          transform: open ? "translateY(0)" : "translateY(105%)",
-          background: "var(--surface-2)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid var(--border-color)",
-          borderBottom: "none",
-        }}
-      >
-        {/* Header */}
-        <div
-          className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0"
-          style={{ borderBottom: "1px solid var(--border-color)" }}
+    <BottomSheet
+      open={open}
+      onClose={handleClose}
+      title="Enviar arquivo"
+      footer={
+        <button
+          onClick={handleUpload}
+          disabled={uploading || !file}
+          className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-40"
+          style={{ background: "var(--accent)", color: "white" }}
         >
-          <div
-            className="w-9 h-1 rounded-full absolute left-1/2 -translate-x-1/2 top-3"
-            style={{ background: "var(--border-color)" }}
-          />
+          {uploading ? "Enviando…" : "Enviar para o cofre"}
+        </button>
+      }
+    >
+      <div className="px-5 py-5 space-y-5">
+        {/* Categoria */}
+        <div>
           <p
-            className="font-semibold text-base mt-2"
-            style={{ color: "var(--text)" }}
+            className="text-xs font-semibold uppercase tracking-wider mb-3"
+            style={{ color: "var(--text-muted)" }}
           >
-            Enviar arquivo
+            Categoria
           </p>
-          <button onClick={handleClose} className="p-1 mt-2 active:opacity-70">
-            <X size={20} style={{ color: "var(--text-muted)" }} />
-          </button>
+          <FilterChips
+            options={CATS}
+            value={categoria}
+            onChange={setCategoria}
+            columns={2}
+          />
         </div>
 
-        <div className="px-5 py-5 space-y-5">
-          {/* Categoria */}
-          <div>
-            <p
-              className="text-xs font-semibold uppercase tracking-wider mb-3"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Categoria
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {CATS.map(({ id, label }) => {
-                const active = categoria === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setCategoria(id)}
-                    className="py-2.5 rounded-xl text-sm font-medium transition-all"
-                    style={{
-                      background: active
-                        ? "rgb(var(--accent-rgb) / 0.18)"
-                        : "var(--surface)",
-                      border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-                      color: active ? "var(--accent)" : "var(--text-muted)",
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* File picker */}
-          <div>
-            <p
-              className="text-xs font-semibold uppercase tracking-wider mb-3"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Arquivo
-            </p>
-            <input
-              ref={inputRef}
-              type="file"
-              className="hidden"
-              accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
-              onChange={(e) => {
-                setError(null);
-                setFile(e.target.files?.[0] ?? null);
-              }}
-            />
-            <button
-              onClick={() => inputRef.current?.click()}
-              className="flex items-center gap-3 w-full px-4 py-4 rounded-2xl transition-opacity active:opacity-70"
-              style={{
-                background: "var(--surface)",
-                border: `1px solid ${file ? "var(--accent)" : "var(--border-color)"}`,
-              }}
-            >
-              {file ? (
-                <CheckCircle size={20} style={{ color: "var(--accent)" }} />
-              ) : (
-                <FileUp size={20} style={{ color: "var(--text-muted)" }} />
-              )}
-              <span
-                className="text-sm truncate text-left"
-                style={{ color: file ? "var(--text)" : "var(--text-muted)" }}
-              >
-                {file ? file.name : "Selecionar arquivo…"}
-              </span>
-              {file && (
-                <span
-                  className="ml-auto text-xs shrink-0"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {(file.size / 1024).toFixed(0)} KB
-                </span>
-              )}
-            </button>
-          </div>
-
-          {error && (
-            <p className="text-sm" style={{ color: "#ff5050" }}>
-              {error}
-            </p>
-          )}
-        </div>
-
-        <div
-          className="px-5 py-4 shrink-0"
-          style={{ borderTop: "1px solid var(--border-color)" }}
-        >
-          <button
-            onClick={handleUpload}
-            disabled={uploading || !file}
-            className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-40"
-            style={{ background: "var(--accent)", color: "white" }}
+        {/* File picker */}
+        <div>
+          <p
+            className="text-xs font-semibold uppercase tracking-wider mb-3"
+            style={{ color: "var(--text-muted)" }}
           >
-            {uploading ? "Enviando…" : "Enviar para o cofre"}
+            Arquivo
+          </p>
+          <input
+            ref={inputRef}
+            type="file"
+            className="hidden"
+            accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
+            onChange={(e) => {
+              setError(null);
+              setFile(e.target.files?.[0] ?? null);
+            }}
+          />
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="flex items-center gap-3 w-full px-4 py-4 rounded-2xl transition-opacity active:opacity-70"
+            style={{
+              background: "var(--surface)",
+              border: `1px solid ${file ? "var(--accent)" : "var(--border-color)"}`,
+            }}
+          >
+            {file ? (
+              <CheckCircle size={20} style={{ color: "var(--accent)" }} />
+            ) : (
+              <FileUp size={20} style={{ color: "var(--text-muted)" }} />
+            )}
+            <span
+              className="text-sm truncate text-left"
+              style={{ color: file ? "var(--text)" : "var(--text-muted)" }}
+            >
+              {file ? file.name : "Selecionar arquivo…"}
+            </span>
+            {file && (
+              <span
+                className="ml-auto text-xs shrink-0"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {(file.size / 1024).toFixed(0)} KB
+              </span>
+            )}
           </button>
         </div>
+
+        {error && (
+          <p className="text-sm" style={{ color: "var(--danger)" }}>
+            {error}
+          </p>
+        )}
       </div>
-    </>
+    </BottomSheet>
   );
 }

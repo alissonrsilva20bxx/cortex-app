@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, Image, File, ExternalLink } from "lucide-react";
+import { FileText, Image, File, ExternalLink, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { FilterChips } from "@/components/ui/FilterChips";
 
 type Categoria =
   | "todos"
@@ -19,12 +20,15 @@ const CATS: { id: Categoria; label: string }[] = [
   { id: "pessoal", label: "Pessoal" },
 ];
 
-const CAT_COLORS: Record<string, string> = {
-  comprovantes: "#50dc78",
-  conversas: "#64b4ff",
-  documentos: "var(--accent)",
-  pessoal: "#c084fc",
+// Cor de identidade por categoria, como tripla RGB para compor rgb(... / a)
+// sem hex hard-coded (mata a deriva de cor da auditoria).
+const CAT_RGB: Record<string, string> = {
+  comprovantes: "var(--success-rgb)",
+  conversas: "var(--info-rgb)",
+  documentos: "var(--accent-rgb)",
+  pessoal: "192 132 252",
 };
+const catRgb = (cat: string) => CAT_RGB[cat] ?? "var(--accent-rgb)";
 
 interface CofreFile {
   name: string;
@@ -109,33 +113,28 @@ export function CofreTab({ userId, refreshTrigger }: Props) {
 
   return (
     <div className="pb-4">
-      <h2 className="text-xl font-bold mb-4" style={{ color: "var(--text)" }}>
+      <h2 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>
         Cofre
       </h2>
 
-      {/* Filter chips */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar">
-        {CATS.map(({ id, label }) => {
-          const active = filter === id;
-          return (
-            <button
-              key={id}
-              onClick={() => setFilter(id)}
-              className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all"
-              style={{
-                background: active
-                  ? "rgb(var(--accent-rgb) / 0.18)"
-                  : "var(--surface)",
-                border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-                color: active ? "var(--accent)" : "var(--text-muted)",
-                boxShadow: active ? "var(--glow-sm)" : "none",
-              }}
-            >
-              {label}
-            </button>
-          );
-        })}
+      {/* Postura honesta (§5.3): proteção real, sem prometer o que não faz. */}
+      <div className="flex items-start gap-2 mb-4">
+        <ShieldCheck
+          size={13}
+          className="shrink-0 mt-0.5"
+          style={{ color: "var(--text-muted)" }}
+        />
+        <p
+          className="text-[11px] leading-snug"
+          style={{ color: "var(--text-muted)" }}
+        >
+          Só você acessa seus arquivos: guardados na sua conta, protegidos pela
+          trava do app.
+        </p>
       </div>
+
+      {/* Filter chips */}
+      <FilterChips options={CATS} value={filter} onChange={setFilter} />
 
       {/* List */}
       <div className="mt-4 space-y-2">
@@ -185,9 +184,9 @@ export function CofreTab({ userId, refreshTrigger }: Props) {
                   <span
                     className="text-[10px] font-bold px-1.5 py-px rounded-full"
                     style={{
-                      background: `${CAT_COLORS[f.categoria] ?? "var(--accent)"}18`,
-                      color: CAT_COLORS[f.categoria] ?? "var(--accent)",
-                      border: `1px solid ${CAT_COLORS[f.categoria] ?? "var(--accent)"}30`,
+                      background: `rgb(${catRgb(f.categoria)} / 0.1)`,
+                      color: `rgb(${catRgb(f.categoria)})`,
+                      border: `1px solid rgb(${catRgb(f.categoria)} / 0.2)`,
                     }}
                   >
                     {CATS.find((c) => c.id === f.categoria)?.label}

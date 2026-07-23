@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Delete, X } from "lucide-react";
+import { Delete } from "lucide-react";
 import { hashPin } from "@/lib/pin";
 import { supabase } from "@/lib/supabase";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
 
@@ -76,109 +77,65 @@ export function PinSetup({ open, userId, onClose, onSaved }: Props) {
   const current = digits;
 
   return (
-    <>
-      {open && (
-        <div
-          className="fixed inset-0 z-50"
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            background: "rgb(var(--bg-rgb) / 0.6)",
-          }}
-          onClick={handleClose}
-        />
-      )}
+    <BottomSheet
+      open={open}
+      onClose={handleClose}
+      title={step === "enter" ? "Definir PIN" : "Confirmar PIN"}
+    >
+      <div className="flex flex-col items-center py-8 px-5">
+        <p className="text-sm mb-8" style={{ color: "var(--text-muted)" }}>
+          {error
+            ? error
+            : step === "enter"
+              ? "Digite um PIN de 4 dígitos"
+              : "Digite o PIN novamente para confirmar"}
+        </p>
 
-      <div
-        className="fixed left-0 right-0 z-50 rounded-t-3xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
-        style={{
-          bottom: 0,
-          transform: open ? "translateY(0)" : "translateY(105%)",
-          background: "var(--surface-2)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid var(--border-color)",
-          borderBottom: "none",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        }}
-      >
-        <div
-          className="flex items-center justify-between px-5 pt-4 pb-3"
-          style={{ borderBottom: "1px solid var(--border-color)" }}
-        >
-          <div
-            className="w-9 h-1 rounded-full absolute left-1/2 -translate-x-1/2 top-3"
-            style={{ background: "var(--border-color)" }}
-          />
-          <p
-            className="font-semibold text-base mt-2"
-            style={{ color: "var(--text)" }}
-          >
-            {step === "enter" ? "Definir PIN" : "Confirmar PIN"}
-          </p>
-          <button onClick={handleClose} className="p-1 mt-2 active:opacity-70">
-            <X size={20} style={{ color: "var(--text-muted)" }} />
-          </button>
+        {/* Dots */}
+        <div className="flex gap-5 mb-8">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="w-4 h-4 rounded-full transition-all duration-150"
+              style={{
+                background:
+                  current.length > i ? "var(--accent)" : "var(--surface-2)",
+                border: "2px solid",
+                borderColor:
+                  current.length > i ? "var(--accent)" : "var(--border-color)",
+                boxShadow: current.length > i ? "var(--glow)" : "none",
+              }}
+            />
+          ))}
         </div>
 
-        <div className="flex flex-col items-center py-8 px-5">
-          <p className="text-sm mb-8" style={{ color: "var(--text-muted)" }}>
-            {error
-              ? error
-              : step === "enter"
-                ? "Digite um PIN de 4 dígitos"
-                : "Digite o PIN novamente para confirmar"}
-          </p>
-
-          {/* Dots */}
-          <div className="flex gap-5 mb-8">
-            {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="w-4 h-4 rounded-full transition-all duration-150"
+        {/* Numpad */}
+        <div className="grid grid-cols-3 gap-3 w-56">
+          {KEYS.map((key, i) => {
+            if (!key) return <div key={i} />;
+            return (
+              <button
+                key={key + i}
+                onClick={() => press(key)}
+                disabled={saving}
+                className="flex items-center justify-center h-14 rounded-2xl text-lg font-semibold transition-all active:scale-95 active:opacity-70 disabled:opacity-40"
                 style={{
-                  background:
-                    current.length > i ? "var(--accent)" : "var(--surface-2)",
-                  border: "2px solid",
-                  borderColor:
-                    current.length > i
-                      ? "var(--accent)"
-                      : "var(--border-color)",
-                  boxShadow: current.length > i ? "var(--glow)" : "none",
+                  background: key === "del" ? "transparent" : "var(--surface)",
+                  border:
+                    key === "del" ? "none" : "1px solid var(--border-color)",
+                  color: "var(--text)",
                 }}
-              />
-            ))}
-          </div>
-
-          {/* Numpad */}
-          <div className="grid grid-cols-3 gap-3 w-56">
-            {KEYS.map((key, i) => {
-              if (!key) return <div key={i} />;
-              return (
-                <button
-                  key={key + i}
-                  onClick={() => press(key)}
-                  disabled={saving}
-                  className="flex items-center justify-center h-14 rounded-2xl text-lg font-semibold transition-all active:scale-95 active:opacity-70 disabled:opacity-40"
-                  style={{
-                    background:
-                      key === "del" ? "transparent" : "var(--surface)",
-                    border:
-                      key === "del" ? "none" : "1px solid var(--border-color)",
-                    color: "var(--text)",
-                  }}
-                >
-                  {key === "del" ? (
-                    <Delete size={20} style={{ color: "var(--text-muted)" }} />
-                  ) : (
-                    key
-                  )}
-                </button>
-              );
-            })}
-          </div>
+              >
+                {key === "del" ? (
+                  <Delete size={20} style={{ color: "var(--text-muted)" }} />
+                ) : (
+                  key
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
-    </>
+    </BottomSheet>
   );
 }
