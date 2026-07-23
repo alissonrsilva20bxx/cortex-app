@@ -58,6 +58,12 @@ export function monthEarnings(jobs: Job[], ref = new Date()): number {
   return earningsInMonth(jobs, ref.getFullYear(), ref.getMonth());
 }
 
+/** Tudo que ela já construiu, desde sempre (jobs concluídos). Usado no aviso
+ * honesto de fim de teste (§7.1) — nunca perder de vista o que já foi feito. */
+export function totalEarnings(jobs: Job[]): number {
+  return jobs.filter(isConcluido).reduce((s, j) => s + j.valor, 0);
+}
+
 /** Ganho do mês anterior — para comparação de tendência. */
 export function prevMonthEarnings(jobs: Job[], ref = new Date()): number {
   const prev = new Date(ref.getFullYear(), ref.getMonth() - 1, 1);

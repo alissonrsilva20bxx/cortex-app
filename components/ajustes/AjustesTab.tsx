@@ -13,6 +13,7 @@ import {
   LogOut,
   ShieldCheck,
   Cloud,
+  Timer,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
@@ -21,11 +22,15 @@ import { PinSetup } from "@/components/pin/PinSetup";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Switch } from "@/components/ui/Switch";
+import { computeAssinatura } from "@/lib/assinatura";
+import { formatBRL, totalEarnings } from "@/lib/finance";
 import type { Theme } from "@/lib/theme";
 import type {
   HomeCardConfig,
   CardStyleConfig,
   ChartPrefConfig,
+  AssinaturaStatus,
+  Job,
 } from "@/lib/types";
 
 const DEFAULT_HOME_CARDS: HomeCardConfig = {
@@ -43,6 +48,7 @@ type TabId = "aparencia" | "seguranca" | "nuvem";
 
 interface Props {
   userId: string;
+  jobs: Job[];
   onSignOut: () => void;
   onPinHashChange: (hash: string | null) => void;
   onHomeCardsChange: (c: HomeCardConfig) => void;
@@ -52,6 +58,7 @@ interface Props {
 
 export function AjustesTab({
   userId,
+  jobs,
   onSignOut,
   onPinHashChange,
   onHomeCardsChange,
@@ -66,22 +73,36 @@ export function AjustesTab({
     useState<HomeCardConfig>(DEFAULT_HOME_CARDS);
   const [chartPrefs, setChartPrefsState] =
     useState<ChartPrefConfig>(DEFAULT_CHART_PREFS);
+  const [assinatura, setAssinatura] = useState<{
+    trialStartedAt: string;
+    status: AssinaturaStatus;
+  } | null>(null);
 
   useEffect(() => {
     supabase
       .from("configuracoes")
-      .select("tema, pin_hash")
+      .select("tema, pin_hash, trial_started_at, assinatura_status")
       .eq("user_id", userId)
       .single()
       .then(({ data }) => {
         if (data?.tema) setTheme(data.tema as Theme);
         setPinEnabled(!!data?.pin_hash);
+        if (data?.trial_started_at && data?.assinatura_status) {
+          setAssinatura({
+            trialStartedAt: data.trial_started_at,
+            status: data.assinatura_status,
+          });
+        }
       });
     const hc = localStorage.getItem("jobapp-home-cards");
     if (hc) setHomeCardsState(JSON.parse(hc));
     const cp = localStorage.getItem("jobapp-chart-prefs");
     if (cp) setChartPrefsState(JSON.parse(cp));
   }, [userId, setTheme]);
+
+  const estadoAssinatura = assinatura
+    ? computeAssinatura(assinatura.trialStartedAt, assinatura.status)
+    : null;
 
   async function handleThemeChange(t: Theme) {
     setTheme(t);
@@ -441,6 +462,71 @@ export function AjustesTab({
       {/* TAB: NUVEM */}
       {activeTab === "nuvem" && (
         <div className="space-y-6">
+          {/* Assinatura — estado do teste, tom sereno, sem culpa nem
+              urgência falsa (§7.1). Nada aqui bloqueia o app: o gatilho e
+              o botão de assinar ficam para quando preço/processador forem
+              decididos. */}
+          {estadoAssinatura && (
+            <section>
+              <p className="section-label mb-3">Assinatura</p>
+              <GlassCard radius="md" className="flex items-start gap-3 p-4">
+                <Timer
+                  size={18}
+                  className="shrink-0 mt-0.5"
+                  style={{ color: "var(--accent)" }}
+                />
+                <div>
+                  {estadoAssinatura.status === "trial" && (
+                    <>
+                      <p
+                        className="font-semibold text-sm"
+                        style={{ color: "var(--text)" }}
+                      >
+                        Teste grátis — {estadoAssinatura.diasRestantes}{" "}
+                        {estadoAssinatura.diasRestantes === 1
+                          ? "dia restante"
+                          : "dias restantes"}
+                      </p>
+                      <p
+                        className="text-xs mt-1 leading-relaxed"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        Sem cartão, sem compromisso. Continue no seu ritmo.
+                      </p>
+                    </>
+                  )}
+                  {estadoAssinatura.status === "vencida" && (
+                    <>
+                      <p
+                        className="font-semibold text-sm"
+                        style={{ color: "var(--text)" }}
+                      >
+                        Seu teste terminou
+                      </p>
+                      <p
+                        className="text-xs mt-1 leading-relaxed"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        Você já construiu {formatBRL(totalEarnings(jobs))} em{" "}
+                        {jobs.filter((j) => j.status === "concluído").length}{" "}
+                        atendimentos. Nada disso se perde — exporte seus dados
+                        sempre que quiser aqui embaixo.
+                      </p>
+                    </>
+                  )}
+                  {estadoAssinatura.status === "ativa" && (
+                    <p
+                      className="font-semibold text-sm"
+                      style={{ color: "var(--text)" }}
+                    >
+                      Assinatura ativa
+                    </p>
+                  )}
+                </div>
+              </GlassCard>
+            </section>
+          )}
+
           {/* Onde os dados ficam — honesto */}
           <GlassCard radius="md" className="flex items-start gap-3 p-4">
             <Cloud

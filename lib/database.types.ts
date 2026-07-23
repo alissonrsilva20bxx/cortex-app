@@ -11,6 +11,8 @@ export type Tema =
   | "emerald"
   | "midnight";
 
+export type AssinaturaStatus = "trial" | "ativa" | "vencida";
+
 export type DespesaCategoria =
   | "alimentacao"
   | "transporte"
@@ -116,15 +118,21 @@ export type Database = {
           user_id: string;
           tema: Tema;
           pin_hash: string | null;
+          trial_started_at: string;
+          assinatura_status: AssinaturaStatus;
         };
         Insert: {
           user_id: string;
           tema?: Tema;
           pin_hash?: string | null;
+          trial_started_at?: string;
+          assinatura_status?: AssinaturaStatus;
         };
         Update: {
           tema?: Tema;
           pin_hash?: string | null;
+          trial_started_at?: string;
+          assinatura_status?: AssinaturaStatus;
         };
         Relationships: [];
       };

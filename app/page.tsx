@@ -331,6 +331,7 @@ export default function Page() {
         {!isNewUser && activeTab === "ajustes" && usuario && (
           <AjustesTab
             userId={usuario.id}
+            jobs={jobs}
             onSignOut={handleSignOut}
             onPinHashChange={(h) => setPinHash(h)}
             onHomeCardsChange={setHomeCards}
