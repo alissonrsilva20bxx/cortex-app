@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Cloud,
   Timer,
+  Download,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
@@ -24,6 +25,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Switch } from "@/components/ui/Switch";
 import { computeAssinatura } from "@/lib/assinatura";
 import { formatBRL, totalEarnings } from "@/lib/finance";
+import { exportarDadosCSV } from "@/lib/exportarDados";
 import type { Theme } from "@/lib/theme";
 import type {
   HomeCardConfig,
@@ -73,6 +75,7 @@ export function AjustesTab({
     useState<HomeCardConfig>(DEFAULT_HOME_CARDS);
   const [chartPrefs, setChartPrefsState] =
     useState<ChartPrefConfig>(DEFAULT_CHART_PREFS);
+  const [exporting, setExporting] = useState(false);
   const [assinatura, setAssinatura] = useState<{
     trialStartedAt: string;
     status: AssinaturaStatus;
@@ -123,6 +126,16 @@ export function AjustesTab({
   function handlePinSaved(hash: string) {
     setPinEnabled(true);
     onPinHashChange(hash);
+  }
+
+  async function handleExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportarDadosCSV(userId);
+    } finally {
+      setExporting(false);
+    }
   }
 
   function updateHomeCards(next: HomeCardConfig) {
@@ -564,6 +577,42 @@ export function AjustesTab({
                 ponta a ponta — preferimos ser honestos sobre isso a prometer
                 mais do que entregamos.
               </p>
+            </GlassCard>
+          </section>
+
+          {/* Exportar — sempre disponível, mesmo com assinatura vencida
+              (§7.4: confiança > lock-in). Não depende do estado acima. */}
+          <section>
+            <p className="section-label mb-3">Seus dados</p>
+            <GlassCard
+              radius="md"
+              onClick={handleExport}
+              className="flex items-center gap-3.5 px-4 py-4"
+            >
+              <div
+                className="flex items-center justify-center rounded-xl shrink-0"
+                style={{
+                  width: 36,
+                  height: 36,
+                  background: "rgb(var(--accent-rgb) / 0.12)",
+                }}
+              >
+                <Download size={16} style={{ color: "var(--accent)" }} />
+              </div>
+              <div className="text-left">
+                <p
+                  className="font-semibold"
+                  style={{ fontSize: "14px", color: "var(--text)" }}
+                >
+                  {exporting ? "Exportando…" : "Exportar meus dados"}
+                </p>
+                <p
+                  className="mt-0.5 font-medium"
+                  style={{ fontSize: "12px", color: "var(--text-muted)" }}
+                >
+                  Baixa um CSV com atendimentos, despesas e receitas
+                </p>
+              </div>
             </GlassCard>
           </section>
         </div>
