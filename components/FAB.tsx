@@ -69,7 +69,7 @@ export function FAB({ activeTab, open, onToggle, onAction }: Props) {
       <div
         className="fixed left-0 right-0 z-50 rounded-t-3xl px-5 pt-3 pb-8 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
-          bottom: "82px",
+          bottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
           transform: open ? "translateY(0)" : "translateY(calc(100% + 100px))",
           background: "var(--surface-2)",
           backdropFilter: "blur(24px)",
@@ -129,7 +129,7 @@ export function FAB({ activeTab, open, onToggle, onAction }: Props) {
         style={{
           width: "48px",
           height: "48px",
-          bottom: "calc(82px + 14px)",
+          bottom: "calc(82px + 14px + env(safe-area-inset-bottom, 0px))",
           right: "20px",
           background: "var(--accent)",
           boxShadow: "var(--glow)",

@@ -52,6 +52,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(MODE_STORAGE_KEY, mode);
   }, [mode]);
 
+  // Sem isso, a barra de status/área segura do Safari fica sempre preta
+  // (o valor fixo do <meta name="theme-color">), mesmo em temas claros —
+  // lê a cor de fundo já resolvida pelo tema/modo ativos, mesma fonte que
+  // o resto do app usa, então nunca dessincroniza.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    const bg = getComputedStyle(document.documentElement)
+      .getPropertyValue("--bg")
+      .trim();
+    if (bg) meta.setAttribute("content", bg);
+  }, [theme, mode]);
+
   return (
     <ThemeContext.Provider
       value={{ theme, setTheme: setThemeState, mode, setMode: setModeState }}

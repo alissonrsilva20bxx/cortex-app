@@ -258,7 +258,10 @@ export default function Page() {
     <div className="relative flex flex-col min-h-screen">
       <LoadingScreen isLoading={!usuario || !dataLoaded} />
 
-      <main className="flex-1 overflow-y-auto pb-40 px-4 pt-6">
+      <main
+        className="flex-1 overflow-y-auto pb-40 px-4"
+        style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
+      >
         {isNewUser && usuario && (
           <OnboardingFlow
             usuario={usuario}
