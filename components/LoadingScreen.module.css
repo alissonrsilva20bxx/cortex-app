@@ -1,31 +1,10 @@
-@keyframes breathe {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes badgePulse {
-  0%,
-  100% {
-    box-shadow: var(--glow-sm);
-  }
-  50% {
-    box-shadow: var(--glow);
-  }
-}
-
 .overlay {
   position: fixed;
   inset: 0;
   background: var(--bg);
   z-index: 9999;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -38,58 +17,149 @@
   pointer-events: none;
 }
 
-.glow {
+.atmosphere {
   position: absolute;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgb(var(--accent-rgb) / 0.22) 0%,
-    rgb(var(--accent-rgb) / 0.06) 45%,
-    transparent 72%
-  );
-  filter: blur(4px);
-  animation: breathe 3.4s ease-in-out infinite;
+  inset: -15%;
+  background:
+    radial-gradient(
+      ellipse 65% 50% at 22% 18%,
+      rgb(var(--accent-rgb) / 0.16) 0%,
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 82% 88%,
+      rgb(var(--accent-rgb) / 0.1) 0%,
+      transparent 70%
+    );
+  animation: breatheAtmosphere 6s ease-in-out infinite;
 }
 
-.logo {
+@keyframes breatheAtmosphere {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.cash {
+  position: absolute;
+  bottom: -10%;
+  font-weight: 800;
+  color: var(--accent);
+  opacity: 0;
+  animation-name: floatCash;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+}
+
+@keyframes floatCash {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--cash-op, 0.2);
+  }
+  80% {
+    opacity: var(--cash-op, 0.2);
+  }
+  100% {
+    transform: translate(var(--cash-drift, 14px), -130vh);
+    opacity: 0;
+  }
+}
+
+.line {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  user-select: none;
-  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: visible;
+  width: 0;
+  height: 3px;
+  border-radius: 99px;
+  margin-bottom: 16px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%);
+  box-shadow:
+    0 0 8px rgb(var(--accent-rgb) / 0.8),
+    0 0 22px rgb(var(--accent-rgb) / 0.35);
+  animation: growLine 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
 }
 
-.iconBadge {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-xl);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 18px;
-  background: linear-gradient(
-    135deg,
-    rgb(var(--accent-rgb) / 0.22),
-    rgb(var(--accent-rgb) / 0.06)
-  );
-  border: 1px solid rgb(var(--accent-rgb) / 0.26);
-  animation: badgePulse 3.4s ease-in-out infinite;
+@keyframes growLine {
+  to {
+    width: 130px;
+  }
 }
 
-.logoText {
+.spark {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 8px 3px rgb(var(--accent-rgb) / 0.9),
+    0 0 18px 6px rgb(var(--accent-rgb) / 0.5);
+  opacity: 0;
+  animation: sparkFade 0.65s ease-in 0.15s forwards;
+}
+
+@keyframes sparkFade {
+  0% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.wordmark {
+  position: relative;
+  z-index: 1;
   font-size: clamp(1.9rem, 7vw, 2.4rem);
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text);
+  clip-path: inset(0 100% 0 0);
+  animation: revealWordmark 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.55s forwards;
 }
 
-.tagline {
-  margin-top: 8px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-muted);
+@keyframes revealWordmark {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.chip {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.12);
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  opacity: 0;
+  transform: translateY(6px);
+  animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 1.45s forwards;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -7,6 +7,18 @@ interface Props {
   isLoading: boolean;
 }
 
+const CASH = [
+  { left: "12%", size: 13, duration: 7, delay: 0, drift: 18, op: 0.16 },
+  { left: "82%", size: 18, duration: 8.5, delay: 0.6, drift: -14, op: 0.14 },
+  { left: "24%", size: 22, duration: 9.5, delay: 1.4, drift: 10, op: 0.12 },
+  { left: "68%", size: 14, duration: 6.5, delay: 2.1, drift: -20, op: 0.2 },
+  { left: "45%", size: 16, duration: 10, delay: 0.3, drift: 8, op: 0.1 },
+  { left: "90%", size: 12, duration: 7.5, delay: 2.8, drift: -10, op: 0.18 },
+  { left: "6%", size: 20, duration: 9, delay: 1.8, drift: 16, op: 0.13 },
+  { left: "58%", size: 11, duration: 6, delay: 3.4, drift: -8, op: 0.22 },
+  { left: "35%", size: 15, duration: 8, delay: 4, drift: 12, op: 0.15 },
+];
+
 export function LoadingScreen({ isLoading }: Props) {
   const [mounted, setMounted] = useState(true);
 
@@ -25,38 +37,32 @@ export function LoadingScreen({ isLoading }: Props) {
     <div
       className={`${styles.overlay}${!isLoading ? ` ${styles.hidden}` : ""}`}
     >
-      <div className={styles.glow} />
+      <div className={styles.atmosphere} />
 
-      <div className={styles.logo}>
-        <div className={styles.iconBadge}>
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"
-              stroke="var(--accent)"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <rect
-              x="9"
-              y="3"
-              width="6"
-              height="4"
-              rx="1.5"
-              stroke="var(--accent)"
-              strokeWidth="1.7"
-            />
-            <path
-              d="M9 12h6M9 16h4"
-              stroke="var(--accent)"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-        <span className={styles.logoText}>JobApp</span>
-        <span className={styles.tagline}>no seu ritmo</span>
+      {CASH.map((c, i) => (
+        <span
+          key={i}
+          className={styles.cash}
+          style={
+            {
+              left: c.left,
+              fontSize: c.size,
+              animationDuration: `${c.duration}s`,
+              animationDelay: `${c.delay}s`,
+              "--cash-drift": `${c.drift}px`,
+              "--cash-op": c.op,
+            } as React.CSSProperties
+          }
+        >
+          R$
+        </span>
+      ))}
+
+      <div className={styles.line}>
+        <span className={styles.spark} />
       </div>
+      <span className={styles.wordmark}>JobApp</span>
+      <span className={styles.chip}>no seu ritmo</span>
     </div>
   );
 }

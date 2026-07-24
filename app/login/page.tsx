@@ -1,51 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { PrototypeSwitcher } from "@/components/prototype/PrototypeSwitcher";
-import { VariantA } from "./prototype/VariantA";
-import { VariantB } from "./prototype/VariantB";
-import { VariantC } from "./prototype/VariantC";
-
-// PROTOTYPE WIRING — remove this block (and app/login/prototype/) once a
-// variant wins; fold the choice into the JSX below and delete the rest.
-const PROTOTYPE_VARIANTS = [
-  { key: "current", label: "Atual" },
-  { key: "A", label: "Masthead editorial" },
-  { key: "B", label: "Prévia da projeção" },
-  { key: "C", label: "Cinematográfica" },
-];
-
-function PrototypeGate({
-  loading,
-  onGoogleLogin,
-  children,
-}: {
-  loading: boolean;
-  onGoogleLogin: () => void;
-  children: React.ReactNode;
-}) {
-  const searchParams = useSearchParams();
-  const variant = searchParams.get("variant") ?? "current";
-
-  return (
-    <>
-      {variant === "A" && (
-        <VariantA loading={loading} onGoogleLogin={onGoogleLogin} />
-      )}
-      {variant === "B" && (
-        <VariantB loading={loading} onGoogleLogin={onGoogleLogin} />
-      )}
-      {variant === "C" && (
-        <VariantC loading={loading} onGoogleLogin={onGoogleLogin} />
-      )}
-      {variant === "current" && children}
-      <PrototypeSwitcher variants={PROTOTYPE_VARIANTS} />
-    </>
-  );
-}
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -59,98 +17,109 @@ export default function LoginPage() {
   }
 
   return (
-    <Suspense fallback={null}>
-      <PrototypeGate loading={loading} onGoogleLogin={handleGoogleLogin}>
-        <LoginCurrent loading={loading} onGoogleLogin={handleGoogleLogin} />
-      </PrototypeGate>
-    </Suspense>
-  );
-}
-
-function LoginCurrent({
-  loading,
-  onGoogleLogin,
-}: {
-  loading: boolean;
-  onGoogleLogin: () => void;
-}) {
-  return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-6"
       style={{ background: "var(--body-bg)" }}
     >
       {/* Logo */}
-      <div className="mb-14 text-center animate-fade-up">
+      <div className="flex items-center gap-2.5 mb-6 animate-fade-up">
         <div
-          className="w-20 h-20 flex items-center justify-center mx-auto mb-6"
+          className="flex items-center justify-center"
           style={{
-            borderRadius: "var(--radius-xl)",
-            background:
-              "linear-gradient(135deg, rgb(var(--accent-rgb) / 0.18), rgb(var(--accent-rgb) / 0.05))",
+            width: 34,
+            height: 34,
+            borderRadius: 11,
+            background: "rgb(var(--accent-rgb) / 0.14)",
             border: "1px solid rgb(var(--accent-rgb) / 0.22)",
-            boxShadow: "var(--glow-sm), inset 0 1px 0 rgb(255 255 255 / 0.08)",
           }}
         >
-          {/* Clipboard icon */}
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"
               stroke="var(--accent)"
-              strokeWidth="1.7"
+              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            <rect
-              x="9"
-              y="3"
-              width="6"
-              height="4"
-              rx="1.5"
-              stroke="var(--accent)"
-              strokeWidth="1.7"
-            />
-            <path
-              d="M9 12h6M9 16h4"
-              stroke="var(--accent)"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
           </svg>
         </div>
-
-        <h1
-          className="font-extrabold tracking-tight"
-          style={{
-            fontSize: "36px",
-            letterSpacing: "-0.04em",
-            color: "var(--text)",
-          }}
+        <span
+          className="font-extrabold"
+          style={{ fontSize: 17, color: "var(--text)" }}
         >
           JobApp
-        </h1>
-        <p
-          className="mt-2.5 font-medium"
-          style={{ fontSize: "14px", color: "var(--text-muted)" }}
-        >
-          Cada atendimento, mais perto da sua independência.
-        </p>
+        </span>
       </div>
 
-      {/* Card */}
+      {/* Prévia da projeção — vende o "aha" antes de pedir o login */}
       <GlassCard
         radius="xl"
-        className="w-full max-w-sm p-8 animate-fade-up"
-        style={{ animationDelay: "80ms" }}
+        className="w-full max-w-sm p-6 animate-fade-up"
+        style={{
+          animationDelay: "80ms",
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
-        <p
-          className="text-center font-medium leading-relaxed mb-6"
-          style={{ fontSize: "14px", color: "var(--text-muted)" }}
-        >
-          Entre com sua conta Google para continuar
-        </p>
+        <div style={{ filter: "blur(7px)", opacity: 0.55, userSelect: "none" }}>
+          <p className="section-label">Você já construiu</p>
+          <p
+            style={{
+              marginTop: 8,
+              fontSize: 36,
+              fontWeight: 900,
+              color: "var(--accent)",
+            }}
+          >
+            R$ 3.240
+          </p>
+          <div className="progress-track" style={{ marginTop: 16 }}>
+            <div className="progress-fill" style={{ width: "62%" }} />
+          </div>
+        </div>
 
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 text-center px-5"
+          style={{
+            background: "rgb(var(--bg-rgb) / 0.4)",
+            backdropFilter: "blur(1px)",
+          }}
+        >
+          <div
+            className="flex items-center justify-center"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              background: "rgb(var(--bg-rgb) / 0.7)",
+              border: "1px solid rgb(var(--accent-rgb) / 0.25)",
+            }}
+          >
+            <Lock size={18} style={{ color: "var(--accent)" }} />
+          </div>
+          <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
+            Sua projeção te espera
+          </p>
+          <p
+            style={{
+              fontSize: 12.5,
+              color: "var(--text-muted)",
+              lineHeight: 1.5,
+              maxWidth: 220,
+            }}
+          >
+            Entre pra ver, no seu ritmo, o quanto você já construiu.
+          </p>
+        </div>
+      </GlassCard>
+
+      {/* CTA */}
+      <div
+        className="w-full max-w-sm mt-4 animate-fade-up"
+        style={{ animationDelay: "160ms" }}
+      >
         <button
-          onClick={onGoogleLogin}
+          onClick={handleGoogleLogin}
           disabled={loading}
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-semibold text-sm active:scale-95 disabled:opacity-60"
           style={{
@@ -184,26 +153,14 @@ function LoginCurrent({
           )}
           {loading ? "Redirecionando…" : "Entrar com Google"}
         </button>
-
         <p
-          className="text-center mt-5 leading-relaxed"
+          className="text-center mt-4 leading-relaxed"
           style={{ fontSize: "11.5px", color: "var(--text-muted)" }}
         >
           Ao entrar, você concorda com os termos de uso e política de
           privacidade.
         </p>
-      </GlassCard>
-
-      <p
-        className="mt-8 animate-fade-up"
-        style={{
-          fontSize: "11px",
-          color: "var(--text-muted)",
-          animationDelay: "160ms",
-        }}
-      >
-        Seu espaço, no seu ritmo.
-      </p>
+      </div>
     </div>
   );
 }
