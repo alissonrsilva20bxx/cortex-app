@@ -6,13 +6,18 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { InstallSheet } from "@/components/install/InstallSheet";
 import { isStandalone } from "@/lib/platform";
 
-const STORAGE_KEY = "jobapp-install-banner-dismissed";
+const STORAGE_KEY = "jobapp-install-banner-snoozed-until";
+const SNOOZE_DIAS = 3;
 
 /**
  * Convite dispensável pra instalar o app, mostrado na Início — não no
  * onboarding (que já tem a oferta de PIN no fim; empilhar mais uma coisa
- * ali atrapalha o "mínimo de passos até o aha"). Some de vez ao ser
- * dispensado; nunca volta a incomodar.
+ * ali atrapalha o "mínimo de passos até o aha").
+ *
+ * "Dispensar" soneca por alguns dias, não esconde pra sempre — enquanto
+ * ela não instalar de verdade, o convite volta. Só some de vez quando o
+ * navegador confirma que o app está rodando instalado (isStandalone —
+ * sinal real, não uma suposição nossa).
  *
  * Compacto de propósito: uma linha só, e o X fica no canto superior do
  * cartão (não no canto inferior direito, onde o FAB flutua por cima).
@@ -23,12 +28,14 @@ export function InstallBanner() {
 
   useEffect(() => {
     if (isStandalone()) return;
-    if (localStorage.getItem(STORAGE_KEY)) return;
+    const snoozedUntil = Number(localStorage.getItem(STORAGE_KEY) ?? 0);
+    if (Date.now() < snoozedUntil) return;
     setVisible(true);
   }, []);
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, "1");
+    const until = Date.now() + SNOOZE_DIAS * 24 * 60 * 60 * 1000;
+    localStorage.setItem(STORAGE_KEY, String(until));
     setVisible(false);
   }
 
