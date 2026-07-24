@@ -20,6 +20,7 @@ import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { RecapSheet } from "@/components/recap/RecapSheet";
+import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase";
 import type {
@@ -295,6 +296,10 @@ export default function Page() {
                   onGoToMetas={() => handleTabChange("financeiro")}
                 />
               )}
+
+              {/* Convite de instalação — dispensável, nunca compete com o
+                  card-herói pela atenção (por isso vem por último). */}
+              <InstallBanner />
             </div>
           </>
         )}

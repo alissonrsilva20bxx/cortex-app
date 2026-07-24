@@ -16,6 +16,7 @@ import {
   Timer,
   Download,
   Bell,
+  Smartphone,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
@@ -24,9 +25,12 @@ import { PinSetup } from "@/components/pin/PinSetup";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Switch } from "@/components/ui/Switch";
+import { NotificacoesSheet } from "@/components/notificacoes/NotificacoesSheet";
+import { InstallSheet } from "@/components/install/InstallSheet";
 import { computeAssinatura } from "@/lib/assinatura";
 import { formatBRL, totalEarnings } from "@/lib/finance";
 import { exportarDadosCSV } from "@/lib/exportarDados";
+import { isStandalone } from "@/lib/platform";
 import {
   isPushSupported,
   isPushSubscribed,
@@ -91,6 +95,9 @@ export function AjustesTab({
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState<string | null>(null);
+  const [notifSheetOpen, setNotifSheetOpen] = useState(false);
+  const [installSheetOpen, setInstallSheetOpen] = useState(false);
+  const [standalone, setStandalone] = useState(false);
 
   useEffect(() => {
     supabase
@@ -117,6 +124,7 @@ export function AjustesTab({
       setPushSupported(true);
       isPushSubscribed().then(setPushEnabled);
     }
+    setStandalone(isStandalone());
   }, [userId, setTheme]);
 
   const estadoAssinatura = assinatura
@@ -144,16 +152,34 @@ export function AjustesTab({
     onPinHashChange(hash);
   }
 
+  // Desativar não precisa de fricção — só ativar passa pelo soft-ask
+  // (§ boa prática: nunca gastar o prompt nativo sem contexto antes).
   async function handleTogglePush(next: boolean) {
+    if (next) {
+      setNotifSheetOpen(true);
+      return;
+    }
     setPushBusy(true);
     setPushError(null);
     try {
-      if (next) {
-        await subscribeToPush(userId);
-      } else {
-        await unsubscribeFromPush(userId);
-      }
-      setPushEnabled(next);
+      await unsubscribeFromPush(userId);
+      setPushEnabled(false);
+    } catch (err) {
+      setPushError(
+        err instanceof Error ? err.message : "Não foi possível desativar."
+      );
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  async function handleConfirmSubscribe() {
+    setPushBusy(true);
+    setPushError(null);
+    try {
+      await subscribeToPush(userId);
+      setPushEnabled(true);
+      setNotifSheetOpen(false);
     } catch (err) {
       setPushError(
         err instanceof Error ? err.message : "Não foi possível ativar."
@@ -505,6 +531,44 @@ export function AjustesTab({
             </p>
           </GlassCard>
 
+          {/* Instalar app — abre mais rápido e, no iPhone, é pré-requisito
+              real pra notificação funcionar (limite da Apple, não nosso). */}
+          {!standalone && (
+            <section>
+              <p className="section-label mb-3">App</p>
+              <GlassCard
+                radius="md"
+                onClick={() => setInstallSheetOpen(true)}
+                className="flex items-center gap-3.5 px-4 py-4"
+              >
+                <div
+                  className="flex items-center justify-center rounded-xl shrink-0"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    background: "rgb(var(--accent-rgb) / 0.12)",
+                  }}
+                >
+                  <Smartphone size={16} style={{ color: "var(--accent)" }} />
+                </div>
+                <div className="text-left">
+                  <p
+                    className="font-semibold"
+                    style={{ fontSize: "14px", color: "var(--text)" }}
+                  >
+                    Instalar app
+                  </p>
+                  <p
+                    className="mt-0.5 font-medium"
+                    style={{ fontSize: "12px", color: "var(--text-muted)" }}
+                  >
+                    Abre mais rápido e funciona offline
+                  </p>
+                </div>
+              </GlassCard>
+            </section>
+          )}
+
           {/* Notificações — opt-in, nunca spam (§7.3). Só aparece quando o
               navegador suporta; sem culpa se ela recusar a permissão. */}
           {pushSupported && (
@@ -745,6 +809,22 @@ export function AjustesTab({
         userId={userId}
         onClose={() => setPinSetupOpen(false)}
         onSaved={handlePinSaved}
+      />
+
+      <NotificacoesSheet
+        open={notifSheetOpen}
+        onClose={() => setNotifSheetOpen(false)}
+        onConfirm={handleConfirmSubscribe}
+        onNeedsInstall={() => {
+          setNotifSheetOpen(false);
+          setInstallSheetOpen(true);
+        }}
+        busy={pushBusy}
+      />
+
+      <InstallSheet
+        open={installSheetOpen}
+        onClose={() => setInstallSheetOpen(false)}
       />
     </div>
   );

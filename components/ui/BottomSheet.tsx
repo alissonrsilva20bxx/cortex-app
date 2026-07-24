@@ -24,7 +24,7 @@ export function BottomSheet({ open, onClose, title, children, footer }: Props) {
     <>
       {open && (
         <div
-          className="fixed inset-0 z-50"
+          className="fixed inset-0 z-[60]"
           style={{
             backdropFilter: "blur(6px)",
             WebkitBackdropFilter: "blur(6px)",
@@ -35,7 +35,7 @@ export function BottomSheet({ open, onClose, title, children, footer }: Props) {
       )}
 
       <div
-        className="fixed left-0 right-0 z-50 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed left-0 right-0 z-[60] flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: 0,
           transform: open ? "translateY(0)" : "translateY(105%)",
