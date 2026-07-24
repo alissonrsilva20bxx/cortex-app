@@ -15,6 +15,7 @@ import {
   Cloud,
   Timer,
   Download,
+  Bell,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
@@ -26,6 +27,12 @@ import { Switch } from "@/components/ui/Switch";
 import { computeAssinatura } from "@/lib/assinatura";
 import { formatBRL, totalEarnings } from "@/lib/finance";
 import { exportarDadosCSV } from "@/lib/exportarDados";
+import {
+  isPushSupported,
+  isPushSubscribed,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push";
 import type { Theme } from "@/lib/theme";
 import type {
   HomeCardConfig,
@@ -80,6 +87,10 @@ export function AjustesTab({
     trialStartedAt: string;
     status: AssinaturaStatus;
   } | null>(null);
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushError, setPushError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -101,6 +112,11 @@ export function AjustesTab({
     if (hc) setHomeCardsState(JSON.parse(hc));
     const cp = localStorage.getItem("jobapp-chart-prefs");
     if (cp) setChartPrefsState(JSON.parse(cp));
+
+    if (isPushSupported()) {
+      setPushSupported(true);
+      isPushSubscribed().then(setPushEnabled);
+    }
   }, [userId, setTheme]);
 
   const estadoAssinatura = assinatura
@@ -126,6 +142,25 @@ export function AjustesTab({
   function handlePinSaved(hash: string) {
     setPinEnabled(true);
     onPinHashChange(hash);
+  }
+
+  async function handleTogglePush(next: boolean) {
+    setPushBusy(true);
+    setPushError(null);
+    try {
+      if (next) {
+        await subscribeToPush(userId);
+      } else {
+        await unsubscribeFromPush(userId);
+      }
+      setPushEnabled(next);
+    } catch (err) {
+      setPushError(
+        err instanceof Error ? err.message : "Não foi possível ativar."
+      );
+    } finally {
+      setPushBusy(false);
+    }
   }
 
   async function handleExport() {
@@ -469,6 +504,57 @@ export function AjustesTab({
               senha da sua conta.
             </p>
           </GlassCard>
+
+          {/* Notificações — opt-in, nunca spam (§7.3). Só aparece quando o
+              navegador suporta; sem culpa se ela recusar a permissão. */}
+          {pushSupported && (
+            <section>
+              <p className="section-label mb-3">Notificações</p>
+              <GlassCard
+                radius="md"
+                className="flex items-center gap-3.5 px-4 py-4"
+              >
+                <div
+                  className="flex items-center justify-center rounded-xl shrink-0"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    background: "rgb(var(--accent-rgb) / 0.12)",
+                  }}
+                >
+                  <Bell size={16} style={{ color: "var(--accent)" }} />
+                </div>
+                <div className="flex-1 text-left">
+                  <p
+                    className="font-semibold"
+                    style={{ fontSize: "14px", color: "var(--text)" }}
+                  >
+                    Lembretes
+                  </p>
+                  <p
+                    className="mt-0.5 font-medium"
+                    style={{ fontSize: "12px", color: "var(--text-muted)" }}
+                  >
+                    Atendimento chegando perto, cliente que costuma voltar
+                  </p>
+                  {pushError && (
+                    <p
+                      className="mt-1 font-medium"
+                      style={{ fontSize: "11px", color: "var(--danger)" }}
+                    >
+                      {pushError}
+                    </p>
+                  )}
+                </div>
+                <Switch
+                  checked={pushEnabled}
+                  onChange={handleTogglePush}
+                  disabled={pushBusy}
+                  ariaLabel="Notificações"
+                />
+              </GlassCard>
+            </section>
+          )}
         </div>
       )}
 

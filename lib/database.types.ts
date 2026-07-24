@@ -217,6 +217,26 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          criado_em: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          criado_em?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

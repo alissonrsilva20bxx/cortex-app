@@ -85,3 +85,34 @@ self.addEventListener("fetch", (e) => {
     );
   }
 });
+
+// ── Push notifications (opt-in, §7.3) ──────────────────────────────
+// Tom sereno: sem emoji de alarme, sem badge de contagem — um lembrete,
+// não um puxão. O payload já vem pronto (título + corpo) do servidor.
+self.addEventListener("push", (e) => {
+  if (!e.data) return;
+  const payload = e.data.json();
+  e.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/pwa-icon?size=192",
+      badge: "/pwa-icon?size=192",
+      tag: payload.tag ?? "jobapp-lembrete",
+      data: { url: payload.url ?? "/" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url ?? "/";
+  e.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        const existing = clients.find((c) => "focus" in c);
+        if (existing) return existing.focus();
+        return self.clients.openWindow(url);
+      })
+  );
+});
