@@ -69,8 +69,8 @@ export function FAB({ activeTab, open, onToggle, onAction }: Props) {
       <div
         className="fixed left-0 right-0 z-50 rounded-t-3xl px-5 pt-3 pb-8 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
-          bottom: "68px",
-          transform: open ? "translateY(0)" : "translateY(110%)",
+          bottom: "82px",
+          transform: open ? "translateY(0)" : "translateY(calc(100% + 100px))",
           background: "var(--surface-2)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
@@ -127,16 +127,16 @@ export function FAB({ activeTab, open, onToggle, onAction }: Props) {
         onClick={onToggle}
         className="fixed z-50 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90"
         style={{
-          width: "56px",
-          height: "56px",
-          bottom: "calc(68px + 16px)",
+          width: "48px",
+          height: "48px",
+          bottom: "calc(82px + 14px)",
           right: "20px",
           background: "var(--accent)",
           boxShadow: "var(--glow)",
           transform: open ? "rotate(45deg)" : "rotate(0deg)",
         }}
       >
-        <Plus size={26} color="white" strokeWidth={2.5} />
+        <Plus size={22} color="white" strokeWidth={2.5} />
       </button>
     </>
   );

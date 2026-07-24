@@ -1,6 +1,12 @@
 "use client";
 
-import { Share, SquarePlus, ChevronDown, Download } from "lucide-react";
+import {
+  SquarePlus,
+  ChevronDown,
+  Download,
+  MoreVertical,
+  MoreHorizontal,
+} from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { isIOS } from "@/lib/platform";
 import { useInstallPrompt } from "@/lib/useInstallPrompt";
@@ -9,9 +15,10 @@ import { useInstallPrompt } from "@/lib/useInstallPrompt";
  * Tutorial de instalação (tela de início). No Android, o navegador expõe
  * um evento que a gente escuta e vira um botão de 1 toque. A Apple não dá
  * esse gancho — no iPhone é sempre manual, então em vez de só descrever em
- * texto, mostramos um mini-fluxo ilustrado (ícone de compartilhar → item
- * "Adicionar à Tela de Início"), no mesmo idioma visual do app — não uma
- * cópia da interface real da Apple, só uma pista visual de onde tocar.
+ * texto, mostramos um mini-fluxo ilustrado (menu "•••" do Safari → item
+ * "Adicionar à Tela de Início" na própria lista, sem passar por
+ * "Compartilhar"), no mesmo idioma visual do app — não uma cópia da
+ * interface real da Apple, só uma pista visual de onde tocar.
  */
 
 interface Props {
@@ -36,7 +43,7 @@ function StepBadge({ n }: { n: number }) {
   );
 }
 
-function ToolbarMock() {
+function ToolbarMock({ Icon }: { Icon: typeof MoreVertical }) {
   return (
     <div
       className="flex items-center justify-center gap-6 py-3.5 rounded-2xl"
@@ -59,7 +66,7 @@ function ToolbarMock() {
           boxShadow: "var(--glow-sm)",
         }}
       >
-        <Share size={17} style={{ color: "var(--accent)" }} />
+        <Icon size={17} style={{ color: "var(--accent)" }} />
       </div>
       <div
         className="rounded-full"
@@ -69,7 +76,13 @@ function ToolbarMock() {
   );
 }
 
-function MenuRowMock() {
+function MenuRowMock({
+  Icon,
+  label,
+}: {
+  Icon: typeof MoreVertical;
+  label: string;
+}) {
   return (
     <div
       className="flex items-center gap-3 py-3 px-3.5 rounded-2xl"
@@ -83,10 +96,10 @@ function MenuRowMock() {
         className="flex items-center justify-center rounded-lg shrink-0"
         style={{ width: 26, height: 26, background: "var(--accent)" }}
       >
-        <SquarePlus size={15} color="white" />
+        <Icon size={15} color="white" />
       </div>
       <p className="text-xs font-semibold" style={{ color: "var(--text)" }}>
-        Adicionar à Tela de Início
+        {label}
       </p>
     </div>
   );
@@ -117,13 +130,13 @@ export function InstallSheet({ open, onClose }: Props) {
             <div className="flex items-start gap-3">
               <StepBadge n={1} />
               <div className="flex-1 space-y-2">
-                <ToolbarMock />
+                <ToolbarMock Icon={MoreHorizontal} />
                 <p
                   className="text-xs leading-snug"
                   style={{ color: "var(--text)" }}
                 >
-                  Toque no ícone de <strong>compartilhar</strong>, na barra do
-                  Safari
+                  Toque no <strong>menu</strong> do Safari (os três pontinhos,
+                  perto da barra de endereço)
                 </p>
               </div>
             </div>
@@ -135,12 +148,15 @@ export function InstallSheet({ open, onClose }: Props) {
             <div className="flex items-start gap-3">
               <StepBadge n={2} />
               <div className="flex-1 space-y-2">
-                <MenuRowMock />
+                <MenuRowMock
+                  Icon={SquarePlus}
+                  label="Adicionar à Tela de Início"
+                />
                 <p
                   className="text-xs leading-snug"
                   style={{ color: "var(--text)" }}
                 >
-                  Escolha essa opção na lista que abrir
+                  Deslize a lista até achar essa opção
                 </p>
               </div>
             </div>
@@ -155,14 +171,39 @@ export function InstallSheet({ open, onClose }: Props) {
             Instalar agora
           </button>
         ) : (
-          <p
-            className="text-sm text-center"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Abra o menu do navegador e escolha{" "}
-            <strong>&quot;Instalar app&quot;</strong> ou{" "}
-            <strong>&quot;Adicionar à tela inicial&quot;</strong>.
-          </p>
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <StepBadge n={1} />
+              <div className="flex-1 space-y-2">
+                <ToolbarMock Icon={MoreVertical} />
+                <p
+                  className="text-xs leading-snug"
+                  style={{ color: "var(--text)" }}
+                >
+                  Toque no <strong>menu</strong> do navegador (os três
+                  pontinhos)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-center" style={{ marginLeft: 10 }}>
+              <ChevronDown size={16} style={{ color: "var(--text-muted)" }} />
+            </div>
+
+            <div className="flex items-start gap-3">
+              <StepBadge n={2} />
+              <div className="flex-1 space-y-2">
+                <MenuRowMock Icon={Download} label="Instalar app" />
+                <p
+                  className="text-xs leading-snug"
+                  style={{ color: "var(--text)" }}
+                >
+                  Escolha essa opção (pode aparecer como &quot;Adicionar à tela
+                  inicial&quot;)
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </BottomSheet>
