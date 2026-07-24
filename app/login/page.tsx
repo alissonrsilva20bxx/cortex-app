@@ -1,7 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { PrototypeSwitcher } from "@/components/prototype/PrototypeSwitcher";
+import { VariantA } from "./prototype/VariantA";
+import { VariantB } from "./prototype/VariantB";
+import { VariantC } from "./prototype/VariantC";
+
+// PROTOTYPE WIRING — remove this block (and app/login/prototype/) once a
+// variant wins; fold the choice into the JSX below and delete the rest.
+const PROTOTYPE_VARIANTS = [
+  { key: "current", label: "Atual" },
+  { key: "A", label: "Masthead editorial" },
+  { key: "B", label: "Prévia da projeção" },
+  { key: "C", label: "Cinematográfica" },
+];
+
+function PrototypeGate({
+  loading,
+  onGoogleLogin,
+  children,
+}: {
+  loading: boolean;
+  onGoogleLogin: () => void;
+  children: React.ReactNode;
+}) {
+  const searchParams = useSearchParams();
+  const variant = searchParams.get("variant") ?? "current";
+
+  return (
+    <>
+      {variant === "A" && (
+        <VariantA loading={loading} onGoogleLogin={onGoogleLogin} />
+      )}
+      {variant === "B" && (
+        <VariantB loading={loading} onGoogleLogin={onGoogleLogin} />
+      )}
+      {variant === "C" && (
+        <VariantC loading={loading} onGoogleLogin={onGoogleLogin} />
+      )}
+      {variant === "current" && children}
+      <PrototypeSwitcher variants={PROTOTYPE_VARIANTS} />
+    </>
+  );
+}
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -15,6 +59,22 @@ export default function LoginPage() {
   }
 
   return (
+    <Suspense fallback={null}>
+      <PrototypeGate loading={loading} onGoogleLogin={handleGoogleLogin}>
+        <LoginCurrent loading={loading} onGoogleLogin={handleGoogleLogin} />
+      </PrototypeGate>
+    </Suspense>
+  );
+}
+
+function LoginCurrent({
+  loading,
+  onGoogleLogin,
+}: {
+  loading: boolean;
+  onGoogleLogin: () => void;
+}) {
+  return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-6"
       style={{ background: "var(--body-bg)" }}
@@ -22,8 +82,9 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="mb-14 text-center animate-fade-up">
         <div
-          className="w-20 h-20 rounded-[28px] flex items-center justify-center mx-auto mb-6"
+          className="w-20 h-20 flex items-center justify-center mx-auto mb-6"
           style={{
+            borderRadius: "var(--radius-xl)",
             background:
               "linear-gradient(135deg, rgb(var(--accent-rgb) / 0.18), rgb(var(--accent-rgb) / 0.05))",
             border: "1px solid rgb(var(--accent-rgb) / 0.22)",
@@ -71,22 +132,15 @@ export default function LoginPage() {
           className="mt-2.5 font-medium"
           style={{ fontSize: "14px", color: "var(--text-muted)" }}
         >
-          Seus atendimentos, organizados.
+          Cada atendimento, mais perto da sua independência.
         </p>
       </div>
 
       {/* Card */}
-      <div
-        className="w-full max-w-sm rounded-3xl p-8 animate-fade-up"
-        style={{
-          animationDelay: "80ms",
-          background: "rgb(var(--bg-rgb) / 0.48)",
-          border: "1px solid rgb(var(--accent-rgb) / 0.12)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          boxShadow:
-            "inset 0 1px 0 rgb(255 255 255 / 0.06), 0 8px 40px rgb(0 0 0 / 0.32)",
-        }}
+      <GlassCard
+        radius="xl"
+        className="w-full max-w-sm p-8 animate-fade-up"
+        style={{ animationDelay: "80ms" }}
       >
         <p
           className="text-center font-medium leading-relaxed mb-6"
@@ -96,7 +150,7 @@ export default function LoginPage() {
         </p>
 
         <button
-          onClick={handleGoogleLogin}
+          onClick={onGoogleLogin}
           disabled={loading}
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-semibold text-sm active:scale-95 disabled:opacity-60"
           style={{
@@ -138,7 +192,7 @@ export default function LoginPage() {
           Ao entrar, você concorda com os termos de uso e política de
           privacidade.
         </p>
-      </div>
+      </GlassCard>
 
       <p
         className="mt-8 animate-fade-up"
@@ -148,7 +202,7 @@ export default function LoginPage() {
           animationDelay: "160ms",
         }}
       >
-        v1.0 · Feito para profissionais autônomos
+        Seu espaço, no seu ritmo.
       </p>
     </div>
   );

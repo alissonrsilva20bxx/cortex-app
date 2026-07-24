@@ -56,6 +56,22 @@ const swScript = `
   }
 `;
 
+// Dev mode never registers a SW (see below), but a SW registered by an
+// earlier prod build or dev session may still be sitting in the browser,
+// silently serving stale dev bundles. Tear it down on every dev load.
+const swTeardownScript = `
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      regs.forEach(function (r) { r.unregister(); });
+    });
+  }
+  if ('caches' in window) {
+    caches.keys().then(function (keys) {
+      keys.forEach(function (k) { caches.delete(k); });
+    });
+  }
+`;
+
 export default function RootLayout({
   children,
 }: {
@@ -70,7 +86,15 @@ export default function RootLayout({
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
-        <script dangerouslySetInnerHTML={{ __html: swScript }} />
+        {/* Only in production: dev chunk filenames aren't content-hashed,
+            so a cache-first SW would serve stale JS across dev sessions.
+            In dev, actively tear down any SW/cache left over from a
+            previous session instead. */}
+        {process.env.NODE_ENV === "production" ? (
+          <script dangerouslySetInnerHTML={{ __html: swScript }} />
+        ) : (
+          <script dangerouslySetInnerHTML={{ __html: swTeardownScript }} />
+        )}
       </body>
     </html>
   );
