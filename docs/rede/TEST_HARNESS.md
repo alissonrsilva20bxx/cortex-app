@@ -4,12 +4,12 @@
 
 ## 1. O que este ticket entrega
 
-Infraestrutura mínima para rodar testes de RLS/concorrência contra um Supabase que não é produção:
+Infraestrutura mínima para rodar testes de RLS/concorrência contra um Supabase local descartável:
 
 - `supabase/config.toml` (via `supabase init`) — permite `supabase start` rodar um Postgres+Auth+Storage local via Docker, aplicando `supabase/migrations/*.sql` automaticamente a cada start.
 - Ferramenta de teste escolhida: **Vitest** (`vitest.config.ts`). Não havia suíte automatizada no projeto antes deste ticket (confirmado em `CURRENT_BACKEND_AUDIT.md`) — Vitest foi escolhido por rodar TypeScript nativamente sem passo de build separado, ter execução rápida o suficiente para testes de concorrência, e não exigir infraestrutura própria de servidor (diferente de Playwright/Cypress, que seriam overkill para testes que só falam HTTP com o Supabase, não com o navegador).
 - `tests/rede/support/` — camada reutilizável:
-  - `env.ts` — lê `SUPABASE_TEST_URL`/`SUPABASE_TEST_ANON_KEY`/`SUPABASE_TEST_SERVICE_ROLE_KEY` e **recusa rodar** se a URL apontar para o projeto de produção (`seciereacfestemdhzhp.supabase.co`) ou para qualquer host que não seja local, a menos que `SUPABASE_TEST_ALLOW_REMOTE=true` seja setado explicitamente (uso pretendido: staging dedicado).
+  - `env.ts` — lê `SUPABASE_TEST_URL`/`SUPABASE_TEST_ANON_KEY`/`SUPABASE_TEST_SERVICE_ROLE_KEY` e **recusa qualquer host que não seja `localhost` ou `127.0.0.1`**.
   - `clients.ts` — `adminClient()` (service role, só para setup/teardown), `anonClient()`, `authenticatedClient(email, password)`.
   - `testUsers.ts` — `createTestUser()`/`deleteTestUser()`: cria usuário descartável via `auth.admin.createUser` (email/senha, pré-confirmado) e devolve um client já autenticado como esse usuário. O app em produção só usa Google OAuth (`docs/adr/0001`); o harness usa email/senha via admin API porque é a forma de obter uma sessão real sem navegador — não altera nem participa do fluxo de login do app.
   - `vitest.setup.ts` — carrega `.env.test.local` (gitignored, já coberto pela regra `.env*` do `.gitignore` raiz).
@@ -43,10 +43,6 @@ npm test                    # roda a suíte uma vez
 npm run test:watch          # modo watch
 npm run supabase:stop       # derruba os containers quando terminar
 ```
-
-### Staging dedicado
-
-Mesmas três variáveis em `.env.test.local`, apontando para um projeto Supabase de staging (nunca produção — `env.ts` bloqueia o host de produção mesmo que alguém tente), mais `SUPABASE_TEST_ALLOW_REMOTE=true` para confirmar explicitamente que o host remoto é intencional.
 
 ## 4. Evidência de que o critério de aceite foi cumprido
 

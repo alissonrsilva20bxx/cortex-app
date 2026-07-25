@@ -33,9 +33,13 @@ export async function createTestUser(): Promise<TestUser> {
     );
   }
 
-  const client = await authenticatedClient(email, password);
-
-  return { id: data.user.id, email, password, client };
+  try {
+    const client = await authenticatedClient(email, password);
+    return { id: data.user.id, email, password, client };
+  } catch (error) {
+    await admin.auth.admin.deleteUser(data.user.id);
+    throw error;
+  }
 }
 
 /** Deletes a test user (and, via FK cascade, any rows owned by them). */

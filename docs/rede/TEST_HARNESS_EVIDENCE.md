@@ -38,11 +38,11 @@ por `supabase init` documenta isso:
 # deprecated and the field is removed on 2026-10-30 once the always-revoked behaviour is permanent.
 ```
 
-Como correção local (não uma migration nova — nenhum arquivo em
-`supabase/migrations/` foi tocado), `auto_expose_new_tables = true` foi
-habilitado em `supabase/config.toml` para reproduzir o comportamento que o
-schema versionado assume. Isso é suficiente para este ticket (harness local
-funcionando), mas é um risco real fora do escopo de `RD-17` para corrigir:
+O harness mantém `auto_expose_new_tables = false`, igual ao default atual.
+Como `RD-17` não pode reescrever a migration histórica, `supabase/seed.sql`
+concede acesso local **somente** à tabela `jobs` e somente ao role
+`authenticated`, que é o objeto exercitado por este teste. Isso não mascara
+novas tabelas: migrations da Rede precisam declarar seus próprios `GRANT`s.
 
 - **A flag é removida em 2026-10-30.** Depois disso, nenhuma quantidade de
   configuração de CLI recupera o comportamento legado — as migrations
@@ -89,20 +89,19 @@ Isso prova o critério de aceite de `RD-17` ponto a ponto:
    - outro usuário autenticado não vê a linha (`toHaveLength(0)`, sem erro —
      RLS filtra, não bloqueia com erro);
    - outro usuário não consegue atualizar a linha (zero linhas afetadas).
-4. **Ambiente que não é produção** — `tests/rede/support/env.ts` recusa
-   rodar contra o host de produção mesmo que a variável aponte para lá (ver
-   seção 4).
+4. **Ambiente local** — `tests/rede/support/env.ts` recusa qualquer hostname
+   que não seja `localhost` ou `127.0.0.1` antes de criar um client (seção 4).
 
-## 4. Guardrail de produção testado deliberadamente
+## 4. Guardrail local testado deliberadamente
 
-Rodando a suíte com `SUPABASE_TEST_URL` apontado manualmente para o projeto
-de produção (`seciereacfestemdhzhp.supabase.co`), sem nenhuma chamada de rede
-real acontecer — o guard barra antes de qualquer client ser criado:
+Rodando a suíte com `SUPABASE_TEST_URL` apontado para um hostname não-local,
+sem nenhuma chamada de rede acontecer — o guard barra antes de qualquer
+client ser criado:
 
 ```
-Error: [tests/rede] Refusing to run: SUPABASE_TEST_URL points at the production project
-(seciereacfestemdhzhp.supabase.co). These tests create/delete users and must only run against a
-local Supabase (supabase start) or a dedicated staging project.
+Error: [tests/rede] SUPABASE_TEST_URL (...) is not a local Supabase instance.
+These tests create and delete users with a service-role key, so this harness accepts
+only localhost or 127.0.0.1.
 ```
 
 ## 5. Limpeza

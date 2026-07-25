@@ -17,12 +17,16 @@ import {
  * migration lands.
  */
 describe("RLS: jobs (owner full access)", () => {
+  const testUsers: TestUser[] = [];
   let userA: TestUser;
   let userB: TestUser;
   let jobId: string;
 
   beforeAll(async () => {
-    [userA, userB] = await Promise.all([createTestUser(), createTestUser()]);
+    userA = await createTestUser();
+    testUsers.push(userA);
+    userB = await createTestUser();
+    testUsers.push(userB);
 
     const { data, error } = await userA.client
       .from("jobs")
@@ -44,7 +48,15 @@ describe("RLS: jobs (owner full access)", () => {
   });
 
   afterAll(async () => {
-    await Promise.all([deleteTestUser(userA), deleteTestUser(userB)]);
+    const results = await Promise.allSettled(testUsers.map(deleteTestUser));
+    const failures = results.filter((result) => result.status === "rejected");
+    if (failures.length > 0) {
+      throw new Error(
+        `Failed to delete ${failures.length} local test user(s): ${failures
+          .map((failure) => String(failure.reason))
+          .join("; ")}`
+      );
+    }
   });
 
   it("lets the owner read their own job", async () => {
