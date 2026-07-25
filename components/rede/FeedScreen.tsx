@@ -1,0 +1,255 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  UserPlus,
+  MessageCircle,
+  Link2 as LinkIcon,
+  Gift,
+  Sparkles,
+  Image as ImageIcon,
+} from "lucide-react";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { RedeHeader } from "./RedeHeader";
+import { ContextualBlock } from "./ContextualBlock";
+import { PostCard } from "./PostCard";
+import { Avatar } from "./Avatar";
+import {
+  DISCOVER_PEOPLE,
+  LIVE_LINKS,
+  WISHLIST_ITEMS,
+  findUser,
+  type RedePost,
+} from "@/lib/mockRede";
+import type { Usuario } from "@/lib/types";
+
+type Segmento = "paraVoce" | "amigas";
+
+interface ContextualBlockDef {
+  key: string;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+}
+
+interface Props {
+  usuario: Usuario;
+  posts: RedePost[];
+  friends: string[];
+  pendingRequestsCount: number;
+  unreadChats: number;
+  unreadNotifs: number;
+  onOpenSearch: () => void;
+  onOpenNotifs: () => void;
+  onOpenChat: () => void;
+  onOpenMeuEspaco: () => void;
+  onOpenAmigas: () => void;
+  onOpenWishlist: () => void;
+  onOpenComposer: (tipoInicial?: "foto" | "desejo") => void;
+  onToggleLike: (id: string) => void;
+  onToggleSave: (id: string) => void;
+  onComment: (post: RedePost) => void;
+  onShare: (post: RedePost) => void;
+  onOpenMenu: (post: RedePost) => void;
+  onOpenAutor: (autorId: string) => void;
+}
+
+export function FeedScreen({
+  usuario,
+  posts,
+  friends,
+  pendingRequestsCount,
+  unreadChats,
+  unreadNotifs,
+  onOpenSearch,
+  onOpenNotifs,
+  onOpenChat,
+  onOpenMeuEspaco,
+  onOpenAmigas,
+  onOpenWishlist,
+  onOpenComposer,
+  onToggleLike,
+  onToggleSave,
+  onComment,
+  onShare,
+  onOpenMenu,
+  onOpenAutor,
+}: Props) {
+  const [segmento, setSegmento] = useState<Segmento>("paraVoce");
+
+  const visiblePosts = useMemo(
+    () =>
+      segmento === "paraVoce"
+        ? posts
+        : posts.filter(
+            (p) => p.autorId === "me" || friends.includes(p.autorId)
+          ),
+    [posts, segmento, friends]
+  );
+
+  const wishlistPertoDaMeta = WISHLIST_ITEMS.find(
+    (w) => w.estado !== "conquistado" && w.valorAtual / w.valorAlvo >= 0.7
+  );
+  const livelinksIncompletos = LIVE_LINKS.filter((l) => !l.ativo).length;
+  const discover = DISCOVER_PEOPLE.map((d) => findUser(d.userId)).filter(
+    Boolean
+  );
+
+  const blocks: ContextualBlockDef[] = [];
+  if (pendingRequestsCount > 0) {
+    blocks.push({
+      key: "solicitacoes",
+      icon: <UserPlus size={17} style={{ color: "var(--accent)" }} />,
+      title: `Você recebeu ${pendingRequestsCount} solicitações de amizade`,
+      subtitle: "Toque para ver quem quer se conectar",
+      onClick: onOpenAmigas,
+    });
+  }
+  if (unreadChats > 0) {
+    blocks.push({
+      key: "mensagens",
+      icon: <MessageCircle size={17} style={{ color: "var(--accent)" }} />,
+      title: `${unreadChats} mensagens não lidas`,
+      subtitle: "Suas conversas estão esperando",
+      onClick: onOpenChat,
+    });
+  }
+  if (livelinksIncompletos > 0) {
+    blocks.push({
+      key: "livelinks",
+      icon: <LinkIcon size={17} style={{ color: "var(--accent)" }} />,
+      title: "Complete seus LiveLinks",
+      subtitle: `${livelinksIncompletos} link${livelinksIncompletos > 1 ? "s" : ""} desativado${livelinksIncompletos > 1 ? "s" : ""} no seu perfil`,
+      onClick: onOpenMeuEspaco,
+    });
+  }
+  if (wishlistPertoDaMeta) {
+    blocks.push({
+      key: "wishlist",
+      icon: <Gift size={17} style={{ color: "var(--accent)" }} />,
+      title: "Desejo próximo da meta",
+      subtitle: `${wishlistPertoDaMeta.nome} — ${Math.round((wishlistPertoDaMeta.valorAtual / wishlistPertoDaMeta.valorAlvo) * 100)}%`,
+      onClick: onOpenWishlist,
+    });
+  }
+  if (discover.length > 0) {
+    blocks.push({
+      key: "descobrir",
+      icon: <Sparkles size={17} style={{ color: "var(--accent)" }} />,
+      title: "Pessoas que talvez você conheça",
+      subtitle: discover.map((u) => u!.nome.split(" ")[0]).join(", "),
+      onClick: onOpenAmigas,
+    });
+  }
+
+  const queue = [...blocks];
+  type FeedItem =
+    | { type: "post"; post: RedePost }
+    | { type: "block"; block: ContextualBlockDef };
+  const items: FeedItem[] = [];
+  visiblePosts.forEach((post, i) => {
+    items.push({ type: "post", post });
+    if ([1, 4, 6].includes(i) && queue.length) {
+      items.push({ type: "block", block: queue.shift()! });
+    }
+  });
+
+  return (
+    <div className="pb-4">
+      <RedeHeader
+        usuarioNome={usuario.nome}
+        unreadChats={unreadChats}
+        unreadNotifs={unreadNotifs}
+        onSearch={onOpenSearch}
+        onOpenNotifs={onOpenNotifs}
+        onOpenChat={onOpenChat}
+        onOpenMeuEspaco={onOpenMeuEspaco}
+      />
+
+      {/* Compositor — entrada estática, abre o composer completo em sheet */}
+      <GlassCard
+        radius="lg"
+        onClick={() => onOpenComposer()}
+        className="flex items-center gap-3 px-4 py-3.5 mb-4"
+      >
+        <Avatar nome={usuario.nome} size="md" />
+        <span
+          className="flex-1 text-sm text-left"
+          style={{ color: "var(--text-muted)" }}
+        >
+          Compartilhe algo…
+        </span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenComposer("foto");
+          }}
+          aria-label="Adicionar foto"
+          className="p-1.5 active:opacity-60"
+        >
+          <ImageIcon size={17} style={{ color: "var(--text-muted)" }} />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenComposer("desejo");
+          }}
+          aria-label="Adicionar desejo"
+          className="p-1.5 active:opacity-60"
+        >
+          <Gift size={17} style={{ color: "var(--text-muted)" }} />
+        </button>
+      </GlassCard>
+
+      <SegmentedControl<Segmento>
+        className="mb-4"
+        value={segmento}
+        onChange={setSegmento}
+        options={[
+          { id: "paraVoce", label: "Para você" },
+          { id: "amigas", label: "Amigas" },
+        ]}
+      />
+
+      <div className="space-y-3">
+        {items.length === 0 ? (
+          <p
+            className="text-sm text-center py-12"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {segmento === "amigas"
+              ? "Nenhuma publicação das suas amigas ainda."
+              : "Nenhuma publicação por aqui ainda."}
+          </p>
+        ) : (
+          items.map((item) =>
+            item.type === "post" ? (
+              <PostCard
+                key={item.post.id}
+                post={item.post}
+                usuarioNome={usuario.nome}
+                onToggleLike={onToggleLike}
+                onToggleSave={onToggleSave}
+                onComment={onComment}
+                onShare={onShare}
+                onOpenMenu={onOpenMenu}
+                onOpenAutor={onOpenAutor}
+                onOpenWishlist={onOpenWishlist}
+              />
+            ) : (
+              <ContextualBlock
+                key={item.block.key}
+                icon={item.block.icon}
+                title={item.block.title}
+                subtitle={item.block.subtitle}
+                onClick={item.block.onClick}
+              />
+            )
+          )
+        )}
+      </div>
+    </div>
+  );
+}

@@ -1,7 +1,13 @@
 export type JobStatus = "agendado" | "confirmado" | "concluído" | "cancelado";
 export type Modalidade = "presencial" | "online";
 export type PeriodoMeta = "dia" | "mes" | "ano";
-export type TabId = "home" | "jobs" | "financeiro" | "cofre" | "ajustes";
+export type TabId =
+  | "home"
+  | "jobs"
+  | "financeiro"
+  | "cofre"
+  | "rede"
+  | "ajustes";
 export type AssinaturaStatus = "trial" | "ativa" | "vencida";
 
 export interface Job {

@@ -16,6 +16,7 @@ import { DespesaForm } from "@/components/financeiro/DespesaForm";
 import { ReceitaForm } from "@/components/financeiro/ReceitaForm";
 import { CofreTab } from "@/components/cofre/CofreTab";
 import { UploadSheet } from "@/components/cofre/UploadSheet";
+import { RedeTeaserTab } from "@/components/rede/RedeTeaserTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
@@ -336,6 +337,8 @@ export default function Page() {
         {!isNewUser && activeTab === "cofre" && usuario && (
           <CofreTab userId={usuario.id} refreshTrigger={cofreRefreshKey} />
         )}
+
+        {!isNewUser && activeTab === "rede" && usuario && <RedeTeaserTab />}
 
         {!isNewUser && activeTab === "ajustes" && usuario && (
           <AjustesTab

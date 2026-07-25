@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Wallet,
   ShieldCheck,
+  UsersRound,
   Settings,
 } from "lucide-react";
 import type { TabId } from "@/lib/types";
@@ -14,6 +15,7 @@ const TABS: { id: TabId; label: string; Icon: typeof Home }[] = [
   { id: "jobs", label: "Agenda", Icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", Icon: Wallet },
   { id: "cofre", label: "Cofre", Icon: ShieldCheck },
+  { id: "rede", label: "Rede", Icon: UsersRound },
   { id: "ajustes", label: "Ajustes", Icon: Settings },
 ];
 
