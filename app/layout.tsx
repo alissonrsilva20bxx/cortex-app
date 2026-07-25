@@ -42,8 +42,10 @@ export const metadata: Metadata = {
 const themeScript = `
   try {
     var t = localStorage.getItem('jobapp-theme');
-    var valid = ['pink-neon', 'purple', 'crimson'];
+    var valid = ['grafite', 'pink-neon', 'purple', 'crimson', 'ocean', 'gold', 'emerald', 'midnight'];
     if (t && valid.includes(t)) document.documentElement.setAttribute('data-theme', t);
+    var m = localStorage.getItem('jobapp-mode');
+    if (m === 'light') document.documentElement.setAttribute('data-mode', 'light');
   } catch(e) {}
 `;
 
@@ -78,7 +80,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" data-theme="pink-neon" className={jakarta.variable}>
+    <html
+      lang="pt-BR"
+      data-theme="pink-neon"
+      className={jakarta.variable}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
