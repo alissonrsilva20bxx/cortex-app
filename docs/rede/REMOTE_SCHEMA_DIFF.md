@@ -1,6 +1,8 @@
 # RD-000 — Diff do schema remoto
 
 **Captura analisada:** `.scratch/jobapp-remote-schema-audit.json`  
+**Captura complementar:** `jobapp-remote-schema-extended-audit.json` (artefato
+local fora do Git)
 **Momento da captura:** 2026-07-25 10:00:44 UTC  
 **Escopo:** schema `public`, somente leitura  
 **Fontes locais comparadas:** `supabase/migrations/*.sql`, scripts SQL soltos em
@@ -25,6 +27,13 @@ O remoto capturado contém somente quatro tabelas em `public`:
   tabelas ausentes e cinco valores inexistentes de `tema`.
 - Não há tabela de `public` registrada em publication na captura; portanto
   nenhuma das quatro tabelas observadas está publicada para Realtime.
+- RLS está habilitado nas quatro tabelas públicas.
+- As funções `set_updated_at()` e `handle_new_user()` existem; o trigger
+  `on_auth_user_created` está ativo em `auth.users`.
+- O bucket privado `cofre` e a policy `cofre: owner full access` existem.
+- `handle_new_user()` é `SECURITY DEFINER`, mas não tem `search_path` fixado em
+  `proconfig`. Isso deve ser tratado como risco de hardening antes de qualquer
+  ampliação do modelo.
 
 Consequência: `RD-00` não deve partir da premissa anterior de que os scripts
 soltos ou o snapshot TypeScript descrevem objetos já existentes no remoto. O
@@ -66,7 +75,7 @@ Enums confirmados:
 
 | Fonte | Estado frente ao remoto | Diff confirmado |
 |---|---|---|
-| `0001_jobapp_schema.sql` | Parcialmente representada | As quatro tabelas públicas, índices, policies e triggers de tabela aparecem com o shape esperado. A captura não inventaria evidência sobre função, trigger em `auth` ou Storage; ver limites abaixo. |
+| `0001_jobapp_schema.sql` | Representada no escopo auditado | As quatro tabelas públicas, índices, policies, triggers de tabela, RLS, funções esperadas, trigger em `auth`, bucket privado `cofre` e sua policy aparecem com o shape esperado nas duas capturas. A equivalência textual completa dos corpos das funções continua fora do alcance; ver limites abaixo. |
 | `0002_marco5_assinatura.sql` | Representada | `configuracoes.trial_started_at`, `configuracoes.assinatura_status` e o enum `assinatura_status` existem com tipos e defaults esperados. A captura não prova que o backfill histórico ocorreu. |
 | `0003_push_subscriptions.sql` | Não representada | `public.push_subscriptions` está ausente; por consequência, também estão ausentes no inventário público capturado seu índice unique de `endpoint` e sua policy. |
 
@@ -110,6 +119,17 @@ precisão SQL e não devem ser usados como fonte de verdade para a reconciliaç�
   `receitas_avulsas` e `objetivos`.
 - `tema` contém somente três valores.
 - A lista `publications` está vazia.
+- RLS está habilitado, sem `FORCE ROW LEVEL SECURITY`, em `configuracoes`,
+  `jobs`, `metas` e `notas`.
+- `set_updated_at()` e `handle_new_user()` existem no schema `public`.
+- `handle_new_user()` é `SECURITY DEFINER` e não possui configuração local de
+  `search_path`; `set_updated_at()` não é `SECURITY DEFINER`.
+- `on_auth_user_created` está ativo em `auth.users` e chama
+  `handle_new_user()`.
+- O bucket `cofre` existe como privado e possui a policy
+  `cofre: owner full access` em `storage.objects`.
+- `jobs.valor` e `metas.valor_alvo` são `numeric(10,2)`; os checks confirmados
+  exigem valores maiores ou iguais a zero.
 
 ### Inferências suportadas, mas não fatos históricos
 
@@ -122,22 +142,17 @@ precisão SQL e não devem ser usados como fonte de verdade para a reconciliaç�
   essas histórias.
 - A captura não informa se algum objeto ausente já existiu anteriormente.
 
-### Limites da captura
+### Limites das capturas
 
-O artefato não traz inventário de funções, definição de RLS habilitada por
-tabela, schemas `auth`/`storage`, buckets ou policies de Storage. Logo, ele não
-confirma nem nega:
+A captura complementar resolveu as lacunas sobre RLS habilitado, funções
+esperadas, trigger de `auth`, bucket/policy de Storage, checks de valor e
+precisão dos campos `numeric`. Ainda não estão provados:
 
-- as funções `set_updated_at()` e `handle_new_user()` (os triggers públicos
-  apenas referenciam a primeira);
-- o trigger `on_auth_user_created` em `auth.users`;
-- o bucket privado `cofre` e sua policy em `storage.objects`;
-- a definição completa das funções, incluindo `security definer` e
-  `search_path`;
+- o corpo SQL completo das funções e sua equivalência textual com a migration;
 - o valor histórico usado no backfill de `trial_started_at`;
-- precisão/escala efetiva dos campos `numeric`, pois o artefato registra o tipo
-  como `numeric` sem esses atributos;
-- um dump reproduzível completo de todos os schemas envolvidos.
+- um dump reproduzível completo de todos os schemas e objetos internos do
+  Supabase;
+- o histórico pelo qual o remoto chegou a esse estado.
 
 As constraints aparecem no artefato em formato de inventário relacional
 expandido, sem a expressão SQL completa de cada `CHECK` e sem resolver o destino
@@ -168,24 +183,34 @@ presentes nas quatro tabelas.
    ambiente local/staging apropriado; essa regeneração continua pertencendo a
    `RD-09`.
 
-Há duas verificações que devem preceder a aplicação remota de `RD-00`:
+Antes da aplicação remota de `RD-00`, ainda é obrigatório:
 
-- confirmar por dump completo ou consultas adicionais os itens fora do alcance
-  desta captura (`auth`, `storage`, funções e estado de RLS);
 - confirmar a decisão de produto sobre os cinco temas adicionais. A captura
-  prova que eles não existem hoje; não prova que devam ser adicionados.
+  prova que eles não existem hoje; não prova que devam ser adicionados;
+- revisar e corrigir com segurança o `search_path` de `handle_new_user()`, sem
+  alterar seu comportamento funcional;
+- ensaiar a migration proposta no ambiente descartável e num banco vazio.
 
 ## 6. Estado do critério de aceite de RD-000
 
-O diff explícito exigido por `RD-000` está documentado aqui. Porém, o segundo
-item do critério de aceite — um banco descartável que reproduza o schema real —
-não pode ser considerado concluído apenas com este artefato, porque a captura
-não contém definições completas de funções, checks, `auth` e `storage`.
+O diff explícito exigido por `RD-000` está documentado aqui. Um ambiente
+Supabase local descartável foi inicializado somente com `0001` e `0002` e
+validado contra as duas capturas remotas:
 
-Assim, este documento desbloqueia a **especificação** de `RD-00`, mas a execução
-de `RD-00` contra o remoto continua bloqueada até que:
+- mesmas quatro tabelas públicas e 26 colunas;
+- mesmos seis índices, quatro policies e dois triggers públicos;
+- RLS habilitado nas quatro tabelas;
+- funções `set_updated_at()` e `handle_new_user()`;
+- trigger `on_auth_user_created`;
+- bucket privado `cofre` e sua policy de acesso por proprietário;
+- `jobs.valor` e `metas.valor_alvo` como `numeric(10,2)`, com checks de valor
+  maior ou igual a zero;
+- `handle_new_user()` como `SECURITY DEFINER` sem `search_path` local e
+  `set_updated_at()` sem `SECURITY DEFINER`.
 
-1. exista o ambiente descartável com as definições faltantes verificadas; e
-2. a migration proposta passe nele duas vezes e também num banco vazio, como
-   exige `BACKEND_TICKETS.md`.
-
+Portanto, os critérios de aceite de `RD-000` estão atendidos. Isso desbloqueia a
+**especificação e implementação local** de `RD-00`, mas não autoriza aplicação
+remota. A futura migration de `RD-00` ainda precisa passar duas vezes nesse
+ambiente e também num banco vazio, como exige `BACKEND_TICKETS.md`, além da
+decisão de produto sobre os cinco temas e da revisão do `search_path` de
+`handle_new_user()`.
