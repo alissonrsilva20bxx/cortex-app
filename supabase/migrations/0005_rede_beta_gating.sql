@@ -74,6 +74,30 @@ $$;
 revoke all on function public.rede_is_admin() from public;
 grant execute on function public.rede_is_admin() to authenticated;
 
+-- Supabase's current default no longer auto-exposes new public objects.
+-- Keep client privileges minimal; RLS remains the row-level gate.
+grant usage on schema public to authenticated, service_role;
+revoke all on type public.rede_solicitacao_beta_status from public;
+grant usage on type public.rede_solicitacao_beta_status
+  to authenticated, service_role;
+revoke all
+  on table
+    public.rede_solicitacoes_beta,
+    public.rede_admins,
+    public.rede_convites
+  from anon, authenticated, service_role;
+grant select, insert on table public.rede_solicitacoes_beta
+  to authenticated;
+grant select on table public.rede_admins, public.rede_convites
+  to authenticated;
+grant select, insert, update, delete
+  on table
+    public.rede_solicitacoes_beta,
+    public.rede_admins,
+    public.rede_convites
+  to service_role;
+grant execute on function public.rede_is_admin() to service_role;
+
 do $$
 begin
   if not exists (
