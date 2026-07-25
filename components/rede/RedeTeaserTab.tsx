@@ -15,13 +15,6 @@ import {
 import { GlassCard } from "@/components/ui/GlassCard";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Avatar } from "./Avatar";
-import {
-  REDE_POSTS,
-  findUser,
-  formatRelativeTime,
-  CATEGORIA_META,
-  type RedePost,
-} from "@/lib/mockRede";
 
 /**
  * Vitrine da Rede no app oficial — só anúncio visual da comunidade que vem
@@ -37,39 +30,83 @@ const BENEFICIOS = [
   { Icon: Link2, texto: "Organizar seu perfil e LiveLinks" },
 ];
 
-const PREVIA_IDS = ["p1", "p2", "p4"];
+type TeaserPost = {
+  id: string;
+  nome: string;
+  cor: string;
+  categoria: string;
+  categoriaRgb: string;
+  tempo: string;
+  texto: string;
+  curtidas: number;
+  comentarios: number;
+};
 
-function TeaserPostCard({ post }: { post: RedePost }) {
-  const autor = post.autorId === "me" ? null : findUser(post.autorId);
-  const nomeExibido =
-    post.autorId === "me" ? "Você" : (autor?.nome ?? "Usuária");
-  const cat = CATEGORIA_META[post.categoria];
+const TEASER_POSTS: TeaserPost[] = [
+  {
+    id: "teaser-1",
+    nome: "Camila Duarte",
+    cor: "#ec4899",
+    categoria: "Conquista",
+    categoriaRgb: "236 72 153",
+    tempo: "há 2h",
+    texto:
+      "Depois de três meses acompanhando minhas entradas, finalmente entendi quanto realmente sobra no fim do mês.",
+    curtidas: 24,
+    comentarios: 2,
+  },
+  {
+    id: "teaser-2",
+    nome: "Miguel",
+    cor: "#8b5cf6",
+    categoria: "Conquista",
+    categoriaRgb: "139 92 246",
+    tempo: "há 5h",
+    texto:
+      "Semana cheia, mas terminei o mês batendo a meta pela primeira vez! 🎉",
+    curtidas: 12,
+    comentarios: 1,
+  },
+  {
+    id: "teaser-3",
+    nome: "Ana Souza",
+    cor: "#06b6d4",
+    categoria: "Dica",
+    categoriaRgb: "6 182 212",
+    tempo: "ontem",
+    texto:
+      "Organizar os atendimentos por semana me ajudou a enxergar horários livres e planejar melhor.",
+    curtidas: 18,
+    comentarios: 3,
+  },
+];
 
+function TeaserPostCard({ post }: { post: TeaserPost }) {
   return (
     <GlassCard radius="lg" className="p-4" style={{ pointerEvents: "none" }}>
       <div className="flex items-start gap-3">
-        <Avatar nome={nomeExibido} cor={autor?.cor} size="md" />
+        <Avatar nome={post.nome} cor={post.cor} size="md" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p
               className="font-semibold text-sm truncate"
               style={{ color: "var(--text)" }}
             >
-              {nomeExibido}
+              {post.nome}
             </p>
             <span
               className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
               style={{
-                background: `rgb(${cat.rgb} / 0.12)`,
-                color: `rgb(${cat.rgb})`,
-                border: `1px solid rgb(${cat.rgb} / 0.25)`,
+                background: `rgb(${post.categoriaRgb} / 0.12)`,
+                color: `rgb(${post.categoriaRgb})`,
+                border: `1px solid rgb(${post.categoriaRgb} / 0.25)`,
               }}
             >
-              {cat.label}
+              {post.categoria}
             </span>
           </div>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            {formatRelativeTime(post.criadoEm)}
+            {post.tempo}
           </p>
         </div>
       </div>
@@ -100,7 +137,7 @@ function TeaserPostCard({ post }: { post: RedePost }) {
         >
           <CommentIcon size={16} />
           <span className="text-xs font-semibold tabular-nums">
-            {post.comentarios.length}
+            {post.comentarios}
           </span>
         </span>
       </div>
@@ -144,10 +181,6 @@ function ComingSoonRow({
 export function RedeTeaserTab() {
   const [betaSheetOpen, setBetaSheetOpen] = useState(false);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
-
-  const previaPosts = PREVIA_IDS.map((id) =>
-    REDE_POSTS.find((p) => p.id === id)
-  ).filter((p): p is RedePost => !!p);
 
   return (
     <div className="pb-4">
@@ -212,7 +245,7 @@ export function RedeTeaserTab() {
         <p className="section-label mb-3">Prévia do que vem por aí</p>
         <div className="relative">
           <div className="space-y-3">
-            {previaPosts.map((post) => (
+            {TEASER_POSTS.map((post) => (
               <TeaserPostCard key={post.id} post={post} />
             ))}
           </div>
