@@ -25,8 +25,8 @@ import {
 
 /**
  * Vitrine da Rede no app oficial — só anúncio visual da comunidade que vem
- * por aí. O mockup completo e navegável continua vivo em RedeTab, usado
- * só em /dev-preview/rede; esta tela não chama nada dele, é 100% estática.
+ * por aí. O mockup completo e navegável continua preservado na branch de
+ * desenvolvimento; esta tela não o renderiza e é 100% estática.
  */
 
 const BENEFICIOS = [
