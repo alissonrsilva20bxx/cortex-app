@@ -136,7 +136,10 @@ begin
       on public.rede_perfis
       for delete
       to authenticated
-      using (auth.uid() = user_id);
+      using (
+        auth.uid() = user_id
+        and public.rede_is_member()
+      );
   end if;
 
   if not exists (

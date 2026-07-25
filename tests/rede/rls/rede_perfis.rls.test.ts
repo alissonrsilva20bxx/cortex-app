@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { adminClient, type TestClient } from "../support/clients";
+import { adminClient, anonClient, type TestClient } from "../support/clients";
 import {
   createTestUser,
   deleteTestUser,
@@ -43,6 +43,16 @@ describe("RLS: rede_perfis + rede_livelinks", () => {
       });
     if (error) {
       throw new Error(`Failed to seed redeemed invite: ${error.message}`);
+    }
+  }
+
+  async function revokeInviteFor(userId: string): Promise<void> {
+    const { error } = await untyped(adminClient())
+      .from("rede_convites")
+      .delete()
+      .eq("usado_por", userId);
+    if (error) {
+      throw new Error(`Failed to revoke redeemed invite: ${error.message}`);
     }
   }
 
@@ -119,6 +129,21 @@ describe("RLS: rede_perfis + rede_livelinks", () => {
     expect(data).toHaveLength(0);
   });
 
+  it("does not expose the membership helper to an anonymous caller", async () => {
+    const { error } = await untyped(anonClient()).rpc("rede_is_member");
+
+    expect(error).not.toBeNull();
+  });
+
+  it("does not let an authenticated outsider bypass the membership helper", async () => {
+    const { data, error } = await untyped(outsider.client).rpc(
+      "rede_is_member"
+    );
+
+    expect(error).toBeNull();
+    expect(data).toBe(false);
+  });
+
   it("rejects a different member trying to update the profile", async () => {
     const { data, error } = await untyped(memberB.client)
       .from("rede_perfis")
@@ -128,6 +153,32 @@ describe("RLS: rede_perfis + rede_livelinks", () => {
 
     expect(error).toBeNull();
     expect(data).toHaveLength(0);
+  });
+
+  it("rejects deleting a profile after its redeemed invite is revoked", async () => {
+    await revokeInviteFor(memberA.id);
+    try {
+      const { data, error } = await untyped(memberA.client)
+        .from("rede_perfis")
+        .delete()
+        .eq("user_id", memberA.id)
+        .select("user_id");
+
+      expect(error).toBeNull();
+      expect(data).toHaveLength(0);
+
+      const { data: persistedProfile, error: verificationError } =
+        await untyped(adminClient())
+          .from("rede_perfis")
+          .select("user_id")
+          .eq("user_id", memberA.id)
+          .single();
+
+      expect(verificationError).toBeNull();
+      expect(persistedProfile?.user_id).toBe(memberA.id);
+    } finally {
+      await redeemInviteFor(memberA.id);
+    }
   });
 
   describe("rede_livelinks", () => {

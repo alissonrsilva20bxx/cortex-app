@@ -63,9 +63,12 @@ Cobertura:
   `SELECT` e recebe lista vazia (RLS filtra, sem erro).
 - **Outro membro não consegue atualizar perfil alheio** — `memberB` tenta
   `UPDATE` no perfil de `memberA`, zero linhas afetadas.
-- Mesmo conjunto de asserções para `rede_livelinks`: dono cria, outro
-  membro lê, não-membro não lê, outro membro não consegue atualizar o
-  LiveLink alheio.
+- Para `rede_livelinks`: dono cria, outro membro lê, não-membro não lê e
+  outro membro não consegue atualizar o LiveLink alheio.
+- A função auxiliar rejeita chamada anônima e retorna `false` para usuário
+  autenticado sem convite, cobrindo diretamente o seu limite de privilégio.
+- Um dono cujo convite foi revogado não consegue apagar o próprio perfil,
+  comprovando que o gate também vale para `DELETE`.
 
 ## 3. Achado operacional (não é bug da migration)
 
