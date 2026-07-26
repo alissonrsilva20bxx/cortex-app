@@ -59,10 +59,28 @@ create table if not exists public.rede_curtidas (
   primary key (post_id, user_id)
 );
 
--- Reaproveita o helper de bloqueio mutuo em ambas as tabelas de conteudo,
--- mesmo padrao de rede_is_member (0006): security definer evita repetir a
--- subquery em rede_bloqueios em toda policy que precisa dessa checagem.
-create or replace function public.rede_bloqueio_mutuo(alvo uuid)
+-- Helpers ficam fora do schema exposto pelo PostgREST. Assim as policies
+-- evitam recursao de RLS sem oferecer um RPC que revele quem bloqueou quem.
+create schema if not exists private;
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated, service_role;
+
+create or replace function private.rede_users_unblocked(other_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select not exists (
+    select 1
+    from public.rede_bloqueios
+    where (bloqueador_id = auth.uid() and bloqueado_id = other_user_id)
+       or (bloqueador_id = other_user_id and bloqueado_id = auth.uid())
+  );
+$$;
+
+create or replace function private.rede_post_visible(target_post_id uuid)
 returns boolean
 language sql
 stable
@@ -71,14 +89,17 @@ set search_path = ''
 as $$
   select exists (
     select 1
-    from public.rede_bloqueios
-    where (bloqueador_id = auth.uid() and bloqueado_id = alvo)
-       or (bloqueador_id = alvo and bloqueado_id = auth.uid())
+    from public.rede_posts post
+    where post.id = target_post_id
+      and private.rede_users_unblocked(post.autor_id)
   );
 $$;
 
-revoke all on function public.rede_bloqueio_mutuo(uuid) from public;
-grant execute on function public.rede_bloqueio_mutuo(uuid)
+revoke all on function private.rede_users_unblocked(uuid) from public;
+revoke all on function private.rede_post_visible(uuid) from public;
+grant execute on function private.rede_users_unblocked(uuid)
+  to authenticated, service_role;
+grant execute on function private.rede_post_visible(uuid)
   to authenticated, service_role;
 
 alter table public.rede_posts enable row level security;
@@ -96,13 +117,20 @@ revoke all
 revoke all on type public.rede_post_categoria from public;
 
 grant usage on type public.rede_post_categoria to authenticated, service_role;
-grant select, insert, update, delete
-  on table
-    public.rede_posts,
-    public.rede_comentarios
+grant select, delete
+  on table public.rede_posts, public.rede_comentarios
   to authenticated;
-grant select, insert, delete
-  on table public.rede_curtidas
+grant select, delete on table public.rede_curtidas
+  to authenticated;
+grant insert (autor_id, categoria, texto) on table public.rede_posts
+  to authenticated;
+grant update (categoria, texto) on table public.rede_posts
+  to authenticated;
+grant insert (post_id, autor_id, texto) on table public.rede_comentarios
+  to authenticated;
+grant update (texto) on table public.rede_comentarios
+  to authenticated;
+grant insert (post_id, user_id) on table public.rede_curtidas
   to authenticated;
 grant select, insert, update, delete
   on table
@@ -118,7 +146,7 @@ create policy "rede_posts: member select"
   to authenticated
   using (
     public.rede_is_member()
-    and not public.rede_bloqueio_mutuo(autor_id)
+    and private.rede_users_unblocked(autor_id)
   );
 
 drop policy if exists "rede_posts: owner insert" on public.rede_posts;
@@ -136,7 +164,10 @@ create policy "rede_posts: owner update"
   on public.rede_posts
   for update
   to authenticated
-  using (auth.uid() = autor_id)
+  using (
+    auth.uid() = autor_id
+    and public.rede_is_member()
+  )
   with check (
     auth.uid() = autor_id
     and public.rede_is_member()
@@ -159,7 +190,8 @@ create policy "rede_comentarios: member select"
   to authenticated
   using (
     public.rede_is_member()
-    and not public.rede_bloqueio_mutuo(autor_id)
+    and private.rede_users_unblocked(autor_id)
+    and private.rede_post_visible(post_id)
   );
 
 drop policy if exists "rede_comentarios: owner insert" on public.rede_comentarios;
@@ -170,6 +202,7 @@ create policy "rede_comentarios: owner insert"
   with check (
     auth.uid() = autor_id
     and public.rede_is_member()
+    and private.rede_post_visible(post_id)
   );
 
 drop policy if exists "rede_comentarios: owner update" on public.rede_comentarios;
@@ -177,10 +210,15 @@ create policy "rede_comentarios: owner update"
   on public.rede_comentarios
   for update
   to authenticated
-  using (auth.uid() = autor_id)
+  using (
+    auth.uid() = autor_id
+    and public.rede_is_member()
+    and private.rede_post_visible(post_id)
+  )
   with check (
     auth.uid() = autor_id
     and public.rede_is_member()
+    and private.rede_post_visible(post_id)
   );
 
 drop policy if exists "rede_comentarios: owner delete" on public.rede_comentarios;
@@ -198,7 +236,11 @@ create policy "rede_curtidas: member select"
   on public.rede_curtidas
   for select
   to authenticated
-  using (public.rede_is_member());
+  using (
+    public.rede_is_member()
+    and private.rede_post_visible(post_id)
+    and private.rede_users_unblocked(user_id)
+  );
 
 drop policy if exists "rede_curtidas: owner insert" on public.rede_curtidas;
 create policy "rede_curtidas: owner insert"
@@ -208,6 +250,7 @@ create policy "rede_curtidas: owner insert"
   with check (
     auth.uid() = user_id
     and public.rede_is_member()
+    and private.rede_post_visible(post_id)
   );
 
 drop policy if exists "rede_curtidas: owner delete" on public.rede_curtidas;
@@ -219,3 +262,7 @@ create policy "rede_curtidas: owner delete"
     auth.uid() = user_id
     and public.rede_is_member()
   );
+
+-- Remove a versao antiga exposta via RPC somente depois de substituir todas
+-- as policies que poderiam depender dela, permitindo reaplicacao convergente.
+drop function if exists public.rede_bloqueio_mutuo(uuid);
