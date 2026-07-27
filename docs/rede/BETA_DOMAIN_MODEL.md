@@ -60,6 +60,7 @@ Adicionado nesta revisão (a pedido de `CODEX_REVIEW.md`). Cada seção abaixo t
 - Tabela `rede_livelinks`: `id`, `user_id` (FK), `titulo`, `url`, `ordem` (inteiro, para permitir reordenar), `criado_em`.
 - RLS: dono tem CRUD total nos próprios links; qualquer membro autenticado da Rede pode `SELECT` os links de qualquer perfil (é vitrine pública dentro da comunidade).
 - Validação de URL (schema `https://`, tamanho máximo) fica na aplicação, não no banco — mesmo padrão do resto do projeto (constraints de banco são simples: `CHECK` de not-null/positivo, validação de formato é client-side).
+- **Limites técnicos do MVP:** após remover espaços externos, o título deve ter de 1 a 100 caracteres e a URL HTTPS absoluta deve ter no máximo 2048 caracteres. Esses valores ficam centralizados e exportados pela camada de serviço.
 - **A decidir (produto):** limite de quantidade de LiveLinks por perfil. Sugestão por analogia ao limite já existente no Cofre (15 imagens) seria um número pequeno e fixo (ex.: 5) para manter o perfil "vitrine", não uma lista infinita — mas isso é call de produto, não técnica.
 
 ## 3. Posts

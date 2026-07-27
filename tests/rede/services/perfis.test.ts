@@ -6,6 +6,8 @@ import {
   criarLiveLink,
   criarPerfil,
   excluirLiveLink,
+  LIVELINK_TITULO_MAX_LENGTH,
+  LIVELINK_URL_MAX_LENGTH,
   listarLiveLinks,
   reordenarLiveLinks,
 } from "../../../lib/rede/perfis";
@@ -132,6 +134,84 @@ describe("serviço de perfis", () => {
     });
   });
 
+  it("normaliza espaços do título e da URL antes de criar um LiveLink", async () => {
+    const single = vi.fn().mockResolvedValue({ data: {}, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ insert });
+
+    await criarLiveLink(client as never, {
+      titulo: "  Portfolio  ",
+      url: "  https://example.test/portfolio  ",
+    });
+
+    expect(insert).toHaveBeenCalledWith({
+      user_id: "user-1",
+      titulo: "Portfolio",
+      url: "https://example.test/portfolio",
+      ordem: undefined,
+    });
+  });
+
+  it.each([
+    ["URL relativa", "/portfolio"],
+    ["HTTP", "http://example.test"],
+    ["protocolo perigoso", "javascript:alert(1)"],
+    ["credenciais embutidas", "https://usuario:senha@example.test"],
+    ["URL malformada", "não é uma URL"],
+  ])("recusa %s ao criar um LiveLink", async (_caso, url) => {
+    const client = clienteComUsuario();
+
+    await expect(
+      criarLiveLink(client as never, { titulo: "Portfolio", url })
+    ).rejects.toThrow("URL do LiveLink");
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["título vazio", "", "Título do LiveLink"],
+    ["título só com espaços", "   ", "Título do LiveLink"],
+    ["título acima de 100 caracteres", "a".repeat(101), "Título do LiveLink"],
+    [
+      "URL acima de 2048 caracteres",
+      `https://example.test/${"a".repeat(2028)}`,
+      "URL do LiveLink",
+    ],
+  ])("recusa %s", async (_caso, valor, mensagem) => {
+    const client = clienteComUsuario();
+    const input =
+      _caso === "URL acima de 2048 caracteres"
+        ? { titulo: "Portfolio", url: valor }
+        : { titulo: valor, url: "https://example.test" };
+
+    await expect(criarLiveLink(client as never, input)).rejects.toThrow(
+      mensagem
+    );
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("aceita exatamente os limites técnicos de título e URL", async () => {
+    const single = vi.fn().mockResolvedValue({ data: {}, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ insert });
+    const prefix = "https://example.test/";
+    const titulo = "a".repeat(LIVELINK_TITULO_MAX_LENGTH);
+    const url = prefix + "a".repeat(LIVELINK_URL_MAX_LENGTH - prefix.length);
+
+    await expect(
+      criarLiveLink(client as never, { titulo, url })
+    ).resolves.toEqual({});
+    expect(insert).toHaveBeenCalledWith({
+      user_id: "user-1",
+      titulo,
+      url,
+      ordem: undefined,
+    });
+  });
+
   it("lista os LiveLinks de um usuário ordenados por ordem", async () => {
     const livelinks = [
       { id: "livelink-1", ordem: 0 },
@@ -150,37 +230,25 @@ describe("serviço de perfis", () => {
     expect(order).toHaveBeenCalledWith("ordem", { ascending: true });
   });
 
-  it("reordena os LiveLinks do usuário autenticado pela posição no array", async () => {
+  it("reordena todos os LiveLinks em uma única operação atômica", async () => {
     const client = clienteComUsuario();
-    const montarAtualizacao = (id: string, ordem: number) => {
-      const single = vi
-        .fn()
-        .mockResolvedValue({ data: { id, ordem }, error: null });
-      const select = vi.fn().mockReturnValue({ single });
-      const eqUser = vi.fn().mockReturnValue({ select });
-      const eqId = vi.fn().mockReturnValue({ eq: eqUser });
-      const update = vi.fn().mockReturnValue({ eq: eqId });
-      return { update, eqId, eqUser };
-    };
-    const primeira = montarAtualizacao("livelink-2", 0);
-    const segunda = montarAtualizacao("livelink-1", 1);
-    client.from
-      .mockReturnValueOnce({ update: primeira.update })
-      .mockReturnValueOnce({ update: segunda.update });
+    const livelinks = [
+      { id: "livelink-2", ordem: 0 },
+      { id: "livelink-1", ordem: 1 },
+    ];
+    const rpc = vi.fn().mockResolvedValue({ data: livelinks, error: null });
+    Object.assign(client, { rpc });
 
     await expect(
       reordenarLiveLinks(client as never, {
         ids: ["livelink-2", "livelink-1"],
       })
-    ).resolves.toEqual([
-      { id: "livelink-2", ordem: 0 },
-      { id: "livelink-1", ordem: 1 },
-    ]);
-    expect(primeira.update).toHaveBeenCalledWith({ ordem: 0 });
-    expect(primeira.eqId).toHaveBeenCalledWith("id", "livelink-2");
-    expect(primeira.eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(segunda.update).toHaveBeenCalledWith({ ordem: 1 });
-    expect(segunda.eqId).toHaveBeenCalledWith("id", "livelink-1");
+    ).resolves.toEqual(livelinks);
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith("rede_reordenar_livelinks", {
+      livelink_ids: ["livelink-2", "livelink-1"],
+    });
+    expect(client.from).not.toHaveBeenCalled();
   });
 
   it("exclui somente o LiveLink do usuário autenticado", async () => {
