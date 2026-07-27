@@ -686,6 +686,10 @@ export type Database = {
         Returns: boolean;
       };
       rede_is_member: { Args: never; Returns: boolean };
+      rede_reordenar_livelinks: {
+        Args: { livelink_ids: string[] };
+        Returns: Database["public"]["Tables"]["rede_livelinks"]["Row"][];
+      };
     };
     Enums: {
       assinatura_status: "trial" | "ativa" | "vencida";

@@ -6,6 +6,9 @@ type RedeClient = SupabaseClient<Database>;
 type Perfil = Database["public"]["Tables"]["rede_perfis"]["Row"];
 type LiveLink = Database["public"]["Tables"]["rede_livelinks"]["Row"];
 
+export const LIVELINK_TITULO_MAX_LENGTH = 100;
+export const LIVELINK_URL_MAX_LENGTH = 2048;
+
 export type CriarPerfilInput = {
   nomeExibicao: string;
   corAvatar: string;
@@ -120,13 +123,43 @@ export async function criarLiveLink(
   client: RedeClient,
   input: CriarLiveLinkInput
 ): Promise<LiveLink> {
+  const titulo = input.titulo.trim();
+  const url = input.url.trim();
+
+  if (titulo.length === 0 || titulo.length > LIVELINK_TITULO_MAX_LENGTH) {
+    throw new Error(
+      `Título do LiveLink deve ter entre 1 e ${LIVELINK_TITULO_MAX_LENGTH} caracteres`
+    );
+  }
+
+  if (url.length === 0 || url.length > LIVELINK_URL_MAX_LENGTH) {
+    throw new Error(
+      `URL do LiveLink deve ter entre 1 e ${LIVELINK_URL_MAX_LENGTH} caracteres`
+    );
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    throw new Error("URL do LiveLink deve ser uma URL HTTPS absoluta");
+  }
+
+  if (
+    parsedUrl.protocol !== "https:" ||
+    parsedUrl.username !== "" ||
+    parsedUrl.password !== ""
+  ) {
+    throw new Error("URL do LiveLink deve ser uma URL HTTPS absoluta");
+  }
+
   const userId = await obterUsuarioId(client);
   const { data, error } = await client
     .from("rede_livelinks")
     .insert({
       user_id: userId,
-      titulo: input.titulo,
-      url: input.url,
+      titulo,
+      url,
       ordem: input.ordem,
     })
     .select()
@@ -160,28 +193,15 @@ export async function reordenarLiveLinks(
   client: RedeClient,
   input: ReordenarLiveLinksInput
 ): Promise<LiveLink[]> {
-  const userId = await obterUsuarioId(client);
-  // Cada LiveLink pertence a um único dono, então as atualizações não colidem
-  // entre si e podem rodar em paralelo com segurança.
-  const resultados = await Promise.all(
-    input.ids.map((id, ordem) =>
-      client
-        .from("rede_livelinks")
-        .update({ ordem })
-        .eq("id", id)
-        .eq("user_id", userId)
-        .select()
-        .single()
-    )
-  );
-
-  return resultados.map(({ data, error }) => {
-    if (error) {
-      throw error;
-    }
-
-    return data;
+  const { data, error } = await client.rpc("rede_reordenar_livelinks", {
+    livelink_ids: input.ids,
   });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 export async function excluirLiveLink(
