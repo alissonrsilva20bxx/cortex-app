@@ -1,11 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Clock } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
+import { SkeletonList } from "./Skeleton";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { REDE_USERS, CATEGORIA_META, type RedePost } from "@/lib/mockRede";
+import {
+  REDE_USERS,
+  RECENT_SEARCHES,
+  CATEGORIA_META,
+  type RedePost,
+} from "@/lib/mockRede";
 
 interface Props {
   posts: RedePost[];
@@ -21,7 +27,20 @@ export function SearchScreen({
   onOpenPost,
 }: Props) {
   const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
   const q = query.trim().toLowerCase();
+
+  // Simula o instante de busca (dados são locais e instantâneos, mas a UI
+  // precisa mostrar o estado de carregamento pedido no escopo).
+  useEffect(() => {
+    if (q.length === 0) {
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(() => setSearching(false), 380);
+    return () => clearTimeout(t);
+  }, [q]);
 
   const pessoas = useMemo(
     () =>
@@ -72,12 +91,26 @@ export function SearchScreen({
       </div>
 
       {q.length === 0 ? (
-        <p
-          className="text-sm text-center py-12"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Busque por um nome, @usuário ou assunto.
-        </p>
+        <section>
+          <p className="section-label mb-3">Buscas recentes</p>
+          <div className="space-y-2">
+            {RECENT_SEARCHES.map((term) => (
+              <GlassCard
+                key={term}
+                radius="md"
+                onClick={() => setQuery(term)}
+                className="flex items-center gap-3 px-3.5 py-3"
+              >
+                <Clock size={15} style={{ color: "var(--text-muted)" }} />
+                <span className="text-sm" style={{ color: "var(--text-2)" }}>
+                  {term}
+                </span>
+              </GlassCard>
+            ))}
+          </div>
+        </section>
+      ) : searching ? (
+        <SkeletonList rows={4} />
       ) : (
         <div className="space-y-6">
           {pessoas.length > 0 && (

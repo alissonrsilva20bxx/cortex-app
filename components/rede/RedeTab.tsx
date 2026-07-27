@@ -202,6 +202,10 @@ export function RedeTab({ usuario }: Props) {
     setSentRequests((prev) => [...prev, userId]);
     toast.success("Solicitação enviada!");
   }
+  function removeFriend(userId: string) {
+    setFriends((prev) => prev.filter((id) => id !== userId));
+    toast.success("Amiga removida");
+  }
 
   // ── Chat ──
   function openChatThread(conversationId: string) {
@@ -466,6 +470,7 @@ export function RedeTab({ usuario }: Props) {
           onAccept={acceptRequest}
           onDecline={declineRequest}
           onSendRequest={sendRequest}
+          onRemoveFriend={removeFriend}
           onOpenChat={openChatWithUser}
           onOpenProfile={openAutor}
         />

@@ -228,6 +228,14 @@ export const DISCOVER_PEOPLE: DiscoverPerson[] = [
   { userId: "u8", motivo: "Perto de você" },
 ];
 
+/** Buscas recentes mockadas — mostradas na Busca antes de digitar algo. */
+export const RECENT_SEARCHES: string[] = [
+  "Camila Duarte",
+  "precificação",
+  "box braids",
+  "conquista",
+];
+
 export const CONVERSATIONS: Conversation[] = [
   {
     id: "c1",
