@@ -113,8 +113,14 @@ describe("RLS: RD-06 messaging", () => {
       .from("rede_conversas_participantes")
       .select("user_id")
       .eq("conversa_id", conversationAB);
+    const hiddenConversation = await redeClient(outsider.client)
+      .from("rede_conversas")
+      .select("id")
+      .eq("id", conversationAB);
     expect(hidden.error).toBeNull();
     expect(hidden.data).toHaveLength(0);
+    expect(hiddenConversation.error).toBeNull();
+    expect(hiddenConversation.data).toHaveLength(0);
   });
 
   it("lets participants insert/read messages and hides them from outsiders", async () => {
