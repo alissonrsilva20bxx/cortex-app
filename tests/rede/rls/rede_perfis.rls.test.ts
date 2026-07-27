@@ -108,6 +108,31 @@ describe("RLS: rede_perfis + rede_livelinks", () => {
     expect(data?.user_id).toBe(memberA.id);
   });
 
+  it("lets the owner update and delete their own profile", async () => {
+    const inserted = await untyped(memberB.client).from("rede_perfis").insert({
+      user_id: memberB.id,
+      nome_exibicao: "Membro B",
+      cor_avatar: "#654321",
+    });
+    expect(inserted.error).toBeNull();
+
+    const updated = await untyped(memberB.client)
+      .from("rede_perfis")
+      .update({ nome_exibicao: "Membro B atualizado" })
+      .eq("user_id", memberB.id)
+      .select("nome_exibicao");
+    expect(updated.error).toBeNull();
+    expect(updated.data).toEqual([{ nome_exibicao: "Membro B atualizado" }]);
+
+    const removed = await untyped(memberB.client)
+      .from("rede_perfis")
+      .delete()
+      .eq("user_id", memberB.id)
+      .select("user_id");
+    expect(removed.error).toBeNull();
+    expect(removed.data).toEqual([{ user_id: memberB.id }]);
+  });
+
   it("lets any member SELECT another member's profile", async () => {
     const { data, error } = await untyped(memberB.client)
       .from("rede_perfis")
@@ -231,6 +256,46 @@ describe("RLS: rede_perfis + rede_livelinks", () => {
 
       expect(error).toBeNull();
       expect(data).toHaveLength(0);
+    });
+
+    it("rejects creating a LiveLink for another member", async () => {
+      const { error } = await untyped(memberB.client)
+        .from("rede_livelinks")
+        .insert({
+          user_id: memberA.id,
+          titulo: "Forjado",
+          url: "https://example.test/forjado",
+          ordem: 1,
+        });
+
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe("42501");
+    });
+
+    it("lets only the owner update and delete their LiveLink", async () => {
+      const outsiderDelete = await untyped(memberB.client)
+        .from("rede_livelinks")
+        .delete()
+        .eq("id", livelinkId)
+        .select("id");
+      expect(outsiderDelete.error).toBeNull();
+      expect(outsiderDelete.data).toHaveLength(0);
+
+      const ownerUpdate = await untyped(memberA.client)
+        .from("rede_livelinks")
+        .update({ titulo: "Portfolio atualizado" })
+        .eq("id", livelinkId)
+        .select("titulo");
+      expect(ownerUpdate.error).toBeNull();
+      expect(ownerUpdate.data).toEqual([{ titulo: "Portfolio atualizado" }]);
+
+      const ownerDelete = await untyped(memberA.client)
+        .from("rede_livelinks")
+        .delete()
+        .eq("id", livelinkId)
+        .select("id");
+      expect(ownerDelete.error).toBeNull();
+      expect(ownerDelete.data).toEqual([{ id: livelinkId }]);
     });
   });
 });

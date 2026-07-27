@@ -302,6 +302,35 @@ describe("RLS: RD-05 conteudo (posts, comentarios, curtidas)", () => {
       expect(ownerUpdate.data).toEqual([{ id: neutralPostId }]);
     });
 
+    it("lets an owner create and delete a post, but hides deletion from another member", async () => {
+      const inserted = await redeClient(neutralReader.client)
+        .from("rede_posts")
+        .insert({
+          autor_id: neutralReader.id,
+          categoria: "dica",
+          texto: "post temporario para cobrir delete",
+        })
+        .select("id")
+        .single();
+      expect(inserted.error).toBeNull();
+
+      const outsiderDelete = await redeClient(blockerA.client)
+        .from("rede_posts")
+        .delete()
+        .eq("id", inserted.data?.id)
+        .select("id");
+      expect(outsiderDelete.error).toBeNull();
+      expect(outsiderDelete.data).toHaveLength(0);
+
+      const ownerDelete = await redeClient(neutralReader.client)
+        .from("rede_posts")
+        .delete()
+        .eq("id", inserted.data?.id)
+        .select("id");
+      expect(ownerDelete.error).toBeNull();
+      expect(ownerDelete.data).toEqual([{ id: inserted.data?.id }]);
+    });
+
     it("does not expose rede_posts to anon", async () => {
       const anon = redeClient(anonClient());
       const select = await anon.from("rede_posts").select("id");
