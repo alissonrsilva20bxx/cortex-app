@@ -34,16 +34,32 @@ Onze casos cobrindo o critério de aceite ("consulta por B a post anônimo de A 
 - `anon` não acessa a view.
 - `service_role` continua enxergando o `autor_id` real na tabela base (caminho administrativo intacto).
 
-## 4. Execução — status: **pendente, Docker local sem resposta**
+## 4. Execução — status: **validado, 2026-07-28** (bug de nomenclatura de migration encontrado e corrigido)
 
-Mesma situação operacional já registrada em `RD03_EVIDENCE.md` §3 e `RD02_EVIDENCE.md` §3: o stack Docker compartilhado (`supabase_db_cortex-app`) não respondeu a `docker exec ... pg_isready` em nenhuma das tentativas feitas durante esta sessão (2026-07-28), provavelmente por contenção com outro trabalho em paralelo no mesmo stack. Migration, código e teste estão prontos; falta rodar `supabase db reset && npm test` assim que o stack responder.
+Docker Desktop foi reiniciado manualmente nesta sessão (daemon travado, mesmo achado de `RD03_EVIDENCE.md` §3). Na primeira tentativa de `supabase db reset`, o CLI **pulou silenciosamente** a migration deste ticket:
+
+```
+Skipping migration 0009b_rede_posts_anonimos.sql... (file name must match pattern "<timestamp>_name.sql")
+```
+
+O prefixo `0009b` não é puramente numérico, então o Supabase CLI recusa o arquivo — a coluna `anonimo` e a view `rede_posts_publico` nunca teriam sido criadas em nenhum ambiente real, apesar do código e do teste estarem corretos. **Corrigido renomeando para `0013_rede_posts_anonimos.sql`** (via `git mv` — próximo número livre na sequência: RD08 já ocupa `0014`, RD15 já ocupa `0015`). Depois do rename, `supabase db reset` aplicou `0013` sem erro.
+
+```
+$ npm test -- rede_posts_anonimos
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Duration  2.26s
+```
+
+Nota: a seção 3 acima fala em "onze casos" — a suíte real (`tests/rede/rls/rede_posts_anonimos.rls.test.ts`) tem 9 `it()`, todos passando. Contagem da doc estava imprecisa, não há caso faltando em relação ao critério de aceite (a prova central "nem via join" está coberta).
 
 ## 5. `tsc --noEmit` — passou
 
 Diferente da validação contra o Postgres local, o typecheck não depende do Docker. Rodei `npm install` (504 pacotes) e `npx tsc --noEmit` neste worktree: **saída vazia, zero erros.** Confirma que `lib/database.types.ts` (coluna `anonimo` + view `rede_posts_publico`) e `lib/rede/feed.ts` (leitura pela view, `criarPost` sem `autor_id` na projeção de retorno) tipam corretamente entre si.
 
-## 6. O que ainda falta para fechar este ticket
+## 6. Fechamento
 
-- Confirmar `supabase status` antes de depender do stack.
-- `supabase db reset` (aplica `0009b` em sequência com tudo que já existe).
-- `npm test -- rede_posts_anonimos` e colar a saída aqui.
+- [x] `supabase status` confirmado.
+- [x] Migration renomeada `0009b` → `0013` e aplicada via `supabase db reset`.
+- [x] `npm test -- rede_posts_anonimos`: 9/9 passando.
