@@ -35,12 +35,20 @@ Primeiro teste de Storage da suíte — não havia padrão anterior pra seguir (
 
 `npm install` (504 pacotes) + `npx tsc --noEmit`: saída vazia, zero erros. O teste de Storage não depende de `lib/database.types.ts` (a API de Storage do client Supabase não é tipada pelo schema do Postgres), então não houve necessidade de mudança nos tipos para este ticket.
 
-## 4. Execução — status: **pendente, Docker local sem resposta**
+## 4. Execução — status: **validado, 2026-07-28**
 
-Mesma situação já registrada em `RD03_EVIDENCE.md`/`RD05B_EVIDENCE.md`: `docker exec ... pg_isready` contra `supabase_db_cortex-app` deu timeout em todas as tentativas desta sessão. Migration, policies e teste estão prontos; falta `supabase db reset && npm test` assim que o stack responder.
+Docker Desktop foi reiniciado manualmente nesta sessão (daemon travado, mesmo achado de `RD03_EVIDENCE.md` §3). `supabase db reset` aplicou `0014_rede_storage.sql` sem erro.
 
-## 5. O que ainda falta para fechar este ticket
+```
+$ npm test -- rede-midia
 
-- Confirmar `supabase status`.
-- `supabase db reset` (aplica `0014` em sequência).
-- `npm test -- rede-midia` e colar a saída aqui.
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Duration  2.57s
+```
+
+## 5. Fechamento
+
+- [x] `supabase status` confirmado.
+- [x] `supabase db reset` aplicado (`0014` em sequência).
+- [x] `npm test -- rede-midia`: 9/9 passando.
