@@ -47,10 +47,18 @@ $ npx vitest run tests/rede/routes/convites.route.test.ts
 
 Precisou de um ajuste real: `lib/database.types.ts` não tinha `rede_gerar_convite`/`rede_resgatar_convite` em `Functions` (as únicas duas RPCs novas deste ticket). Adicionadas seguindo o mesmo formato das entradas já existentes (`Args`/`Returns: Json`). Depois disso, `npx tsc --noEmit` roda limpo, zero erros.
 
-## 5. O que depende do Docker (pendente, mesma situação registrada em RD03/RD05B/RD08_EVIDENCE.md)
+## 5. Execução contra Postgres — status: **validado, 2026-07-28**
 
-O teste de rota (seção 3) já prova a correção do bug — é mockado, roda sem Postgres. O que falta, e depende do stack local responder:
+Docker Desktop foi reiniciado manualmente nesta sessão (daemon travado, mesmo achado de `RD03_EVIDENCE.md` §3). `supabase db reset` aplicou `0015_rede_convites_rpc.sql` sem erro. Reconfirmado `npm test -- convites`: 13/13 passando (mockado, agora com o schema real de pé).
 
-- Aplicar `0015_rede_convites_rpc.sql` via `supabase db reset`.
+Verificação adicional direto no Postgres (`\df`) confirmando que as duas RPCs existem com a assinatura exata que o teste espera — sem parâmetro `codigo` em texto puro, só os hashes:
+
+```
+public | rede_gerar_convite    | jsonb | codigo_hash text
+public | rede_resgatar_convite | jsonb | codigo_hash text, ip_hash text
+```
+
+O que ainda falta, fora do escopo deste ticket:
+
 - Um teste de integração real (`tests/rede/rls/rede_convites_rpc.rls.test.ts` ou equivalente) provando as duas funções contra Postgres de verdade: admin gera convite, não-admin recebe `42501`, resgate atômico sob concorrência (isso é especificamente o que `RD-19` cobre — testes de concorrência para convites — então não escrevi esse teste aqui de propósito, pra não pisar no território do Agente Auxiliar).
 - Confirmar rate limit de fato persiste entre chamadas (não só que o código compila).
