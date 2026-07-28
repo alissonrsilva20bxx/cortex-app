@@ -26,15 +26,23 @@ Sete casos, provando especificamente o critério de aceite do ticket ("teste aut
 - Delete pelo próprio dono é bloqueado (erro).
 - `service_role` ainda consegue gerenciar a linha normalmente — prova que a restrição é específica de `authenticated`, não uma trava geral que quebraria o caminho administrativo.
 
-## 3. Execução — status: **pendente, Docker local sem resposta**
+## 3. Execução — status: **validado, 2026-07-28**
 
-Tentei três vezes (`docker ps`, `docker exec ... pg_isready`) contra o mesmo stack Docker compartilhado (`supabase_db_cortex-app`) documentado como ponto de atenção em `RD02_EVIDENCE.md` §3 — todas as tentativas deram timeout (60s+) sem resposta do daemon. Consistente com o mesmo achado operacional já registrado: o stack é compartilhado entre worktrees/agentes, e pode estar ocupado com `supabase stop`/`start`/`db reset` de outro trabalho em paralelo (RD-19/RD-20, rodando por outro agente no mesmo período).
+Docker Desktop precisou ser reiniciado manualmente nesta sessão (daemon não respondia nem a `docker ps`, não só a comandos dentro do container — travamento do daemon, não contenção de Postgres). Depois do restart, `supabase db reset` aplicou `0001`–`0012` (incluindo `0007_rede_assinaturas.sql`) sem erro. `node_modules` estava ausente neste worktree (nunca instalado); rodei `npm install` antes de tudo.
 
-**Não apliquei a migration nem rodei o teste ainda.** Migration e teste estão escritos e prontos; a validação `supabase db reset && npm test` fica pendente da primeira janela em que o stack local responder. Vou tentar novamente ao longo da sessão sem bloquear o restante do trabalho (RD-05b, RD-08).
+```
+$ npm test -- rede_assinaturas
 
-## 4. O que ainda falta para fechar este ticket
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Duration  2.59s
+```
 
-- Rodar `npm run supabase:status` para confirmar o stack está de pé.
-- Rodar `supabase db reset` (ou `supabase start`, se os containers tiverem caído) para aplicar `0007` do zero junto com tudo que já existe.
-- Copiar URL/anon key/service_role key para `.env.test.local` (gitignored) se ainda não existir neste worktree.
-- Rodar `npm test -- rede_assinaturas` e colar a saída aqui.
+Os 7 casos passaram, incluindo a asserção central (`update status: "ativa"` pelo próprio dono bloqueado).
+
+## 4. Fechamento
+
+- [x] `npm run supabase:status` confirmado.
+- [x] `supabase db reset` aplicado.
+- [x] `.env.test.local` criado (gitignored, chaves padrão de dev local do Supabase).
+- [x] `npm test -- rede_assinaturas`: 7/7 passando.
