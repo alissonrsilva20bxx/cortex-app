@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KeyRound } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 
@@ -28,6 +28,14 @@ interface Props {
 export function SerialKeySheet({ open, onClose, onConfirm }: Props) {
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // BottomSheet mantém o conteúdo montado mesmo fechado (só translada pra
+  // fora da tela), então autoFocus no <input> dispararia o teclado assim
+  // que a aba Rede carregasse. Focar aqui, atrelado à abertura real.
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
 
   function handleClose() {
     setCode("");
@@ -83,12 +91,12 @@ export function SerialKeySheet({ open, onClose, onConfirm }: Props) {
           antecipada na Rede.
         </p>
         <input
+          ref={inputRef}
           style={inputStyle}
           placeholder="REDE-BETA-0001"
           value={code}
           onChange={(e) => setCode(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
-          autoFocus
         />
       </div>
     </BottomSheet>
