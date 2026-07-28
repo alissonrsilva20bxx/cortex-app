@@ -16,7 +16,7 @@ import { DespesaForm } from "@/components/financeiro/DespesaForm";
 import { ReceitaForm } from "@/components/financeiro/ReceitaForm";
 import { CofreTab } from "@/components/cofre/CofreTab";
 import { UploadSheet } from "@/components/cofre/UploadSheet";
-import { RedeTeaserTab } from "@/components/rede/RedeTeaserTab";
+import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
@@ -79,6 +79,10 @@ export default function Page() {
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
+
+  // Some com a BottomNav quando o composer do chat da Rede está focado,
+  // igual ao shell mockado de /dev-preview/app.
+  const [chatComposerFocused, setChatComposerFocused] = useState(false);
 
   const [homeCards, setHomeCards] =
     useState<HomeCardConfig>(DEFAULT_HOME_CARDS);
@@ -338,7 +342,12 @@ export default function Page() {
           <CofreTab userId={usuario.id} refreshTrigger={cofreRefreshKey} />
         )}
 
-        {!isNewUser && activeTab === "rede" && usuario && <RedeTeaserTab />}
+        {!isNewUser && activeTab === "rede" && usuario && (
+          <RedeGatedTab
+            usuario={usuario}
+            onChatFocusChange={setChatComposerFocused}
+          />
+        )}
 
         {!isNewUser && activeTab === "ajustes" && usuario && (
           <AjustesTab
@@ -353,7 +362,7 @@ export default function Page() {
         )}
       </main>
 
-      {!isNewUser && (
+      {!isNewUser && !chatComposerFocused && (
         <>
           <FAB
             activeTab={activeTab}

@@ -38,8 +38,8 @@ import type {
  * Cópia completa da casca do app (pílula flutuante, todas as 6 abas),
  * 100% mockada — sem Supabase de verdade, sem login. Existe só pra ver o
  * frontend inteiro navegável (transições, abas) antes de fechar como isso
- * se conecta ao backend real. A aba Rede usa o gate (vitrine → código de
- * acesso → Feed completo) em vez da RedeTeaserTab estática de produção.
+ * se conecta ao backend real. A aba Rede usa o mesmo RedeGatedTab (vitrine
+ * → código de acesso → Feed completo) da rota real.
  */
 
 const DEFAULT_HOME_CARDS: HomeCardConfig = {
