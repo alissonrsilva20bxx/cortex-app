@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { MessageCircle, UserPlus, Check } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { LiveLinksPreview } from "./LiveLinksSection";
 import { WishlistCard } from "./WishlistCard";
 import { PostCard } from "./PostCard";
+import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
 import type { LiveLink, RedePost, WishlistItem } from "@/lib/mockRede";
 import type { Usuario } from "@/lib/types";
 
@@ -52,6 +54,13 @@ export function PerfilPublicoScreen({
   onShare,
   onOpenMenu,
 }: Props) {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 420);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="pb-4">
       <ScreenHeader
@@ -59,105 +68,120 @@ export function PerfilPublicoScreen({
         onBack={onBack}
       />
 
-      <div className="flex flex-col items-center text-center mb-5">
-        <Avatar nome={nome} cor={cor} size="xl" />
-        <p
-          className="font-bold mt-3"
-          style={{ fontSize: "18px", color: "var(--text)" }}
-        >
-          {nome}
-        </p>
-        {handle && (
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            {handle}
-          </p>
-        )}
-        <p
-          className="text-sm mt-2 max-w-[280px]"
-          style={{ color: "var(--text-muted)" }}
-        >
-          {bio}
-        </p>
+      {loading ? (
+        <>
+          <SkeletonProfileHeader />
+          <div className="space-y-6">
+            <SkeletonList rows={2} />
+            <SkeletonGrid items={2} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-col items-center text-center mb-5">
+            <Avatar nome={nome} cor={cor} size="xl" />
+            <p
+              className="font-bold mt-3"
+              style={{ fontSize: "18px", color: "var(--text)" }}
+            >
+              {nome}
+            </p>
+            {handle && (
+              <p
+                className="text-xs mt-0.5"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {handle}
+              </p>
+            )}
+            <p
+              className="text-sm mt-2 max-w-[280px]"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {bio}
+            </p>
 
-        {!isMe && (
-          <div className="flex items-center gap-2 mt-4">
-            {isFriend ? (
-              <button
-                onClick={onOpenChat}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity active:opacity-70"
-                style={{ background: "var(--accent)", color: "#fff" }}
+            {!isMe && (
+              <div className="flex items-center gap-2 mt-4">
+                {isFriend ? (
+                  <button
+                    onClick={onOpenChat}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity active:opacity-70"
+                    style={{ background: "var(--accent)", color: "#fff" }}
+                  >
+                    <MessageCircle size={13} />
+                    Conversar
+                  </button>
+                ) : requestSent ? (
+                  <span
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold"
+                    style={{
+                      color: "var(--text-muted)",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <Check size={13} />
+                    Solicitação enviada
+                  </span>
+                ) : (
+                  <button
+                    onClick={onSendRequest}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity active:opacity-70"
+                    style={{ background: "var(--accent)", color: "#fff" }}
+                  >
+                    <UserPlus size={13} />
+                    Adicionar
+                  </button>
+                )}
+              </div>
+            )}
+            {isMe && (
+              <p
+                className="text-[11px] mt-4"
+                style={{ color: "var(--text-muted)" }}
               >
-                <MessageCircle size={13} />
-                Conversar
-              </button>
-            ) : requestSent ? (
-              <span
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold"
-                style={{
-                  color: "var(--text-muted)",
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                <Check size={13} />
-                Solicitação enviada
-              </span>
-            ) : (
-              <button
-                onClick={onSendRequest}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity active:opacity-70"
-                style={{ background: "var(--accent)", color: "#fff" }}
-              >
-                <UserPlus size={13} />
-                Adicionar
-              </button>
+                É assim que quem não é sua amiga vê seu perfil.
+              </p>
             )}
           </div>
-        )}
-        {isMe && (
-          <p
-            className="text-[11px] mt-4"
-            style={{ color: "var(--text-muted)" }}
-          >
-            É assim que quem não é sua amiga vê seu perfil.
-          </p>
-        )}
-      </div>
 
-      <section className="mb-6">
-        <p className="section-label mb-3">LiveLinks</p>
-        <LiveLinksPreview links={liveLinks} />
-      </section>
+          <section className="mb-6">
+            <p className="section-label mb-3">LiveLinks</p>
+            <LiveLinksPreview links={liveLinks} />
+          </section>
 
-      {wishlistPublico.length > 0 && (
-        <section className="mb-6">
-          <p className="section-label mb-3">Desejos</p>
-          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-            {wishlistPublico.map((item) => (
-              <WishlistCard key={item.id} item={item} compact />
-            ))}
-          </div>
-        </section>
-      )}
+          {wishlistPublico.length > 0 && (
+            <section className="mb-6">
+              <p className="section-label mb-3">Desejos</p>
+              <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+                {wishlistPublico.map((item) => (
+                  <WishlistCard key={item.id} item={item} compact />
+                ))}
+              </div>
+            </section>
+          )}
 
-      {posts.length > 0 && (
-        <section>
-          <p className="section-label mb-3">Publicações</p>
-          <div className="space-y-3">
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                usuarioNome={usuario.nome}
-                onToggleLike={onToggleLike}
-                onToggleSave={onToggleSave}
-                onComment={onComment}
-                onShare={onShare}
-                onOpenMenu={onOpenMenu}
-                onOpenAutor={() => {}}
-              />
-            ))}
-          </div>
-        </section>
+          {posts.length > 0 && (
+            <section>
+              <p className="section-label mb-3">Publicações</p>
+              <div className="space-y-3">
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    usuarioNome={usuario.nome}
+                    onToggleLike={onToggleLike}
+                    onToggleSave={onToggleSave}
+                    onComment={onComment}
+                    onShare={onShare}
+                    onOpenMenu={onOpenMenu}
+                    onOpenAutor={() => {}}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

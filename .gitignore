@@ -9,3 +9,4 @@ coverage
 *.db
 tsconfig.tsbuildinfo
 .vercel
+.scratch

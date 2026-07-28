@@ -22,14 +22,20 @@ const PLATFORM_ICON: Record<Plataforma, typeof Instagram> = {
   agenda: CalendarCheck,
 };
 
-/** Lista editável — usada em Meu espaço (ativar, reordenar). */
+/** Lista editável — usada em Meu espaço (ativar, reordenar, editar texto). */
 interface EditorProps {
   links: LiveLink[];
   onToggle: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
+  onEditLink: (link: LiveLink) => void;
 }
 
-export function LiveLinksEditor({ links, onToggle, onMove }: EditorProps) {
+export function LiveLinksEditor({
+  links,
+  onToggle,
+  onMove,
+  onEditLink,
+}: EditorProps) {
   const sorted = [...links].sort((a, b) => a.ordem - b.ordem);
   return (
     <div className="space-y-2">
@@ -51,7 +57,11 @@ export function LiveLinksEditor({ links, onToggle, onMove }: EditorProps) {
             >
               <Icon size={16} style={{ color: "var(--accent)" }} />
             </div>
-            <div className="min-w-0 flex-1">
+            <button
+              onClick={() => onEditLink(link)}
+              className="min-w-0 flex-1 text-left active:opacity-70 transition-opacity"
+              aria-label={`Editar ${link.label}`}
+            >
               <p
                 className="text-sm font-semibold truncate"
                 style={{ color: "var(--text)" }}
@@ -64,7 +74,7 @@ export function LiveLinksEditor({ links, onToggle, onMove }: EditorProps) {
               >
                 {link.url}
               </p>
-            </div>
+            </button>
             <div className="flex items-center gap-0.5 shrink-0">
               <button
                 onClick={() => onMove(link.id, "up")}

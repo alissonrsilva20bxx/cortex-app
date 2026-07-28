@@ -51,3 +51,39 @@ export function SkeletonList({ rows = 3 }: { rows?: number }) {
     </div>
   );
 }
+
+/** Silhueta de um WishlistCard (imagem + 2 linhas) — grade 2 colunas. */
+export function SkeletonCard() {
+  return (
+    <div className="glass-card rounded-2xl p-3">
+      <Block
+        width="100%"
+        height={130}
+        className="!rounded-[var(--radius-sm)]"
+      />
+      <Block width="70%" height={12} className="mt-2.5" />
+      <Block width="45%" height={10} className="mt-2" />
+    </div>
+  );
+}
+
+export function SkeletonGrid({ items = 4 }: { items?: number }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {Array.from({ length: items }, (_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </div>
+  );
+}
+
+/** Cabeçalho de perfil — avatar centralizado + nome + bio (Meu espaço, Perfil público). */
+export function SkeletonProfileHeader() {
+  return (
+    <div className="flex flex-col items-center mb-5">
+      <Block width={88} height={88} className="!rounded-full" />
+      <Block width={140} height={14} className="mt-3" />
+      <Block width={200} height={10} className="mt-2.5" />
+    </div>
+  );
+}

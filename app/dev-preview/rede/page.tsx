@@ -14,6 +14,9 @@ import type { TabId } from "@/lib/types";
  */
 export default function DevPreviewRede() {
   const [activeTab] = useState<TabId>("rede");
+  // Simula o teclado: enquanto o compositor do chat está focado, a
+  // BottomNav some (um teclado real cobriria/empurraria ela).
+  const [chatComposerFocused, setChatComposerFocused] = useState(false);
 
   return (
     <div
@@ -24,10 +27,15 @@ export default function DevPreviewRede() {
         className="flex-1 overflow-y-auto pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
-        <RedeTab usuario={mockUsuario} />
+        <RedeTab
+          usuario={mockUsuario}
+          onChatFocusChange={setChatComposerFocused}
+        />
       </main>
 
-      <BottomNav activeTab={activeTab} onChange={() => {}} />
+      {!chatComposerFocused && (
+        <BottomNav activeTab={activeTab} onChange={() => {}} />
+      )}
     </div>
   );
 }

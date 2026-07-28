@@ -2,7 +2,7 @@
 
 **App**: PWA para profissionais autônomos gerenciarem jobs, finanças e documentos.  
 **Stack**: Next.js 14 App Router · TypeScript · Tailwind CSS · Supabase · PWA  
-**Prod**: https://jobapp-bxx-project.vercel.app | **Supabase**: https://seciereacfestemdhzhp.supabase.co  
+**Prod**: https://cortex-app-bice.vercel.app (⚠️ deployada da `master`, parada em 01/07 — sem Marco 0-5, sem BottomNav pílula, sem Rede) | **Preview mais completo**: https://jobapp-git-release-rede-teaser-preview-bxx-project.vercel.app (branch `release/rede-teaser-preview`, pushada — tem Marco 0-5 + BottomNav pílula flutuante + Rede vitrine) | **Supabase**: https://seciereacfestemdhzhp.supabase.co  
 **Dev**: `npm run dev` → localhost:3000 | **Deploy**: `vercel --prod --yes`
 
 ## Arquivos-chave

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Share2 } from "lucide-react";
+import { Share2, Trash2 } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { Privacidade, WishlistEstado, WishlistItem } from "@/lib/mockRede";
 
@@ -56,6 +56,7 @@ interface Props {
   onClose: () => void;
   onSave: (data: FormState, existing: WishlistItem | null) => void;
   onShareToFeed: (item: WishlistItem) => void;
+  onDeleteRequest: (item: WishlistItem) => void;
 }
 
 export function WishlistForm({
@@ -64,6 +65,7 @@ export function WishlistForm({
   onClose,
   onSave,
   onShareToFeed,
+  onDeleteRequest,
 }: Props) {
   const [form, setForm] = useState<FormState>(EMPTY);
 
@@ -115,6 +117,16 @@ export function WishlistForm({
           >
             {item ? "Salvar alterações" : "Adicionar desejo"}
           </button>
+          {item && (
+            <button
+              onClick={() => onDeleteRequest(item)}
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-semibold text-sm transition-opacity active:opacity-80"
+              style={{ color: "var(--danger)" }}
+            >
+              <Trash2 size={15} />
+              Excluir desejo
+            </button>
+          )}
         </div>
       }
     >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Check, AlertCircle } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { findUser, type Conversation, type RedeMessage } from "@/lib/mockRede";
 
@@ -11,6 +11,9 @@ interface Props {
   onBack: () => void;
   onOpenAutor: (userId: string) => void;
   onSend: (texto: string) => void;
+  onRetry: (messageId: string) => void;
+  /** Simula o teclado empurrando o compositor pra cima e escondendo a BottomNav. */
+  onComposerFocusChange?: (focused: boolean) => void;
 }
 
 export function ChatThreadScreen({
@@ -19,14 +22,29 @@ export function ChatThreadScreen({
   onBack,
   onOpenAutor,
   onSend,
+  onRetry,
+  onComposerFocusChange,
 }: Props) {
   const [texto, setTexto] = useState("");
+  const [focused, setFocused] = useState(false);
   const user = findUser(conversation.userId);
+  // Mock leve de presença — sem campo novo no modelo, só deriva do que já
+  // existe (não lida agora ⇒ "ativa"; senão mostra a última hora vista).
+  const online = conversation.naoLidas > 0;
+  const statusText = online
+    ? "Ativa agora"
+    : `Visto por último: ${conversation.hora}`;
+  const isSending = messages.some((m) => m.deMim && m.status === "sending");
 
   function handleSend() {
-    if (!texto.trim()) return;
+    if (!texto.trim() || isSending) return;
     onSend(texto.trim());
     setTexto("");
+  }
+
+  function setComposerFocused(v: boolean) {
+    setFocused(v);
+    onComposerFocusChange?.(v);
   }
 
   return (
@@ -47,65 +65,115 @@ export function ChatThreadScreen({
             className="flex items-center gap-2.5 min-w-0"
           >
             <Avatar nome={user.nome} cor={user.cor} size="sm" />
-            <span
-              className="font-bold truncate"
-              style={{
-                fontSize: "17px",
-                letterSpacing: "-0.01em",
-                color: "var(--text)",
-              }}
-            >
-              {user.nome}
-            </span>
+            <div className="min-w-0 text-left">
+              <p
+                className="font-bold truncate"
+                style={{
+                  fontSize: "17px",
+                  letterSpacing: "-0.01em",
+                  color: "var(--text)",
+                }}
+              >
+                {user.nome}
+              </p>
+              <p
+                className="flex items-center gap-1.5 text-[11px] truncate"
+                style={{ color: online ? "var(--accent)" : "var(--text-2)" }}
+              >
+                {online && (
+                  <span
+                    className="rounded-full shrink-0"
+                    style={{ width: 6, height: 6, background: "var(--accent)" }}
+                  />
+                )}
+                {statusText}
+              </p>
+            </div>
           </button>
         )}
       </div>
 
       {/* Bolhas */}
       <div className="space-y-2.5">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`flex ${m.deMim ? "justify-end" : "justify-start"}`}
-          >
+        {messages.map((m) => {
+          const failed = m.deMim && m.status === "error";
+          const sending = m.deMim && m.status === "sending";
+          return (
             <div
-              className="max-w-[78%] px-4 py-2.5 text-sm leading-relaxed"
-              style={{
-                background: m.deMim ? "var(--accent)" : "var(--surface)",
-                color: m.deMim ? "#fff" : "var(--text)",
-                border: m.deMim ? "none" : "1px solid var(--border-color)",
-                borderRadius: "18px",
-                borderBottomRightRadius: m.deMim ? "4px" : "18px",
-                borderBottomLeftRadius: m.deMim ? "18px" : "4px",
-              }}
+              key={m.id}
+              className={`flex ${m.deMim ? "justify-end" : "justify-start"}`}
             >
-              {m.texto}
-              <div
-                className="text-[10px] mt-1"
+              <button
+                onClick={() => failed && onRetry(m.id)}
+                disabled={!failed}
+                className="max-w-[78%] px-4 py-2.5 text-sm leading-relaxed text-left"
                 style={{
-                  color: m.deMim
-                    ? "rgb(255 255 255 / 0.7)"
-                    : "var(--text-muted)",
+                  background: m.deMim ? "var(--accent)" : "var(--surface)",
+                  color: m.deMim ? "#fff" : "var(--text)",
+                  border: failed
+                    ? "1px solid var(--danger)"
+                    : m.deMim
+                      ? "none"
+                      : "1px solid var(--border-color)",
+                  borderRadius: "18px",
+                  borderBottomRightRadius: m.deMim ? "4px" : "18px",
+                  borderBottomLeftRadius: m.deMim ? "18px" : "4px",
+                  opacity: sending ? 0.6 : 1,
+                  cursor: failed ? "pointer" : "default",
                 }}
               >
-                {m.hora}
-              </div>
+                {m.texto}
+                <div
+                  className="flex items-center gap-1 text-[10px] mt-1"
+                  style={{
+                    color: failed
+                      ? "var(--danger)"
+                      : m.deMim
+                        ? "rgb(255 255 255 / 0.7)"
+                        : "var(--text-2)",
+                  }}
+                >
+                  {sending && (
+                    <>
+                      <Loader2 size={10} className="animate-spin" />
+                      Enviando…
+                    </>
+                  )}
+                  {failed && (
+                    <>
+                      <AlertCircle size={10} />
+                      Falha ao enviar · toque para tentar novamente
+                    </>
+                  )}
+                  {!sending && !failed && (
+                    <>
+                      {m.hora}
+                      {m.deMim && <Check size={11} />}
+                    </>
+                  )}
+                </div>
+              </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Campo de envio fixo */}
+      {/* Campo de envio fixo — sobe e some da BottomNav quando "o teclado abre" */}
       <div
         className="fixed left-0 right-0 z-40 flex items-center gap-2 px-4"
         style={{
-          bottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
+          bottom: focused
+            ? "calc(272px + env(safe-area-inset-bottom, 0px))"
+            : "calc(94px + env(safe-area-inset-bottom, 0px))",
+          transition: "bottom 0.25s cubic-bezier(0.32, 0.72, 0, 1)",
         }}
       >
         <input
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onFocus={() => setComposerFocused(true)}
+          onBlur={() => setComposerFocused(false)}
           placeholder="Escreva uma mensagem…"
           className="flex-1 text-sm"
           style={{
@@ -121,7 +189,7 @@ export function ChatThreadScreen({
         />
         <button
           onClick={handleSend}
-          disabled={!texto.trim()}
+          disabled={!texto.trim() || isSending}
           aria-label="Enviar"
           className="flex items-center justify-center rounded-full shrink-0 transition-opacity active:opacity-70 disabled:opacity-40"
           style={{
@@ -131,7 +199,11 @@ export function ChatThreadScreen({
             boxShadow: "var(--glow-sm)",
           }}
         >
-          <Send size={16} color="#fff" />
+          {isSending ? (
+            <Loader2 size={16} color="#fff" className="animate-spin" />
+          ) : (
+            <Send size={16} color="#fff" />
+          )}
         </button>
       </div>
     </div>

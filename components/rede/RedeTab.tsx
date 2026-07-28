@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, EyeOff, Flag, Instagram, MessageCircle } from "lucide-react";
+import {
+  Link2,
+  Flag,
+  Pencil,
+  Trash2,
+  Bookmark,
+  Send,
+  Share2,
+  X,
+} from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { FeedScreen } from "./FeedScreen";
 import { SearchScreen } from "./SearchScreen";
@@ -19,6 +28,8 @@ import { PostComposer } from "./PostComposer";
 import { CommentsSheet } from "./CommentsSheet";
 import { RedeNotificationsSheet } from "./RedeNotificationsSheet";
 import { OptionsSheet } from "./OptionsSheet";
+import { ShareToChatSheet } from "./ShareToChatSheet";
+import { LiveLinkForm } from "./LiveLinkForm";
 import {
   REDE_POSTS,
   FRIEND_IDS,
@@ -57,9 +68,11 @@ type RedeScreen =
 
 interface Props {
   usuario: Usuario;
+  /** Simula o teclado abrindo — repassado até a página, que esconde a BottomNav. */
+  onChatFocusChange?: (focused: boolean) => void;
 }
 
-export function RedeTab({ usuario }: Props) {
+export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const toast = useToast();
 
   // ── Navegação: pilha local, sem 2ª barra de navegação (o Feed é a base) ──
@@ -96,6 +109,13 @@ export function RedeTab({ usuario }: Props) {
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
   const [menuPost, setMenuPost] = useState<RedePost | null>(null);
   const [sharePost, setSharePost] = useState<RedePost | null>(null);
+  const [deleteConfirmPost, setDeleteConfirmPost] = useState<RedePost | null>(
+    null
+  );
+  const [editingPost, setEditingPost] = useState<RedePost | null>(null);
+  const [shareToConvoPost, setShareToConvoPost] = useState<RedePost | null>(
+    null
+  );
   const [wishlistFormOpen, setWishlistFormOpen] = useState(false);
   const [editingWishlist, setEditingWishlist] = useState<WishlistItem | null>(
     null
@@ -103,6 +123,11 @@ export function RedeTab({ usuario }: Props) {
   const [clienteDetail, setClienteDetail] = useState<Cliente | null>(null);
   const [clienteFormOpen, setClienteFormOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
+  const [deleteConfirmWishlist, setDeleteConfirmWishlist] =
+    useState<WishlistItem | null>(null);
+  const [deleteConfirmCliente, setDeleteConfirmCliente] =
+    useState<Cliente | null>(null);
+  const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
 
   const unreadChats = conversations.reduce((s, c) => s + c.naoLidas, 0);
   const unreadNotifs = notificacoes.filter((n) => !n.lida).length;
@@ -150,6 +175,7 @@ export function RedeTab({ usuario }: Props) {
           : p
       )
     );
+    toast.success("Comentário publicado!");
   }
 
   function handlePublish(data: {
@@ -184,6 +210,36 @@ export function RedeTab({ usuario }: Props) {
     toast.success("Publicação enviada!");
   }
 
+  function saveEditedPost(
+    postId: string,
+    data: {
+      texto: string;
+      tipo: RedePost["tipo"];
+      categoria: RedePost["categoria"];
+      anonimo: boolean;
+    }
+  ) {
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              texto: data.texto,
+              tipo: data.tipo,
+              categoria: data.categoria,
+            }
+          : p
+      )
+    );
+    toast.success("Publicação atualizada!");
+  }
+
+  function deletePost(postId: string) {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    setDeleteConfirmPost(null);
+    toast.success("Publicação excluída");
+  }
+
   function openAutor(autorId: string) {
     if (autorId === "anon") return;
     push({ type: "perfilPublico", userId: autorId });
@@ -205,6 +261,16 @@ export function RedeTab({ usuario }: Props) {
   function removeFriend(userId: string) {
     setFriends((prev) => prev.filter((id) => id !== userId));
     toast.success("Amiga removida");
+  }
+
+  // ── Notificações ──
+  function markNotifRead(id: string) {
+    setNotificacoes((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, lida: true } : n))
+    );
+  }
+  function markAllNotifsRead() {
+    setNotificacoes((prev) => prev.map((n) => ({ ...n, lida: true })));
   }
 
   // ── Chat ──
@@ -231,15 +297,33 @@ export function RedeTab({ usuario }: Props) {
     setMessages((prev) => ({ ...prev, [nova.id]: [] }));
     push({ type: "chatThread", conversationId: nova.id });
   }
+  // "erro" é um gatilho de demonstração — digitar exatamente essa palavra
+  // mostra o estado de falha de envio de propósito, pra dar pra revisar sem
+  // depender de sorte num delay aleatório.
+  function settleMessage(
+    conversationId: string,
+    messageId: string,
+    status: "sent" | "error"
+  ) {
+    setMessages((prev) => ({
+      ...prev,
+      [conversationId]: (prev[conversationId] ?? []).map((m) =>
+        m.id === messageId ? { ...m, status } : m
+      ),
+    }));
+  }
+
   function sendMessage(conversationId: string, texto: string) {
+    const id = `m-${Date.now()}`;
     const msg: RedeMessage = {
-      id: `m-${Date.now()}`,
+      id,
       deMim: true,
       texto,
       hora: new Date().toLocaleTimeString("pt-BR", {
         hour: "2-digit",
         minute: "2-digit",
       }),
+      status: "sending",
     };
     setMessages((prev) => ({
       ...prev,
@@ -252,6 +336,38 @@ export function RedeTab({ usuario }: Props) {
           : c
       )
     );
+    const failed = texto.trim().toLowerCase() === "erro";
+    setTimeout(
+      () => settleMessage(conversationId, id, failed ? "error" : "sent"),
+      700
+    );
+  }
+
+  function retrySend(conversationId: string, messageId: string) {
+    setMessages((prev) => ({
+      ...prev,
+      [conversationId]: (prev[conversationId] ?? []).map((m) =>
+        m.id === messageId ? { ...m, status: "sending" } : m
+      ),
+    }));
+    setTimeout(() => settleMessage(conversationId, messageId, "sent"), 700);
+  }
+
+  function sharePostToChat(conversationId: string) {
+    if (!shareToConvoPost) return;
+    const preview =
+      shareToConvoPost.texto.length > 60
+        ? `${shareToConvoPost.texto.slice(0, 60)}…`
+        : shareToConvoPost.texto;
+    sendMessage(conversationId, `📎 Compartilhou uma publicação: "${preview}"`);
+    const user = findUser(
+      conversations.find((c) => c.id === conversationId)?.userId ?? ""
+    );
+    toast.success(
+      user ? `Publicação enviada para ${user.nome}!` : "Publicação enviada!"
+    );
+    setShareToConvoPost(null);
+    setSharePost(null);
   }
 
   // ── LiveLinks ──
@@ -277,6 +393,15 @@ export function RedeTab({ usuario }: Props) {
   }
   function shareProfile() {
     toast.success("Link do perfil copiado!");
+  }
+  function saveLiveLink(id: string, data: { label: string; url: string }) {
+    setLiveLinks((prev) =>
+      prev.map((l) =>
+        l.id === id ? { ...l, label: data.label, url: data.url } : l
+      )
+    );
+    setEditingLiveLink(null);
+    toast.success("LiveLink atualizado!");
   }
 
   // ── Wishlist ──
@@ -321,6 +446,13 @@ export function RedeTab({ usuario }: Props) {
     }
     setWishlistFormOpen(false);
     setEditingWishlist(null);
+  }
+  function deleteWishlist(id: string) {
+    setWishlistItems((prev) => prev.filter((w) => w.id !== id));
+    setDeleteConfirmWishlist(null);
+    setWishlistFormOpen(false);
+    setEditingWishlist(null);
+    toast.success("Desejo excluído");
   }
   function shareWishlistToFeed(item: WishlistItem) {
     const novo: RedePost = {
@@ -393,6 +525,12 @@ export function RedeTab({ usuario }: Props) {
     setEditingCliente(null);
     setClienteDetail(null);
   }
+  function deleteCliente(id: string) {
+    setClientes((prev) => prev.filter((c) => c.id !== id));
+    setDeleteConfirmCliente(null);
+    setClienteDetail(null);
+    toast.success("Cliente excluído");
+  }
 
   // ── Perfil público: dados derivados ──
   function buildProfile(userId: string) {
@@ -434,10 +572,7 @@ export function RedeTab({ usuario }: Props) {
           unreadChats={unreadChats}
           unreadNotifs={unreadNotifs}
           onOpenSearch={() => push({ type: "busca" })}
-          onOpenNotifs={() => {
-            setNotifSheetOpen(true);
-            setNotificacoes((prev) => prev.map((n) => ({ ...n, lida: true })));
-          }}
+          onOpenNotifs={() => setNotifSheetOpen(true)}
           onOpenChat={() => push({ type: "chatList" })}
           onOpenMeuEspaco={() => push({ type: "meuEspaco" })}
           onOpenAmigas={() => push({ type: "amigas" })}
@@ -497,6 +632,8 @@ export function RedeTab({ usuario }: Props) {
               onBack={pop}
               onOpenAutor={openAutor}
               onSend={(texto) => sendMessage(convo.id, texto)}
+              onRetry={(messageId) => retrySend(convo.id, messageId)}
+              onComposerFocusChange={onChatFocusChange}
             />
           );
         })()}
@@ -512,6 +649,7 @@ export function RedeTab({ usuario }: Props) {
           onBack={pop}
           onToggleLiveLink={toggleLiveLink}
           onMoveLiveLink={moveLiveLink}
+          onEditLiveLink={(link) => setEditingLiveLink(link)}
           onShareProfile={shareProfile}
           onOpenWishlist={() => push({ type: "wishlist" })}
           onOpenClientes={() => push({ type: "clientes" })}
@@ -587,8 +725,13 @@ export function RedeTab({ usuario }: Props) {
         open={composerOpen}
         usuarioNome={usuario.nome}
         tipoInicial={composerTipoInicial}
-        onClose={() => setComposerOpen(false)}
+        editingPost={editingPost}
+        onClose={() => {
+          setComposerOpen(false);
+          setEditingPost(null);
+        }}
         onPublish={handlePublish}
+        onSaveEdit={saveEditedPost}
       />
 
       <CommentsSheet
@@ -604,35 +747,87 @@ export function RedeTab({ usuario }: Props) {
         onClose={() => setNotifSheetOpen(false)}
         notificacoes={notificacoes}
         onOpenProfile={openAutor}
+        onMarkRead={markNotifRead}
+        onMarkAllRead={markAllNotifsRead}
       />
 
       <OptionsSheet
         open={!!menuPost}
         title="Publicação"
         onClose={() => setMenuPost(null)}
+        options={
+          !menuPost
+            ? []
+            : menuPost.autorId === "me"
+              ? [
+                  {
+                    key: "editar",
+                    label: "Editar",
+                    Icon: Pencil,
+                    onSelect: () => {
+                      setEditingPost(menuPost);
+                      setComposerOpen(true);
+                    },
+                  },
+                  {
+                    key: "excluir",
+                    label: "Excluir",
+                    Icon: Trash2,
+                    danger: true,
+                    onSelect: () => setDeleteConfirmPost(menuPost),
+                  },
+                  {
+                    key: "cancelar",
+                    label: "Cancelar",
+                    Icon: X,
+                    onSelect: () => {},
+                  },
+                ]
+              : [
+                  {
+                    key: "salvar",
+                    label: menuPost.salvoPorMim
+                      ? "Remover dos salvos"
+                      : "Salvar publicação",
+                    Icon: Bookmark,
+                    onSelect: () => toggleSave(menuPost.id),
+                  },
+                  {
+                    key: "denunciar",
+                    label: "Denunciar",
+                    Icon: Flag,
+                    danger: true,
+                    onSelect: () => toast.success("Denúncia enviada, obrigada"),
+                  },
+                  {
+                    key: "cancelar",
+                    label: "Cancelar",
+                    Icon: X,
+                    onSelect: () => {},
+                  },
+                ]
+        }
+      />
+
+      <OptionsSheet
+        open={!!deleteConfirmPost}
+        title="Excluir publicação?"
+        onClose={() => setDeleteConfirmPost(null)}
         options={[
           {
-            key: "copiar",
-            label: "Copiar link",
-            Icon: Link2,
-            onSelect: () => toast.success("Link copiado!"),
-          },
-          {
-            key: "ocultar",
-            label: "Ocultar publicação",
-            Icon: EyeOff,
+            key: "confirmar",
+            label: "Sim, excluir",
+            Icon: Trash2,
+            danger: true,
             onSelect: () => {
-              if (menuPost)
-                setPosts((prev) => prev.filter((p) => p.id !== menuPost.id));
-              toast.success("Publicação ocultada");
+              if (deleteConfirmPost) deletePost(deleteConfirmPost.id);
             },
           },
           {
-            key: "denunciar",
-            label: "Denunciar",
-            Icon: Flag,
-            danger: true,
-            onSelect: () => toast.success("Denúncia enviada, obrigada"),
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
           },
         ]}
       />
@@ -643,16 +838,16 @@ export function RedeTab({ usuario }: Props) {
         onClose={() => setSharePost(null)}
         options={[
           {
-            key: "whatsapp",
-            label: "Enviar no WhatsApp",
-            Icon: MessageCircle,
-            onSelect: () => toast.success("Abrindo WhatsApp…"),
+            key: "conversa",
+            label: "Enviar para uma conversa",
+            Icon: Send,
+            onSelect: () => setShareToConvoPost(sharePost),
           },
           {
-            key: "instagram",
-            label: "Compartilhar no Instagram",
-            Icon: Instagram,
-            onSelect: () => toast.success("Abrindo Instagram…"),
+            key: "externo",
+            label: "Compartilhar externamente",
+            Icon: Share2,
+            onSelect: () => toast.success("Abrindo compartilhamento…"),
           },
           {
             key: "copiar",
@@ -661,6 +856,19 @@ export function RedeTab({ usuario }: Props) {
             onSelect: () => toast.success("Link copiado!"),
           },
         ]}
+      />
+
+      <ShareToChatSheet
+        open={!!shareToConvoPost}
+        conversations={conversations}
+        onClose={() => setShareToConvoPost(null)}
+        onSelectConversation={sharePostToChat}
+      />
+
+      <LiveLinkForm
+        link={editingLiveLink}
+        onClose={() => setEditingLiveLink(null)}
+        onSave={saveLiveLink}
       />
 
       <WishlistForm
@@ -672,6 +880,10 @@ export function RedeTab({ usuario }: Props) {
         }}
         onSave={saveWishlist}
         onShareToFeed={shareWishlistToFeed}
+        onDeleteRequest={(item) => {
+          setWishlistFormOpen(false);
+          setDeleteConfirmWishlist(item);
+        }}
       />
 
       <ClienteDetailSheet
@@ -680,6 +892,10 @@ export function RedeTab({ usuario }: Props) {
         onEdit={(c) => {
           setEditingCliente(c);
           setClienteFormOpen(true);
+        }}
+        onDeleteRequest={(c) => {
+          setClienteDetail(null);
+          setDeleteConfirmCliente(c);
         }}
       />
 
@@ -691,6 +907,53 @@ export function RedeTab({ usuario }: Props) {
           setEditingCliente(null);
         }}
         onSave={saveCliente}
+      />
+
+      <OptionsSheet
+        open={!!deleteConfirmWishlist}
+        title="Excluir desejo?"
+        onClose={() => setDeleteConfirmWishlist(null)}
+        options={[
+          {
+            key: "confirmar",
+            label: "Sim, excluir",
+            Icon: Trash2,
+            danger: true,
+            onSelect: () => {
+              if (deleteConfirmWishlist)
+                deleteWishlist(deleteConfirmWishlist.id);
+            },
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
+          },
+        ]}
+      />
+
+      <OptionsSheet
+        open={!!deleteConfirmCliente}
+        title="Excluir cliente?"
+        onClose={() => setDeleteConfirmCliente(null)}
+        options={[
+          {
+            key: "confirmar",
+            label: "Sim, excluir",
+            Icon: Trash2,
+            danger: true,
+            onSelect: () => {
+              if (deleteConfirmCliente) deleteCliente(deleteConfirmCliente.id);
+            },
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
+          },
+        ]}
       />
     </div>
   );

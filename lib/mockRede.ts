@@ -79,6 +79,8 @@ export interface RedeMessage {
   deMim: boolean;
   texto: string;
   hora: string;
+  /** Só se aplica a mensagens minhas — ausente = já entregue (mock antigo). */
+  status?: "sending" | "sent" | "error";
 }
 
 export interface LiveLink {
@@ -112,8 +114,15 @@ export interface Cliente {
 
 export interface RedeNotificacao {
   id: string;
-  tipo: "curtida" | "comentario" | "solicitacao" | "mencao";
-  userId: string;
+  tipo:
+    | "curtida"
+    | "comentario"
+    | "solicitacao"
+    | "mencao"
+    | "mensagem"
+    | "aviso";
+  /** Ausente em avisos da comunidade — não partem de uma pessoa específica. */
+  userId?: string;
   texto: string;
   criadoEm: string;
   lida: boolean;
@@ -632,6 +641,22 @@ export const REDE_NOTIFICACOES: RedeNotificacao[] = [
     userId: "u4",
     texto: "mencionou você nos comentários",
     criadoEm: daysAgo(2),
+    lida: true,
+  },
+  {
+    id: "n5",
+    tipo: "mensagem",
+    userId: "u2",
+    texto: "te enviou uma mensagem",
+    criadoEm: hoursAgo(6),
+    lida: false,
+  },
+  {
+    id: "n6",
+    tipo: "aviso",
+    texto:
+      "Novidade: agora dá pra reordenar seus LiveLinks direto do Meu Espaço.",
+    criadoEm: daysAgo(3),
     lida: true,
   },
 ];

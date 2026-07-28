@@ -4,17 +4,21 @@ import { useEffect, useState } from "react";
 import { Image as ImageIcon, Gift, Link2, EyeOff } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { FilterChips } from "@/components/ui/FilterChips";
+import { useToast } from "@/components/Toast";
 import { Avatar } from "./Avatar";
 import {
   CATEGORIA_META,
   type PostCategoria,
   type PostTipo,
+  type RedePost,
 } from "@/lib/mockRede";
 
 interface Props {
   open: boolean;
   usuarioNome: string;
   tipoInicial?: PostTipo;
+  /** Presente = editando essa publicação em vez de criar uma nova. */
+  editingPost?: RedePost | null;
   onClose: () => void;
   onPublish: (data: {
     texto: string;
@@ -22,6 +26,15 @@ interface Props {
     categoria: PostCategoria;
     anonimo: boolean;
   }) => void;
+  onSaveEdit: (
+    postId: string,
+    data: {
+      texto: string;
+      tipo: PostTipo;
+      categoria: PostCategoria;
+      anonimo: boolean;
+    }
+  ) => void;
 }
 
 const CATEGORIA_OPTIONS = (Object.keys(CATEGORIA_META) as PostCategoria[]).map(
@@ -42,17 +55,28 @@ export function PostComposer({
   open,
   usuarioNome,
   tipoInicial,
+  editingPost,
   onClose,
   onPublish,
+  onSaveEdit,
 }: Props) {
+  const toast = useToast();
   const [texto, setTexto] = useState("");
   const [tipo, setTipo] = useState<PostTipo>("texto");
   const [categoria, setCategoria] = useState<PostCategoria>("dica");
   const [anonimo, setAnonimo] = useState(false);
 
   useEffect(() => {
-    if (open) setTipo(tipoInicial ?? "texto");
-  }, [open, tipoInicial]);
+    if (!open) return;
+    if (editingPost) {
+      setTexto(editingPost.texto);
+      setTipo(editingPost.tipo);
+      setCategoria(editingPost.categoria);
+      setAnonimo(editingPost.anonimo);
+    } else {
+      setTipo(tipoInicial ?? "texto");
+    }
+  }, [open, tipoInicial, editingPost]);
 
   function reset() {
     setTexto("");
@@ -63,7 +87,20 @@ export function PostComposer({
 
   function handlePublish() {
     if (!texto.trim()) return;
-    onPublish({ texto: texto.trim(), tipo, categoria, anonimo });
+    if (anonimo && tipo !== "texto") {
+      toast.error("Anexos não ficam disponíveis em publicações anônimas.");
+      return;
+    }
+    if (editingPost) {
+      onSaveEdit(editingPost.id, {
+        texto: texto.trim(),
+        tipo,
+        categoria,
+        anonimo,
+      });
+    } else {
+      onPublish({ texto: texto.trim(), tipo, categoria, anonimo });
+    }
     reset();
     onClose();
   }
@@ -75,7 +112,7 @@ export function PostComposer({
         reset();
         onClose();
       }}
-      title="Nova publicação"
+      title={editingPost ? "Editar publicação" : "Nova publicação"}
       footer={
         <button
           onClick={handlePublish}
@@ -83,7 +120,7 @@ export function PostComposer({
           className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-50"
           style={{ background: "var(--accent)", color: "white" }}
         >
-          Publicar
+          {editingPost ? "Salvar alterações" : "Publicar"}
         </button>
       }
     >

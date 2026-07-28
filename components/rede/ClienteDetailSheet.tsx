@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Pencil } from "lucide-react";
+import { Phone, Pencil, Trash2 } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Avatar } from "./Avatar";
 import { CLIENTE_STATUS_META } from "./clienteStatus";
@@ -17,9 +17,15 @@ interface Props {
   cliente: Cliente | null;
   onClose: () => void;
   onEdit: (cliente: Cliente) => void;
+  onDeleteRequest: (cliente: Cliente) => void;
 }
 
-export function ClienteDetailSheet({ cliente, onClose, onEdit }: Props) {
+export function ClienteDetailSheet({
+  cliente,
+  onClose,
+  onEdit,
+  onDeleteRequest,
+}: Props) {
   return (
     <BottomSheet
       open={!!cliente}
@@ -27,14 +33,24 @@ export function ClienteDetailSheet({ cliente, onClose, onEdit }: Props) {
       title="Cliente"
       footer={
         cliente ? (
-          <button
-            onClick={() => onEdit(cliente)}
-            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80"
-            style={{ background: "var(--accent)", color: "white" }}
-          >
-            <Pencil size={15} />
-            Editar
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => onEdit(cliente)}
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80"
+              style={{ background: "var(--accent)", color: "white" }}
+            >
+              <Pencil size={15} />
+              Editar
+            </button>
+            <button
+              onClick={() => onDeleteRequest(cliente)}
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-semibold text-sm transition-opacity active:opacity-80"
+              style={{ color: "var(--danger)" }}
+            >
+              <Trash2 size={15} />
+              Excluir cliente
+            </button>
+          </div>
         ) : undefined
       }
     >

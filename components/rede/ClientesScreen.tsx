@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Plus, ShieldCheck } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { ClienteCard } from "./ClienteCard";
+import { SkeletonList } from "./Skeleton";
 import { FilterChips } from "@/components/ui/FilterChips";
 import type { Cliente, ClienteStatus } from "@/lib/mockRede";
 
@@ -32,6 +33,12 @@ export function ClientesScreen({
 }: Props) {
   const [query, setQuery] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 420);
+    return () => clearTimeout(t);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -101,12 +108,16 @@ export function ClientesScreen({
       />
 
       <div className="space-y-2">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <SkeletonList rows={4} />
+        ) : filtered.length === 0 ? (
           <p
             className="text-sm text-center py-12"
             style={{ color: "var(--text-muted)" }}
           >
-            Nenhum cliente encontrado.
+            {clientes.length === 0
+              ? "Você ainda não tem clientes cadastrados."
+              : "Nenhum cliente encontrado."}
           </p>
         ) : (
           filtered.map((c) => (

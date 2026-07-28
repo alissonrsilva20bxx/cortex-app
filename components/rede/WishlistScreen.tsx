@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { WishlistCard } from "./WishlistCard";
+import { SkeletonGrid } from "./Skeleton";
 import { FilterChips } from "@/components/ui/FilterChips";
 import type { WishlistEstado, WishlistItem } from "@/lib/mockRede";
 
@@ -25,6 +26,13 @@ interface Props {
 
 export function WishlistScreen({ items, onBack, onAddNew, onOpenItem }: Props) {
   const [filtro, setFiltro] = useState<FiltroEstado>("todos");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 420);
+    return () => clearTimeout(t);
+  }, []);
+
   const filtered =
     filtro === "todos" ? items : items.filter((i) => i.estado === filtro);
 
@@ -52,7 +60,9 @@ export function WishlistScreen({ items, onBack, onAddNew, onOpenItem }: Props) {
         className="mb-4"
       />
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <SkeletonGrid />
+      ) : filtered.length === 0 ? (
         <p
           className="text-sm text-center py-12"
           style={{ color: "var(--text-muted)" }}
