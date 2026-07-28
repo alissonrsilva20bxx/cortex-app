@@ -621,6 +621,7 @@ export type Database = {
       };
       rede_posts: {
         Row: {
+          anonimo: boolean;
           atualizado_em: string;
           autor_id: string;
           categoria: Database["public"]["Enums"]["rede_post_categoria"];
@@ -629,6 +630,7 @@ export type Database = {
           texto: string;
         };
         Insert: {
+          anonimo?: boolean;
           atualizado_em?: string;
           autor_id: string;
           categoria: Database["public"]["Enums"]["rede_post_categoria"];
@@ -637,6 +639,7 @@ export type Database = {
           texto: string;
         };
         Update: {
+          anonimo?: boolean;
           atualizado_em?: string;
           autor_id?: string;
           categoria?: Database["public"]["Enums"]["rede_post_categoria"];
@@ -669,7 +672,18 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      rede_posts_publico: {
+        Row: {
+          anonimo: boolean;
+          atualizado_em: string;
+          autor_id: string | null;
+          categoria: Database["public"]["Enums"]["rede_post_categoria"];
+          criado_em: string;
+          id: string;
+          texto: string;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       rede_conversation_is_unblocked: {

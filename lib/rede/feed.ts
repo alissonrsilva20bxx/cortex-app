@@ -4,12 +4,21 @@ import type { Database } from "../database.types";
 
 type RedeClient = SupabaseClient<Database>;
 type Post = Database["public"]["Tables"]["rede_posts"]["Row"];
+/**
+ * Feed reads go through this view, never the base table directly -- see
+ * supabase/migrations/0009b_rede_posts_anonimos.sql. The base table's
+ * `autor_id` column has no SELECT grant for `authenticated` at all; the view
+ * is the only path that can return it, and only when the post isn't
+ * anonymous, or the caller is the author, or the caller is an admin.
+ */
+type PostPublico = Database["public"]["Views"]["rede_posts_publico"]["Row"];
 type Comentario = Database["public"]["Tables"]["rede_comentarios"]["Row"];
 type Categoria = Database["public"]["Enums"]["rede_post_categoria"];
 
 export type CriarPostInput = {
   categoria: Categoria;
   texto: string;
+  anonimo?: boolean;
 };
 
 export type CriarComentarioInput = {
@@ -38,9 +47,9 @@ async function obterUsuarioId(client: RedeClient): Promise<string> {
   return user.id;
 }
 
-export async function listarFeed(client: RedeClient): Promise<Post[]> {
+export async function listarFeed(client: RedeClient): Promise<PostPublico[]> {
   const { data, error } = await client
-    .from("rede_posts")
+    .from("rede_posts_publico")
     .select("*")
     .order("criado_em", { ascending: false });
 
@@ -51,10 +60,21 @@ export async function listarFeed(client: RedeClient): Promise<Post[]> {
   return data;
 }
 
+/**
+ * autor_id fica de fora da projeção de propósito: a tabela base não
+ * concede SELECT nessa coluna para `authenticated` (migration 0009b), nem
+ * mesmo para o próprio dono logo após o insert -- ler o próprio autor_id
+ * de volta exigiria passar pela view (rede_posts_publico), que já devolve
+ * o valor real para o dono. O chamador já sabe quem é (acabou de se
+ * autenticar), então não há necessidade prática de o eco do insert incluir
+ * essa coluna.
+ */
+export type PostCriado = Omit<Post, "autor_id">;
+
 export async function criarPost(
   client: RedeClient,
   input: CriarPostInput
-): Promise<Post> {
+): Promise<PostCriado> {
   const autorId = await obterUsuarioId(client);
   const { data, error } = await client
     .from("rede_posts")
@@ -62,8 +82,9 @@ export async function criarPost(
       autor_id: autorId,
       categoria: input.categoria,
       texto: input.texto,
+      anonimo: input.anonimo ?? false,
     })
-    .select()
+    .select("id, categoria, texto, anonimo, criado_em, atualizado_em")
     .single();
 
   if (error) {
