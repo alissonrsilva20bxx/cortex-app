@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Bell, Calendar, Users, Smartphone } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { isIOS, isStandalone } from "@/lib/platform";
@@ -30,7 +31,13 @@ export function NotificacoesSheet({
   onNeedsInstall,
   busy,
 }: Props) {
-  const blockedByIOS = isIOS() && !isStandalone();
+  // Mesma razão do InstallSheet: navigator não existe no servidor, então
+  // calcular isso direto no render divergiria da hidratação num iPhone
+  // real e forçaria o React a remontar a árvore inteira no cliente.
+  const [blockedByIOS, setBlockedByIOS] = useState(false);
+  useEffect(() => {
+    setBlockedByIOS(isIOS() && !isStandalone());
+  }, []);
 
   if (blockedByIOS) {
     return (

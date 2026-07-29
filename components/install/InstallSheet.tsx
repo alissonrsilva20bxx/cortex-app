@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   SquarePlus,
   ChevronDown,
@@ -107,7 +108,13 @@ function MenuRowMock({
 
 export function InstallSheet({ open, onClose }: Props) {
   const { canPromptInstall, promptInstall } = useInstallPrompt();
-  const ios = isIOS();
+  // isIOS() lê navigator, que não existe no servidor -- calcular direto no
+  // render divergiria entre a primeira pintura (SSR: sempre false) e a
+  // hidratação num iPhone real (true), o que faz o React descartar a
+  // árvore inteira e remontar tudo do zero no cliente. Falso na primeira
+  // pintura (igual ao servidor), valor real só depois de montado.
+  const [ios, setIos] = useState(false);
+  useEffect(() => setIos(isIOS()), []);
 
   async function handleInstallClick() {
     const accepted = await promptInstall();
