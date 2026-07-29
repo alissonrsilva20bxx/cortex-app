@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { KeyRound } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { useToast } from "@/components/Toast";
 
 const inputStyle: React.CSSProperties = {
   background: "var(--surface)",
@@ -24,8 +25,8 @@ interface Props {
   onConfirm: () => void;
 }
 
-/** Qualquer código libera — o foco aqui é a transição, não validação real. */
 export function SerialKeySheet({ open, onClose, onConfirm }: Props) {
+  const toast = useToast();
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,14 +44,27 @@ export function SerialKeySheet({ open, onClose, onConfirm }: Props) {
     onClose();
   }
 
-  function handleConfirm() {
-    if (!code.trim()) return;
+  async function handleConfirm() {
+    if (!code.trim() || submitting) return;
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const res = await fetch("/api/rede/convites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "resgatar", codigo: code.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Não foi possível resgatar o convite.");
+        return;
+      }
       setCode("");
       onConfirm();
-    }, 550);
+    } catch {
+      toast.error("Não foi possível resgatar o convite.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -97,6 +111,18 @@ export function SerialKeySheet({ open, onClose, onConfirm }: Props) {
           value={code}
           onChange={(e) => setCode(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+          name="codigo-convite-rede"
+          autoComplete="one-time-code"
+          autoCorrect="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          // Safari trata "Código de acesso" como campo de credencial e
+          // oferece o ícone de senha salva do iCloud Chaveiro — que ele
+          // posiciona errado dentro de sheets com transform (flutua solto
+          // colado na BottomNav). autoComplete="off" não bastou (Safari
+          // ignora "off" quando já decidiu que parece senha por conta
+          // própria); "one-time-code" é o valor que a própria Apple
+          // recomenda pra campo de código recebido, não credencial salva.
         />
       </div>
     </BottomSheet>

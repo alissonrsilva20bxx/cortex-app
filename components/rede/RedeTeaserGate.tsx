@@ -14,13 +14,8 @@ import {
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { useToast } from "@/components/Toast";
 import { Avatar } from "./Avatar";
-
-/**
- * Cópia visual da vitrine oficial (RedeTeaserTab) só pro shell mockado em
- * /dev-preview/app — o botão principal abre o gate de serial key em vez do
- * sheet de espera da beta. RedeTeaserTab.tsx real não é tocado.
- */
 
 const BENEFICIOS = [
   { Icon: Sparkles, texto: "Trocar experiências com segurança" },
@@ -178,12 +173,39 @@ function ComingSoonRow({
   );
 }
 
+/** Qual sheet do gate está visível — dono é o componente pai (RedeGatedTab),
+ * garantindo no máximo um aberto por vez entre os três (inclui o
+ * SerialKeySheet, que o pai renderiza). */
+export type GateSheet = "preview" | "confirmacao" | "chave" | null;
+
 interface Props {
-  onRequestJoin: () => void;
+  sheet: GateSheet;
+  onSheetChange: (sheet: GateSheet) => void;
 }
 
-export function RedeTeaserGate({ onRequestJoin }: Props) {
-  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
+export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
+  const toast = useToast();
+  const [solicitando, setSolicitando] = useState(false);
+  const [jaExistiaSolicitacao, setJaExistiaSolicitacao] = useState(false);
+
+  async function handleQueroParticipar() {
+    if (solicitando) return;
+    setSolicitando(true);
+    try {
+      const res = await fetch("/api/rede/solicitar-beta", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Não foi possível enviar sua solicitação.");
+        return;
+      }
+      setJaExistiaSolicitacao(Boolean(data.jaExistia));
+      onSheetChange("confirmacao");
+    } catch {
+      toast.error("Não foi possível enviar sua solicitação.");
+    } finally {
+      setSolicitando(false);
+    }
+  }
 
   return (
     <div className="pb-4">
@@ -319,14 +341,22 @@ export function RedeTeaserGate({ onRequestJoin }: Props) {
 
       {/* Ações */}
       <button
-        onClick={onRequestJoin}
-        className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80"
+        onClick={handleQueroParticipar}
+        disabled={solicitando}
+        className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-50"
         style={{ background: "var(--accent)", color: "#fff" }}
       >
-        Quero participar da beta
+        {solicitando ? "Enviando…" : "Quero participar da beta"}
       </button>
       <button
-        onClick={() => setPreviewSheetOpen(true)}
+        onClick={() => onSheetChange("chave")}
+        className="w-full py-2.5 text-xs font-semibold active:opacity-70"
+        style={{ color: "var(--text-muted)" }}
+      >
+        Já tem um código de convite? Digite aqui
+      </button>
+      <button
+        onClick={() => onSheetChange("preview")}
         className="w-full flex items-center justify-center gap-1.5 py-3.5 text-sm font-semibold active:opacity-70"
         style={{ color: "var(--text)" }}
       >
@@ -335,8 +365,25 @@ export function RedeTeaserGate({ onRequestJoin }: Props) {
       </button>
 
       <BottomSheet
-        open={previewSheetOpen}
-        onClose={() => setPreviewSheetOpen(false)}
+        open={sheet === "confirmacao"}
+        onClose={() => onSheetChange(null)}
+        title="Solicitação de beta"
+      >
+        <div className="px-5 py-5">
+          <p
+            className="text-sm leading-relaxed"
+            style={{ color: "var(--text-2)" }}
+          >
+            {jaExistiaSolicitacao
+              ? "Você já está na lista de espera. Avisamos assim que seu convite estiver pronto."
+              : "Solicitação enviada! Avisamos assim que seu convite estiver pronto."}
+          </p>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheet === "preview"}
+        onClose={() => onSheetChange(null)}
         title="O que vem por aí"
       >
         <div className="px-5 py-3 pb-6">

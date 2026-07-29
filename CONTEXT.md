@@ -32,7 +32,9 @@ Uma das quatro pastas fixas dentro do Cofre: `Comprovantes`, `Conversas`, `Docum
 
 ## Rota Sensível
 
-Uma seção do app que exige revalidação do PIN antes do acesso, mesmo que o app já esteja desbloqueado. As Rotas Sensíveis são: **Jobs**, **Financeiro** e **Cofre**. A sessão de PIN numa Rota Sensível é válida por 5 minutos — após esse tempo, o PIN é exigido novamente.
+Uma seção do app que exige revalidação do PIN antes do acesso, mesmo que o app já esteja desbloqueado. As Rotas Sensíveis são: **Jobs**, **Financeiro**, **Cofre** e o **Chat da Rede** (sub-seção da Rede, não a aba inteira — feed, perfil e demais partes da Rede não exigem PIN). A sessão de PIN numa Rota Sensível é válida por 5 minutos — após esse tempo, o PIN é exigido novamente.
+
+Nota: a revalidação por rota (o timer de 5 minutos) ainda não está implementada em nenhuma Rota Sensível hoje — só o desbloqueio global do app na abertura existe (`components/pin/PinScreen.tsx`). Esta definição é o comportamento pretendido, não o estado atual do código.
 
 ## PIN
 
