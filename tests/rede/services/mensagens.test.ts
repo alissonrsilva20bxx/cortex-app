@@ -1,0 +1,230 @@
+import { describe, expect, it, vi } from "vitest";
+
+import {
+  abrirConversa1a1,
+  assinarMensagensConversa,
+  enviarMensagem,
+  marcarMensagemComoLida,
+} from "../../../lib/rede/mensagens";
+
+function clienteComUsuario(userId = "user-1") {
+  return {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: { id: userId } },
+        error: null,
+      }),
+    },
+    rpc: vi.fn(),
+    from: vi.fn(),
+    channel: vi.fn(),
+    removeChannel: vi.fn().mockResolvedValue("ok"),
+  };
+}
+
+describe("serviço de mensagens", () => {
+  it("abre a conversa 1:1 pelo RPC atômico e reutilizável", async () => {
+    const client = clienteComUsuario();
+    client.rpc.mockResolvedValue({ data: "conversa-1", error: null });
+
+    await expect(
+      abrirConversa1a1(client as never, { outroUserId: "user-2" })
+    ).resolves.toBe("conversa-1");
+    expect(client.rpc).toHaveBeenCalledWith("rede_criar_conversa_1a1", {
+      outro_user_id: "user-2",
+    });
+  });
+
+  it("envia texto como o usuário autenticado", async () => {
+    const mensagem = {
+      id: "mensagem-1",
+      conversa_id: "conversa-1",
+      autor_id: "user-1",
+      texto: "Olá",
+    };
+    const single = vi.fn().mockResolvedValue({ data: mensagem, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ insert });
+
+    await expect(
+      enviarMensagem(client as never, {
+        conversaId: "conversa-1",
+        texto: "Olá",
+      })
+    ).resolves.toEqual(mensagem);
+    expect(insert).toHaveBeenCalledWith({
+      conversa_id: "conversa-1",
+      autor_id: "user-1",
+      texto: "Olá",
+    });
+  });
+
+  it("marca uma mensagem recebida como lida", async () => {
+    const mensagem = { id: "mensagem-1", lida_em: "2026-07-26T00:00:00.000Z" };
+    const single = vi.fn().mockResolvedValue({ data: mensagem, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const eqConversa = vi.fn().mockReturnValue({ select });
+    const eqId = vi.fn().mockReturnValue({ eq: eqConversa });
+    const update = vi.fn().mockReturnValue({ eq: eqId });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ update });
+
+    await expect(
+      marcarMensagemComoLida(client as never, {
+        conversaId: "conversa-1",
+        mensagemId: "mensagem-1",
+      })
+    ).resolves.toEqual(mensagem);
+    expect(update).toHaveBeenCalledWith({ lida_em: expect.any(String) });
+    expect(eqId).toHaveBeenCalledWith("id", "mensagem-1");
+    expect(eqConversa).toHaveBeenCalledWith("conversa_id", "conversa-1");
+  });
+
+  it("só assina o canal depois de confirmar acesso visível à conversa", async () => {
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { id: "conversa-1" }, error: null });
+    const eq = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ eq });
+    const subscribe = vi.fn((callback) => callback("SUBSCRIBED"));
+    const channel = { on: vi.fn(), subscribe };
+    channel.on.mockReturnValue(channel);
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ select });
+    client.channel.mockReturnValue(channel);
+    const onMensagem = vi.fn();
+
+    await assinarMensagensConversa(client as never, {
+      conversaId: "conversa-1",
+      onMensagem,
+    });
+
+    expect(select).toHaveBeenCalledWith("id");
+    expect(eq).toHaveBeenCalledWith("id", "conversa-1");
+    expect(client.channel).toHaveBeenCalledWith(
+      expect.stringMatching(/^rede-mensagens:conversa-1:\d+$/)
+    );
+    expect(channel.on).toHaveBeenCalledWith(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "rede_mensagens",
+        filter: "conversa_id=eq.conversa-1",
+      },
+      expect.any(Function)
+    );
+    expect(subscribe).toHaveBeenCalledOnce();
+    const callback = channel.on.mock.calls[0][2];
+    const novaMensagem = { id: "mensagem-2", texto: "Cheguei" };
+    callback({ new: novaMensagem });
+    expect(onMensagem).toHaveBeenCalledWith(novaMensagem);
+  });
+
+  it("mantem duas assinaturas da mesma conversa em canais independentes", async () => {
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { id: "conversa-1" }, error: null });
+    const eq = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ eq });
+    const criarCanal = () => {
+      const channel = {
+        on: vi.fn(),
+        subscribe: vi.fn((callback) => callback("SUBSCRIBED")),
+      };
+      channel.on.mockReturnValue(channel);
+      return channel;
+    };
+    const primeiroCanal = criarCanal();
+    const segundoCanal = criarCanal();
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ select });
+    client.channel
+      .mockReturnValueOnce(primeiroCanal)
+      .mockReturnValueOnce(segundoCanal);
+
+    const primeiro = await assinarMensagensConversa(client as never, {
+      conversaId: "conversa-1",
+      onMensagem: vi.fn(),
+    });
+    const segundo = await assinarMensagensConversa(client as never, {
+      conversaId: "conversa-1",
+      onMensagem: vi.fn(),
+    });
+
+    expect(client.channel.mock.calls[0][0]).not.toBe(
+      client.channel.mock.calls[1][0]
+    );
+    await client.removeChannel(primeiro);
+    expect(client.removeChannel).toHaveBeenCalledWith(primeiroCanal);
+    expect(segundo).toBe(segundoCanal);
+  });
+
+  it.each(["CHANNEL_ERROR", "TIMED_OUT"] as const)(
+    "remove o canal e rejeita quando a assinatura termina com %s",
+    async (status) => {
+      const maybeSingle = vi
+        .fn()
+        .mockResolvedValue({ data: { id: "conversa-1" }, error: null });
+      const eq = vi.fn().mockReturnValue({ maybeSingle });
+      const select = vi.fn().mockReturnValue({ eq });
+      const channel = {
+        on: vi.fn(),
+        subscribe: vi.fn((callback) => callback(status)),
+      };
+      channel.on.mockReturnValue(channel);
+      const client = clienteComUsuario();
+      client.from.mockReturnValue({ select });
+      client.channel.mockReturnValue(channel);
+
+      await expect(
+        assinarMensagensConversa(client as never, {
+          conversaId: "conversa-1",
+          onMensagem: vi.fn(),
+        })
+      ).rejects.toThrow(`Falha ao assinar conversa: ${status}`);
+      expect(client.removeChannel).toHaveBeenCalledWith(channel);
+    }
+  );
+
+  it("não cria canal quando a conversa não está visível ao usuário", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const eq = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ eq });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ select });
+
+    await expect(
+      assinarMensagensConversa(client as never, {
+        conversaId: "conversa-1",
+        onMensagem: vi.fn(),
+      })
+    ).rejects.toThrow("Sem acesso à conversa");
+    expect(client.channel).not.toHaveBeenCalled();
+  });
+
+  it("recusa escrita e assinatura sem usuário autenticado", async () => {
+    const client = clienteComUsuario();
+    client.auth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    await expect(
+      enviarMensagem(client as never, {
+        conversaId: "conversa-1",
+        texto: "Olá",
+      })
+    ).rejects.toThrow("Usuário não autenticado");
+    await expect(
+      assinarMensagensConversa(client as never, {
+        conversaId: "conversa-1",
+        onMensagem: vi.fn(),
+      })
+    ).rejects.toThrow("Usuário não autenticado");
+    expect(client.from).not.toHaveBeenCalled();
+    expect(client.channel).not.toHaveBeenCalled();
+  });
+});
