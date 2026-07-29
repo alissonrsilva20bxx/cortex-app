@@ -23,6 +23,20 @@ function hashCodigo(codigo: string): string {
   return createHash("sha256").update(codigo).digest("hex");
 }
 
+// Teclados no celular (principalmente iOS "Smart Punctuation") trocam "-"
+// por travessão/en dash sozinhos, e minúscula/maiúscula não bate com o
+// hash se a pessoa digitar em vez de colar. Como o formato do código é
+// fixo (letras maiúsculas, dígitos, hífen), normalizar antes de hashear
+// não abre brecha nenhuma -- só aceita a mesma grafia que já esperávamos.
+// U+2010..U+2015 (hifen/travessoes tipograficos) + U+2212 (sinal de menos) --
+// variantes que teclados com "smart punctuation" (iOS) trocam sozinhos no
+// lugar do hifen comum ao digitar.
+const TRACOS_UNICODE = /[‐-―−]/g;
+
+function normalizarCodigo(bruto: string): string {
+  return bruto.trim().toUpperCase().replace(TRACOS_UNICODE, "-");
+}
+
 function obterIp(request: NextRequest): string {
   return (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -89,7 +103,7 @@ async function resgatarConvite(request: NextRequest, codigo: unknown) {
   // (^[0-9a-f]{64}$) e rejeita qualquer coisa que não seja um SHA-256 já
   // calculado. Ver supabase/migrations/0015_rede_convites_rpc.sql.
   const { data, error } = await supabase.rpc("rede_resgatar_convite", {
-    codigo_hash: hashCodigo(codigo),
+    codigo_hash: hashCodigo(normalizarCodigo(codigo)),
     ip_hash: hashCodigo(obterIp(request)),
   });
 
