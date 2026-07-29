@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { TabPanel } from "@/components/TabPanel";
 import { BottomNav } from "@/components/BottomNav";
 import { FAB } from "@/components/FAB";
 import { GreetingHeader } from "@/components/home/GreetingHeader";
@@ -282,83 +283,85 @@ export default function Page() {
           />
         )}
 
-        {!isNewUser && activeTab === "home" && usuario && (
+        {!isNewUser && usuario && (
           <>
-            <GreetingHeader usuario={usuario} />
-            <div className="mt-6 space-y-4">
-              {/* Card-herói: a projeção viva das metas (o coração) */}
-              <HeroCard
-                jobs={jobs}
-                metas={metas}
-                onGoToFinanceiro={() => handleTabChange("financeiro")}
-              />
-
-              {/* Próximo atendimento — o motor diário */}
-              {homeCards.nextJob && <NextJobCard jobs={jobs} />}
-
-              {/* Objetivos pessoais */}
-              {(homeCards.objetivos ?? true) && (
-                <ObjetivosCard
-                  objetivos={objetivos}
-                  onToggle={handleToggleObjetivo}
-                  onGoToMetas={() => handleTabChange("financeiro")}
+            <TabPanel tab="home" activeTab={activeTab}>
+              <GreetingHeader usuario={usuario} />
+              <div className="mt-6 space-y-4">
+                {/* Card-herói: a projeção viva das metas (o coração) */}
+                <HeroCard
+                  jobs={jobs}
+                  metas={metas}
+                  onGoToFinanceiro={() => handleTabChange("financeiro")}
                 />
-              )}
 
-              {/* Convite de instalação — dispensável, nunca compete com o
-                  card-herói pela atenção (por isso vem por último). */}
-              <InstallBanner />
-            </div>
+                {/* Próximo atendimento — o motor diário */}
+                {homeCards.nextJob && <NextJobCard jobs={jobs} />}
+
+                {/* Objetivos pessoais */}
+                {(homeCards.objetivos ?? true) && (
+                  <ObjetivosCard
+                    objetivos={objetivos}
+                    onToggle={handleToggleObjetivo}
+                    onGoToMetas={() => handleTabChange("financeiro")}
+                  />
+                )}
+
+                {/* Convite de instalação — dispensável, nunca compete com o
+                    card-herói pela atenção (por isso vem por último). */}
+                <InstallBanner />
+              </div>
+            </TabPanel>
+
+            <TabPanel tab="jobs" activeTab={activeTab}>
+              <JobsTab
+                userId={usuario.id}
+                refreshTrigger={jobsRefreshKey}
+                chartType={chartPrefs.jobs}
+                onEditJob={(job) => {
+                  setEditingJob(job);
+                  setJobFormOpen(true);
+                }}
+              />
+            </TabPanel>
+
+            <TabPanel tab="financeiro" activeTab={activeTab}>
+              <FinanceiroTab
+                userId={usuario.id}
+                refreshTrigger={financeiroRefreshKey}
+                chartType={chartPrefs.financeiro}
+                onInnerTabChange={setFinInnerTab}
+                onAddDespesa={() => setDespesaFormOpen(true)}
+                onAddReceita={() => setReceitaFormOpen(true)}
+                objetivos={objetivos}
+                onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
+                onToggleObjetivo={handleToggleObjetivo}
+              />
+            </TabPanel>
+
+            <TabPanel tab="cofre" activeTab={activeTab}>
+              <CofreTab userId={usuario.id} refreshTrigger={cofreRefreshKey} />
+            </TabPanel>
+
+            <TabPanel tab="rede" activeTab={activeTab}>
+              <RedeGatedTab
+                usuario={usuario}
+                onChatFocusChange={setChatComposerFocused}
+              />
+            </TabPanel>
+
+            <TabPanel tab="ajustes" activeTab={activeTab}>
+              <AjustesTab
+                userId={usuario.id}
+                jobs={jobs}
+                onSignOut={handleSignOut}
+                onPinHashChange={(h) => setPinHash(h)}
+                onHomeCardsChange={setHomeCards}
+                onCardStylesChange={setCardStyles}
+                onChartPrefsChange={setChartPrefs}
+              />
+            </TabPanel>
           </>
-        )}
-
-        {!isNewUser && activeTab === "jobs" && usuario && (
-          <JobsTab
-            userId={usuario.id}
-            refreshTrigger={jobsRefreshKey}
-            chartType={chartPrefs.jobs}
-            onEditJob={(job) => {
-              setEditingJob(job);
-              setJobFormOpen(true);
-            }}
-          />
-        )}
-
-        {!isNewUser && activeTab === "financeiro" && usuario && (
-          <FinanceiroTab
-            userId={usuario.id}
-            refreshTrigger={financeiroRefreshKey}
-            chartType={chartPrefs.financeiro}
-            onInnerTabChange={setFinInnerTab}
-            onAddDespesa={() => setDespesaFormOpen(true)}
-            onAddReceita={() => setReceitaFormOpen(true)}
-            objetivos={objetivos}
-            onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
-            onToggleObjetivo={handleToggleObjetivo}
-          />
-        )}
-
-        {!isNewUser && activeTab === "cofre" && usuario && (
-          <CofreTab userId={usuario.id} refreshTrigger={cofreRefreshKey} />
-        )}
-
-        {!isNewUser && activeTab === "rede" && usuario && (
-          <RedeGatedTab
-            usuario={usuario}
-            onChatFocusChange={setChatComposerFocused}
-          />
-        )}
-
-        {!isNewUser && activeTab === "ajustes" && usuario && (
-          <AjustesTab
-            userId={usuario.id}
-            jobs={jobs}
-            onSignOut={handleSignOut}
-            onPinHashChange={(h) => setPinHash(h)}
-            onHomeCardsChange={setHomeCards}
-            onCardStylesChange={setCardStyles}
-            onChartPrefsChange={setChartPrefs}
-          />
         )}
       </main>
 

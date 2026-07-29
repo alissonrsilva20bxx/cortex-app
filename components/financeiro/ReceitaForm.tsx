@@ -28,8 +28,6 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
   const [data, setData] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
 
-  if (!open) return null;
-
   async function handleSave() {
     const v = parseFloat(valor.replace(",", "."));
     if (!descricao.trim() || isNaN(v) || v <= 0) {
@@ -58,14 +56,23 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[200] flex flex-col justify-end"
-      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-[200]"
+          style={{
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={onClose}
+        />
+      )}
+
       <div
-        className="rounded-t-[28px] px-4 pt-5 pb-8"
+        className="fixed left-0 right-0 z-[200] rounded-t-[28px] px-4 pt-5 pb-8 max-h-[90vh] overflow-y-auto transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
+          bottom: 0,
+          transform: open ? "translateY(0)" : "translateY(105%)",
           background: "var(--bg)",
           border: "1px solid var(--border-color)",
           borderBottom: "none",
@@ -177,6 +184,6 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
           {loading ? "Salvando..." : "Salvar Entrada"}
         </button>
       </div>
-    </div>
+    </>
   );
 }

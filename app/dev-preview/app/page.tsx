@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { TabPanel } from "@/components/TabPanel";
 import { BottomNav } from "@/components/BottomNav";
 import { FAB } from "@/components/FAB";
 import { GreetingHeader } from "@/components/home/GreetingHeader";
@@ -196,29 +197,27 @@ export default function DevPreviewApp() {
         className="flex-1 overflow-y-auto pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
-        {activeTab === "home" && (
-          <>
-            <GreetingHeader usuario={usuario} />
-            <div className="mt-6 space-y-4">
-              <HeroCard
-                jobs={jobs}
-                metas={metas}
-                onGoToFinanceiro={() => handleTabChange("financeiro")}
+        <TabPanel tab="home" activeTab={activeTab}>
+          <GreetingHeader usuario={usuario} />
+          <div className="mt-6 space-y-4">
+            <HeroCard
+              jobs={jobs}
+              metas={metas}
+              onGoToFinanceiro={() => handleTabChange("financeiro")}
+            />
+            {homeCards.nextJob && <NextJobCard jobs={jobs} />}
+            {(homeCards.objetivos ?? true) && (
+              <ObjetivosCard
+                objetivos={objetivos}
+                onToggle={handleToggleObjetivo}
+                onGoToMetas={() => handleTabChange("financeiro")}
               />
-              {homeCards.nextJob && <NextJobCard jobs={jobs} />}
-              {(homeCards.objetivos ?? true) && (
-                <ObjetivosCard
-                  objetivos={objetivos}
-                  onToggle={handleToggleObjetivo}
-                  onGoToMetas={() => handleTabChange("financeiro")}
-                />
-              )}
-              <InstallBanner />
-            </div>
-          </>
-        )}
+            )}
+            <InstallBanner />
+          </div>
+        </TabPanel>
 
-        {activeTab === "jobs" && (
+        <TabPanel tab="jobs" activeTab={activeTab}>
           <JobsTab
             userId={usuario.id}
             refreshTrigger={jobsRefreshKey}
@@ -228,9 +227,9 @@ export default function DevPreviewApp() {
               setJobFormOpen(true);
             }}
           />
-        )}
+        </TabPanel>
 
-        {activeTab === "financeiro" && (
+        <TabPanel tab="financeiro" activeTab={activeTab}>
           <FinanceiroTab
             userId={usuario.id}
             refreshTrigger={financeiroRefreshKey}
@@ -242,20 +241,20 @@ export default function DevPreviewApp() {
             onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
             onToggleObjetivo={handleToggleObjetivo}
           />
-        )}
+        </TabPanel>
 
-        {activeTab === "cofre" && (
+        <TabPanel tab="cofre" activeTab={activeTab}>
           <CofreTab userId={usuario.id} refreshTrigger={cofreRefreshKey} />
-        )}
+        </TabPanel>
 
-        {activeTab === "rede" && (
+        <TabPanel tab="rede" activeTab={activeTab}>
           <RedeGatedTab
             usuario={usuario}
             onChatFocusChange={setChatComposerFocused}
           />
-        )}
+        </TabPanel>
 
-        {activeTab === "ajustes" && (
+        <TabPanel tab="ajustes" activeTab={activeTab}>
           <AjustesTab
             userId={usuario.id}
             jobs={jobs}
@@ -265,7 +264,7 @@ export default function DevPreviewApp() {
             onCardStylesChange={() => {}}
             onChartPrefsChange={setChartPrefs}
           />
-        )}
+        </TabPanel>
       </main>
 
       {!chatComposerFocused && (
