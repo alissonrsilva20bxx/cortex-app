@@ -56,7 +56,9 @@ export default function DevPreviewApp() {
   const mockInitialized = useRef(false);
   if (!mockInitialized.current) {
     mockInitialized.current = true;
-    __setMockSupabaseClient(createMockSupabaseClient(buildMockAppSeed()));
+    __setMockSupabaseClient(
+      createMockSupabaseClient(buildMockAppSeed(), MOCK_APP_USUARIO.id)
+    );
   }
 
   const toast = useToast();

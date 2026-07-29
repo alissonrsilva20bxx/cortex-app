@@ -37,6 +37,12 @@ export type ExcluirLiveLinkInput = {
   livelinkId: string;
 };
 
+export type AtualizarLiveLinkInput = {
+  livelinkId: string;
+  titulo: string;
+  url: string;
+};
+
 async function obterUsuarioId(client: RedeClient): Promise<string> {
   const {
     data: { user },
@@ -119,13 +125,7 @@ export async function atualizarPerfil(
   return data;
 }
 
-export async function criarLiveLink(
-  client: RedeClient,
-  input: CriarLiveLinkInput
-): Promise<LiveLink> {
-  const titulo = input.titulo.trim();
-  const url = input.url.trim();
-
+function validarTituloUrlLiveLink(titulo: string, url: string) {
   if (titulo.length === 0 || titulo.length > LIVELINK_TITULO_MAX_LENGTH) {
     throw new Error(
       `Título do LiveLink deve ter entre 1 e ${LIVELINK_TITULO_MAX_LENGTH} caracteres`
@@ -152,6 +152,15 @@ export async function criarLiveLink(
   ) {
     throw new Error("URL do LiveLink deve ser uma URL HTTPS absoluta");
   }
+}
+
+export async function criarLiveLink(
+  client: RedeClient,
+  input: CriarLiveLinkInput
+): Promise<LiveLink> {
+  const titulo = input.titulo.trim();
+  const url = input.url.trim();
+  validarTituloUrlLiveLink(titulo, url);
 
   const userId = await obterUsuarioId(client);
   const { data, error } = await client
@@ -162,6 +171,30 @@ export async function criarLiveLink(
       url,
       ordem: input.ordem,
     })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function atualizarLiveLink(
+  client: RedeClient,
+  input: AtualizarLiveLinkInput
+): Promise<LiveLink> {
+  const titulo = input.titulo.trim();
+  const url = input.url.trim();
+  validarTituloUrlLiveLink(titulo, url);
+
+  const userId = await obterUsuarioId(client);
+  const { data, error } = await client
+    .from("rede_livelinks")
+    .update({ titulo, url })
+    .eq("id", input.livelinkId)
+    .eq("user_id", userId)
     .select()
     .single();
 

@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import {
   UserPlus,
   MessageCircle,
-  Link2 as LinkIcon,
   Gift,
   Sparkles,
   Image as ImageIcon,
@@ -17,7 +16,6 @@ import { PostCard } from "./PostCard";
 import { Avatar } from "./Avatar";
 import {
   DISCOVER_PEOPLE,
-  LIVE_LINKS,
   WISHLIST_ITEMS,
   findUser,
   type RedePost,
@@ -92,7 +90,6 @@ export function FeedScreen({
   const wishlistPertoDaMeta = WISHLIST_ITEMS.find(
     (w) => w.estado !== "conquistado" && w.valorAtual / w.valorAlvo >= 0.7
   );
-  const livelinksIncompletos = LIVE_LINKS.filter((l) => !l.ativo).length;
   const discover = DISCOVER_PEOPLE.map((d) => findUser(d.userId)).filter(
     Boolean
   );
@@ -114,15 +111,6 @@ export function FeedScreen({
       title: `${unreadChats} mensagens não lidas`,
       subtitle: "Suas conversas estão esperando",
       onClick: onOpenChat,
-    });
-  }
-  if (livelinksIncompletos > 0) {
-    blocks.push({
-      key: "livelinks",
-      icon: <LinkIcon size={17} style={{ color: "var(--accent)" }} />,
-      title: "Complete seus LiveLinks",
-      subtitle: `${livelinksIncompletos} link${livelinksIncompletos > 1 ? "s" : ""} desativado${livelinksIncompletos > 1 ? "s" : ""} no seu perfil`,
-      onClick: onOpenMeuEspaco,
     });
   }
   if (wishlistPertoDaMeta) {

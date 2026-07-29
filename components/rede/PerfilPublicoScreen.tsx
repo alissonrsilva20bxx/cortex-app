@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { MessageCircle, UserPlus, Check } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
-import { LiveLinksPreview } from "./LiveLinksSection";
+import { LiveLinksPreview, type LiveLink } from "./LiveLinksSection";
 import { WishlistCard } from "./WishlistCard";
 import { PostCard } from "./PostCard";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
-import type { LiveLink, RedePost, WishlistItem } from "@/lib/mockRede";
+import type { RedePost, WishlistItem } from "@/lib/mockRede";
 import type { Usuario } from "@/lib/types";
 
 interface Props {

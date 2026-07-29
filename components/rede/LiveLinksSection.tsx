@@ -1,153 +1,167 @@
 "use client";
 
 import {
-  Instagram,
-  MessageCircle,
-  Music2,
-  Globe,
-  CalendarCheck,
+  Link2,
   ChevronUp,
   ChevronDown,
   ExternalLink,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Switch } from "@/components/ui/Switch";
-import type { LiveLink, Plataforma } from "@/lib/mockRede";
+import type { Database } from "@/lib/database.types";
 
-const PLATFORM_ICON: Record<Plataforma, typeof Instagram> = {
-  instagram: Instagram,
-  whatsapp: MessageCircle,
-  tiktok: Music2,
-  site: Globe,
-  agenda: CalendarCheck,
-};
+export type LiveLink = Database["public"]["Tables"]["rede_livelinks"]["Row"];
 
-/** Lista editável — usada em Meu espaço (ativar, reordenar, editar texto). */
+export const LIVELINKS_MAX = 5;
+
+/** Lista editável — usada em Meu espaço (adicionar, editar, excluir,
+ * reordenar). Lista livre estilo Linktree: sem catálogo fixo de
+ * plataforma nem toggle ativo/inativo, esses conceitos não existem no
+ * schema real (`rede_livelinks`: id, titulo, url, ordem). */
 interface EditorProps {
   links: LiveLink[];
-  onToggle: (id: string) => void;
   onMove: (id: string, direction: "up" | "down") => void;
-  onEditLink: (link: LiveLink) => void;
+  onEdit: (link: LiveLink) => void;
+  onDelete: (id: string) => void;
+  onAdd: () => void;
 }
 
 export function LiveLinksEditor({
   links,
-  onToggle,
   onMove,
-  onEditLink,
+  onEdit,
+  onDelete,
+  onAdd,
 }: EditorProps) {
   const sorted = [...links].sort((a, b) => a.ordem - b.ordem);
   return (
     <div className="space-y-2">
-      {sorted.map((link, i) => {
-        const Icon = PLATFORM_ICON[link.plataforma];
-        return (
-          <GlassCard
-            key={link.id}
-            radius="md"
-            className="flex items-center gap-3 px-3.5 py-3"
+      {sorted.length === 0 && (
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          Nenhum LiveLink ainda.
+        </p>
+      )}
+      {sorted.map((link, i) => (
+        <GlassCard
+          key={link.id}
+          radius="md"
+          className="flex items-center gap-3 px-3.5 py-3"
+        >
+          <div
+            className="flex items-center justify-center rounded-xl shrink-0"
+            style={{
+              width: 36,
+              height: 36,
+              background: "rgb(var(--accent-rgb) / 0.12)",
+            }}
           >
-            <div
-              className="flex items-center justify-center rounded-xl shrink-0"
-              style={{
-                width: 36,
-                height: 36,
-                background: "rgb(var(--accent-rgb) / 0.12)",
-              }}
+            <Link2 size={16} style={{ color: "var(--accent)" }} />
+          </div>
+          <button
+            onClick={() => onEdit(link)}
+            className="min-w-0 flex-1 text-left active:opacity-70 transition-opacity"
+            aria-label={`Editar ${link.titulo}`}
+          >
+            <p
+              className="text-sm font-semibold truncate"
+              style={{ color: "var(--text)" }}
             >
-              <Icon size={16} style={{ color: "var(--accent)" }} />
-            </div>
+              {link.titulo}
+            </p>
+            <p
+              className="text-xs truncate"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {link.url}
+            </p>
+          </button>
+          <div className="flex items-center gap-0.5 shrink-0">
             <button
-              onClick={() => onEditLink(link)}
-              className="min-w-0 flex-1 text-left active:opacity-70 transition-opacity"
-              aria-label={`Editar ${link.label}`}
+              onClick={() => onMove(link.id, "up")}
+              disabled={i === 0}
+              aria-label="Mover para cima"
+              className="p-1 active:opacity-60 disabled:opacity-25"
             >
-              <p
-                className="text-sm font-semibold truncate"
-                style={{ color: "var(--text)" }}
-              >
-                {link.label}
-              </p>
-              <p
-                className="text-xs truncate"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {link.url}
-              </p>
+              <ChevronUp size={15} style={{ color: "var(--text-muted)" }} />
             </button>
-            <div className="flex items-center gap-0.5 shrink-0">
-              <button
-                onClick={() => onMove(link.id, "up")}
-                disabled={i === 0}
-                aria-label="Mover para cima"
-                className="p-1 active:opacity-60 disabled:opacity-25"
-              >
-                <ChevronUp size={15} style={{ color: "var(--text-muted)" }} />
-              </button>
-              <button
-                onClick={() => onMove(link.id, "down")}
-                disabled={i === sorted.length - 1}
-                aria-label="Mover para baixo"
-                className="p-1 active:opacity-60 disabled:opacity-25"
-              >
-                <ChevronDown size={15} style={{ color: "var(--text-muted)" }} />
-              </button>
-            </div>
-            <Switch
-              checked={link.ativo}
-              onChange={() => onToggle(link.id)}
-              ariaLabel={link.label}
-            />
-          </GlassCard>
-        );
-      })}
+            <button
+              onClick={() => onMove(link.id, "down")}
+              disabled={i === sorted.length - 1}
+              aria-label="Mover para baixo"
+              className="p-1 active:opacity-60 disabled:opacity-25"
+            >
+              <ChevronDown size={15} style={{ color: "var(--text-muted)" }} />
+            </button>
+            <button
+              onClick={() => onDelete(link.id)}
+              aria-label={`Excluir ${link.titulo}`}
+              className="p-1 active:opacity-60"
+            >
+              <Trash2 size={15} style={{ color: "var(--text-muted)" }} />
+            </button>
+          </div>
+        </GlassCard>
+      ))}
+      {sorted.length < LIVELINKS_MAX && (
+        <button
+          onClick={onAdd}
+          className="w-full flex items-center justify-center gap-1.5 py-3 rounded-2xl text-sm font-semibold transition-opacity active:opacity-70"
+          style={{
+            border: "1px dashed var(--border-color)",
+            color: "var(--accent)",
+          }}
+        >
+          <Plus size={15} />
+          Adicionar LiveLink
+        </button>
+      )}
     </div>
   );
 }
 
-/** Preview público — só os links ativos, como quem visita o perfil vê. */
+/** Preview público — como quem visita o perfil vê, com links clicáveis de
+ * verdade. */
 export function LiveLinksPreview({ links }: { links: LiveLink[] }) {
-  const active = [...links]
-    .filter((l) => l.ativo)
-    .sort((a, b) => a.ordem - b.ordem);
+  const sorted = [...links].sort((a, b) => a.ordem - b.ordem);
 
-  if (active.length === 0) {
+  if (sorted.length === 0) {
     return (
       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-        Nenhum LiveLink ativo no momento.
+        Nenhum LiveLink ainda.
       </p>
     );
   }
 
   return (
     <div className="space-y-2">
-      {active.map((link) => {
-        const Icon = PLATFORM_ICON[link.plataforma];
-        return (
+      {sorted.map((link) => (
+        <a
+          key={link.id}
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="glass-card flex items-center gap-3 px-4 py-3 rounded-2xl active:opacity-80 transition-opacity"
+        >
           <div
-            key={link.id}
-            className="glass-card flex items-center gap-3 px-4 py-3 rounded-2xl"
+            className="flex items-center justify-center rounded-xl shrink-0"
+            style={{
+              width: 34,
+              height: 34,
+              background: "rgb(var(--accent-rgb) / 0.12)",
+            }}
           >
-            <div
-              className="flex items-center justify-center rounded-xl shrink-0"
-              style={{
-                width: 34,
-                height: 34,
-                background: "rgb(var(--accent-rgb) / 0.12)",
-              }}
-            >
-              <Icon size={15} style={{ color: "var(--accent)" }} />
-            </div>
-            <span
-              className="flex-1 text-sm font-semibold truncate"
-              style={{ color: "var(--text)" }}
-            >
-              {link.label}
-            </span>
-            <ExternalLink size={13} style={{ color: "var(--text-muted)" }} />
+            <Link2 size={15} style={{ color: "var(--accent)" }} />
           </div>
-        );
-      })}
+          <span
+            className="flex-1 text-sm font-semibold truncate"
+            style={{ color: "var(--text)" }}
+          >
+            {link.titulo}
+          </span>
+          <ExternalLink size={13} style={{ color: "var(--text-muted)" }} />
+        </a>
+      ))}
     </div>
   );
 }

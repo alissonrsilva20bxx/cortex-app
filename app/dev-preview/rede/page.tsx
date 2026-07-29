@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { RedeTab } from "@/components/rede/RedeTab";
 import { mockUsuario } from "@/lib/mock";
+import { __setMockSupabaseClient } from "@/lib/supabase";
+import { createMockSupabaseClient } from "@/lib/mockSupabase";
 import type { TabId } from "@/lib/types";
 
 /**
@@ -13,6 +15,17 @@ import type { TabId } from "@/lib/types";
  * localStorage pelo resto do app (Ajustes), como qualquer outra tela.
  */
 export default function DevPreviewRede() {
+  // Mesmo swap do /dev-preview/app: sem isso, chamadas reais de serviço
+  // (ex.: lib/rede/perfis.ts) bateriam no Supabase real com um user_id
+  // falso e sem sessão -- 400 garantido.
+  const mockInitialized = useRef(false);
+  if (!mockInitialized.current) {
+    mockInitialized.current = true;
+    __setMockSupabaseClient(
+      createMockSupabaseClient({ tables: {}, cofreFiles: [] }, mockUsuario.id)
+    );
+  }
+
   const [activeTab] = useState<TabId>("rede");
   // Simula o teclado: enquanto o compositor do chat está focado, a
   // BottomNav some (um teclado real cobriria/empurraria ela).

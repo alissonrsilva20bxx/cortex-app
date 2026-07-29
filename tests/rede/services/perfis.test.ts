@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  atualizarLiveLink,
   atualizarPerfil,
   buscarPerfil,
   criarLiveLink,
@@ -250,6 +251,77 @@ describe("serviço de perfis", () => {
     });
     expect(client.from).not.toHaveBeenCalled();
   });
+
+  it("atualiza título e URL de um LiveLink em nome do usuário autenticado", async () => {
+    const livelink = {
+      id: "livelink-1",
+      user_id: "user-1",
+      titulo: "Portfolio novo",
+      url: "https://example.test/novo",
+      ordem: 0,
+    };
+    const single = vi.fn().mockResolvedValue({ data: livelink, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const eqUser = vi.fn().mockReturnValue({ select });
+    const eqId = vi.fn().mockReturnValue({ eq: eqUser });
+    const update = vi.fn().mockReturnValue({ eq: eqId });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ update });
+
+    await expect(
+      atualizarLiveLink(client as never, {
+        livelinkId: "livelink-1",
+        titulo: "Portfolio novo",
+        url: "https://example.test/novo",
+      })
+    ).resolves.toEqual(livelink);
+    expect(update).toHaveBeenCalledWith({
+      titulo: "Portfolio novo",
+      url: "https://example.test/novo",
+    });
+    expect(eqId).toHaveBeenCalledWith("id", "livelink-1");
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+  });
+
+  it("normaliza espaços do título e da URL antes de atualizar um LiveLink", async () => {
+    const single = vi.fn().mockResolvedValue({ data: {}, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const eqUser = vi.fn().mockReturnValue({ select });
+    const eqId = vi.fn().mockReturnValue({ eq: eqUser });
+    const update = vi.fn().mockReturnValue({ eq: eqId });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ update });
+
+    await atualizarLiveLink(client as never, {
+      livelinkId: "livelink-1",
+      titulo: "  Portfolio  ",
+      url: "  https://example.test/portfolio  ",
+    });
+
+    expect(update).toHaveBeenCalledWith({
+      titulo: "Portfolio",
+      url: "https://example.test/portfolio",
+    });
+  });
+
+  it.each([
+    ["título vazio", "", "https://example.test", "Título do LiveLink"],
+    ["URL relativa", "Portfolio", "/portfolio", "URL do LiveLink"],
+  ])(
+    "recusa %s ao atualizar um LiveLink",
+    async (_caso, titulo, url, mensagem) => {
+      const client = clienteComUsuario();
+
+      await expect(
+        atualizarLiveLink(client as never, {
+          livelinkId: "livelink-1",
+          titulo,
+          url,
+        })
+      ).rejects.toThrow(mensagem);
+      expect(client.from).not.toHaveBeenCalled();
+    }
+  );
 
   it("exclui somente o LiveLink do usuário autenticado", async () => {
     const eqUser = vi.fn().mockResolvedValue({ error: null });

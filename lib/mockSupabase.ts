@@ -38,6 +38,7 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
   private orders: [string, boolean][] = [];
   private limitN: number | null = null;
   private wantsSingle = false;
+  private wantsMaybeSingle = false;
   private selectCols = "*";
   private payload: Row | Row[] | null = null;
   private upsertConflict: string | null = null;
@@ -70,6 +71,10 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
   }
   single() {
     this.wantsSingle = true;
+    return this;
+  }
+  maybeSingle() {
+    this.wantsMaybeSingle = true;
     return this;
   }
   insert(payload: Row | Row[]) {
@@ -136,6 +141,9 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
             ? { data: one as T, error: null }
             : { data: null, error: { message: "No rows found" } }
         );
+      }
+      if (this.wantsMaybeSingle) {
+        return delay({ data: (projected[0] as T) ?? null, error: null });
       }
       return delay({ data: projected as T, error: null });
     }
@@ -275,7 +283,10 @@ export interface MockSupabaseSeed {
   cofreFiles: StorageFileMeta[];
 }
 
-export function createMockSupabaseClient(seed: MockSupabaseSeed) {
+export function createMockSupabaseClient(
+  seed: MockSupabaseSeed,
+  authUserId?: string
+) {
   const store: Store = seed.tables;
   const bucket = new MockStorageBucket(seed.cofreFiles);
 
@@ -287,6 +298,36 @@ export function createMockSupabaseClient(seed: MockSupabaseSeed) {
       from(_bucket: string) {
         return bucket;
       },
+    },
+    // Só o suficiente pra código real que chama auth.getUser() (ex.:
+    // lib/rede/perfis.ts) não quebrar rodando contra o mock -- nenhuma
+    // sessão de verdade, só devolve o id combinado com o preview.
+    auth: {
+      async getUser() {
+        return authUserId
+          ? { data: { user: { id: authUserId } }, error: null }
+          : { data: { user: null }, error: null };
+      },
+    },
+    // Só cobre as RPCs que o client-side de fato chama direto (a maioria
+    // fica atrás das rotas de API, com seu próprio client server-side).
+    rpc(fn: string, params?: Record<string, unknown>) {
+      if (fn === "rede_reordenar_livelinks") {
+        const ids = (params?.livelink_ids as string[] | undefined) ?? [];
+        const rows = store["rede_livelinks"] ?? [];
+        ids.forEach((id, i) => {
+          const row = rows.find((r) => r.id === id);
+          if (row) row.ordem = i;
+        });
+        const sorted = [...rows].sort(
+          (a, b) => (a.ordem as number) - (b.ordem as number)
+        );
+        return delay({ data: sorted as unknown, error: null });
+      }
+      return delay({
+        data: null,
+        error: { message: `RPC mock não implementada: ${fn}` },
+      });
     },
   };
 }

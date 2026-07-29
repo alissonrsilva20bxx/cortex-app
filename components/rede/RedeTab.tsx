@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Link2,
   Flag,
@@ -30,6 +30,8 @@ import { RedeNotificationsSheet } from "./RedeNotificationsSheet";
 import { OptionsSheet } from "./OptionsSheet";
 import { ShareToChatSheet } from "./ShareToChatSheet";
 import { LiveLinkForm } from "./LiveLinkForm";
+import { ProfileEditForm } from "./ProfileEditForm";
+import { type LiveLink } from "./LiveLinksSection";
 import {
   REDE_POSTS,
   FRIEND_IDS,
@@ -37,23 +39,47 @@ import {
   DISCOVER_PEOPLE,
   CONVERSATIONS,
   MESSAGES,
-  LIVE_LINKS,
   WISHLIST_ITEMS,
   CLIENTES,
   REDE_NOTIFICACOES,
-  MY_BIO,
   findUser,
   type RedePost,
   type FriendRequest,
   type Conversation,
   type RedeMessage,
-  type LiveLink,
   type WishlistItem,
   type Cliente,
   type RedeNotificacao,
   type Privacidade,
 } from "@/lib/mockRede";
+import { supabase } from "@/lib/supabase";
+import {
+  buscarPerfil,
+  criarPerfil,
+  atualizarPerfil,
+  criarLiveLink,
+  atualizarLiveLink,
+  listarLiveLinks,
+  reordenarLiveLinks,
+  excluirLiveLink,
+} from "@/lib/rede/perfis";
+import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
+
+type Perfil = Database["public"]["Tables"]["rede_perfis"]["Row"];
+
+const CORES_AVATAR = [
+  "#ec4899",
+  "#8b5cf6",
+  "#06b6d4",
+  "#f59e0b",
+  "#10b981",
+  "#6366f1",
+];
+
+function corAvatarAleatoria(): string {
+  return CORES_AVATAR[Math.floor(Math.random() * CORES_AVATAR.length)];
+}
 
 type RedeScreen =
   | { type: "feed" }
@@ -75,6 +101,41 @@ interface Props {
 export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const toast = useToast();
 
+  // ── Perfil real + LiveLinks ──
+  const [perfil, setPerfil] = useState<Perfil | null>(null);
+  const [liveLinks, setLiveLinks] = useState<LiveLink[]>([]);
+  const [liveLinkFormOpen, setLiveLinkFormOpen] = useState(false);
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
+
+  // Existir em rede_perfis é o opt-in de entrar na Rede -- quem chegou até
+  // aqui já passou pelo gate, então cria silenciosamente na primeira visita
+  // (nome da conta, cor aleatória) em vez de pedir preenchimento antes de
+  // ver o Feed.
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      let p = await buscarPerfil(supabase, usuario.id);
+      if (!p) {
+        p = await criarPerfil(supabase, {
+          nomeExibicao: usuario.nome,
+          corAvatar: corAvatarAleatoria(),
+        });
+      }
+      if (!ativo) return;
+      setPerfil(p);
+      const links = await listarLiveLinks(supabase, usuario.id);
+      if (!ativo) return;
+      setLiveLinks(links);
+    })().catch((e) => {
+      console.error("[RedeTab perfil]", e);
+      toast.error("Não foi possível carregar seu perfil da Rede.");
+    });
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuario.id]);
+
   // ── Navegação: pilha local, sem 2ª barra de navegação (o Feed é a base) ──
   const [stack, setStack] = useState<RedeScreen[]>([{ type: "feed" }]);
   const screen = stack[stack.length - 1];
@@ -91,7 +152,6 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     useState<Conversation[]>(CONVERSATIONS);
   const [messages, setMessages] =
     useState<Record<string, RedeMessage[]>>(MESSAGES);
-  const [liveLinks, setLiveLinks] = useState<LiveLink[]>(LIVE_LINKS);
   const [wishlistItems, setWishlistItems] =
     useState<WishlistItem[]>(WISHLIST_ITEMS);
   const [clientes, setClientes] = useState<Cliente[]>(CLIENTES);
@@ -371,37 +431,81 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   }
 
   // ── LiveLinks ──
-  function toggleLiveLink(id: string) {
-    setLiveLinks((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, ativo: !l.ativo } : l))
-    );
-  }
-  function moveLiveLink(id: string, direction: "up" | "down") {
-    setLiveLinks((prev) => {
-      const sorted = [...prev].sort((a, b) => a.ordem - b.ordem);
-      const idx = sorted.findIndex((l) => l.id === id);
-      const swapWith = direction === "up" ? idx - 1 : idx + 1;
-      if (swapWith < 0 || swapWith >= sorted.length) return prev;
-      const a = sorted[idx];
-      const b = sorted[swapWith];
-      return prev.map((l) => {
-        if (l.id === a.id) return { ...l, ordem: b.ordem };
-        if (l.id === b.id) return { ...l, ordem: a.ordem };
-        return l;
+  async function moveLiveLink(id: string, direction: "up" | "down") {
+    const sorted = [...liveLinks].sort((a, b) => a.ordem - b.ordem);
+    const idx = sorted.findIndex((l) => l.id === id);
+    const swapWith = direction === "up" ? idx - 1 : idx + 1;
+    if (swapWith < 0 || swapWith >= sorted.length) return;
+    const reordered = [...sorted];
+    [reordered[idx], reordered[swapWith]] = [
+      reordered[swapWith],
+      reordered[idx],
+    ];
+    try {
+      const updated = await reordenarLiveLinks(supabase, {
+        ids: reordered.map((l) => l.id),
       });
-    });
+      setLiveLinks(updated);
+    } catch {
+      toast.error("Não foi possível reordenar os LiveLinks.");
+    }
   }
   function shareProfile() {
     toast.success("Link do perfil copiado!");
   }
-  function saveLiveLink(id: string, data: { label: string; url: string }) {
-    setLiveLinks((prev) =>
-      prev.map((l) =>
-        l.id === id ? { ...l, label: data.label, url: data.url } : l
-      )
-    );
-    setEditingLiveLink(null);
-    toast.success("LiveLink atualizado!");
+  async function saveLiveLink(
+    data: { titulo: string; url: string },
+    existing: LiveLink | null
+  ) {
+    try {
+      if (existing) {
+        const updated = await atualizarLiveLink(supabase, {
+          livelinkId: existing.id,
+          titulo: data.titulo,
+          url: data.url,
+        });
+        setLiveLinks((prev) =>
+          prev.map((l) => (l.id === updated.id ? updated : l))
+        );
+        toast.success("LiveLink atualizado!");
+      } else {
+        const created = await criarLiveLink(supabase, {
+          titulo: data.titulo,
+          url: data.url,
+          ordem: liveLinks.length,
+        });
+        setLiveLinks((prev) => [...prev, created]);
+        toast.success("LiveLink adicionado!");
+      }
+      setLiveLinkFormOpen(false);
+      setEditingLiveLink(null);
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Não foi possível salvar o LiveLink."
+      );
+    }
+  }
+  async function deleteLiveLink(id: string) {
+    try {
+      await excluirLiveLink(supabase, { livelinkId: id });
+      setLiveLinks((prev) => prev.filter((l) => l.id !== id));
+      toast.success("LiveLink excluído");
+    } catch {
+      toast.error("Não foi possível excluir o LiveLink.");
+    }
+  }
+  async function saveProfile(data: { nomeExibicao: string; bio: string }) {
+    try {
+      const updated = await atualizarPerfil(supabase, {
+        nomeExibicao: data.nomeExibicao,
+        bio: data.bio,
+      });
+      setPerfil(updated);
+      setProfileEditOpen(false);
+      toast.success("Perfil atualizado!");
+    } catch {
+      toast.error("Não foi possível salvar o perfil.");
+    }
   }
 
   // ── Wishlist ──
@@ -536,10 +640,10 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   function buildProfile(userId: string) {
     if (userId === "me") {
       return {
-        nome: usuario.nome,
+        nome: perfil?.nome_exibicao ?? usuario.nome,
         handle: undefined,
-        cor: undefined,
-        bio: MY_BIO,
+        cor: perfil?.cor_avatar,
+        bio: perfil?.bio ?? "",
         isMe: true,
       };
     }
@@ -640,16 +744,26 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
 
       {screen.type === "meuEspaco" && (
         <MeuEspacoScreen
-          usuario={usuario}
+          nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
+          bio={perfil?.bio ?? ""}
+          cor={perfil?.cor_avatar ?? "var(--accent)"}
           meusPosts={posts.filter((p) => p.autorId === "me")}
           liveLinks={liveLinks}
           wishlistItems={wishlistItems}
           clientesCount={clientes.length}
           defaultPrivacidade={defaultPrivacidade}
           onBack={pop}
-          onToggleLiveLink={toggleLiveLink}
           onMoveLiveLink={moveLiveLink}
-          onEditLiveLink={(link) => setEditingLiveLink(link)}
+          onEditLiveLink={(link) => {
+            setEditingLiveLink(link);
+            setLiveLinkFormOpen(true);
+          }}
+          onDeleteLiveLink={deleteLiveLink}
+          onAddLiveLink={() => {
+            setEditingLiveLink(null);
+            setLiveLinkFormOpen(true);
+          }}
+          onEditProfile={() => setProfileEditOpen(true)}
           onShareProfile={shareProfile}
           onOpenWishlist={() => push({ type: "wishlist" })}
           onOpenClientes={() => push({ type: "clientes" })}
@@ -670,6 +784,9 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           const wishlistPublico = profile.isMe
             ? wishlistItems.filter((w) => w.privacidade === "comunidade")
             : [];
+          // LiveLinks de outras pessoas ainda não são reais (isso é
+          // ticket 11, Amigas+Busca) -- só mostra os de verdade no "me".
+          const livelinksExibidos = profile.isMe ? liveLinks : [];
           return (
             <PerfilPublicoScreen
               nome={profile.nome}
@@ -679,7 +796,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
               isMe={profile.isMe}
               isFriend={isFriend}
               requestSent={sentRequests.includes(screen.userId)}
-              liveLinks={liveLinks}
+              liveLinks={livelinksExibidos}
               wishlistPublico={wishlistPublico}
               posts={posts.filter(
                 (p) => !p.anonimo && p.autorId === screen.userId
@@ -866,9 +983,23 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       />
 
       <LiveLinkForm
+        open={liveLinkFormOpen}
         link={editingLiveLink}
-        onClose={() => setEditingLiveLink(null)}
+        onClose={() => {
+          setLiveLinkFormOpen(false);
+          setEditingLiveLink(null);
+        }}
         onSave={saveLiveLink}
+      />
+
+      <ProfileEditForm
+        open={profileEditOpen}
+        initial={{
+          nomeExibicao: perfil?.nome_exibicao ?? usuario.nome,
+          bio: perfil?.bio ?? "",
+        }}
+        onClose={() => setProfileEditOpen(false)}
+        onSave={saveProfile}
       />
 
       <WishlistForm

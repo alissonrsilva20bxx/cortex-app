@@ -1,35 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Share2, ChevronRight, Users2 } from "lucide-react";
+import { Share2, ChevronRight, Users2, Pencil } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { LiveLinksEditor } from "./LiveLinksSection";
+import { LiveLinksEditor, type LiveLink } from "./LiveLinksSection";
 import { WishlistCard } from "./WishlistCard";
 import { PostCard } from "./PostCard";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
 import {
-  MY_BIO,
-  type LiveLink,
   type Privacidade,
   type RedePost,
   type WishlistItem,
 } from "@/lib/mockRede";
-import type { Usuario } from "@/lib/types";
 
 interface Props {
-  usuario: Usuario;
+  nomeExibicao: string;
+  bio: string;
+  cor: string;
   meusPosts: RedePost[];
   liveLinks: LiveLink[];
   wishlistItems: WishlistItem[];
   clientesCount: number;
   defaultPrivacidade: Privacidade;
   onBack: () => void;
-  onToggleLiveLink: (id: string) => void;
   onMoveLiveLink: (id: string, direction: "up" | "down") => void;
   onEditLiveLink: (link: LiveLink) => void;
+  onDeleteLiveLink: (id: string) => void;
+  onAddLiveLink: () => void;
+  onEditProfile: () => void;
   onShareProfile: () => void;
   onOpenWishlist: () => void;
   onOpenClientes: () => void;
@@ -43,16 +44,20 @@ interface Props {
 }
 
 export function MeuEspacoScreen({
-  usuario,
+  nomeExibicao,
+  bio,
+  cor,
   meusPosts,
   liveLinks,
   wishlistItems,
   clientesCount,
   defaultPrivacidade,
   onBack,
-  onToggleLiveLink,
   onMoveLiveLink,
   onEditLiveLink,
+  onDeleteLiveLink,
+  onAddLiveLink,
+  onEditProfile,
   onShareProfile,
   onOpenWishlist,
   onOpenClientes,
@@ -88,19 +93,30 @@ export function MeuEspacoScreen({
         <>
           {/* Identidade */}
           <div className="flex flex-col items-center text-center mb-5">
-            <Avatar nome={usuario.nome} size="xl" />
-            <p
-              className="font-bold mt-3"
-              style={{ fontSize: "18px", color: "var(--text)" }}
-            >
-              {usuario.nome}
-            </p>
-            <p
-              className="text-sm mt-1 max-w-[280px]"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {MY_BIO}
-            </p>
+            <Avatar nome={nomeExibicao} cor={cor} size="xl" />
+            <div className="flex items-center gap-1.5 mt-3">
+              <p
+                className="font-bold"
+                style={{ fontSize: "18px", color: "var(--text)" }}
+              >
+                {nomeExibicao}
+              </p>
+              <button
+                onClick={onEditProfile}
+                aria-label="Editar perfil"
+                className="p-1 active:opacity-60"
+              >
+                <Pencil size={14} style={{ color: "var(--text-muted)" }} />
+              </button>
+            </div>
+            {bio && (
+              <p
+                className="text-sm mt-1 max-w-[280px]"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {bio}
+              </p>
+            )}
             <button
               onClick={onOpenPerfilPublico}
               className="flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full text-xs font-semibold transition-opacity active:opacity-70"
@@ -130,9 +146,10 @@ export function MeuEspacoScreen({
             </div>
             <LiveLinksEditor
               links={liveLinks}
-              onToggle={onToggleLiveLink}
               onMove={onMoveLiveLink}
-              onEditLink={onEditLiveLink}
+              onEdit={onEditLiveLink}
+              onDelete={onDeleteLiveLink}
+              onAdd={onAddLiveLink}
             />
           </section>
 
@@ -209,7 +226,7 @@ export function MeuEspacoScreen({
                   <PostCard
                     key={post.id}
                     post={post}
-                    usuarioNome={usuario.nome}
+                    usuarioNome={nomeExibicao}
                     onToggleLike={onToggleLike}
                     onToggleSave={onToggleSave}
                     onComment={onComment}
