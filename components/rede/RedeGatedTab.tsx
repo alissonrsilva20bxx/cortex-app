@@ -30,8 +30,23 @@ export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
   // acesso liberado — sem isso, quem já desbloqueou via SerialKeySheet numa
   // sessão anterior cai na tela de gate de novo a cada recarregamento, já
   // que `unlocked` acima é só estado local.
+  //
+  // ?vitrine=1 na URL força a vitrine a aparecer mesmo numa conta já
+  // desbloqueada -- só pra quem está testando/mexendo no fluxo do gate
+  // repetidamente sem precisar revogar o convite no banco toda hora. Não é
+  // UI (ninguém digita isso sem saber que existe), então não conflita com a
+  // decisão de "sem UI de admin" da ticket 03.
   useEffect(() => {
     let ativo = true;
+    const forcarVitrine =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("vitrine") === "1";
+
+    if (forcarVitrine) {
+      setVerificandoAcesso(false);
+      return;
+    }
+
     supabase
       .from("rede_convites")
       .select("id")
