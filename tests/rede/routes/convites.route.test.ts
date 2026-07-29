@@ -164,8 +164,11 @@ describe("POST /api/rede/convites", () => {
       // deste endpoint chamava a RPC com `{ codigo: <texto puro> }` --
       // parâmetro errado (a função só tem `codigo_hash`) e valor errado
       // (nunca hasheado). Essa chamada quebraria 100% dos resgates.
+      // O código é normalizado (maiúsculas, trim, traço tipográfico -> "-")
+      // antes de ser hasheado -- ver normalizarCodigo em route.ts, criada
+      // pra tolerar Smart Punctuation do teclado do iOS trocando o hífen.
       expect(supabase.rpc).toHaveBeenCalledWith("rede_resgatar_convite", {
-        codigo_hash: hash("codigo-em-texto-puro"),
+        codigo_hash: hash("CODIGO-EM-TEXTO-PURO"),
         ip_hash: hash("203.0.113.7"),
       });
       const [, params] = supabase.rpc.mock.calls[0] as [
