@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RedeTeaserGate, type GateSheet } from "./RedeTeaserGate";
 import { SerialKeySheet } from "./SerialKeySheet";
 import { RedeTab } from "./RedeTab";
+import { supabase } from "@/lib/supabase";
 import type { Usuario } from "@/lib/types";
 
 interface Props {
@@ -22,7 +23,40 @@ interface Props {
  * empilharem visualmente ao mesmo tempo. */
 export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
   const [unlocked, setUnlocked] = useState(false);
+  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
   const [sheet, setSheet] = useState<GateSheet>(null);
+
+  // Um convite já resgatado por esse usuário é a única fonte de verdade pra
+  // acesso liberado — sem isso, quem já desbloqueou via SerialKeySheet numa
+  // sessão anterior cai na tela de gate de novo a cada recarregamento, já
+  // que `unlocked` acima é só estado local.
+  useEffect(() => {
+    let ativo = true;
+    supabase
+      .from("rede_convites")
+      .select("id")
+      .eq("usado_por", usuario.id)
+      .limit(1)
+      .then(({ data }) => {
+        if (!ativo) return;
+        if (data && data.length > 0) setUnlocked(true);
+        setVerificandoAcesso(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [usuario.id]);
+
+  if (verificandoAcesso) {
+    return (
+      <div className="flex justify-center pt-12">
+        <div
+          className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: "var(--accent)" }}
+        />
+      </div>
+    );
+  }
 
   if (unlocked) {
     return <RedeTab usuario={usuario} onChatFocusChange={onChatFocusChange} />;
