@@ -1,13 +1,23 @@
 import "server-only";
 
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "../../../../lib/supabase-server";
 
 export const runtime = "nodejs";
 
-const CODIGO_BYTES = 32;
+// Sem caracteres ambíguos (0/O, 1/I/L) -- código é ditado/copiado à mão.
+const ALFABETO_CODIGO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const SUFIXO_TAMANHO = 4;
+
+function gerarCodigoLegivel(): string {
+  let sufixo = "";
+  for (let i = 0; i < SUFIXO_TAMANHO; i++) {
+    sufixo += ALFABETO_CODIGO[randomInt(ALFABETO_CODIGO.length)];
+  }
+  return `REDE-BETA-${sufixo}`;
+}
 
 function hashCodigo(codigo: string): string {
   return createHash("sha256").update(codigo).digest("hex");
@@ -38,7 +48,7 @@ async function gerarConvite() {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const codigo = randomBytes(CODIGO_BYTES).toString("base64url");
+  const codigo = gerarCodigoLegivel();
   const { data, error } = await supabase.rpc("rede_gerar_convite", {
     codigo_hash: hashCodigo(codigo),
   });
