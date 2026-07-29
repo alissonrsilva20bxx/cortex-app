@@ -680,6 +680,10 @@ export type Database = {
         Args: { outro_user_id: string };
         Returns: string;
       };
+      rede_gerar_convite: {
+        Args: { codigo_hash: string };
+        Returns: Json;
+      };
       rede_is_admin: { Args: never; Returns: boolean };
       rede_is_conversation_participant: {
         Args: { target_conversa_id: string };
@@ -689,6 +693,10 @@ export type Database = {
       rede_reordenar_livelinks: {
         Args: { livelink_ids: string[] };
         Returns: Database["public"]["Tables"]["rede_livelinks"]["Row"][];
+      };
+      rede_resgatar_convite: {
+        Args: { codigo_hash: string; ip_hash: string };
+        Returns: Json;
       };
     };
     Enums: {
