@@ -35,10 +35,15 @@ export function BottomSheet({ open, onClose, title, children, footer }: Props) {
       )}
 
       <div
-        className="fixed left-0 right-0 z-[60] flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed left-0 right-0 z-[60] flex flex-col ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: 0,
           transform: open ? "translateY(0)" : "translateY(105%)",
+          visibility: open ? "visible" : "hidden",
+          pointerEvents: open ? "auto" : "none",
+          transitionProperty: "transform, visibility",
+          transitionDuration: "300ms, 0s",
+          transitionDelay: open ? "0s, 0s" : "0s, 300ms",
           background: "var(--surface-2)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
