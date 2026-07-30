@@ -597,6 +597,7 @@ export type Database = {
           cor_avatar: string;
           criado_em: string;
           nome_exibicao: string;
+          notificacoes_vistas_em: string | null;
           user_id: string;
         };
         Insert: {
@@ -606,6 +607,7 @@ export type Database = {
           cor_avatar: string;
           criado_em?: string;
           nome_exibicao: string;
+          notificacoes_vistas_em?: string | null;
           user_id: string;
         };
         Update: {
@@ -615,6 +617,7 @@ export type Database = {
           cor_avatar?: string;
           criado_em?: string;
           nome_exibicao?: string;
+          notificacoes_vistas_em?: string | null;
           user_id?: string;
         };
         Relationships: [];

@@ -35,11 +35,9 @@ import { type LiveLink } from "./LiveLinksSection";
 import {
   WISHLIST_ITEMS,
   CLIENTES,
-  REDE_NOTIFICACOES,
   findUser,
   type WishlistItem,
   type Cliente,
-  type RedeNotificacao,
   type Privacidade,
 } from "@/lib/mockRede";
 import { supabase } from "@/lib/supabase";
@@ -89,6 +87,11 @@ import {
   assinarMensagensConversa,
   type ConversaResumo,
 } from "@/lib/rede/mensagens";
+import {
+  listarNotificacoes,
+  marcarNotificacoesVistas,
+  type Notificacao,
+} from "@/lib/rede/notificacoes";
 import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
 
@@ -345,12 +348,34 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abertaConversaId]);
 
+  // ── Notificações real -- eager, o sino no header mostra a contagem já
+  // na primeira tela (mesmo motivo de Amigas ser eager, ver acima) ──
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
+  const [notificacoesLoading, setNotificacoesLoading] = useState(true);
+
+  useEffect(() => {
+    let ativo = true;
+    listarNotificacoes(supabase)
+      .then((data) => {
+        if (!ativo) return;
+        setNotificacoes(data);
+        setNotificacoesLoading(false);
+      })
+      .catch((e) => {
+        console.error("[RedeTab notificacoes]", e);
+        toast.error("Não foi possível carregar as notificações.");
+        setNotificacoesLoading(false);
+      });
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Dados mockados, mutáveis localmente ──
   const [wishlistItems, setWishlistItems] =
     useState<WishlistItem[]>(WISHLIST_ITEMS);
   const [clientes, setClientes] = useState<Cliente[]>(CLIENTES);
-  const [notificacoes, setNotificacoes] =
-    useState<RedeNotificacao[]>(REDE_NOTIFICACOES);
   const [defaultPrivacidade, setDefaultPrivacidade] =
     useState<Privacidade>("amigas");
 
@@ -638,13 +663,39 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   }
 
   // ── Notificações ──
-  function markNotifRead(id: string) {
-    setNotificacoes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, lida: true } : n))
-    );
+  // Curtida/comentário/pedido de amizade não têm leitura por item (só um
+  // cursor único no perfil, ver lib/rede/notificacoes.ts) -- clicar navega
+  // pro destino; mensagem some sozinha quando a conversa é aberta (leitura
+  // real de mensagem já existente, ticket 12), então só marca localmente
+  // pra feedback imediato do sino.
+  function openNotificacao(n: Notificacao) {
+    if (n.tipo === "mensagem") {
+      setNotificacoes((prev) =>
+        prev.map((x) => (x.id === n.id ? { ...x, lida: true } : x))
+      );
+    }
+    switch (n.destino.tipo) {
+      case "post":
+        setCommentsPostId(n.destino.postId);
+        break;
+      case "perfil":
+        openAutor(n.destino.userId);
+        break;
+      case "conversa":
+        openChatThread(n.destino.conversaId);
+        break;
+    }
   }
-  function markAllNotifsRead() {
-    setNotificacoes((prev) => prev.map((n) => ({ ...n, lida: true })));
+  async function markAllNotifsRead() {
+    setNotificacoes((prev) =>
+      prev.map((n) => (n.tipo === "mensagem" ? n : { ...n, lida: true }))
+    );
+    try {
+      await marcarNotificacoesVistas(supabase);
+    } catch (e) {
+      console.error("[RedeTab marcar notificações vistas]", e);
+      toast.error("Não foi possível marcar as notificações como lidas.");
+    }
   }
 
   // ── Chat ──
@@ -1237,9 +1288,9 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       <RedeNotificationsSheet
         open={notifSheetOpen}
         onClose={() => setNotifSheetOpen(false)}
+        loading={notificacoesLoading}
         notificacoes={notificacoes}
-        onOpenProfile={openAutor}
-        onMarkRead={markNotifRead}
+        onOpenNotificacao={openNotificacao}
         onMarkAllRead={markAllNotifsRead}
       />
 

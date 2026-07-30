@@ -47,6 +47,7 @@ export default function DevPreviewRede() {
                 cor_avatar: "#06b6d4",
                 bio: "",
                 area_atuacao: null,
+                notificacoes_vistas_em: null,
                 criado_em: new Date().toISOString(),
                 atualizado_em: new Date().toISOString(),
               },
@@ -164,12 +165,26 @@ export default function DevPreviewRede() {
                 texto: "Que máximo, também preciso fazer isso!",
                 criado_em: new Date(Date.now() - 3_600_000).toISOString(),
               },
+              {
+                id: "com-2",
+                post_id: "post-2",
+                autor_id: sugestaoId,
+                texto: "Vou testar isso hoje mesmo!",
+                criado_em: new Date(
+                  Date.now() - 3_600_000 * 0.75
+                ).toISOString(),
+              },
             ],
             rede_curtidas: [
               {
                 post_id: "post-1",
                 user_id: mockUsuario.id,
                 criado_em: new Date().toISOString(),
+              },
+              {
+                post_id: "post-2",
+                user_id: amigaId,
+                criado_em: new Date(Date.now() - 3_600_000 * 0.5).toISOString(),
               },
             ],
           },

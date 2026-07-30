@@ -56,26 +56,6 @@ export interface Cliente {
   observacoes: string;
 }
 
-export interface RedeNotificacao {
-  id: string;
-  tipo:
-    | "curtida"
-    | "comentario"
-    | "solicitacao"
-    | "mencao"
-    | "mensagem"
-    | "aviso";
-  /** Ausente em avisos da comunidade — não partem de uma pessoa específica. */
-  userId?: string;
-  texto: string;
-  criadoEm: string;
-  lida: boolean;
-}
-
-const hoursAgo = (h: number) =>
-  new Date(Date.now() - h * 3_600_000).toISOString();
-const daysAgo = (d: number) => hoursAgo(d * 24);
-
 /** "há 2h" / "há 3 d" / "12 jul" — sempre relativo ao instante de renderização. */
 export function formatRelativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -297,56 +277,5 @@ export const CLIENTES: Cliente[] = [
     etiquetas: ["fidelizada"],
     ultimoContato: "2026-07-22",
     observacoes: "Cliente desde o começo. Sempre traz indicação nova.",
-  },
-];
-
-export const REDE_NOTIFICACOES: RedeNotificacao[] = [
-  {
-    id: "n1",
-    tipo: "curtida",
-    userId: "u1",
-    texto: "curtiu sua publicação",
-    criadoEm: hoursAgo(1),
-    lida: false,
-  },
-  {
-    id: "n2",
-    tipo: "comentario",
-    userId: "u7",
-    texto: 'comentou: "Arrasou!! 👏"',
-    criadoEm: hoursAgo(4),
-    lida: false,
-  },
-  {
-    id: "n3",
-    tipo: "solicitacao",
-    userId: "u5",
-    texto: "quer ser sua amiga",
-    criadoEm: daysAgo(1),
-    lida: true,
-  },
-  {
-    id: "n4",
-    tipo: "mencao",
-    userId: "u4",
-    texto: "mencionou você nos comentários",
-    criadoEm: daysAgo(2),
-    lida: true,
-  },
-  {
-    id: "n5",
-    tipo: "mensagem",
-    userId: "u2",
-    texto: "te enviou uma mensagem",
-    criadoEm: hoursAgo(6),
-    lida: false,
-  },
-  {
-    id: "n6",
-    tipo: "aviso",
-    texto:
-      "Novidade: agora dá pra reordenar seus LiveLinks direto do Meu Espaço.",
-    criadoEm: daysAgo(3),
-    lida: true,
   },
 ];
