@@ -1,25 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  UserPlus,
-  MessageCircle,
-  Gift,
-  Sparkles,
-  Image as ImageIcon,
-} from "lucide-react";
+import { UserPlus, MessageCircle, Gift, Sparkles } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { RedeHeader } from "./RedeHeader";
 import { ContextualBlock } from "./ContextualBlock";
 import { PostCard } from "./PostCard";
 import { Avatar } from "./Avatar";
-import {
-  DISCOVER_PEOPLE,
-  WISHLIST_ITEMS,
-  findUser,
-  type RedePost,
-} from "@/lib/mockRede";
+import { DISCOVER_PEOPLE, WISHLIST_ITEMS, findUser } from "@/lib/mockRede";
+import type { FeedPost } from "@/lib/rede/feed";
 import type { Usuario } from "@/lib/types";
 
 type Segmento = "paraVoce" | "amigas";
@@ -34,7 +24,7 @@ interface ContextualBlockDef {
 
 interface Props {
   usuario: Usuario;
-  posts: RedePost[];
+  posts: FeedPost[];
   friends: string[];
   pendingRequestsCount: number;
   unreadChats: number;
@@ -45,12 +35,11 @@ interface Props {
   onOpenMeuEspaco: () => void;
   onOpenAmigas: () => void;
   onOpenWishlist: () => void;
-  onOpenComposer: (tipoInicial?: "foto" | "desejo") => void;
+  onOpenComposer: () => void;
   onToggleLike: (id: string) => void;
-  onToggleSave: (id: string) => void;
-  onComment: (post: RedePost) => void;
-  onShare: (post: RedePost) => void;
-  onOpenMenu: (post: RedePost) => void;
+  onComment: (post: FeedPost) => void;
+  onShare: (post: FeedPost) => void;
+  onOpenMenu: (post: FeedPost) => void;
   onOpenAutor: (autorId: string) => void;
 }
 
@@ -69,7 +58,6 @@ export function FeedScreen({
   onOpenWishlist,
   onOpenComposer,
   onToggleLike,
-  onToggleSave,
   onComment,
   onShare,
   onOpenMenu,
@@ -82,7 +70,7 @@ export function FeedScreen({
       segmento === "paraVoce"
         ? posts
         : posts.filter(
-            (p) => p.autorId === "me" || friends.includes(p.autorId)
+            (p) => p.autorId === usuario.id || friends.includes(p.autorId)
           ),
     [posts, segmento, friends]
   );
@@ -134,7 +122,7 @@ export function FeedScreen({
 
   const queue = [...blocks];
   type FeedItem =
-    | { type: "post"; post: RedePost }
+    | { type: "post"; post: FeedPost }
     | { type: "block"; block: ContextualBlockDef };
   const items: FeedItem[] = [];
   visiblePosts.forEach((post, i) => {
@@ -160,7 +148,7 @@ export function FeedScreen({
       <GlassCard
         as="div"
         radius="lg"
-        onClick={() => onOpenComposer()}
+        onClick={onOpenComposer}
         className="flex items-center gap-3 px-4 py-3.5 mb-4"
       >
         <Avatar nome={usuario.nome} size="md" />
@@ -170,26 +158,6 @@ export function FeedScreen({
         >
           Compartilhe algo…
         </span>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenComposer("foto");
-          }}
-          aria-label="Adicionar foto"
-          className="p-1.5 active:opacity-60"
-        >
-          <ImageIcon size={17} style={{ color: "var(--text-muted)" }} />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenComposer("desejo");
-          }}
-          aria-label="Adicionar desejo"
-          className="p-1.5 active:opacity-60"
-        >
-          <Gift size={17} style={{ color: "var(--text-muted)" }} />
-        </button>
       </GlassCard>
 
       <SegmentedControl<Segmento>
@@ -218,14 +186,11 @@ export function FeedScreen({
               <PostCard
                 key={item.post.id}
                 post={item.post}
-                usuarioNome={usuario.nome}
                 onToggleLike={onToggleLike}
-                onToggleSave={onToggleSave}
                 onComment={onComment}
                 onShare={onShare}
                 onOpenMenu={onOpenMenu}
                 onOpenAutor={onOpenAutor}
-                onOpenWishlist={onOpenWishlist}
               />
             ) : (
               <ContextualBlock

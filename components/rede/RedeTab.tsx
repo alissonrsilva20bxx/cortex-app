@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Link2,
-  Flag,
-  Pencil,
-  Trash2,
-  Bookmark,
-  Send,
-  Share2,
-  X,
-} from "lucide-react";
+import { Link2, Flag, Pencil, Trash2, Send, Share2, X } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { FeedScreen } from "./FeedScreen";
 import { SearchScreen } from "./SearchScreen";
@@ -33,7 +24,6 @@ import { LiveLinkForm } from "./LiveLinkForm";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { type LiveLink } from "./LiveLinksSection";
 import {
-  REDE_POSTS,
   FRIEND_IDS,
   FRIEND_REQUESTS,
   DISCOVER_PEOPLE,
@@ -43,7 +33,6 @@ import {
   CLIENTES,
   REDE_NOTIFICACOES,
   findUser,
-  type RedePost,
   type FriendRequest,
   type Conversation,
   type RedeMessage,
@@ -63,10 +52,24 @@ import {
   reordenarLiveLinks,
   excluirLiveLink,
 } from "@/lib/rede/perfis";
+import {
+  listarFeed,
+  criarPost,
+  atualizarPost,
+  excluirPost,
+  listarComentarios,
+  criarComentario,
+  alternarCurtida,
+  type FeedPost,
+  type FeedComment,
+  type Categoria,
+} from "@/lib/rede/feed";
+import { criarDenuncia, type CriarDenunciaInput } from "@/lib/rede/denuncias";
 import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
 
 type Perfil = Database["public"]["Tables"]["rede_perfis"]["Row"];
+type DenunciaMotivo = CriarDenunciaInput["motivo"];
 
 const CORES_AVATAR = [
   "#ec4899",
@@ -106,6 +109,11 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const [liveLinks, setLiveLinks] = useState<LiveLink[]>([]);
   const [liveLinkFormOpen, setLiveLinkFormOpen] = useState(false);
   const [profileEditOpen, setProfileEditOpen] = useState(false);
+  // Perfis reais de outras autoras, buscados sob demanda ao abrir o perfil
+  // público de alguém a partir de um post/comentário real (ver openAutor).
+  const [otherProfiles, setOtherProfiles] = useState<
+    Record<string, { nome: string; bio: string; cor: string }>
+  >({});
 
   // Existir em rede_perfis é o opt-in de entrar na Rede -- quem chegou até
   // aqui já passou pelo gate, então cria silenciosamente na primeira visita
@@ -143,8 +151,30 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const pop = () =>
     setStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
 
+  // ── Feed real ──
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [feedLoading, setFeedLoading] = useState(true);
+
+  useEffect(() => {
+    let ativo = true;
+    listarFeed(supabase)
+      .then((data) => {
+        if (!ativo) return;
+        setPosts(data);
+        setFeedLoading(false);
+      })
+      .catch((e) => {
+        console.error("[RedeTab feed]", e);
+        toast.error("Não foi possível carregar o feed.");
+        setFeedLoading(false);
+      });
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Dados mockados, mutáveis localmente ──
-  const [posts, setPosts] = useState<RedePost[]>(REDE_POSTS);
   const [friends, setFriends] = useState<string[]>(FRIEND_IDS);
   const [requests, setRequests] = useState<FriendRequest[]>(FRIEND_REQUESTS);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
@@ -162,18 +192,15 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
 
   // ── Sheets ──
   const [composerOpen, setComposerOpen] = useState(false);
-  const [composerTipoInicial, setComposerTipoInicial] = useState<
-    "foto" | "desejo" | undefined
-  >();
   const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
-  const [menuPost, setMenuPost] = useState<RedePost | null>(null);
-  const [sharePost, setSharePost] = useState<RedePost | null>(null);
-  const [deleteConfirmPost, setDeleteConfirmPost] = useState<RedePost | null>(
+  const [menuPost, setMenuPost] = useState<FeedPost | null>(null);
+  const [sharePost, setSharePost] = useState<FeedPost | null>(null);
+  const [deleteConfirmPost, setDeleteConfirmPost] = useState<FeedPost | null>(
     null
   );
-  const [editingPost, setEditingPost] = useState<RedePost | null>(null);
-  const [shareToConvoPost, setShareToConvoPost] = useState<RedePost | null>(
+  const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
+  const [shareToConvoPost, setShareToConvoPost] = useState<FeedPost | null>(
     null
   );
   const [wishlistFormOpen, setWishlistFormOpen] = useState(false);
@@ -188,13 +215,47 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const [deleteConfirmCliente, setDeleteConfirmCliente] =
     useState<Cliente | null>(null);
   const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
+  // Alvo da denúncia em andamento -- separado do menu de opções do post
+  // porque também é aberto a partir do "..." de um comentário.
+  const [reportTarget, setReportTarget] = useState<{
+    tipo: "post" | "comentario";
+    id: string;
+  } | null>(null);
+
+  // Comentários do post atualmente aberto no CommentsSheet -- buscados sob
+  // demanda (rede_posts não guarda a lista, só existe agregada aqui).
+  const [comments, setComments] = useState<FeedComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!commentsPostId) {
+      setComments([]);
+      return;
+    }
+    let ativo = true;
+    setCommentsLoading(true);
+    listarComentarios(supabase, commentsPostId)
+      .then((data) => {
+        if (!ativo) return;
+        setComments(data);
+        setCommentsLoading(false);
+      })
+      .catch((e) => {
+        console.error("[RedeTab comentarios]", e);
+        toast.error("Não foi possível carregar os comentários.");
+        setCommentsLoading(false);
+      });
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commentsPostId]);
 
   const unreadChats = conversations.reduce((s, c) => s + c.naoLidas, 0);
   const unreadNotifs = notificacoes.filter((n) => !n.lida).length;
-  const commentsPost = posts.find((p) => p.id === commentsPostId) ?? null;
 
   // ── Posts ──
-  function toggleLike(id: string) {
+  async function toggleLike(id: string) {
     setPosts((prev) =>
       prev.map((p) =>
         p.id === id
@@ -206,103 +267,152 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           : p
       )
     );
+    try {
+      await alternarCurtida(supabase, { postId: id });
+    } catch (e) {
+      console.error("[RedeTab curtida]", e);
+      // Reverte a atualização otimista se a chamada real falhar.
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                curtidoPorMim: !p.curtidoPorMim,
+                curtidas: p.curtidas + (p.curtidoPorMim ? -1 : 1),
+              }
+            : p
+        )
+      );
+      toast.error("Não foi possível curtir a publicação.");
+    }
   }
 
-  function toggleSave(id: string) {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, salvoPorMim: !p.salvoPorMim } : p))
-    );
-    const p = posts.find((x) => x.id === id);
-    toast.success(p?.salvoPorMim ? "Removido dos salvos" : "Publicação salva!");
+  async function addComment(postId: string, texto: string) {
+    try {
+      await criarComentario(supabase, { postId, texto });
+      const atualizados = await listarComentarios(supabase, postId);
+      setComments(atualizados);
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, comentariosCount: atualizados.length } : p
+        )
+      );
+      toast.success("Comentário publicado!");
+    } catch (e) {
+      console.error("[RedeTab comentario]", e);
+      toast.error("Não foi possível publicar o comentário.");
+    }
   }
 
-  function addComment(postId: string, texto: string) {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? {
-              ...p,
-              comentarios: [
-                ...p.comentarios,
-                {
-                  id: `c-${Date.now()}`,
-                  autorId: "me",
-                  texto,
-                  criadoEm: new Date().toISOString(),
-                },
-              ],
-            }
-          : p
-      )
-    );
-    toast.success("Comentário publicado!");
-  }
-
-  function handlePublish(data: {
+  // `criarPost` devolve a linha crua de `rede_posts` -- monta o FeedPost
+  // localmente com o que já se sabe do próprio perfil, sem round-trip extra.
+  function feedPostFromCreated(created: {
+    id: string;
+    autor_id: string;
+    categoria: Categoria;
     texto: string;
-    tipo: RedePost["tipo"];
-    categoria: RedePost["categoria"];
-    anonimo: boolean;
-  }) {
-    const wishlistRef = wishlistItems[0];
-    const novo: RedePost = {
-      id: `p-${Date.now()}`,
-      autorId: data.anonimo ? "anon" : "me",
-      anonimo: data.anonimo,
-      texto: data.texto,
-      tipo: data.tipo,
-      categoria: data.categoria,
-      imagemCor: data.tipo === "foto" ? WISHLIST_PALETTE[0] : undefined,
-      wishlistNome: data.tipo === "desejo" ? wishlistRef?.nome : undefined,
-      wishlistProgresso:
-        data.tipo === "desejo" && wishlistRef
-          ? Math.round((wishlistRef.valorAtual / wishlistRef.valorAlvo) * 100)
-          : undefined,
-      linkTitulo: data.tipo === "link" ? "Um artigo interessante" : undefined,
-      linkUrl: data.tipo === "link" ? "exemplo.com/artigo" : undefined,
-      criadoEm: new Date().toISOString(),
+    criado_em: string;
+    atualizado_em: string;
+  }): FeedPost {
+    return {
+      id: created.id,
+      autorId: created.autor_id,
+      autorNome: perfil?.nome_exibicao ?? usuario.nome,
+      autorCor: perfil?.cor_avatar ?? "var(--accent)",
+      categoria: created.categoria,
+      texto: created.texto,
+      criadoEm: created.criado_em,
+      atualizadoEm: created.atualizado_em,
       curtidas: 0,
       curtidoPorMim: false,
-      salvoPorMim: false,
-      comentarios: [],
+      comentariosCount: 0,
     };
-    setPosts((prev) => [novo, ...prev]);
-    toast.success("Publicação enviada!");
   }
 
-  function saveEditedPost(
-    postId: string,
-    data: {
-      texto: string;
-      tipo: RedePost["tipo"];
-      categoria: RedePost["categoria"];
-      anonimo: boolean;
+  async function handlePublish(data: { texto: string; categoria: Categoria }) {
+    try {
+      const created = await criarPost(supabase, data);
+      setPosts((prev) => [feedPostFromCreated(created), ...prev]);
+      toast.success("Publicação enviada!");
+    } catch (e) {
+      console.error("[RedeTab publicar]", e);
+      toast.error("Não foi possível publicar.");
     }
+  }
+
+  async function saveEditedPost(
+    postId: string,
+    data: { texto: string; categoria: Categoria }
   ) {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? {
-              ...p,
-              texto: data.texto,
-              tipo: data.tipo,
-              categoria: data.categoria,
-            }
-          : p
-      )
-    );
-    toast.success("Publicação atualizada!");
+    try {
+      const updated = await atualizarPost(supabase, { postId, ...data });
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                texto: updated.texto,
+                categoria: updated.categoria,
+                atualizadoEm: updated.atualizado_em,
+              }
+            : p
+        )
+      );
+      toast.success("Publicação atualizada!");
+    } catch (e) {
+      console.error("[RedeTab editar post]", e);
+      toast.error("Não foi possível atualizar a publicação.");
+    }
   }
 
-  function deletePost(postId: string) {
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
-    setDeleteConfirmPost(null);
-    toast.success("Publicação excluída");
+  async function deletePost(postId: string) {
+    try {
+      await excluirPost(supabase, { postId });
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      setDeleteConfirmPost(null);
+      toast.success("Publicação excluída");
+    } catch (e) {
+      console.error("[RedeTab excluir post]", e);
+      toast.error("Não foi possível excluir a publicação.");
+    }
   }
 
+  async function submitReport(motivo: DenunciaMotivo) {
+    if (!reportTarget) return;
+    try {
+      await criarDenuncia(supabase, {
+        alvoTipo: reportTarget.tipo,
+        alvoId: reportTarget.id,
+        motivo,
+      });
+      toast.success("Denúncia enviada, obrigada");
+    } catch (e) {
+      console.error("[RedeTab denuncia]", e);
+      toast.error("Não foi possível enviar a denúncia.");
+    } finally {
+      setReportTarget(null);
+    }
+  }
+
+  // Perfil real de outra autora (post/comentário), buscado sob demanda e
+  // cacheado -- se não existir (ex.: id ainda mockado de Busca/Descobrir,
+  // que não são reais até a ticket 11), buildProfile cai no mock abaixo.
   function openAutor(autorId: string) {
-    if (autorId === "anon") return;
     push({ type: "perfilPublico", userId: autorId });
+    if (autorId === usuario.id || otherProfiles[autorId]) return;
+    buscarPerfil(supabase, autorId)
+      .then((p) => {
+        if (!p) return;
+        setOtherProfiles((prev) => ({
+          ...prev,
+          [autorId]: {
+            nome: p.nome_exibicao,
+            bio: p.bio ?? "",
+            cor: p.cor_avatar,
+          },
+        }));
+      })
+      .catch((e) => console.error("[RedeTab perfil autor]", e));
   }
 
   // ── Amigas ──
@@ -558,27 +668,25 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     setEditingWishlist(null);
     toast.success("Desejo excluído");
   }
-  function shareWishlistToFeed(item: WishlistItem) {
-    const novo: RedePost = {
-      id: `p-${Date.now()}`,
-      autorId: "me",
-      anonimo: false,
-      texto: `Compartilhando meu progresso com "${item.nome}"!`,
-      tipo: "desejo",
-      categoria: "conquista",
-      wishlistNome: item.nome,
-      wishlistProgresso: Math.round((item.valorAtual / item.valorAlvo) * 100),
-      criadoEm: new Date().toISOString(),
-      curtidas: 0,
-      curtidoPorMim: false,
-      salvoPorMim: false,
-      comentarios: [],
-    };
-    setPosts((prev) => [novo, ...prev]);
-    setWishlistFormOpen(false);
-    setEditingWishlist(null);
-    toast.success("Desejo compartilhado no Feed!");
-    setStack([{ type: "feed" }]);
+  // Wishlist ainda é só mock (sem tabela real) -- rede_posts não tem como
+  // guardar um card de desejo embutido, então isso vira um post de texto
+  // normal descrevendo o progresso, publicado de verdade no Feed.
+  async function shareWishlistToFeed(item: WishlistItem) {
+    const progresso = Math.round((item.valorAtual / item.valorAlvo) * 100);
+    try {
+      const created = await criarPost(supabase, {
+        categoria: "conquista",
+        texto: `Compartilhando meu progresso com "${item.nome}" — ${progresso}% da meta!`,
+      });
+      setPosts((prev) => [feedPostFromCreated(created), ...prev]);
+      setWishlistFormOpen(false);
+      setEditingWishlist(null);
+      toast.success("Desejo compartilhado no Feed!");
+      setStack([{ type: "feed" }]);
+    } catch (e) {
+      console.error("[RedeTab compartilhar desejo]", e);
+      toast.error("Não foi possível compartilhar no Feed.");
+    }
   }
 
   // ── Clientes ──
@@ -638,7 +746,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
 
   // ── Perfil público: dados derivados ──
   function buildProfile(userId: string) {
-    if (userId === "me") {
+    if (userId === usuario.id) {
       return {
         nome: perfil?.nome_exibicao ?? usuario.nome,
         handle: undefined,
@@ -647,6 +755,18 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         isMe: true,
       };
     }
+    const real = otherProfiles[userId];
+    if (real) {
+      return {
+        nome: real.nome,
+        handle: undefined,
+        cor: real.cor,
+        bio: real.bio,
+        isMe: false,
+      };
+    }
+    // Fallback pro mock: cobre Busca/Descobrir, que ainda não são reais
+    // (ticket 11) e apontam ids que não existem em rede_perfis.
     const u = findUser(userId);
     return {
       nome: u?.nome ?? "Usuária",
@@ -659,10 +779,9 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
 
   const postActions = {
     onToggleLike: toggleLike,
-    onToggleSave: toggleSave,
-    onComment: (p: RedePost) => setCommentsPostId(p.id),
-    onShare: (p: RedePost) => setSharePost(p),
-    onOpenMenu: (p: RedePost) => setMenuPost(p),
+    onComment: (p: FeedPost) => setCommentsPostId(p.id),
+    onShare: (p: FeedPost) => setSharePost(p),
+    onOpenMenu: (p: FeedPost) => setMenuPost(p),
   };
 
   return (
@@ -681,10 +800,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           onOpenMeuEspaco={() => push({ type: "meuEspaco" })}
           onOpenAmigas={() => push({ type: "amigas" })}
           onOpenWishlist={() => push({ type: "wishlist" })}
-          onOpenComposer={(tipo) => {
-            setComposerTipoInicial(tipo);
-            setComposerOpen(true);
-          }}
+          onOpenComposer={() => setComposerOpen(true)}
           onOpenAutor={openAutor}
           {...postActions}
         />
@@ -747,7 +863,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
           bio={perfil?.bio ?? ""}
           cor={perfil?.cor_avatar ?? "var(--accent)"}
-          meusPosts={posts.filter((p) => p.autorId === "me")}
+          meusPosts={posts.filter((p) => p.autorId === usuario.id)}
           liveLinks={liveLinks}
           wishlistItems={wishlistItems}
           clientesCount={clientes.length}
@@ -768,7 +884,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           onOpenWishlist={() => push({ type: "wishlist" })}
           onOpenClientes={() => push({ type: "clientes" })}
           onOpenPerfilPublico={() =>
-            push({ type: "perfilPublico", userId: "me" })
+            push({ type: "perfilPublico", userId: usuario.id })
           }
           onChangeDefaultPrivacidade={setDefaultPrivacidade}
           {...postActions}
@@ -798,10 +914,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
               requestSent={sentRequests.includes(screen.userId)}
               liveLinks={livelinksExibidos}
               wishlistPublico={wishlistPublico}
-              posts={posts.filter(
-                (p) => !p.anonimo && p.autorId === screen.userId
-              )}
-              usuario={usuario}
+              posts={posts.filter((p) => p.autorId === screen.userId)}
               onBack={pop}
               onOpenChat={() => openChatWithUser(screen.userId)}
               onSendRequest={() => sendRequest(screen.userId)}
@@ -841,7 +954,6 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       <PostComposer
         open={composerOpen}
         usuarioNome={usuario.nome}
-        tipoInicial={composerTipoInicial}
         editingPost={editingPost}
         onClose={() => {
           setComposerOpen(false);
@@ -852,11 +964,16 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       />
 
       <CommentsSheet
-        post={commentsPost}
+        postId={commentsPostId}
         usuarioNome={usuario.nome}
+        comments={comments}
+        loading={commentsLoading}
         onClose={() => setCommentsPostId(null)}
         onAddComment={addComment}
         onOpenAutor={openAutor}
+        onReportComment={(c) =>
+          setReportTarget({ tipo: "comentario", id: c.id })
+        }
       />
 
       <RedeNotificationsSheet
@@ -875,7 +992,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         options={
           !menuPost
             ? []
-            : menuPost.autorId === "me"
+            : menuPost.autorId === usuario.id
               ? [
                   {
                     key: "editar",
@@ -902,19 +1019,12 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
                 ]
               : [
                   {
-                    key: "salvar",
-                    label: menuPost.salvoPorMim
-                      ? "Remover dos salvos"
-                      : "Salvar publicação",
-                    Icon: Bookmark,
-                    onSelect: () => toggleSave(menuPost.id),
-                  },
-                  {
                     key: "denunciar",
                     label: "Denunciar",
                     Icon: Flag,
                     danger: true,
-                    onSelect: () => toast.success("Denúncia enviada, obrigada"),
+                    onSelect: () =>
+                      setReportTarget({ tipo: "post", id: menuPost.id }),
                   },
                   {
                     key: "cancelar",
@@ -924,6 +1034,48 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
                   },
                 ]
         }
+      />
+
+      <OptionsSheet
+        open={!!reportTarget}
+        title="Motivo da denúncia"
+        onClose={() => setReportTarget(null)}
+        options={[
+          {
+            key: "spam",
+            label: "Spam",
+            Icon: Flag,
+            danger: true,
+            onSelect: () => submitReport("spam"),
+          },
+          {
+            key: "assedio",
+            label: "Assédio",
+            Icon: Flag,
+            danger: true,
+            onSelect: () => submitReport("assedio"),
+          },
+          {
+            key: "conteudo_impropio",
+            label: "Conteúdo impróprio",
+            Icon: Flag,
+            danger: true,
+            onSelect: () => submitReport("conteudo_impropio"),
+          },
+          {
+            key: "outro",
+            label: "Outro motivo",
+            Icon: Flag,
+            danger: true,
+            onSelect: () => submitReport("outro"),
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
+          },
+        ]}
       />
 
       <OptionsSheet

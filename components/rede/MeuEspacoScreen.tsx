@@ -10,17 +10,14 @@ import { LiveLinksEditor, type LiveLink } from "./LiveLinksSection";
 import { WishlistCard } from "./WishlistCard";
 import { PostCard } from "./PostCard";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
-import {
-  type Privacidade,
-  type RedePost,
-  type WishlistItem,
-} from "@/lib/mockRede";
+import { type Privacidade, type WishlistItem } from "@/lib/mockRede";
+import type { FeedPost } from "@/lib/rede/feed";
 
 interface Props {
   nomeExibicao: string;
   bio: string;
   cor: string;
-  meusPosts: RedePost[];
+  meusPosts: FeedPost[];
   liveLinks: LiveLink[];
   wishlistItems: WishlistItem[];
   clientesCount: number;
@@ -37,10 +34,9 @@ interface Props {
   onOpenPerfilPublico: () => void;
   onChangeDefaultPrivacidade: (p: Privacidade) => void;
   onToggleLike: (id: string) => void;
-  onToggleSave: (id: string) => void;
-  onComment: (post: RedePost) => void;
-  onShare: (post: RedePost) => void;
-  onOpenMenu: (post: RedePost) => void;
+  onComment: (post: FeedPost) => void;
+  onShare: (post: FeedPost) => void;
+  onOpenMenu: (post: FeedPost) => void;
 }
 
 export function MeuEspacoScreen({
@@ -64,7 +60,6 @@ export function MeuEspacoScreen({
   onOpenPerfilPublico,
   onChangeDefaultPrivacidade,
   onToggleLike,
-  onToggleSave,
   onComment,
   onShare,
   onOpenMenu,
@@ -226,9 +221,7 @@ export function MeuEspacoScreen({
                   <PostCard
                     key={post.id}
                     post={post}
-                    usuarioNome={nomeExibicao}
                     onToggleLike={onToggleLike}
-                    onToggleSave={onToggleSave}
                     onComment={onComment}
                     onShare={onShare}
                     onOpenMenu={onOpenMenu}

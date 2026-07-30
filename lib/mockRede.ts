@@ -4,13 +4,6 @@
  * a experiência visual antes de existir qualquer tabela/API real.
  */
 
-export type PostTipo = "texto" | "foto" | "desejo" | "link";
-export type PostCategoria =
-  | "dica"
-  | "conquista"
-  | "duvida"
-  | "desabafo"
-  | "divulgacao";
 export type Privacidade = "privado" | "amigas" | "comunidade";
 export type WishlistEstado = "quero" | "planejando" | "conquistado";
 export type ClienteStatus = "ativo" | "vip" | "em-negociacao" | "pausado";
@@ -27,32 +20,6 @@ export interface RedeUser {
   handle: string;
   bio: string;
   cor: string; // hex — cor de fundo do avatar (sem fotos reais, como o resto do app)
-}
-
-export interface RedeComment {
-  id: string;
-  autorId: string;
-  texto: string;
-  criadoEm: string;
-}
-
-export interface RedePost {
-  id: string;
-  autorId: string; // "me" | id em REDE_USERS
-  anonimo: boolean;
-  texto: string;
-  tipo: PostTipo;
-  categoria: PostCategoria;
-  imagemCor?: string; // tipo "foto" — bloco mockado, sem asset real
-  linkTitulo?: string;
-  linkUrl?: string;
-  wishlistNome?: string;
-  wishlistProgresso?: number; // 0–100
-  criadoEm: string;
-  curtidas: number;
-  curtidoPorMim: boolean;
-  salvoPorMim: boolean;
-  comentarios: RedeComment[];
 }
 
 export interface FriendRequest {
@@ -147,17 +114,6 @@ export function formatRelativeTime(iso: string): string {
     month: "short",
   });
 }
-
-export const CATEGORIA_META: Record<
-  PostCategoria,
-  { label: string; rgb: string }
-> = {
-  dica: { label: "Dica", rgb: "var(--info-rgb)" },
-  conquista: { label: "Conquista", rgb: "var(--success-rgb)" },
-  duvida: { label: "Dúvida", rgb: "var(--warning-rgb)" },
-  desabafo: { label: "Desabafo", rgb: "167 139 250" },
-  divulgacao: { label: "Divulgação", rgb: "var(--accent-rgb)" },
-};
 
 export const REDE_USERS: RedeUser[] = [
   {
@@ -323,162 +279,6 @@ export const MESSAGES: Record<string, RedeMessage[]> = {
     },
   ],
 };
-
-export const REDE_POSTS: RedePost[] = [
-  {
-    id: "p1",
-    autorId: "u1",
-    anonimo: false,
-    texto:
-      "Gente, depois de 3 meses acompanhando minhas entradas aqui no app eu finalmente entendi quanto realmente sobra no fim do mês. Mudou como eu cobro.",
-    tipo: "texto",
-    categoria: "conquista",
-    criadoEm: hoursAgo(2),
-    curtidas: 24,
-    curtidoPorMim: true,
-    salvoPorMim: false,
-    comentarios: [
-      {
-        id: "c1",
-        autorId: "u2",
-        texto: "Que máximo, também preciso fazer isso",
-        criadoEm: hoursAgo(1),
-      },
-      {
-        id: "c2",
-        autorId: "u4",
-        texto: "Bem-vinda ao clube das planilhas 😅",
-        criadoEm: hoursAgo(1),
-      },
-    ],
-  },
-  {
-    id: "p2",
-    autorId: "me",
-    anonimo: false,
-    texto:
-      "Semana cheia, mas terminei o mês batendo a meta pela primeira vez! 🎉",
-    tipo: "texto",
-    categoria: "conquista",
-    criadoEm: hoursAgo(5),
-    curtidas: 12,
-    curtidoPorMim: false,
-    salvoPorMim: false,
-    comentarios: [
-      { id: "c3", autorId: "u7", texto: "Arrasou!! 👏", criadoEm: hoursAgo(4) },
-    ],
-  },
-  {
-    id: "p3",
-    autorId: "u3",
-    anonimo: false,
-    texto:
-      "Alguém mais sofre pra cobrar sinal de cliente nova sem parecer chata? Como vocês fazem essa conversa?",
-    tipo: "texto",
-    categoria: "duvida",
-    criadoEm: hoursAgo(7),
-    curtidas: 8,
-    curtidoPorMim: false,
-    salvoPorMim: true,
-    comentarios: [
-      {
-        id: "c4",
-        autorId: "u5",
-        texto: "Mando uma mensagem padrão, fica menos sem graça",
-        criadoEm: hoursAgo(6),
-      },
-    ],
-  },
-  {
-    id: "p4",
-    autorId: "u7",
-    anonimo: false,
-    texto:
-      "Combo de box braids + manutenção grátis no primeiro mês. Foto do resultado de hoje ✨",
-    tipo: "foto",
-    imagemCor: "#5EEAD4",
-    categoria: "divulgacao",
-    criadoEm: hoursAgo(9),
-    curtidas: 41,
-    curtidoPorMim: true,
-    salvoPorMim: false,
-    comentarios: [],
-  },
-  {
-    id: "p5",
-    autorId: "anon",
-    anonimo: true,
-    texto:
-      "Preciso desabafar: essa semana tive que remarcar 4 atendimentos e fiquei péssima achando que ia perder as clientes. Ninguém cancelou, todo mundo entendeu. Às vezes a cabeça inventa o pior cenário.",
-    tipo: "texto",
-    categoria: "desabafo",
-    criadoEm: hoursAgo(12),
-    curtidas: 33,
-    curtidoPorMim: false,
-    salvoPorMim: false,
-    comentarios: [
-      {
-        id: "c5",
-        autorId: "u2",
-        texto: "Sinto muito isso também, não tá sozinha",
-        criadoEm: hoursAgo(11),
-      },
-    ],
-  },
-  {
-    id: "p6",
-    autorId: "u2",
-    anonimo: false,
-    texto:
-      "Quase lá! Juntando pro secador novo, esse mês entrou mais um pedacinho.",
-    tipo: "desejo",
-    wishlistNome: "Secador profissional",
-    wishlistProgresso: 78,
-    categoria: "conquista",
-    criadoEm: daysAgo(1),
-    curtidas: 19,
-    curtidoPorMim: true,
-    salvoPorMim: false,
-    comentarios: [],
-  },
-  {
-    id: "p7",
-    autorId: "u4",
-    anonimo: false,
-    texto:
-      "Achei esse artigo ótimo sobre como precificar procedimentos de skincare por hora.",
-    tipo: "link",
-    linkTitulo: "Como precificar seu tempo (e não só o produto)",
-    linkUrl: "blog.exemplo.com/precificacao-skincare",
-    categoria: "dica",
-    criadoEm: daysAgo(2),
-    curtidas: 15,
-    curtidoPorMim: false,
-    salvoPorMim: true,
-    comentarios: [
-      {
-        id: "c6",
-        autorId: "u1",
-        texto: "Salvei, obrigada!",
-        criadoEm: daysAgo(2),
-      },
-    ],
-  },
-  {
-    id: "p8",
-    autorId: "u8",
-    anonimo: false,
-    texto:
-      "Dica rápida: álcool 70 + potinho de algodão do lado do posto de trabalho economiza um tempão entre atendimentos.",
-    tipo: "texto",
-    categoria: "dica",
-    criadoEm: daysAgo(3),
-    curtidas: 27,
-    curtidoPorMim: false,
-    salvoPorMim: false,
-    comentarios: [],
-  },
-];
 
 export const LIVE_LINKS: LiveLink[] = [
   {

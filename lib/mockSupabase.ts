@@ -35,6 +35,7 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
 }> {
   private op: "select" | "insert" | "update" | "delete" | "upsert" = "select";
   private filters: [string, unknown][] = [];
+  private inFilters: [string, unknown[]][] = [];
   private orders: [string, boolean][] = [];
   private limitN: number | null = null;
   private wantsSingle = false;
@@ -48,6 +49,13 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
     private table: string
   ) {}
 
+  private matches(row: Row): boolean {
+    return (
+      matchesFilters(row, this.filters) &&
+      this.inFilters.every(([col, vals]) => vals.includes(row[col]))
+    );
+  }
+
   select(cols = "*") {
     if (this.op === "insert" || this.op === "update" || this.op === "upsert") {
       this.selectCols = cols;
@@ -59,6 +67,10 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
   }
   eq(col: string, val: unknown) {
     this.filters.push([col, val]);
+    return this;
+  }
+  in(col: string, vals: unknown[]) {
+    this.inFilters.push([col, vals]);
     return this;
   }
   order(col: string, opts?: { ascending?: boolean }) {
@@ -123,7 +135,7 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
     const rows = this.store[this.table];
 
     if (this.op === "select") {
-      let result = rows.filter((r) => matchesFilters(r, this.filters));
+      let result = rows.filter((r) => this.matches(r));
       for (const [col, asc] of this.orders) {
         result = [...result].sort((a, b) => {
           const av = a[col] as string | number;
@@ -168,13 +180,22 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
     }
 
     if (this.op === "update") {
-      const matched = rows.filter((r) => matchesFilters(r, this.filters));
+      const matched = rows.filter((r) => this.matches(r));
       for (const row of matched) Object.assign(row, this.payload);
-      return delay({ data: matched as T, error: null });
+      const projected = matched.map((r) => pick(r, this.selectCols));
+      if (this.wantsSingle) {
+        const one = projected[0];
+        return delay(
+          one
+            ? { data: one as T, error: null }
+            : { data: null, error: { message: "No rows found" } }
+        );
+      }
+      return delay({ data: projected as T, error: null });
     }
 
     if (this.op === "delete") {
-      const keep = rows.filter((r) => !matchesFilters(r, this.filters));
+      const keep = rows.filter((r) => !this.matches(r));
       const removedCount = rows.length - keep.length;
       this.store[this.table] = keep;
       return delay({ data: null, error: removedCount > 0 ? null : null });

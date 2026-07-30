@@ -1,37 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { Send, MoreHorizontal } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Avatar } from "./Avatar";
-import { findUser, formatRelativeTime, type RedePost } from "@/lib/mockRede";
+import { SkeletonRow } from "./Skeleton";
+import { formatRelativeTime } from "@/lib/mockRede";
+import type { FeedComment } from "@/lib/rede/feed";
 
 interface Props {
-  post: RedePost | null;
+  postId: string | null;
   usuarioNome: string;
+  comments: FeedComment[];
+  loading: boolean;
   onClose: () => void;
   onAddComment: (postId: string, texto: string) => void;
   onOpenAutor: (autorId: string) => void;
+  onReportComment: (comment: FeedComment) => void;
 }
 
 export function CommentsSheet({
-  post,
+  postId,
   usuarioNome,
+  comments,
+  loading,
   onClose,
   onAddComment,
   onOpenAutor,
+  onReportComment,
 }: Props) {
   const [texto, setTexto] = useState("");
 
   function handleSend() {
-    if (!post || !texto.trim()) return;
-    onAddComment(post.id, texto.trim());
+    if (!postId || !texto.trim()) return;
+    onAddComment(postId, texto.trim());
     setTexto("");
   }
 
   return (
     <BottomSheet
-      open={!!post}
+      open={!!postId}
       onClose={onClose}
       title="Comentários"
       footer={
@@ -64,7 +72,12 @@ export function CommentsSheet({
       }
     >
       <div className="overflow-y-auto px-5 py-4" style={{ maxHeight: "55dvh" }}>
-        {!post || post.comentarios.length === 0 ? (
+        {loading ? (
+          <div className="space-y-3">
+            <SkeletonRow withSubtitle={false} />
+            <SkeletonRow withSubtitle={false} />
+          </div>
+        ) : comments.length === 0 ? (
           <p
             className="text-sm text-center py-8"
             style={{ color: "var(--text-muted)" }}
@@ -73,33 +86,38 @@ export function CommentsSheet({
           </p>
         ) : (
           <div className="space-y-4">
-            {post.comentarios.map((c) => {
-              const isMe = c.autorId === "me";
-              const autor = isMe ? null : findUser(c.autorId);
-              const nome = isMe ? usuarioNome : (autor?.nome ?? "Usuária");
-              return (
-                <div key={c.id} className="flex items-start gap-3">
-                  <Avatar
-                    nome={nome}
-                    cor={autor?.cor}
-                    size="sm"
-                    onClick={isMe ? undefined : () => onOpenAutor(c.autorId)}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm" style={{ color: "var(--text)" }}>
-                      <span className="font-semibold">{nome}</span>{" "}
-                      <span style={{ color: "var(--text-2)" }}>{c.texto}</span>
-                    </p>
-                    <p
-                      className="text-[11px] mt-0.5"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {formatRelativeTime(c.criadoEm)}
-                    </p>
-                  </div>
+            {comments.map((c) => (
+              <div key={c.id} className="flex items-start gap-3">
+                <Avatar
+                  nome={c.autorNome}
+                  cor={c.autorCor}
+                  size="sm"
+                  onClick={() => onOpenAutor(c.autorId)}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm" style={{ color: "var(--text)" }}>
+                    <span className="font-semibold">{c.autorNome}</span>{" "}
+                    <span style={{ color: "var(--text-2)" }}>{c.texto}</span>
+                  </p>
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {formatRelativeTime(c.criadoEm)}
+                  </p>
                 </div>
-              );
-            })}
+                <button
+                  onClick={() => onReportComment(c)}
+                  aria-label="Mais opções"
+                  className="p-1 -m-1 shrink-0 active:opacity-60"
+                >
+                  <MoreHorizontal
+                    size={16}
+                    style={{ color: "var(--text-muted)" }}
+                  />
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>

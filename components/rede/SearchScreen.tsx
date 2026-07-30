@@ -6,18 +6,14 @@ import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
 import { GlassCard } from "@/components/ui/GlassCard";
-import {
-  REDE_USERS,
-  RECENT_SEARCHES,
-  CATEGORIA_META,
-  type RedePost,
-} from "@/lib/mockRede";
+import { REDE_USERS, RECENT_SEARCHES } from "@/lib/mockRede";
+import { CATEGORIA_META, type FeedPost } from "@/lib/rede/feed";
 
 interface Props {
-  posts: RedePost[];
+  posts: FeedPost[];
   onBack: () => void;
   onOpenAutor: (autorId: string) => void;
-  onOpenPost: (post: RedePost) => void;
+  onOpenPost: (post: FeedPost) => void;
 }
 
 export function SearchScreen({

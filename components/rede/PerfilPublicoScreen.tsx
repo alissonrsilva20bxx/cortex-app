@@ -8,8 +8,8 @@ import { LiveLinksPreview, type LiveLink } from "./LiveLinksSection";
 import { WishlistCard } from "./WishlistCard";
 import { PostCard } from "./PostCard";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
-import type { RedePost, WishlistItem } from "@/lib/mockRede";
-import type { Usuario } from "@/lib/types";
+import type { WishlistItem } from "@/lib/mockRede";
+import type { FeedPost } from "@/lib/rede/feed";
 
 interface Props {
   nome: string;
@@ -21,16 +21,14 @@ interface Props {
   requestSent: boolean;
   liveLinks: LiveLink[];
   wishlistPublico: WishlistItem[];
-  posts: RedePost[];
-  usuario: Usuario;
+  posts: FeedPost[];
   onBack: () => void;
   onOpenChat?: () => void;
   onSendRequest?: () => void;
   onToggleLike: (id: string) => void;
-  onToggleSave: (id: string) => void;
-  onComment: (post: RedePost) => void;
-  onShare: (post: RedePost) => void;
-  onOpenMenu: (post: RedePost) => void;
+  onComment: (post: FeedPost) => void;
+  onShare: (post: FeedPost) => void;
+  onOpenMenu: (post: FeedPost) => void;
 }
 
 export function PerfilPublicoScreen({
@@ -44,12 +42,10 @@ export function PerfilPublicoScreen({
   liveLinks,
   wishlistPublico,
   posts,
-  usuario,
   onBack,
   onOpenChat,
   onSendRequest,
   onToggleLike,
-  onToggleSave,
   onComment,
   onShare,
   onOpenMenu,
@@ -169,9 +165,7 @@ export function PerfilPublicoScreen({
                   <PostCard
                     key={post.id}
                     post={post}
-                    usuarioNome={usuario.nome}
                     onToggleLike={onToggleLike}
-                    onToggleSave={onToggleSave}
                     onComment={onComment}
                     onShare={onShare}
                     onOpenMenu={onOpenMenu}

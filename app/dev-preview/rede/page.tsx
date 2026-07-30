@@ -21,8 +21,78 @@ export default function DevPreviewRede() {
   const mockInitialized = useRef(false);
   if (!mockInitialized.current) {
     mockInitialized.current = true;
+    const outraAutoraId = "outra-autora";
     __setMockSupabaseClient(
-      createMockSupabaseClient({ tables: {}, cofreFiles: [] }, mockUsuario.id)
+      createMockSupabaseClient(
+        {
+          tables: {
+            rede_perfis: [
+              {
+                id: "perfil-outra",
+                user_id: outraAutoraId,
+                nome_exibicao: "Camila Duarte",
+                cor_avatar: "#FF7AB6",
+                bio: "Nail designer há 6 anos.",
+                area_atuacao: null,
+                criado_em: new Date().toISOString(),
+                atualizado_em: new Date().toISOString(),
+              },
+              {
+                id: "perfil-mock-user",
+                user_id: mockUsuario.id,
+                nome_exibicao: mockUsuario.nome,
+                cor_avatar: "#06b6d4",
+                bio: "",
+                area_atuacao: null,
+                criado_em: new Date().toISOString(),
+                atualizado_em: new Date().toISOString(),
+              },
+            ],
+            rede_posts: [
+              {
+                id: "post-1",
+                autor_id: outraAutoraId,
+                categoria: "conquista",
+                texto:
+                  "Depois de três meses acompanhando minhas entradas, finalmente entendi quanto realmente sobra no fim do mês.",
+                criado_em: new Date(Date.now() - 3_600_000 * 2).toISOString(),
+                atualizado_em: new Date(
+                  Date.now() - 3_600_000 * 2
+                ).toISOString(),
+              },
+              {
+                id: "post-2",
+                autor_id: mockUsuario.id,
+                categoria: "dica",
+                texto:
+                  "Dica rápida: anotar os gastos assim que saem já evita esquecer no fim do mês.",
+                criado_em: new Date(Date.now() - 3_600_000 * 5).toISOString(),
+                atualizado_em: new Date(
+                  Date.now() - 3_600_000 * 5
+                ).toISOString(),
+              },
+            ],
+            rede_comentarios: [
+              {
+                id: "com-1",
+                post_id: "post-1",
+                autor_id: mockUsuario.id,
+                texto: "Que máximo, também preciso fazer isso!",
+                criado_em: new Date(Date.now() - 3_600_000).toISOString(),
+              },
+            ],
+            rede_curtidas: [
+              {
+                post_id: "post-1",
+                user_id: mockUsuario.id,
+                criado_em: new Date().toISOString(),
+              },
+            ],
+          },
+          cofreFiles: [],
+        },
+        mockUsuario.id
+      )
     );
   }
 
