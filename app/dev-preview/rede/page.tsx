@@ -22,6 +22,9 @@ export default function DevPreviewRede() {
   if (!mockInitialized.current) {
     mockInitialized.current = true;
     const outraAutoraId = "outra-autora";
+    const solicitanteId = "solicitante-1";
+    const amigaId = "amiga-1";
+    const sugestaoId = "sugestao-1";
     __setMockSupabaseClient(
       createMockSupabaseClient(
         {
@@ -47,7 +50,56 @@ export default function DevPreviewRede() {
                 criado_em: new Date().toISOString(),
                 atualizado_em: new Date().toISOString(),
               },
+              {
+                id: "perfil-solicitante",
+                user_id: solicitanteId,
+                nome_exibicao: "Larissa Prado",
+                cor_avatar: "#7AA7FF",
+                bio: "Cabeleireira mobile.",
+                area_atuacao: null,
+                criado_em: new Date().toISOString(),
+                atualizado_em: new Date().toISOString(),
+              },
+              {
+                id: "perfil-amiga",
+                user_id: amigaId,
+                nome_exibicao: "Juliana Alves",
+                cor_avatar: "#6EE7B7",
+                bio: "Esteticista.",
+                area_atuacao: null,
+                criado_em: new Date().toISOString(),
+                atualizado_em: new Date().toISOString(),
+              },
+              {
+                id: "perfil-sugestao",
+                user_id: sugestaoId,
+                nome_exibicao: "Fernanda Costa",
+                cor_avatar: "#FFC24B",
+                bio: "Maquiagem para noivas e eventos.",
+                area_atuacao: null,
+                criado_em: new Date().toISOString(),
+                atualizado_em: new Date().toISOString(),
+              },
             ],
+            rede_amizades: [
+              {
+                id: "amz-pendente",
+                solicitante_id: solicitanteId,
+                destinatario_id: mockUsuario.id,
+                status: "pendente",
+                criado_em: new Date().toISOString(),
+                respondido_em: null,
+              },
+              {
+                id: "amz-aceita",
+                solicitante_id: mockUsuario.id,
+                destinatario_id: amigaId,
+                status: "aceita",
+                criado_em: new Date().toISOString(),
+                respondido_em: new Date().toISOString(),
+              },
+            ],
+            rede_bloqueios: [],
             rede_posts: [
               {
                 id: "post-1",

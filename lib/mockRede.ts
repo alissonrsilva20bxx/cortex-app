@@ -22,12 +22,6 @@ export interface RedeUser {
   cor: string; // hex — cor de fundo do avatar (sem fotos reais, como o resto do app)
 }
 
-export interface FriendRequest {
-  id: string;
-  userId: string;
-  mutualCount: number;
-}
-
 export interface DiscoverPerson {
   userId: string;
   motivo: string;
@@ -179,14 +173,6 @@ export const findUser = (id: string) => REDE_USERS.find((u) => u.id === id);
 /** Bio mockada de "mim" — nome/avatar vêm do usuário real, só a bio é fixture. */
 export const MY_BIO =
   "Prestando atendimento com carinho e organização todo dia 💛";
-
-/** Amigas de "mim" — usado para filtrar o segmento "Amigas" do feed. */
-export const FRIEND_IDS = ["u1", "u2", "u4", "u7"];
-
-export const FRIEND_REQUESTS: FriendRequest[] = [
-  { id: "fr1", userId: "u5", mutualCount: 3 },
-  { id: "fr2", userId: "u6", mutualCount: 1 },
-];
 
 export const DISCOVER_PEOPLE: DiscoverPerson[] = [
   { userId: "u3", motivo: "5 amigas em comum" },

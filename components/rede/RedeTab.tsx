@@ -24,16 +24,12 @@ import { LiveLinkForm } from "./LiveLinkForm";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { type LiveLink } from "./LiveLinksSection";
 import {
-  FRIEND_IDS,
-  FRIEND_REQUESTS,
-  DISCOVER_PEOPLE,
   CONVERSATIONS,
   MESSAGES,
   WISHLIST_ITEMS,
   CLIENTES,
   REDE_NOTIFICACOES,
   findUser,
-  type FriendRequest,
   type Conversation,
   type RedeMessage,
   type WishlistItem,
@@ -51,6 +47,8 @@ import {
   listarLiveLinks,
   reordenarLiveLinks,
   excluirLiveLink,
+  buscarPessoas,
+  type PessoaResumo,
 } from "@/lib/rede/perfis";
 import {
   listarFeed,
@@ -65,6 +63,18 @@ import {
   type Categoria,
 } from "@/lib/rede/feed";
 import { criarDenuncia, type CriarDenunciaInput } from "@/lib/rede/denuncias";
+import {
+  listarAmigas,
+  listarSolicitacoesPendentes,
+  listarSolicitacoesEnviadas,
+  listarSugestoes,
+  enviarPedidoAmizade,
+  aceitarPedidoAmizade,
+  recusarPedidoAmizade,
+  removerAmizade,
+  bloquearUsuario,
+  type SolicitacaoAmizade,
+} from "@/lib/rede/social";
 import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
 
@@ -174,10 +184,45 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Dados mockados, mutáveis localmente ──
-  const [friends, setFriends] = useState<string[]>(FRIEND_IDS);
-  const [requests, setRequests] = useState<FriendRequest[]>(FRIEND_REQUESTS);
+  // ── Amigas real -- buscado sob demanda ao entrar na tela (não no mount,
+  // não é o destino padrão como o Feed) ──
+  const [friends, setFriends] = useState<PessoaResumo[]>([]);
+  const [requests, setRequests] = useState<SolicitacaoAmizade[]>([]);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const [sugestoes, setSugestoes] = useState<PessoaResumo[]>([]);
+  const [amigasLoading, setAmigasLoading] = useState(true);
+
+  // Eager, não sob demanda: FeedScreen já mostra "N solicitações de
+  // amizade" na primeira tela (pendingRequestsCount), então precisa saber
+  // isso antes da usuária sequer abrir a aba Amigas.
+  useEffect(() => {
+    let ativo = true;
+    Promise.all([
+      listarAmigas(supabase),
+      listarSolicitacoesPendentes(supabase),
+      listarSolicitacoesEnviadas(supabase),
+      listarSugestoes(supabase),
+    ])
+      .then(([amigasData, solicitacoesData, enviadasData, sugestoesData]) => {
+        if (!ativo) return;
+        setFriends(amigasData);
+        setRequests(solicitacoesData);
+        setSentRequests(enviadasData);
+        setSugestoes(sugestoesData);
+        setAmigasLoading(false);
+      })
+      .catch((e) => {
+        console.error("[RedeTab amigas]", e);
+        toast.error("Não foi possível carregar Amigas.");
+        setAmigasLoading(false);
+      });
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Dados mockados, mutáveis localmente ──
   const [conversations, setConversations] =
     useState<Conversation[]>(CONVERSATIONS);
   const [messages, setMessages] =
@@ -416,21 +461,58 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   }
 
   // ── Amigas ──
-  function acceptRequest(req: FriendRequest) {
-    setFriends((prev) => [...prev, req.userId]);
-    setRequests((prev) => prev.filter((r) => r.id !== req.id));
-    toast.success("Agora vocês são amigas!");
+  async function acceptRequest(req: SolicitacaoAmizade) {
+    try {
+      await aceitarPedidoAmizade(supabase, { amizadeId: req.id });
+      setRequests((prev) => prev.filter((r) => r.id !== req.id));
+      setFriends((prev) => [...prev, req.pessoa]);
+      toast.success("Agora vocês são amigas!");
+    } catch (e) {
+      console.error("[RedeTab aceitar pedido]", e);
+      toast.error("Não foi possível aceitar o pedido.");
+    }
   }
-  function declineRequest(id: string) {
-    setRequests((prev) => prev.filter((r) => r.id !== id));
+  async function declineRequest(id: string) {
+    try {
+      await recusarPedidoAmizade(supabase, { amizadeId: id });
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+    } catch (e) {
+      console.error("[RedeTab recusar pedido]", e);
+      toast.error("Não foi possível recusar o pedido.");
+    }
   }
-  function sendRequest(userId: string) {
-    setSentRequests((prev) => [...prev, userId]);
-    toast.success("Solicitação enviada!");
+  async function sendRequest(userId: string) {
+    try {
+      await enviarPedidoAmizade(supabase, { destinatarioId: userId });
+      setSentRequests((prev) => [...prev, userId]);
+      toast.success("Solicitação enviada!");
+    } catch (e) {
+      console.error("[RedeTab enviar pedido]", e);
+      toast.error("Não foi possível enviar a solicitação.");
+    }
   }
-  function removeFriend(userId: string) {
-    setFriends((prev) => prev.filter((id) => id !== userId));
-    toast.success("Amiga removida");
+  async function removeFriend(userId: string) {
+    try {
+      await removerAmizade(supabase, { outroUserId: userId });
+      setFriends((prev) => prev.filter((f) => f.id !== userId));
+      toast.success("Amiga removida");
+    } catch (e) {
+      console.error("[RedeTab remover amiga]", e);
+      toast.error("Não foi possível remover a amiga.");
+    }
+  }
+  async function blockUser(userId: string) {
+    try {
+      await bloquearUsuario(supabase, { bloqueadoId: userId });
+      setFriends((prev) => prev.filter((f) => f.id !== userId));
+      setRequests((prev) => prev.filter((r) => r.pessoa.id !== userId));
+      setSugestoes((prev) => prev.filter((s) => s.id !== userId));
+      setSentRequests((prev) => prev.filter((id) => id !== userId));
+      toast.success("Usuária bloqueada");
+    } catch (e) {
+      console.error("[RedeTab bloquear]", e);
+      toast.error("Não foi possível bloquear.");
+    }
   }
 
   // ── Notificações ──
@@ -790,7 +872,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         <FeedScreen
           usuario={usuario}
           posts={posts}
-          friends={friends}
+          friends={friends.map((f) => f.id)}
           pendingRequestsCount={requests.length}
           unreadChats={unreadChats}
           unreadNotifs={unreadNotifs}
@@ -812,20 +894,23 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           onBack={pop}
           onOpenAutor={openAutor}
           onOpenPost={(p) => setCommentsPostId(p.id)}
+          onSearchPessoas={(q) => buscarPessoas(supabase, q)}
         />
       )}
 
       {screen.type === "amigas" && (
         <AmigasScreen
+          loading={amigasLoading}
           friends={friends}
           requests={requests}
+          sugestoes={sugestoes}
           sentRequests={sentRequests}
-          discoverPeople={DISCOVER_PEOPLE}
           onBack={pop}
           onAccept={acceptRequest}
           onDecline={declineRequest}
           onSendRequest={sendRequest}
           onRemoveFriend={removeFriend}
+          onBlock={blockUser}
           onOpenChat={openChatWithUser}
           onOpenProfile={openAutor}
         />
@@ -896,12 +981,13 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           const profile = buildProfile(screen.userId);
           const isFriend = profile.isMe
             ? false
-            : friends.includes(screen.userId);
+            : friends.some((f) => f.id === screen.userId);
           const wishlistPublico = profile.isMe
             ? wishlistItems.filter((w) => w.privacidade === "comunidade")
             : [];
-          // LiveLinks de outras pessoas ainda não são reais (isso é
-          // ticket 11, Amigas+Busca) -- só mostra os de verdade no "me".
+          // LiveLinks de outras pessoas ainda não têm de onde vir --
+          // nenhuma ticket do mapa expõe LiveLinks de terceiros, só o
+          // próprio perfil (ticket 09). Fora do escopo por enquanto.
           const livelinksExibidos = profile.isMe ? liveLinks : [];
           return (
             <PerfilPublicoScreen
@@ -918,6 +1004,10 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
               onBack={pop}
               onOpenChat={() => openChatWithUser(screen.userId)}
               onSendRequest={() => sendRequest(screen.userId)}
+              onBlock={() => {
+                blockUser(screen.userId);
+                pop();
+              }}
               {...postActions}
             />
           );

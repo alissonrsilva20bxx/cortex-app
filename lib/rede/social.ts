@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../database.types";
+import { buscarPerfisPorIds, type PessoaResumo } from "./perfis";
 
 type RedeClient = SupabaseClient<Database>;
 type Amizade = Database["public"]["Tables"]["rede_amizades"]["Row"];
@@ -10,12 +11,23 @@ type StatusResposta = Extract<
   "aceita" | "recusada"
 >;
 
+export type { PessoaResumo };
+
+export type SolicitacaoAmizade = {
+  id: string;
+  pessoa: PessoaResumo;
+};
+
 export type EnviarPedidoAmizadeInput = {
   destinatarioId: string;
 };
 
 export type ResponderPedidoAmizadeInput = {
   amizadeId: string;
+};
+
+export type RemoverAmizadeInput = {
+  outroUserId: string;
 };
 
 export type BloqueioInput = {
@@ -37,6 +49,202 @@ async function obterUsuarioId(client: RedeClient): Promise<string> {
   }
 
   return user.id;
+}
+
+/** Ids bloqueados nos dois sentidos (quem eu bloqueei + quem me bloqueou) --
+ * usado pra filtrar amigas/sugestões/solicitações, já que a RLS de
+ * `rede_amizades` (RD-04) não conhece bloqueios, só a de posts conhece. */
+async function listarIdsBloqueados(
+  client: RedeClient,
+  userId: string
+): Promise<Set<string>> {
+  const [{ data: bloqueadaPor, error: e1 }, { data: bloqueei, error: e2 }] =
+    await Promise.all([
+      client
+        .from("rede_bloqueios")
+        .select("bloqueador_id")
+        .eq("bloqueado_id", userId),
+      client
+        .from("rede_bloqueios")
+        .select("bloqueado_id")
+        .eq("bloqueador_id", userId),
+    ]);
+
+  if (e1) {
+    throw e1;
+  }
+  if (e2) {
+    throw e2;
+  }
+
+  const ids = new Set<string>();
+  for (const b of bloqueadaPor ?? []) ids.add(b.bloqueador_id);
+  for (const b of bloqueei ?? []) ids.add(b.bloqueado_id);
+  return ids;
+}
+
+export async function listarAmigas(
+  client: RedeClient
+): Promise<PessoaResumo[]> {
+  const userId = await obterUsuarioId(client);
+  const [
+    { data: comoSolicitante, error: e1 },
+    { data: comoDestinatario, error: e2 },
+    bloqueados,
+  ] = await Promise.all([
+    client
+      .from("rede_amizades")
+      .select("destinatario_id")
+      .eq("solicitante_id", userId)
+      .eq("status", "aceita"),
+    client
+      .from("rede_amizades")
+      .select("solicitante_id")
+      .eq("destinatario_id", userId)
+      .eq("status", "aceita"),
+    listarIdsBloqueados(client, userId),
+  ]);
+
+  if (e1) {
+    throw e1;
+  }
+  if (e2) {
+    throw e2;
+  }
+
+  const ids = [
+    ...(comoSolicitante ?? []).map((r) => r.destinatario_id),
+    ...(comoDestinatario ?? []).map((r) => r.solicitante_id),
+  ].filter((id) => !bloqueados.has(id));
+
+  const perfis = await buscarPerfisPorIds(client, ids);
+  return ids.map((id) => perfis.get(id)).filter((p): p is PessoaResumo => !!p);
+}
+
+export async function listarSolicitacoesPendentes(
+  client: RedeClient
+): Promise<SolicitacaoAmizade[]> {
+  const userId = await obterUsuarioId(client);
+  const [{ data: pedidos, error }, bloqueados] = await Promise.all([
+    client
+      .from("rede_amizades")
+      .select("id,solicitante_id")
+      .eq("destinatario_id", userId)
+      .eq("status", "pendente"),
+    listarIdsBloqueados(client, userId),
+  ]);
+
+  if (error) {
+    throw error;
+  }
+
+  const filtrados = (pedidos ?? []).filter(
+    (p) => !bloqueados.has(p.solicitante_id)
+  );
+  const perfis = await buscarPerfisPorIds(
+    client,
+    filtrados.map((p) => p.solicitante_id)
+  );
+
+  return filtrados
+    .map((p) => {
+      const pessoa = perfis.get(p.solicitante_id);
+      return pessoa ? { id: p.id, pessoa } : null;
+    })
+    .filter((s): s is SolicitacaoAmizade => !!s);
+}
+
+export async function listarSolicitacoesEnviadas(
+  client: RedeClient
+): Promise<string[]> {
+  const userId = await obterUsuarioId(client);
+  const { data, error } = await client
+    .from("rede_amizades")
+    .select("destinatario_id")
+    .eq("solicitante_id", userId)
+    .eq("status", "pendente");
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((r) => r.destinatario_id);
+}
+
+/** "Descobrir" -- toda outra membra sem relação (pendente/aceita/recusada)
+ * nem bloqueio em nenhum sentido. Sem conceito de "amigas em comum": não
+ * existe recomendação real, é diretório simples por enquanto. */
+export async function listarSugestoes(
+  client: RedeClient
+): Promise<PessoaResumo[]> {
+  const userId = await obterUsuarioId(client);
+  const [
+    { data: perfis, error },
+    { data: relacoesA, error: eA },
+    { data: relacoesB, error: eB },
+    bloqueados,
+  ] = await Promise.all([
+    client.from("rede_perfis").select("user_id,nome_exibicao,cor_avatar,bio"),
+    client
+      .from("rede_amizades")
+      .select("destinatario_id")
+      .eq("solicitante_id", userId),
+    client
+      .from("rede_amizades")
+      .select("solicitante_id")
+      .eq("destinatario_id", userId),
+    listarIdsBloqueados(client, userId),
+  ]);
+
+  if (error) {
+    throw error;
+  }
+  if (eA) {
+    throw eA;
+  }
+  if (eB) {
+    throw eB;
+  }
+
+  const excluidos = new Set<string>([
+    userId,
+    ...bloqueados,
+    ...(relacoesA ?? []).map((r) => r.destinatario_id),
+    ...(relacoesB ?? []).map((r) => r.solicitante_id),
+  ]);
+
+  return (perfis ?? [])
+    .filter((p) => !excluidos.has(p.user_id))
+    .map((p) => ({
+      id: p.user_id,
+      nome: p.nome_exibicao,
+      cor: p.cor_avatar,
+      bio: p.bio ?? "",
+    }));
+}
+
+export async function removerAmizade(
+  client: RedeClient,
+  input: RemoverAmizadeInput
+): Promise<void> {
+  const userId = await obterUsuarioId(client);
+  const { error } = await client
+    .from("rede_amizades")
+    .delete()
+    .eq("solicitante_id", userId)
+    .eq("destinatario_id", input.outroUserId);
+  if (error) {
+    throw error;
+  }
+
+  const { error: error2 } = await client
+    .from("rede_amizades")
+    .delete()
+    .eq("solicitante_id", input.outroUserId)
+    .eq("destinatario_id", userId);
+  if (error2) {
+    throw error2;
+  }
 }
 
 async function responderPedido(

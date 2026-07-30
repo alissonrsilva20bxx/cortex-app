@@ -36,6 +36,7 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
   private op: "select" | "insert" | "update" | "delete" | "upsert" = "select";
   private filters: [string, unknown][] = [];
   private inFilters: [string, unknown[]][] = [];
+  private ilikeFilters: [string, string][] = [];
   private orders: [string, boolean][] = [];
   private limitN: number | null = null;
   private wantsSingle = false;
@@ -52,7 +53,17 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
   private matches(row: Row): boolean {
     return (
       matchesFilters(row, this.filters) &&
-      this.inFilters.every(([col, vals]) => vals.includes(row[col]))
+      this.inFilters.every(([col, vals]) => vals.includes(row[col])) &&
+      this.ilikeFilters.every(([col, pattern]) => {
+        const re = new RegExp(
+          `^${pattern
+            .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+            .replace(/%/g, ".*")
+            .replace(/_/g, ".")}$`,
+          "i"
+        );
+        return re.test(String(row[col] ?? ""));
+      })
     );
   }
 
@@ -71,6 +82,10 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
   }
   in(col: string, vals: unknown[]) {
     this.inFilters.push([col, vals]);
+    return this;
+  }
+  ilike(col: string, pattern: string) {
+    this.ilikeFilters.push([col, pattern]);
     return this;
   }
   order(col: string, opts?: { ascending?: boolean }) {

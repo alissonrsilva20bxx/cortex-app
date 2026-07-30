@@ -9,6 +9,29 @@ type LiveLink = Database["public"]["Tables"]["rede_livelinks"]["Row"];
 export const LIVELINK_TITULO_MAX_LENGTH = 100;
 export const LIVELINK_URL_MAX_LENGTH = 2048;
 
+/** Resumo de perfil pra listas (busca, amigas, sugestões) -- mais magro que
+ * `Perfil` completo, que só o dono pede pra editar o próprio. */
+export type PessoaResumo = {
+  id: string;
+  nome: string;
+  cor: string;
+  bio: string;
+};
+
+function paraPessoaResumo(p: {
+  user_id: string;
+  nome_exibicao: string;
+  cor_avatar: string;
+  bio: string | null;
+}): PessoaResumo {
+  return {
+    id: p.user_id,
+    nome: p.nome_exibicao,
+    cor: p.cor_avatar,
+    bio: p.bio ?? "",
+  };
+}
+
 export type CriarPerfilInput = {
   nomeExibicao: string;
   corAvatar: string;
@@ -99,6 +122,52 @@ export async function buscarPerfil(
   }
 
   return data;
+}
+
+/** Busca em lote por id, pra montar autor/nome/cor de listas (amizades,
+ * sugestões, comentários...) sem 1 query por pessoa. */
+export async function buscarPerfisPorIds(
+  client: RedeClient,
+  userIds: string[]
+): Promise<Map<string, PessoaResumo>> {
+  if (userIds.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await client
+    .from("rede_perfis")
+    .select("user_id,nome_exibicao,cor_avatar,bio")
+    .in("user_id", userIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return new Map((data ?? []).map((p) => [p.user_id, paraPessoaResumo(p)]));
+}
+
+/** Busca membros por nome pra Busca > Pessoas -- exclui a própria conta. */
+export async function buscarPessoas(
+  client: RedeClient,
+  query: string
+): Promise<PessoaResumo[]> {
+  const termo = query.trim();
+  if (!termo) {
+    return [];
+  }
+
+  const userId = await obterUsuarioId(client);
+  const { data, error } = await client
+    .from("rede_perfis")
+    .select("user_id,nome_exibicao,cor_avatar,bio")
+    .ilike("nome_exibicao", `%${termo}%`)
+    .limit(20);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).filter((p) => p.user_id !== userId).map(paraPessoaResumo);
 }
 
 export async function atualizarPerfil(

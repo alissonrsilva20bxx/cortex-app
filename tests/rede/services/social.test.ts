@@ -5,7 +5,12 @@ import {
   bloquearUsuario,
   desbloquearUsuario,
   enviarPedidoAmizade,
+  listarAmigas,
+  listarSolicitacoesEnviadas,
+  listarSolicitacoesPendentes,
+  listarSugestoes,
   recusarPedidoAmizade,
+  removerAmizade,
 } from "../../../lib/rede/social";
 
 function clienteComUsuario(userId = "user-1") {
@@ -182,6 +187,233 @@ describe("serviço social", () => {
     ).resolves.toBeUndefined();
     expect(eqBloqueador).toHaveBeenCalledWith("bloqueador_id", "user-1");
     expect(eqBloqueado).toHaveBeenCalledWith("bloqueado_id", "user-2");
+  });
+
+  it("lista amigas aceitas nos dois sentidos, excluindo bloqueadas", async () => {
+    const client = clienteComUsuario();
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_amizades") {
+        return {
+          select: (cols: string) => ({
+            eq: (col1: string) => ({
+              eq: () => {
+                if (col1 === "solicitante_id") {
+                  return Promise.resolve({
+                    data: [{ destinatario_id: "user-2" }],
+                    error: null,
+                  });
+                }
+                return Promise.resolve({
+                  data: [{ solicitante_id: "user-3" }],
+                  error: null,
+                });
+              },
+            }),
+          }),
+        };
+      }
+      if (table === "rede_bloqueios") {
+        return {
+          select: () => ({
+            eq: (col: string) =>
+              col === "bloqueado_id"
+                ? Promise.resolve({ data: [], error: null })
+                : Promise.resolve({
+                    data: [{ bloqueado_id: "user-3" }],
+                    error: null,
+                  }),
+          }),
+        };
+      }
+      if (table === "rede_perfis") {
+        return {
+          select: () => ({
+            in: () =>
+              Promise.resolve({
+                data: [
+                  {
+                    user_id: "user-2",
+                    nome_exibicao: "Amiga 2",
+                    cor_avatar: "#fff",
+                    bio: null,
+                  },
+                ],
+                error: null,
+              }),
+          }),
+        };
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+
+    // user-3 é excluída por bloqueio (aceita mas bloqueada), user-2 fica.
+    await expect(listarAmigas(client as never)).resolves.toEqual([
+      { id: "user-2", nome: "Amiga 2", cor: "#fff", bio: "" },
+    ]);
+  });
+
+  it("lista solicitações pendentes recebidas com o perfil de quem enviou", async () => {
+    const client = clienteComUsuario();
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_amizades") {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () =>
+                Promise.resolve({
+                  data: [{ id: "amizade-1", solicitante_id: "user-2" }],
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      }
+      if (table === "rede_bloqueios") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [], error: null }),
+          }),
+        };
+      }
+      if (table === "rede_perfis") {
+        return {
+          select: () => ({
+            in: () =>
+              Promise.resolve({
+                data: [
+                  {
+                    user_id: "user-2",
+                    nome_exibicao: "Solicitante",
+                    cor_avatar: "#abc",
+                    bio: "Oi",
+                  },
+                ],
+                error: null,
+              }),
+          }),
+        };
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+
+    await expect(listarSolicitacoesPendentes(client as never)).resolves.toEqual(
+      [
+        {
+          id: "amizade-1",
+          pessoa: { id: "user-2", nome: "Solicitante", cor: "#abc", bio: "Oi" },
+        },
+      ]
+    );
+  });
+
+  it("lista os ids das solicitações enviadas e ainda pendentes", async () => {
+    const eqStatus = vi.fn().mockResolvedValue({
+      data: [{ destinatario_id: "user-2" }, { destinatario_id: "user-3" }],
+      error: null,
+    });
+    const eqSolicitante = vi.fn().mockReturnValue({ eq: eqStatus });
+    const select = vi.fn().mockReturnValue({ eq: eqSolicitante });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ select });
+
+    await expect(listarSolicitacoesEnviadas(client as never)).resolves.toEqual([
+      "user-2",
+      "user-3",
+    ]);
+    expect(eqSolicitante).toHaveBeenCalledWith("solicitante_id", "user-1");
+    expect(eqStatus).toHaveBeenCalledWith("status", "pendente");
+  });
+
+  it("sugere membros sem relação nem bloqueio em nenhum sentido", async () => {
+    const client = clienteComUsuario();
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_perfis") {
+        return {
+          select: () =>
+            Promise.resolve({
+              data: [
+                {
+                  user_id: "user-1",
+                  nome_exibicao: "Eu",
+                  cor_avatar: "#000",
+                  bio: null,
+                },
+                {
+                  user_id: "user-2",
+                  nome_exibicao: "Já amiga",
+                  cor_avatar: "#111",
+                  bio: null,
+                },
+                {
+                  user_id: "user-3",
+                  nome_exibicao: "Bloqueada",
+                  cor_avatar: "#222",
+                  bio: null,
+                },
+                {
+                  user_id: "user-4",
+                  nome_exibicao: "Estranha",
+                  cor_avatar: "#333",
+                  bio: "Oi",
+                },
+              ],
+              error: null,
+            }),
+        };
+      }
+      if (table === "rede_amizades") {
+        return {
+          select: (cols: string) => ({
+            eq: () =>
+              cols === "destinatario_id"
+                ? Promise.resolve({
+                    data: [{ destinatario_id: "user-2" }],
+                    error: null,
+                  })
+                : Promise.resolve({ data: [], error: null }),
+          }),
+        };
+      }
+      if (table === "rede_bloqueios") {
+        return {
+          select: () => ({
+            eq: (col: string) =>
+              col === "bloqueado_id"
+                ? Promise.resolve({ data: [], error: null })
+                : Promise.resolve({
+                    data: [{ bloqueado_id: "user-3" }],
+                    error: null,
+                  }),
+          }),
+        };
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+
+    await expect(listarSugestoes(client as never)).resolves.toEqual([
+      { id: "user-4", nome: "Estranha", cor: "#333", bio: "Oi" },
+    ]);
+  });
+
+  it("remove a amizade em qualquer sentido entre os dois usuários", async () => {
+    const eqB1 = vi.fn().mockResolvedValue({ error: null });
+    const eqA1 = vi.fn().mockReturnValue({ eq: eqB1 });
+    const eqB2 = vi.fn().mockResolvedValue({ error: null });
+    const eqA2 = vi.fn().mockReturnValue({ eq: eqB2 });
+    const remove1 = vi.fn().mockReturnValue({ eq: eqA1 });
+    const remove2 = vi.fn().mockReturnValue({ eq: eqA2 });
+    const client = clienteComUsuario();
+    client.from
+      .mockReturnValueOnce({ delete: remove1 })
+      .mockReturnValueOnce({ delete: remove2 });
+
+    await expect(
+      removerAmizade(client as never, { outroUserId: "user-2" })
+    ).resolves.toBeUndefined();
+    expect(eqA1).toHaveBeenCalledWith("solicitante_id", "user-1");
+    expect(eqB1).toHaveBeenCalledWith("destinatario_id", "user-2");
+    expect(eqA2).toHaveBeenCalledWith("solicitante_id", "user-2");
+    expect(eqB2).toHaveBeenCalledWith("destinatario_id", "user-1");
   });
 
   it("recusa escrita sem usuário autenticado", async () => {

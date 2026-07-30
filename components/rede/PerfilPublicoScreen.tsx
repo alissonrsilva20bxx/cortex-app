@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MessageCircle, UserPlus, Check } from "lucide-react";
+import {
+  MessageCircle,
+  UserPlus,
+  Check,
+  MoreHorizontal,
+  Ban,
+  X,
+} from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { LiveLinksPreview, type LiveLink } from "./LiveLinksSection";
 import { WishlistCard } from "./WishlistCard";
 import { PostCard } from "./PostCard";
+import { OptionsSheet } from "./OptionsSheet";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
 import type { WishlistItem } from "@/lib/mockRede";
 import type { FeedPost } from "@/lib/rede/feed";
@@ -25,6 +33,7 @@ interface Props {
   onBack: () => void;
   onOpenChat?: () => void;
   onSendRequest?: () => void;
+  onBlock?: () => void;
   onToggleLike: (id: string) => void;
   onComment: (post: FeedPost) => void;
   onShare: (post: FeedPost) => void;
@@ -45,12 +54,14 @@ export function PerfilPublicoScreen({
   onBack,
   onOpenChat,
   onSendRequest,
+  onBlock,
   onToggleLike,
   onComment,
   onShare,
   onOpenMenu,
 }: Props) {
   const [loading, setLoading] = useState(true);
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 420);
@@ -129,6 +140,21 @@ export function PerfilPublicoScreen({
                     Adicionar
                   </button>
                 )}
+                {onBlock && (
+                  <button
+                    onClick={() => setBlockConfirmOpen(true)}
+                    aria-label="Mais opções"
+                    className="flex items-center justify-center rounded-full transition-opacity active:opacity-70"
+                    style={{
+                      width: 34,
+                      height: 34,
+                      border: "1px solid var(--border-color)",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    <MoreHorizontal size={15} />
+                  </button>
+                )}
               </div>
             )}
             {isMe && (
@@ -177,6 +203,27 @@ export function PerfilPublicoScreen({
           )}
         </>
       )}
+
+      <OptionsSheet
+        open={blockConfirmOpen}
+        title={`Bloquear ${nome}?`}
+        onClose={() => setBlockConfirmOpen(false)}
+        options={[
+          {
+            key: "confirmar",
+            label: "Sim, bloquear",
+            Icon: Ban,
+            danger: true,
+            onSelect: () => onBlock?.(),
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
+          },
+        ]}
+      />
     </div>
   );
 }

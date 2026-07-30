@@ -2,10 +2,10 @@
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Avatar } from "./Avatar";
-import type { RedeUser } from "@/lib/mockRede";
+import type { PessoaResumo } from "@/lib/rede/perfis";
 
 interface Props {
-  user: RedeUser;
+  user: PessoaResumo;
   subtitle?: string;
   onOpenProfile: () => void;
   action: React.ReactNode;

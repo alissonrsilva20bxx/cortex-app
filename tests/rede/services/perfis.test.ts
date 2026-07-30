@@ -4,6 +4,8 @@ import {
   atualizarLiveLink,
   atualizarPerfil,
   buscarPerfil,
+  buscarPerfisPorIds,
+  buscarPessoas,
   criarLiveLink,
   criarPerfil,
   excluirLiveLink,
@@ -83,6 +85,77 @@ describe("serviço de perfis", () => {
     await expect(
       buscarPerfil(client as never, "user-desconhecido")
     ).resolves.toBeNull();
+  });
+
+  it("busca perfis em lote por id, ignorando ids não encontrados", async () => {
+    const inFn = vi.fn().mockResolvedValue({
+      data: [
+        {
+          user_id: "user-2",
+          nome_exibicao: "Bia",
+          cor_avatar: "#111",
+          bio: null,
+        },
+      ],
+      error: null,
+    });
+    const select = vi.fn().mockReturnValue({ in: inFn });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ select });
+
+    const resultado = await buscarPerfisPorIds(client as never, [
+      "user-2",
+      "user-3",
+    ]);
+    expect(resultado.get("user-2")).toEqual({
+      id: "user-2",
+      nome: "Bia",
+      cor: "#111",
+      bio: "",
+    });
+    expect(resultado.has("user-3")).toBe(false);
+  });
+
+  it("não consulta o banco quando a lista de ids está vazia", async () => {
+    const client = clienteComUsuario();
+    const resultado = await buscarPerfisPorIds(client as never, []);
+    expect(resultado.size).toBe(0);
+    expect(client.from).not.toHaveBeenCalled();
+  });
+
+  it("busca pessoas por nome, excluindo a própria conta", async () => {
+    const limit = vi.fn().mockResolvedValue({
+      data: [
+        {
+          user_id: "user-1",
+          nome_exibicao: "Eu Mesma",
+          cor_avatar: "#000",
+          bio: null,
+        },
+        {
+          user_id: "user-2",
+          nome_exibicao: "Camila",
+          cor_avatar: "#f0f",
+          bio: "Oi",
+        },
+      ],
+      error: null,
+    });
+    const ilike = vi.fn().mockReturnValue({ limit });
+    const select = vi.fn().mockReturnValue({ ilike });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ select });
+
+    await expect(buscarPessoas(client as never, "cam")).resolves.toEqual([
+      { id: "user-2", nome: "Camila", cor: "#f0f", bio: "Oi" },
+    ]);
+    expect(ilike).toHaveBeenCalledWith("nome_exibicao", "%cam%");
+  });
+
+  it("não busca pessoas com termo vazio", async () => {
+    const client = clienteComUsuario();
+    await expect(buscarPessoas(client as never, "   ")).resolves.toEqual([]);
+    expect(client.from).not.toHaveBeenCalled();
   });
 
   it("atualiza somente o perfil do usuário autenticado", async () => {

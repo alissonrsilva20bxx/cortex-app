@@ -6,14 +6,16 @@ import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { REDE_USERS, RECENT_SEARCHES } from "@/lib/mockRede";
+import { RECENT_SEARCHES } from "@/lib/mockRede";
 import { CATEGORIA_META, type FeedPost } from "@/lib/rede/feed";
+import type { PessoaResumo } from "@/lib/rede/perfis";
 
 interface Props {
   posts: FeedPost[];
   onBack: () => void;
   onOpenAutor: (autorId: string) => void;
   onOpenPost: (post: FeedPost) => void;
+  onSearchPessoas: (query: string) => Promise<PessoaResumo[]>;
 }
 
 export function SearchScreen({
@@ -21,34 +23,40 @@ export function SearchScreen({
   onBack,
   onOpenAutor,
   onOpenPost,
+  onSearchPessoas,
 }: Props) {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
+  const [pessoas, setPessoas] = useState<PessoaResumo[]>([]);
   const q = query.trim().toLowerCase();
 
-  // Simula o instante de busca (dados são locais e instantâneos, mas a UI
-  // precisa mostrar o estado de carregamento pedido no escopo).
   useEffect(() => {
     if (q.length === 0) {
       setSearching(false);
+      setPessoas([]);
       return;
     }
+    let ativo = true;
     setSearching(true);
-    const t = setTimeout(() => setSearching(false), 380);
-    return () => clearTimeout(t);
+    const t = setTimeout(() => {
+      onSearchPessoas(q)
+        .then((data) => {
+          if (!ativo) return;
+          setPessoas(data);
+          setSearching(false);
+        })
+        .catch(() => {
+          if (!ativo) return;
+          setPessoas([]);
+          setSearching(false);
+        });
+    }, 380);
+    return () => {
+      ativo = false;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
-
-  const pessoas = useMemo(
-    () =>
-      q.length === 0
-        ? []
-        : REDE_USERS.filter(
-            (u) =>
-              u.nome.toLowerCase().includes(q) ||
-              u.handle.toLowerCase().includes(q)
-          ),
-    [q]
-  );
 
   const assuntos = useMemo(
     () =>
@@ -128,12 +136,14 @@ export function SearchScreen({
                       >
                         {u.nome}
                       </p>
-                      <p
-                        className="text-xs truncate"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {u.handle}
-                      </p>
+                      {u.bio && (
+                        <p
+                          className="text-xs truncate"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {u.bio}
+                        </p>
+                      )}
                     </div>
                   </GlassCard>
                 ))}

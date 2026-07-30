@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   MessageCircle,
   Check,
@@ -8,17 +8,15 @@ import {
   UserPlus,
   MoreHorizontal,
   UserMinus,
+  Ban,
 } from "lucide-react";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { ScreenHeader } from "./ScreenHeader";
 import { FriendCard } from "./FriendCard";
 import { SkeletonList } from "./Skeleton";
 import { OptionsSheet } from "./OptionsSheet";
-import {
-  findUser,
-  type FriendRequest,
-  type DiscoverPerson,
-} from "@/lib/mockRede";
+import type { PessoaResumo } from "@/lib/rede/perfis";
+import type { SolicitacaoAmizade } from "@/lib/rede/social";
 
 type SubTab = "amigas" | "solicitacoes" | "descobrir";
 
@@ -56,44 +54,38 @@ function ChipButton({
 }
 
 interface Props {
-  friends: string[];
-  requests: FriendRequest[];
+  loading: boolean;
+  friends: PessoaResumo[];
+  requests: SolicitacaoAmizade[];
+  sugestoes: PessoaResumo[];
   sentRequests: string[];
   onBack: () => void;
-  onAccept: (request: FriendRequest) => void;
+  onAccept: (request: SolicitacaoAmizade) => void;
   onDecline: (requestId: string) => void;
   onSendRequest: (userId: string) => void;
   onRemoveFriend: (userId: string) => void;
+  onBlock: (userId: string) => void;
   onOpenChat: (userId: string) => void;
   onOpenProfile: (userId: string) => void;
-  discoverPeople: DiscoverPerson[];
 }
 
 export function AmigasScreen({
+  loading,
   friends,
   requests,
+  sugestoes,
   sentRequests,
   onBack,
   onAccept,
   onDecline,
   onSendRequest,
   onRemoveFriend,
+  onBlock,
   onOpenChat,
   onOpenProfile,
-  discoverPeople,
 }: Props) {
   const [tab, setTab] = useState<SubTab>("amigas");
-  const [loading, setLoading] = useState(true);
-  const [menuUserId, setMenuUserId] = useState<string | null>(null);
-
-  // Simula o instante de carregamento inicial da tela (dados locais são
-  // instantâneos, mas o escopo pede o estado de carregando visível).
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 420);
-    return () => clearTimeout(t);
-  }, []);
-
-  const menuUser = menuUserId ? findUser(menuUserId) : null;
+  const [menuUser, setMenuUser] = useState<PessoaResumo | null>(null);
 
   return (
     <div className="pb-4">
@@ -127,30 +119,26 @@ export function AmigasScreen({
                   Você ainda não tem amigas por aqui.
                 </p>
               ) : (
-                friends.map((id) => {
-                  const user = findUser(id);
-                  if (!user) return null;
-                  return (
-                    <FriendCard
-                      key={id}
-                      user={user}
-                      onOpenProfile={() => onOpenProfile(id)}
-                      action={
-                        <>
-                          <ChipButton onClick={() => onOpenChat(id)}>
-                            <MessageCircle size={15} />
-                          </ChipButton>
-                          <ChipButton
-                            variant="ghost"
-                            onClick={() => setMenuUserId(id)}
-                          >
-                            <MoreHorizontal size={15} />
-                          </ChipButton>
-                        </>
-                      }
-                    />
-                  );
-                })
+                friends.map((user) => (
+                  <FriendCard
+                    key={user.id}
+                    user={user}
+                    onOpenProfile={() => onOpenProfile(user.id)}
+                    action={
+                      <>
+                        <ChipButton onClick={() => onOpenChat(user.id)}>
+                          <MessageCircle size={15} />
+                        </ChipButton>
+                        <ChipButton
+                          variant="ghost"
+                          onClick={() => setMenuUser(user)}
+                        >
+                          <MoreHorizontal size={15} />
+                        </ChipButton>
+                      </>
+                    }
+                  />
+                ))
               )}
             </div>
           )}
@@ -165,38 +153,33 @@ export function AmigasScreen({
                   Nenhuma solicitação pendente.
                 </p>
               ) : (
-                requests.map((req) => {
-                  const user = findUser(req.userId);
-                  if (!user) return null;
-                  return (
-                    <FriendCard
-                      key={req.id}
-                      user={user}
-                      subtitle={`${req.mutualCount} amiga${req.mutualCount !== 1 ? "s" : ""} em comum`}
-                      onOpenProfile={() => onOpenProfile(req.userId)}
-                      action={
-                        <>
-                          <ChipButton
-                            variant="danger"
-                            onClick={() => onDecline(req.id)}
-                          >
-                            <X size={15} />
-                          </ChipButton>
-                          <ChipButton onClick={() => onAccept(req)}>
-                            <Check size={15} />
-                          </ChipButton>
-                        </>
-                      }
-                    />
-                  );
-                })
+                requests.map((req) => (
+                  <FriendCard
+                    key={req.id}
+                    user={req.pessoa}
+                    onOpenProfile={() => onOpenProfile(req.pessoa.id)}
+                    action={
+                      <>
+                        <ChipButton
+                          variant="danger"
+                          onClick={() => onDecline(req.id)}
+                        >
+                          <X size={15} />
+                        </ChipButton>
+                        <ChipButton onClick={() => onAccept(req)}>
+                          <Check size={15} />
+                        </ChipButton>
+                      </>
+                    }
+                  />
+                ))
               )}
             </div>
           )}
 
           {tab === "descobrir" && (
             <div className="space-y-2">
-              {discoverPeople.length === 0 ? (
+              {sugestoes.length === 0 ? (
                 <p
                   className="text-sm text-center py-12"
                   style={{ color: "var(--text-muted)" }}
@@ -204,16 +187,13 @@ export function AmigasScreen({
                   Nenhuma sugestão por enquanto.
                 </p>
               ) : (
-                discoverPeople.map((d) => {
-                  const user = findUser(d.userId);
-                  if (!user) return null;
-                  const sent = sentRequests.includes(d.userId);
+                sugestoes.map((user) => {
+                  const sent = sentRequests.includes(user.id);
                   return (
                     <FriendCard
-                      key={d.userId}
+                      key={user.id}
                       user={user}
-                      subtitle={d.motivo}
-                      onOpenProfile={() => onOpenProfile(d.userId)}
+                      onOpenProfile={() => onOpenProfile(user.id)}
                       action={
                         sent ? (
                           <span
@@ -223,7 +203,7 @@ export function AmigasScreen({
                             Enviado
                           </span>
                         ) : (
-                          <ChipButton onClick={() => onSendRequest(d.userId)}>
+                          <ChipButton onClick={() => onSendRequest(user.id)}>
                             <UserPlus size={15} />
                           </ChipButton>
                         )
@@ -240,7 +220,7 @@ export function AmigasScreen({
       <OptionsSheet
         open={!!menuUser}
         title={menuUser?.nome ?? ""}
-        onClose={() => setMenuUserId(null)}
+        onClose={() => setMenuUser(null)}
         options={[
           {
             key: "remover",
@@ -248,7 +228,16 @@ export function AmigasScreen({
             Icon: UserMinus,
             danger: true,
             onSelect: () => {
-              if (menuUserId) onRemoveFriend(menuUserId);
+              if (menuUser) onRemoveFriend(menuUser.id);
+            },
+          },
+          {
+            key: "bloquear",
+            label: "Bloquear",
+            Icon: Ban,
+            danger: true,
+            onSelect: () => {
+              if (menuUser) onBlock(menuUser.id);
             },
           },
         ]}
