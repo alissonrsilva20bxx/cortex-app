@@ -100,6 +100,38 @@ export default function DevPreviewRede() {
               },
             ],
             rede_bloqueios: [],
+            rede_conversas: [
+              {
+                id: "conversa-1",
+                criado_em: new Date().toISOString(),
+                user_high_id:
+                  mockUsuario.id > amigaId ? mockUsuario.id : amigaId,
+                user_low_id:
+                  mockUsuario.id > amigaId ? amigaId : mockUsuario.id,
+              },
+            ],
+            rede_conversas_participantes: [
+              { conversa_id: "conversa-1", user_id: mockUsuario.id },
+              { conversa_id: "conversa-1", user_id: amigaId },
+            ],
+            rede_mensagens: [
+              {
+                id: "msg-1",
+                conversa_id: "conversa-1",
+                autor_id: amigaId,
+                texto: "Oi! Vi seu post sobre anotar os gastos, ótima dica!",
+                criado_em: new Date(Date.now() - 3_600_000 * 3).toISOString(),
+                lida_em: null,
+              },
+              {
+                id: "msg-2",
+                conversa_id: "conversa-1",
+                autor_id: amigaId,
+                texto: "Faz isso desde quando?",
+                criado_em: new Date(Date.now() - 3_600_000 * 2.9).toISOString(),
+                lida_em: null,
+              },
+            ],
             rede_posts: [
               {
                 id: "post-1",

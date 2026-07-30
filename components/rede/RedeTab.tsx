@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Link2, Flag, Pencil, Trash2, Send, Share2, X } from "lucide-react";
+import {
+  Link2,
+  Flag,
+  Pencil,
+  Trash2,
+  Send,
+  Share2,
+  X,
+  Ban,
+} from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { FeedScreen } from "./FeedScreen";
 import { SearchScreen } from "./SearchScreen";
 import { AmigasScreen } from "./AmigasScreen";
 import { ChatListScreen } from "./ChatListScreen";
-import { ChatThreadScreen } from "./ChatThreadScreen";
+import { ChatThreadScreen, type ChatMessage } from "./ChatThreadScreen";
 import { MeuEspacoScreen } from "./MeuEspacoScreen";
 import { PerfilPublicoScreen } from "./PerfilPublicoScreen";
 import { WishlistScreen } from "./WishlistScreen";
@@ -24,14 +33,10 @@ import { LiveLinkForm } from "./LiveLinkForm";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { type LiveLink } from "./LiveLinksSection";
 import {
-  CONVERSATIONS,
-  MESSAGES,
   WISHLIST_ITEMS,
   CLIENTES,
   REDE_NOTIFICACOES,
   findUser,
-  type Conversation,
-  type RedeMessage,
   type WishlistItem,
   type Cliente,
   type RedeNotificacao,
@@ -75,6 +80,15 @@ import {
   bloquearUsuario,
   type SolicitacaoAmizade,
 } from "@/lib/rede/social";
+import {
+  listarConversas,
+  listarMensagens,
+  enviarMensagem,
+  marcarMensagemComoLida,
+  abrirConversa1a1,
+  assinarMensagensConversa,
+  type ConversaResumo,
+} from "@/lib/rede/mensagens";
 import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
 
@@ -222,11 +236,116 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Chat real ──
+  const [conversations, setConversations] = useState<ConversaResumo[]>([]);
+  const [conversationsLoading, setConversationsLoading] = useState(true);
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [threadLoading, setThreadLoading] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+    listarConversas(supabase)
+      .then((data) => {
+        if (!ativo) return;
+        setConversations(data);
+        setConversationsLoading(false);
+      })
+      .catch((e) => {
+        console.error("[RedeTab conversas]", e);
+        toast.error("Não foi possível carregar as conversas.");
+        setConversationsLoading(false);
+      });
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const abertaConversaId =
+    screen.type === "chatThread" ? screen.conversationId : null;
+
+  useEffect(() => {
+    if (!abertaConversaId) return;
+    const conversaId = abertaConversaId;
+    let ativo = true;
+    let canal: Awaited<ReturnType<typeof assinarMensagensConversa>> | null =
+      null;
+    setThreadLoading(true);
+
+    (async () => {
+      const data = await listarMensagens(supabase, conversaId);
+      if (!ativo) return;
+      setMessages((prev) => ({ ...prev, [conversaId]: data }));
+      setThreadLoading(false);
+
+      const naoLidas = data.filter((m) => !m.deMim && !m.lidaEm);
+      if (naoLidas.length > 0) {
+        await Promise.all(
+          naoLidas.map((m) =>
+            marcarMensagemComoLida(supabase, {
+              conversaId,
+              mensagemId: m.id,
+            })
+          )
+        );
+        if (!ativo) return;
+        setConversations((prev) =>
+          prev.map((c) => (c.id === conversaId ? { ...c, naoLidas: 0 } : c))
+        );
+      }
+
+      canal = await assinarMensagensConversa(supabase, {
+        conversaId,
+        onMensagem: (nova) => {
+          setMessages((prev) => {
+            const atual = prev[conversaId] ?? [];
+            if (atual.some((m) => m.id === nova.id)) return prev;
+            const msg: ChatMessage = {
+              id: nova.id,
+              autorId: nova.autor_id,
+              texto: nova.texto,
+              criadoEm: nova.criado_em,
+              lidaEm: nova.lida_em,
+              deMim: nova.autor_id === usuario.id,
+            };
+            return { ...prev, [conversaId]: [...atual, msg] };
+          });
+          const deOutraPessoa = nova.autor_id !== usuario.id;
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === conversaId
+                ? {
+                    ...c,
+                    ultimaMensagem: nova.texto,
+                    ultimaMensagemEm: nova.criado_em,
+                    naoLidas: deOutraPessoa ? 0 : c.naoLidas,
+                  }
+                : c
+            )
+          );
+          // A conversa já está aberta = já está sendo lida ao vivo.
+          if (deOutraPessoa) {
+            marcarMensagemComoLida(supabase, {
+              conversaId,
+              mensagemId: nova.id,
+            }).catch((e) => console.error("[RedeTab marcar lida]", e));
+          }
+        },
+      });
+    })().catch((e) => {
+      console.error("[RedeTab thread]", e);
+      toast.error("Não foi possível carregar a conversa.");
+      setThreadLoading(false);
+    });
+
+    return () => {
+      ativo = false;
+      if (canal) void supabase.removeChannel(canal);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abertaConversaId]);
+
   // ── Dados mockados, mutáveis localmente ──
-  const [conversations, setConversations] =
-    useState<Conversation[]>(CONVERSATIONS);
-  const [messages, setMessages] =
-    useState<Record<string, RedeMessage[]>>(MESSAGES);
   const [wishlistItems, setWishlistItems] =
     useState<WishlistItem[]>(WISHLIST_ITEMS);
   const [clientes, setClientes] = useState<Cliente[]>(CLIENTES);
@@ -260,12 +379,14 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const [deleteConfirmCliente, setDeleteConfirmCliente] =
     useState<Cliente | null>(null);
   const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
-  // Alvo da denúncia em andamento -- separado do menu de opções do post
-  // porque também é aberto a partir do "..." de um comentário.
+  // Alvo da denúncia em andamento -- também é aberto a partir do "..." de
+  // um comentário e do "..." de uma conversa (aí denuncia a pessoa, não
+  // uma mensagem específica -- mais simples e igualmente acionável).
   const [reportTarget, setReportTarget] = useState<{
-    tipo: "post" | "comentario";
+    tipo: "post" | "comentario" | "usuario";
     id: string;
   } | null>(null);
+  const [chatMenuOpen, setChatMenuOpen] = useState(false);
 
   // Comentários do post atualmente aberto no CommentsSheet -- buscados sob
   // demanda (rede_posts não guarda a lista, só existe agregada aqui).
@@ -508,6 +629,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       setRequests((prev) => prev.filter((r) => r.pessoa.id !== userId));
       setSugestoes((prev) => prev.filter((s) => s.id !== userId));
       setSentRequests((prev) => prev.filter((id) => id !== userId));
+      setConversations((prev) => prev.filter((c) => c.outroUserId !== userId));
       toast.success("Usuária bloqueada");
     } catch (e) {
       console.error("[RedeTab bloquear]", e);
@@ -532,77 +654,120 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     );
     push({ type: "chatThread", conversationId });
   }
-  function openChatWithUser(userId: string) {
-    const existing = conversations.find((c) => c.userId === userId);
+  async function openChatWithUser(userId: string) {
+    const existing = conversations.find((c) => c.outroUserId === userId);
     if (existing) {
       openChatThread(existing.id);
       return;
     }
-    const nova: Conversation = {
-      id: `c-${userId}`,
-      userId,
-      ultimaMensagem: "",
-      hora: "",
-      naoLidas: 0,
-    };
-    setConversations((prev) => [nova, ...prev]);
-    setMessages((prev) => ({ ...prev, [nova.id]: [] }));
-    push({ type: "chatThread", conversationId: nova.id });
+    try {
+      const conversaId = await abrirConversa1a1(supabase, {
+        outroUserId: userId,
+      });
+      const perfilOutro = await buscarPerfil(supabase, userId);
+      const nova: ConversaResumo = {
+        id: conversaId,
+        outroUserId: userId,
+        outroNome: perfilOutro?.nome_exibicao ?? "Usuária",
+        outroCor: perfilOutro?.cor_avatar ?? "var(--accent)",
+        ultimaMensagem: "",
+        ultimaMensagemEm: null,
+        naoLidas: 0,
+      };
+      setConversations((prev) => [nova, ...prev]);
+      push({ type: "chatThread", conversationId: conversaId });
+    } catch (e) {
+      console.error("[RedeTab abrir conversa]", e);
+      toast.error("Não foi possível abrir a conversa.");
+    }
   }
-  // "erro" é um gatilho de demonstração — digitar exatamente essa palavra
-  // mostra o estado de falha de envio de propósito, pra dar pra revisar sem
-  // depender de sorte num delay aleatório.
-  function settleMessage(
+
+  function mensagemFromRow(row: {
+    id: string;
+    autor_id: string;
+    texto: string;
+    criado_em: string;
+    lida_em: string | null;
+  }): ChatMessage {
+    return {
+      id: row.id,
+      autorId: row.autor_id,
+      texto: row.texto,
+      criadoEm: row.criado_em,
+      lidaEm: row.lida_em,
+      deMim: true,
+    };
+  }
+
+  async function doSendMessage(
     conversationId: string,
-    messageId: string,
-    status: "sent" | "error"
+    localId: string,
+    texto: string
   ) {
-    setMessages((prev) => ({
-      ...prev,
-      [conversationId]: (prev[conversationId] ?? []).map((m) =>
-        m.id === messageId ? { ...m, status } : m
-      ),
-    }));
+    try {
+      const created = await enviarMensagem(supabase, {
+        conversaId: conversationId,
+        texto,
+      });
+      const confirmada = mensagemFromRow(created);
+      setMessages((prev) => ({
+        ...prev,
+        [conversationId]: (prev[conversationId] ?? []).map((m) =>
+          m.id === localId ? confirmada : m
+        ),
+      }));
+      fetch("/api/rede/mensagens/notificar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversaId: conversationId, texto }),
+      }).catch((e) => console.error("[RedeTab notificar mensagem]", e));
+    } catch (e) {
+      console.error("[RedeTab enviar mensagem]", e);
+      setMessages((prev) => ({
+        ...prev,
+        [conversationId]: (prev[conversationId] ?? []).map((m) =>
+          m.id === localId ? { ...m, status: "error" } : m
+        ),
+      }));
+    }
   }
 
   function sendMessage(conversationId: string, texto: string) {
-    const id = `m-${Date.now()}`;
-    const msg: RedeMessage = {
+    const id = `temp-${Date.now()}`;
+    const criadoEm = new Date().toISOString();
+    const otimista: ChatMessage = {
       id,
-      deMim: true,
+      autorId: usuario.id,
       texto,
-      hora: new Date().toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      criadoEm,
+      lidaEm: null,
+      deMim: true,
       status: "sending",
     };
     setMessages((prev) => ({
       ...prev,
-      [conversationId]: [...(prev[conversationId] ?? []), msg],
+      [conversationId]: [...(prev[conversationId] ?? []), otimista],
     }));
     setConversations((prev) =>
       prev.map((c) =>
         c.id === conversationId
-          ? { ...c, ultimaMensagem: texto, hora: "agora" }
+          ? { ...c, ultimaMensagem: texto, ultimaMensagemEm: criadoEm }
           : c
       )
     );
-    const failed = texto.trim().toLowerCase() === "erro";
-    setTimeout(
-      () => settleMessage(conversationId, id, failed ? "error" : "sent"),
-      700
-    );
+    void doSendMessage(conversationId, id, texto);
   }
 
   function retrySend(conversationId: string, messageId: string) {
+    const msg = messages[conversationId]?.find((m) => m.id === messageId);
+    if (!msg) return;
     setMessages((prev) => ({
       ...prev,
       [conversationId]: (prev[conversationId] ?? []).map((m) =>
         m.id === messageId ? { ...m, status: "sending" } : m
       ),
     }));
-    setTimeout(() => settleMessage(conversationId, messageId, "sent"), 700);
+    void doSendMessage(conversationId, messageId, msg.texto);
   }
 
   function sharePostToChat(conversationId: string) {
@@ -612,11 +777,11 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         ? `${shareToConvoPost.texto.slice(0, 60)}…`
         : shareToConvoPost.texto;
     sendMessage(conversationId, `📎 Compartilhou uma publicação: "${preview}"`);
-    const user = findUser(
-      conversations.find((c) => c.id === conversationId)?.userId ?? ""
-    );
+    const convo = conversations.find((c) => c.id === conversationId);
     toast.success(
-      user ? `Publicação enviada para ${user.nome}!` : "Publicação enviada!"
+      convo
+        ? `Publicação enviada para ${convo.outroNome}!`
+        : "Publicação enviada!"
     );
     setShareToConvoPost(null);
     setSharePost(null);
@@ -918,6 +1083,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
 
       {screen.type === "chatList" && (
         <ChatListScreen
+          loading={conversationsLoading}
           conversations={conversations}
           onBack={pop}
           onOpenThread={openChatThread}
@@ -934,8 +1100,10 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
             <ChatThreadScreen
               conversation={convo}
               messages={messages[convo.id] ?? []}
+              loading={threadLoading}
               onBack={pop}
               onOpenAutor={openAutor}
+              onOpenMenu={() => setChatMenuOpen(true)}
               onSend={(texto) => sendMessage(convo.id, texto)}
               onRetry={(messageId) => retrySend(convo.id, messageId)}
               onComposerFocusChange={onChatFocusChange}
@@ -1123,6 +1291,51 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
                     onSelect: () => {},
                   },
                 ]
+        }
+      />
+
+      <OptionsSheet
+        open={chatMenuOpen}
+        title="Opções da conversa"
+        onClose={() => setChatMenuOpen(false)}
+        options={
+          screen.type !== "chatThread"
+            ? []
+            : (() => {
+                const convo = conversations.find(
+                  (c) => c.id === screen.conversationId
+                );
+                if (!convo) return [];
+                return [
+                  {
+                    key: "denunciar",
+                    label: "Denunciar",
+                    Icon: Flag,
+                    danger: true,
+                    onSelect: () =>
+                      setReportTarget({
+                        tipo: "usuario",
+                        id: convo.outroUserId,
+                      }),
+                  },
+                  {
+                    key: "bloquear",
+                    label: "Bloquear",
+                    Icon: Ban,
+                    danger: true,
+                    onSelect: () => {
+                      blockUser(convo.outroUserId);
+                      pop();
+                    },
+                  },
+                  {
+                    key: "cancelar",
+                    label: "Cancelar",
+                    Icon: X,
+                    onSelect: () => {},
+                  },
+                ];
+              })()
         }
       />
 

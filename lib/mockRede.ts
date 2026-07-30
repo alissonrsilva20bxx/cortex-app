@@ -27,23 +27,6 @@ export interface DiscoverPerson {
   motivo: string;
 }
 
-export interface Conversation {
-  id: string;
-  userId: string;
-  ultimaMensagem: string;
-  hora: string;
-  naoLidas: number;
-}
-
-export interface RedeMessage {
-  id: string;
-  deMim: boolean;
-  texto: string;
-  hora: string;
-  /** Só se aplica a mensagens minhas — ausente = já entregue (mock antigo). */
-  status?: "sending" | "sent" | "error";
-}
-
 export interface LiveLink {
   id: string;
   plataforma: Plataforma;
@@ -186,85 +169,6 @@ export const RECENT_SEARCHES: string[] = [
   "box braids",
   "conquista",
 ];
-
-export const CONVERSATIONS: Conversation[] = [
-  {
-    id: "c1",
-    userId: "u1",
-    ultimaMensagem: "Manda o link daquele curso?",
-    hora: "09:41",
-    naoLidas: 2,
-  },
-  {
-    id: "c2",
-    userId: "u2",
-    ultimaMensagem: "Combinado! Te vejo sábado 💛",
-    hora: "Ontem",
-    naoLidas: 0,
-  },
-  {
-    id: "c3",
-    userId: "u7",
-    ultimaMensagem: "Amei o resultado 😍",
-    hora: "Seg",
-    naoLidas: 1,
-  },
-  {
-    id: "c4",
-    userId: "u4",
-    ultimaMensagem: "Vou fazer a promoção também, obrigada pela ideia!",
-    hora: "Qui",
-    naoLidas: 0,
-  },
-];
-
-export const MESSAGES: Record<string, RedeMessage[]> = {
-  c1: [
-    {
-      id: "m1",
-      deMim: false,
-      texto: "Oi! Vi seu post sobre precificação 👀",
-      hora: "09:20",
-    },
-    {
-      id: "m2",
-      deMim: true,
-      texto: "Oi Camila! Foi bom né, me ajudou a reorganizar os preços",
-      hora: "09:25",
-    },
-    {
-      id: "m3",
-      deMim: false,
-      texto: "Manda o link daquele curso?",
-      hora: "09:41",
-    },
-  ],
-  c2: [
-    {
-      id: "m4",
-      deMim: false,
-      texto: "Combinado! Te vejo sábado 💛",
-      hora: "Ontem",
-    },
-  ],
-  c3: [
-    {
-      id: "m5",
-      deMim: true,
-      texto: "Oi Bianca, terminei suas tranças hoje!",
-      hora: "Seg",
-    },
-    { id: "m6", deMim: false, texto: "Amei o resultado 😍", hora: "Seg" },
-  ],
-  c4: [
-    {
-      id: "m7",
-      deMim: false,
-      texto: "Vou fazer a promoção também, obrigada pela ideia!",
-      hora: "Qui",
-    },
-  ],
-};
 
 export const LIVE_LINKS: LiveLink[] = [
   {

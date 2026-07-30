@@ -1,15 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Send, Loader2, Check, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Send,
+  Loader2,
+  Check,
+  AlertCircle,
+  MoreHorizontal,
+} from "lucide-react";
 import { Avatar } from "./Avatar";
-import { findUser, type Conversation, type RedeMessage } from "@/lib/mockRede";
+import { formatRelativeTime } from "@/lib/mockRede";
+import type { ConversaResumo, MensagemChat } from "@/lib/rede/mensagens";
+
+/** Mensagem real + estado transitório de envio otimista -- a tabela não
+ * tem "enviando"/"falhou", isso só existe enquanto o insert real não
+ * confirma (ver `sendMessage`/`retrySend` em RedeTab). */
+export type ChatMessage = MensagemChat & { status?: "sending" | "error" };
 
 interface Props {
-  conversation: Conversation;
-  messages: RedeMessage[];
+  conversation: ConversaResumo;
+  messages: ChatMessage[];
+  loading: boolean;
   onBack: () => void;
   onOpenAutor: (userId: string) => void;
+  onOpenMenu: () => void;
   onSend: (texto: string) => void;
   onRetry: (messageId: string) => void;
   /** Simula o teclado empurrando o compositor pra cima e escondendo a BottomNav. */
@@ -19,21 +34,16 @@ interface Props {
 export function ChatThreadScreen({
   conversation,
   messages,
+  loading,
   onBack,
   onOpenAutor,
+  onOpenMenu,
   onSend,
   onRetry,
   onComposerFocusChange,
 }: Props) {
   const [texto, setTexto] = useState("");
   const [focused, setFocused] = useState(false);
-  const user = findUser(conversation.userId);
-  // Mock leve de presença — sem campo novo no modelo, só deriva do que já
-  // existe (não lida agora ⇒ "ativa"; senão mostra a última hora vista).
-  const online = conversation.naoLidas > 0;
-  const statusText = online
-    ? "Ativa agora"
-    : `Visto por último: ${conversation.hora}`;
   const isSending = messages.some((m) => m.deMim && m.status === "sending");
 
   function handleSend() {
@@ -59,103 +69,117 @@ export function ChatThreadScreen({
         >
           <ArrowLeft size={18} style={{ color: "var(--text)" }} />
         </button>
-        {user && (
-          <button
-            onClick={() => onOpenAutor(user.id)}
-            className="flex items-center gap-2.5 min-w-0"
-          >
-            <Avatar nome={user.nome} cor={user.cor} size="sm" />
-            <div className="min-w-0 text-left">
-              <p
-                className="font-bold truncate"
-                style={{
-                  fontSize: "17px",
-                  letterSpacing: "-0.01em",
-                  color: "var(--text)",
-                }}
-              >
-                {user.nome}
-              </p>
-              <p
-                className="flex items-center gap-1.5 text-[11px] truncate"
-                style={{ color: online ? "var(--accent)" : "var(--text-2)" }}
-              >
-                {online && (
-                  <span
-                    className="rounded-full shrink-0"
-                    style={{ width: 6, height: 6, background: "var(--accent)" }}
-                  />
-                )}
-                {statusText}
-              </p>
-            </div>
-          </button>
-        )}
+        <button
+          onClick={() => onOpenAutor(conversation.outroUserId)}
+          className="flex items-center gap-2.5 min-w-0 flex-1"
+        >
+          <Avatar
+            nome={conversation.outroNome}
+            cor={conversation.outroCor}
+            size="sm"
+          />
+          <div className="min-w-0 text-left">
+            <p
+              className="font-bold truncate"
+              style={{
+                fontSize: "17px",
+                letterSpacing: "-0.01em",
+                color: "var(--text)",
+              }}
+            >
+              {conversation.outroNome}
+            </p>
+          </div>
+        </button>
+        <button
+          onClick={onOpenMenu}
+          aria-label="Mais opções"
+          className="flex items-center justify-center rounded-full shrink-0 transition-opacity active:opacity-70"
+          style={{ width: 36, height: 36, background: "var(--surface)" }}
+        >
+          <MoreHorizontal size={16} style={{ color: "var(--text-muted)" }} />
+        </button>
       </div>
 
       {/* Bolhas */}
       <div className="space-y-2.5">
-        {messages.map((m) => {
-          const failed = m.deMim && m.status === "error";
-          const sending = m.deMim && m.status === "sending";
-          return (
-            <div
-              key={m.id}
-              className={`flex ${m.deMim ? "justify-end" : "justify-start"}`}
-            >
-              <button
-                onClick={() => failed && onRetry(m.id)}
-                disabled={!failed}
-                className="max-w-[78%] px-4 py-2.5 text-sm leading-relaxed text-left"
-                style={{
-                  background: m.deMim ? "var(--accent)" : "var(--surface)",
-                  color: m.deMim ? "#fff" : "var(--text)",
-                  border: failed
-                    ? "1px solid var(--danger)"
-                    : m.deMim
-                      ? "none"
-                      : "1px solid var(--border-color)",
-                  borderRadius: "18px",
-                  borderBottomRightRadius: m.deMim ? "4px" : "18px",
-                  borderBottomLeftRadius: m.deMim ? "18px" : "4px",
-                  opacity: sending ? 0.6 : 1,
-                  cursor: failed ? "pointer" : "default",
-                }}
+        {loading ? (
+          <p
+            className="text-sm text-center py-12"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Carregando conversa…
+          </p>
+        ) : messages.length === 0 ? (
+          <p
+            className="text-sm text-center py-12"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Nenhuma mensagem ainda. Diga oi!
+          </p>
+        ) : (
+          messages.map((m) => {
+            const failed = m.deMim && m.status === "error";
+            const sending = m.deMim && m.status === "sending";
+            return (
+              <div
+                key={m.id}
+                className={`flex ${m.deMim ? "justify-end" : "justify-start"}`}
               >
-                {m.texto}
-                <div
-                  className="flex items-center gap-1 text-[10px] mt-1"
+                <button
+                  onClick={() => failed && onRetry(m.id)}
+                  disabled={!failed}
+                  className="max-w-[78%] px-4 py-2.5 text-sm leading-relaxed text-left"
                   style={{
-                    color: failed
-                      ? "var(--danger)"
+                    background: m.deMim ? "var(--accent)" : "var(--surface)",
+                    color: m.deMim ? "#fff" : "var(--text)",
+                    border: failed
+                      ? "1px solid var(--danger)"
                       : m.deMim
-                        ? "rgb(255 255 255 / 0.7)"
-                        : "var(--text-2)",
+                        ? "none"
+                        : "1px solid var(--border-color)",
+                    borderRadius: "18px",
+                    borderBottomRightRadius: m.deMim ? "4px" : "18px",
+                    borderBottomLeftRadius: m.deMim ? "18px" : "4px",
+                    opacity: sending ? 0.6 : 1,
+                    cursor: failed ? "pointer" : "default",
                   }}
                 >
-                  {sending && (
-                    <>
-                      <Loader2 size={10} className="animate-spin" />
-                      Enviando…
-                    </>
-                  )}
-                  {failed && (
-                    <>
-                      <AlertCircle size={10} />
-                      Falha ao enviar · toque para tentar novamente
-                    </>
-                  )}
-                  {!sending && !failed && (
-                    <>
-                      {m.hora}
-                      {m.deMim && <Check size={11} />}
-                    </>
-                  )}
-                </div>
-              </button>
-            </div>
-          );
-        })}
+                  {m.texto}
+                  <div
+                    className="flex items-center gap-1 text-[10px] mt-1"
+                    style={{
+                      color: failed
+                        ? "var(--danger)"
+                        : m.deMim
+                          ? "rgb(255 255 255 / 0.7)"
+                          : "var(--text-2)",
+                    }}
+                  >
+                    {sending && (
+                      <>
+                        <Loader2 size={10} className="animate-spin" />
+                        Enviando…
+                      </>
+                    )}
+                    {failed && (
+                      <>
+                        <AlertCircle size={10} />
+                        Falha ao enviar · toque para tentar novamente
+                      </>
+                    )}
+                    {!sending && !failed && (
+                      <>
+                        {formatRelativeTime(m.criadoEm)}
+                        {m.deMim && <Check size={11} />}
+                      </>
+                    )}
+                  </div>
+                </button>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Campo de envio fixo — sobe e some da BottomNav quando "o teclado abre" */}

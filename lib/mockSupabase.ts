@@ -360,10 +360,59 @@ export function createMockSupabaseClient(
         );
         return delay({ data: sorted as unknown, error: null });
       }
+      if (fn === "rede_criar_conversa_1a1" && authUserId) {
+        const outroUserId = params?.outro_user_id as string;
+        const participantes = (store["rede_conversas_participantes"] ??= []);
+        const minhasConversas = new Set(
+          participantes
+            .filter((p) => p.user_id === authUserId)
+            .map((p) => p.conversa_id as string)
+        );
+        const existente = participantes.find(
+          (p) =>
+            p.user_id === outroUserId &&
+            minhasConversas.has(p.conversa_id as string)
+        );
+        if (existente) {
+          return delay({ data: existente.conversa_id, error: null });
+        }
+        const novaConversaId = genId("conversa");
+        const conversas = (store["rede_conversas"] ??= []);
+        conversas.push({
+          id: novaConversaId,
+          criado_em: new Date().toISOString(),
+          user_high_id: authUserId > outroUserId ? authUserId : outroUserId,
+          user_low_id: authUserId > outroUserId ? outroUserId : authUserId,
+        });
+        participantes.push(
+          { conversa_id: novaConversaId, user_id: authUserId },
+          { conversa_id: novaConversaId, user_id: outroUserId }
+        );
+        return delay({ data: novaConversaId, error: null });
+      }
       return delay({
         data: null,
         error: { message: `RPC mock não implementada: ${fn}` },
       });
+    },
+    // Sem WebSocket de verdade no mock -- só confirma a inscrição pra não
+    // travar quem espera "SUBSCRIBED". Mensagens em tempo real de outra
+    // sessão nunca chegam aqui (Realtime já foi validado de verdade contra
+    // Supabase real na ticket 05 do mapa; aqui é só pra não quebrar quem
+    // chama .channel()/.subscribe() rodando contra o preview).
+    channel(_name: string) {
+      return {
+        on() {
+          return this;
+        },
+        subscribe(callback?: (status: string) => void) {
+          if (callback) setTimeout(() => callback("SUBSCRIBED"), 0);
+          return this;
+        },
+      };
+    },
+    removeChannel(_channel: unknown) {
+      return Promise.resolve("ok");
     },
   };
 }

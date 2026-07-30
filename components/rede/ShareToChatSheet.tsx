@@ -2,11 +2,11 @@
 
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Avatar } from "./Avatar";
-import { findUser, type Conversation } from "@/lib/mockRede";
+import type { ConversaResumo } from "@/lib/rede/mensagens";
 
 interface Props {
   open: boolean;
-  conversations: Conversation[];
+  conversations: ConversaResumo[];
   onClose: () => void;
   onSelectConversation: (conversationId: string) => void;
 }
@@ -29,25 +29,21 @@ export function ShareToChatSheet({
             Você ainda não tem conversas.
           </p>
         ) : (
-          conversations.map((c) => {
-            const user = findUser(c.userId);
-            if (!user) return null;
-            return (
-              <button
-                key={c.id}
-                onClick={() => onSelectConversation(c.id)}
-                className="flex items-center gap-3 w-full py-2.5 text-left transition-opacity active:opacity-70"
+          conversations.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => onSelectConversation(c.id)}
+              className="flex items-center gap-3 w-full py-2.5 text-left transition-opacity active:opacity-70"
+            >
+              <Avatar nome={c.outroNome} cor={c.outroCor} size="md" />
+              <span
+                className="text-sm font-medium"
+                style={{ color: "var(--text)" }}
               >
-                <Avatar nome={user.nome} cor={user.cor} size="md" />
-                <span
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text)" }}
-                >
-                  {user.nome}
-                </span>
-              </button>
-            );
-          })
+                {c.outroNome}
+              </span>
+            </button>
+          ))
         )}
       </div>
     </BottomSheet>

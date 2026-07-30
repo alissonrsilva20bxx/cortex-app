@@ -4,6 +4,8 @@ import {
   abrirConversa1a1,
   assinarMensagensConversa,
   enviarMensagem,
+  listarConversas,
+  listarMensagens,
   marcarMensagemComoLida,
 } from "../../../lib/rede/mensagens";
 
@@ -33,6 +35,152 @@ describe("serviço de mensagens", () => {
     expect(client.rpc).toHaveBeenCalledWith("rede_criar_conversa_1a1", {
       outro_user_id: "user-2",
     });
+  });
+
+  it("lista conversas com a última mensagem, não lidas e o outro participante", async () => {
+    const client = clienteComUsuario();
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_conversas_participantes") {
+        return {
+          select: (cols: string) => {
+            if (cols === "conversa_id") {
+              return {
+                eq: () =>
+                  Promise.resolve({
+                    data: [{ conversa_id: "conversa-1" }],
+                    error: null,
+                  }),
+              };
+            }
+            return {
+              in: () =>
+                Promise.resolve({
+                  data: [
+                    { conversa_id: "conversa-1", user_id: "user-1" },
+                    { conversa_id: "conversa-1", user_id: "user-2" },
+                  ],
+                  error: null,
+                }),
+            };
+          },
+        };
+      }
+      if (table === "rede_mensagens") {
+        return {
+          select: () => ({
+            in: () => ({
+              order: () =>
+                Promise.resolve({
+                  data: [
+                    {
+                      conversa_id: "conversa-1",
+                      autor_id: "user-2",
+                      texto: "Oi!",
+                      criado_em: "2026-01-01T00:00:00.000Z",
+                      lida_em: null,
+                    },
+                    {
+                      conversa_id: "conversa-1",
+                      autor_id: "user-2",
+                      texto: "Tudo bem?",
+                      criado_em: "2026-01-01T00:01:00.000Z",
+                      lida_em: null,
+                    },
+                  ],
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      }
+      if (table === "rede_perfis") {
+        return {
+          select: () => ({
+            in: () =>
+              Promise.resolve({
+                data: [
+                  {
+                    user_id: "user-2",
+                    nome_exibicao: "Bia",
+                    cor_avatar: "#abc",
+                    bio: null,
+                  },
+                ],
+                error: null,
+              }),
+          }),
+        };
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+
+    await expect(listarConversas(client as never)).resolves.toEqual([
+      {
+        id: "conversa-1",
+        outroUserId: "user-2",
+        outroNome: "Bia",
+        outroCor: "#abc",
+        ultimaMensagem: "Tudo bem?",
+        ultimaMensagemEm: "2026-01-01T00:01:00.000Z",
+        naoLidas: 2,
+      },
+    ]);
+  });
+
+  it("devolve lista vazia sem consultar mais nada quando não participa de nenhuma conversa", async () => {
+    const client = clienteComUsuario();
+    const eq = vi.fn().mockResolvedValue({ data: [], error: null });
+    client.from.mockReturnValue({ select: vi.fn().mockReturnValue({ eq }) });
+
+    await expect(listarConversas(client as never)).resolves.toEqual([]);
+    expect(client.from).toHaveBeenCalledTimes(1);
+  });
+
+  it("lista mensagens em ordem cronológica, marcando deMim contra o usuário autenticado", async () => {
+    const mensagens = [
+      {
+        id: "m1",
+        conversa_id: "conversa-1",
+        autor_id: "user-1",
+        texto: "Oi",
+        criado_em: "2026-01-01T00:00:00.000Z",
+        lida_em: null,
+      },
+      {
+        id: "m2",
+        conversa_id: "conversa-1",
+        autor_id: "user-2",
+        texto: "E aí",
+        criado_em: "2026-01-01T00:01:00.000Z",
+        lida_em: null,
+      },
+    ];
+    const order = vi.fn().mockResolvedValue({ data: mensagens, error: null });
+    const eq = vi.fn().mockReturnValue({ order });
+    const select = vi.fn().mockReturnValue({ eq });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ select });
+
+    await expect(
+      listarMensagens(client as never, "conversa-1")
+    ).resolves.toEqual([
+      {
+        id: "m1",
+        autorId: "user-1",
+        texto: "Oi",
+        criadoEm: "2026-01-01T00:00:00.000Z",
+        lidaEm: null,
+        deMim: true,
+      },
+      {
+        id: "m2",
+        autorId: "user-2",
+        texto: "E aí",
+        criadoEm: "2026-01-01T00:01:00.000Z",
+        lidaEm: null,
+        deMim: false,
+      },
+    ]);
   });
 
   it("envia texto como o usuário autenticado", async () => {
