@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../database.types";
+import { listarIdsBloqueados } from "./bloqueios";
 import { buscarPerfisPorIds, type PessoaResumo } from "./perfis";
 
 type RedeClient = SupabaseClient<Database>;
@@ -53,14 +54,15 @@ export async function listarNotificacoes(
   const userId = await obterUsuarioId(client);
 
   const [
-    { data: perfil, error: perfilError },
+    { data: cursor, error: cursorError },
     { data: meusPosts, error: postsError },
     { data: minhasParticipacoes, error: participacoesError },
     { data: solicitacoes, error: solicitacoesError },
+    bloqueados,
   ] = await Promise.all([
     client
-      .from("rede_perfis")
-      .select("notificacoes_vistas_em")
+      .from("rede_notificacoes_cursor")
+      .select("vistas_em")
       .eq("user_id", userId)
       .maybeSingle(),
     client.from("rede_posts").select("id").eq("autor_id", userId),
@@ -73,10 +75,11 @@ export async function listarNotificacoes(
       .select("id,solicitante_id,criado_em")
       .eq("destinatario_id", userId)
       .eq("status", "pendente"),
+    listarIdsBloqueados(client, userId),
   ]);
 
-  if (perfilError) {
-    throw perfilError;
+  if (cursorError) {
+    throw cursorError;
   }
   if (postsError) {
     throw postsError;
@@ -88,7 +91,13 @@ export async function listarNotificacoes(
     throw solicitacoesError;
   }
 
-  const vistoEm = perfil?.notificacoes_vistas_em ?? null;
+  // Comparação numérica, não de string: `criado_em` (Postgres, geralmente
+  // com deslocamento "+00:00" e precisão de microssegundos) e `vistas_em`
+  // (gerado como `Date.toISOString()`, sufixo "Z", milissegundos) nem
+  // sempre têm o mesmo formato textual -- comparar como string é seguro só
+  // enquanto os dois formatos coincidirem por acaso.
+  const vistoEmMs =
+    cursor?.vistas_em != null ? Date.parse(cursor.vistas_em) : null;
   const postIds = (meusPosts ?? []).map((p) => p.id);
   const conversaIds = (minhasParticipacoes ?? []).map((p) => p.conversa_id);
 
@@ -168,15 +177,24 @@ export async function listarNotificacoes(
     });
   }
 
-  const curtidasDeOutros = (curtidas ?? []).filter((c) => c.user_id !== userId);
+  // Bloqueada em qualquer sentido não gera notificação -- mesmo critério de
+  // listarSugestoes/listarSolicitacoesPendentes (social.ts), que já
+  // excluem bloqueados; sem isto, curtida/comentário/pedido de alguém que
+  // a usuária bloqueou (ou que a bloqueou) continuava aparecendo no sino.
+  const curtidasDeOutros = (curtidas ?? []).filter(
+    (c) => c.user_id !== userId && !bloqueados.has(c.user_id)
+  );
   const comentariosDeOutros = (comentarios ?? []).filter(
-    (c) => c.autor_id !== userId
+    (c) => c.autor_id !== userId && !bloqueados.has(c.autor_id)
+  );
+  const solicitacoesDeOutros = (solicitacoes ?? []).filter(
+    (s) => !bloqueados.has(s.solicitante_id)
   );
 
   const idsPessoas = new Set<string>();
   for (const c of curtidasDeOutros) idsPessoas.add(c.user_id);
   for (const c of comentariosDeOutros) idsPessoas.add(c.autor_id);
-  for (const s of solicitacoes ?? []) idsPessoas.add(s.solicitante_id);
+  for (const s of solicitacoesDeOutros) idsPessoas.add(s.solicitante_id);
   for (const conversaId of ultimaNaoLidaPorConversa.keys()) {
     const outroId = outroPorConversa.get(conversaId);
     if (outroId) idsPessoas.add(outroId);
@@ -185,7 +203,7 @@ export async function listarNotificacoes(
   const perfis = await buscarPerfisPorIds(client, Array.from(idsPessoas));
 
   const lidaPorTimestamp = (criadoEm: string) =>
-    vistoEm !== null && criadoEm <= vistoEm;
+    vistoEmMs !== null && Date.parse(criadoEm) <= vistoEmMs;
 
   const notificacoes: Notificacao[] = [];
 
@@ -217,7 +235,7 @@ export async function listarNotificacoes(
     });
   }
 
-  for (const s of solicitacoes ?? []) {
+  for (const s of solicitacoesDeOutros) {
     const pessoa = perfis.get(s.solicitante_id);
     if (!pessoa) continue;
     notificacoes.push({
@@ -259,10 +277,15 @@ export async function marcarNotificacoesVistas(
   client: RedeClient
 ): Promise<void> {
   const userId = await obterUsuarioId(client);
+  // upsert, não update: ao contrário de rede_perfis, a linha do cursor não
+  // é criada no bootstrap do perfil -- a primeira vez que a usuária marca
+  // como lida ainda não existe linha nenhuma pra um `update` encontrar.
   const { error } = await client
-    .from("rede_perfis")
-    .update({ notificacoes_vistas_em: new Date().toISOString() })
-    .eq("user_id", userId);
+    .from("rede_notificacoes_cursor")
+    .upsert(
+      { user_id: userId, vistas_em: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
 
   if (error) {
     throw error;

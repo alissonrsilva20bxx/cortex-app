@@ -697,6 +697,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
   async function markAllNotifsRead() {
+    const anterior = notificacoes;
     setNotificacoes((prev) =>
       prev.map((n) => (n.tipo === "mensagem" ? n : { ...n, lida: true }))
     );
@@ -705,6 +706,10 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     } catch (e) {
       console.error("[RedeTab marcar notificações vistas]", e);
       toast.error("Não foi possível marcar as notificações como lidas.");
+      // Desfaz o otimismo -- sem isto, o sino mentia "tudo lido" mesmo com
+      // o cursor real não avançado no backend, e só se corrigia sozinho
+      // (sem explicação) no próximo refetch.
+      setNotificacoes(anterior);
     }
   }
 

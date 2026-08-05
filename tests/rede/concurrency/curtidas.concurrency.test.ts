@@ -17,6 +17,13 @@ import {
  * Postgres real, que disparar o toggle N vezes em paralelo a partir do
  * estado "não curtido" nunca produz mais de uma linha nem erro para quem
  * chamou.
+ *
+ * Instabilidade conhecida (não mascarada): o primeiro `it` abaixo falha de
+ * forma intermitente porque `alternarCurtida` lê e decide antes de
+ * escrever em duas transações HTTP separadas -- é uma corrida real na
+ * aplicação, não flakiness de infraestrutura. Causa raiz documentada em
+ * docs/rede/RD19_EVIDENCE.md §6; não corrigido nesta rodada (fora do
+ * escopo desta revisão).
  */
 describe("RD-19 concorrência: rede_curtidas", () => {
   const testUsers: TestUser[] = [];

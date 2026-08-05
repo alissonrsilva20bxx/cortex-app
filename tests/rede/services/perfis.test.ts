@@ -144,12 +144,64 @@ describe("serviço de perfis", () => {
     const ilike = vi.fn().mockReturnValue({ limit });
     const select = vi.fn().mockReturnValue({ ilike });
     const client = clienteComUsuario();
-    client.from.mockReturnValue({ select });
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_bloqueios") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [], error: null }),
+          }),
+        };
+      }
+      return { select };
+    });
 
     await expect(buscarPessoas(client as never, "cam")).resolves.toEqual([
       { id: "user-2", nome: "Camila", cor: "#f0f", bio: "Oi" },
     ]);
     expect(ilike).toHaveBeenCalledWith("nome_exibicao", "%cam%");
+  });
+
+  it("exclui pessoas bloqueadas em qualquer sentido da busca", async () => {
+    const limit = vi.fn().mockResolvedValue({
+      data: [
+        {
+          user_id: "user-2",
+          nome_exibicao: "Camila",
+          cor_avatar: "#f0f",
+          bio: "Oi",
+        },
+        {
+          user_id: "user-3",
+          nome_exibicao: "Carla Bloqueada",
+          cor_avatar: "#000",
+          bio: null,
+        },
+      ],
+      error: null,
+    });
+    const ilike = vi.fn().mockReturnValue({ limit });
+    const select = vi.fn().mockReturnValue({ ilike });
+    const client = clienteComUsuario();
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_bloqueios") {
+        return {
+          select: () => ({
+            eq: (col: string) =>
+              col === "bloqueado_id"
+                ? Promise.resolve({ data: [], error: null })
+                : Promise.resolve({
+                    data: [{ bloqueado_id: "user-3" }],
+                    error: null,
+                  }),
+          }),
+        };
+      }
+      return { select };
+    });
+
+    await expect(buscarPessoas(client as never, "ca")).resolves.toEqual([
+      { id: "user-2", nome: "Camila", cor: "#f0f", bio: "Oi" },
+    ]);
   });
 
   it("não busca pessoas com termo vazio", async () => {

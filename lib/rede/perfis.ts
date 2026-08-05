@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../database.types";
+import { listarIdsBloqueados } from "./bloqueios";
 
 type RedeClient = SupabaseClient<Database>;
 type Perfil = Database["public"]["Tables"]["rede_perfis"]["Row"];
@@ -146,7 +147,10 @@ export async function buscarPerfisPorIds(
   return new Map((data ?? []).map((p) => [p.user_id, paraPessoaResumo(p)]));
 }
 
-/** Busca membros por nome pra Busca > Pessoas -- exclui a própria conta. */
+/** Busca membros por nome pra Busca > Pessoas -- exclui a própria conta e
+ * quem estiver bloqueado em qualquer sentido (mesmo critério de
+ * `listarSugestoes` em social.ts; sem isso, alguém bloqueado continuava
+ * achável e conseguia mandar um novo pedido de amizade pela Busca). */
 export async function buscarPessoas(
   client: RedeClient,
   query: string
@@ -157,17 +161,22 @@ export async function buscarPessoas(
   }
 
   const userId = await obterUsuarioId(client);
-  const { data, error } = await client
-    .from("rede_perfis")
-    .select("user_id,nome_exibicao,cor_avatar,bio")
-    .ilike("nome_exibicao", `%${termo}%`)
-    .limit(20);
+  const [{ data, error }, bloqueados] = await Promise.all([
+    client
+      .from("rede_perfis")
+      .select("user_id,nome_exibicao,cor_avatar,bio")
+      .ilike("nome_exibicao", `%${termo}%`)
+      .limit(20),
+    listarIdsBloqueados(client, userId),
+  ]);
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []).filter((p) => p.user_id !== userId).map(paraPessoaResumo);
+  return (data ?? [])
+    .filter((p) => p.user_id !== userId && !bloqueados.has(p.user_id))
+    .map(paraPessoaResumo);
 }
 
 export async function atualizarPerfil(

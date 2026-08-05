@@ -47,7 +47,6 @@ export default function DevPreviewRede() {
                 cor_avatar: "#06b6d4",
                 bio: "",
                 area_atuacao: null,
-                notificacoes_vistas_em: null,
                 criado_em: new Date().toISOString(),
                 atualizado_em: new Date().toISOString(),
               },

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../database.types";
+import { listarIdsBloqueados } from "./bloqueios";
 import { buscarPerfisPorIds, type PessoaResumo } from "./perfis";
 
 type RedeClient = SupabaseClient<Database>;
@@ -49,38 +50,6 @@ async function obterUsuarioId(client: RedeClient): Promise<string> {
   }
 
   return user.id;
-}
-
-/** Ids bloqueados nos dois sentidos (quem eu bloqueei + quem me bloqueou) --
- * usado pra filtrar amigas/sugestões/solicitações, já que a RLS de
- * `rede_amizades` (RD-04) não conhece bloqueios, só a de posts conhece. */
-async function listarIdsBloqueados(
-  client: RedeClient,
-  userId: string
-): Promise<Set<string>> {
-  const [{ data: bloqueadaPor, error: e1 }, { data: bloqueei, error: e2 }] =
-    await Promise.all([
-      client
-        .from("rede_bloqueios")
-        .select("bloqueador_id")
-        .eq("bloqueado_id", userId),
-      client
-        .from("rede_bloqueios")
-        .select("bloqueado_id")
-        .eq("bloqueador_id", userId),
-    ]);
-
-  if (e1) {
-    throw e1;
-  }
-  if (e2) {
-    throw e2;
-  }
-
-  const ids = new Set<string>();
-  for (const b of bloqueadaPor ?? []) ids.add(b.bloqueador_id);
-  for (const b of bloqueei ?? []) ids.add(b.bloqueado_id);
-  return ids;
 }
 
 export async function listarAmigas(

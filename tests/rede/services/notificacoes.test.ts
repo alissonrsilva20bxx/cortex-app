@@ -29,17 +29,31 @@ function mockFrom(
   });
 }
 
-const PERFIL_SEM_CURSOR = {
+const CURSOR_VAZIO = {
   select: () => ({
     eq: () => ({
       maybeSingle: () =>
         Promise.resolve({
-          data: { notificacoes_vistas_em: null },
+          data: null,
           error: null,
         }),
     }),
   }),
 };
+
+function cursorEm(vistasEm: string) {
+  return {
+    select: () => ({
+      eq: () => ({
+        maybeSingle: () =>
+          Promise.resolve({
+            data: { vistas_em: vistasEm },
+            error: null,
+          }),
+      }),
+    }),
+  };
+}
 
 function perfisHandler(rows: Record<string, unknown>[]) {
   return {
@@ -49,37 +63,38 @@ function perfisHandler(rows: Record<string, unknown>[]) {
   };
 }
 
+const SEM_BLOQUEIOS = {
+  select: () => ({
+    eq: () => Promise.resolve({ data: [], error: null }),
+  }),
+};
+
 describe("serviço de notificações", () => {
   it("agrega curtida, comentário, solicitação e mensagem não lida, ordenadas da mais recente pra mais antiga", async () => {
     const client = clienteComUsuario();
     mockFrom(client, {
-      rede_perfis: {
-        select: (cols: string) => {
-          if (cols === "notificacoes_vistas_em") {
-            return PERFIL_SEM_CURSOR.select();
-          }
-          return perfisHandler([
-            {
-              user_id: "user-2",
-              nome_exibicao: "Bia",
-              cor_avatar: "#abc",
-              bio: null,
-            },
-            {
-              user_id: "user-3",
-              nome_exibicao: "Carla",
-              cor_avatar: "#def",
-              bio: null,
-            },
-            {
-              user_id: "user-4",
-              nome_exibicao: "Duda",
-              cor_avatar: "#111",
-              bio: null,
-            },
-          ]).select();
+      rede_notificacoes_cursor: CURSOR_VAZIO,
+      rede_bloqueios: SEM_BLOQUEIOS,
+      rede_perfis: perfisHandler([
+        {
+          user_id: "user-2",
+          nome_exibicao: "Bia",
+          cor_avatar: "#abc",
+          bio: null,
         },
-      },
+        {
+          user_id: "user-3",
+          nome_exibicao: "Carla",
+          cor_avatar: "#def",
+          bio: null,
+        },
+        {
+          user_id: "user-4",
+          nome_exibicao: "Duda",
+          cor_avatar: "#111",
+          bio: null,
+        },
+      ]),
       rede_posts: {
         select: () => ({
           eq: () => Promise.resolve({ data: [{ id: "post-1" }], error: null }),
@@ -221,37 +236,22 @@ describe("serviço de notificações", () => {
   it("marca curtida/comentário/solicitação como lida quando criadas antes do cursor, mas nunca mensagem", async () => {
     const client = clienteComUsuario();
     mockFrom(client, {
-      rede_perfis: {
-        select: (cols: string) => {
-          if (cols === "notificacoes_vistas_em") {
-            return {
-              eq: () => ({
-                maybeSingle: () =>
-                  Promise.resolve({
-                    data: {
-                      notificacoes_vistas_em: "2026-01-01T00:01:30.000Z",
-                    },
-                    error: null,
-                  }),
-              }),
-            };
-          }
-          return perfisHandler([
-            {
-              user_id: "user-2",
-              nome_exibicao: "Bia",
-              cor_avatar: "#abc",
-              bio: null,
-            },
-            {
-              user_id: "user-4",
-              nome_exibicao: "Duda",
-              cor_avatar: "#111",
-              bio: null,
-            },
-          ]).select();
+      rede_notificacoes_cursor: cursorEm("2026-01-01T00:01:30.000Z"),
+      rede_bloqueios: SEM_BLOQUEIOS,
+      rede_perfis: perfisHandler([
+        {
+          user_id: "user-2",
+          nome_exibicao: "Bia",
+          cor_avatar: "#abc",
+          bio: null,
         },
-      },
+        {
+          user_id: "user-4",
+          nome_exibicao: "Duda",
+          cor_avatar: "#111",
+          bio: null,
+        },
+      ]),
       rede_posts: {
         select: () => ({
           eq: () => Promise.resolve({ data: [{ id: "post-1" }], error: null }),
@@ -348,14 +348,9 @@ describe("serviço de notificações", () => {
   it("não gera notificação de curtida/comentário quando o próprio dono é o autor", async () => {
     const client = clienteComUsuario();
     mockFrom(client, {
-      rede_perfis: {
-        select: (cols: string) => {
-          if (cols === "notificacoes_vistas_em") {
-            return PERFIL_SEM_CURSOR.select();
-          }
-          return perfisHandler([]).select();
-        },
-      },
+      rede_notificacoes_cursor: CURSOR_VAZIO,
+      rede_bloqueios: SEM_BLOQUEIOS,
+      rede_perfis: perfisHandler([]),
       rede_posts: {
         select: () => ({
           eq: () => Promise.resolve({ data: [{ id: "post-1" }], error: null }),
@@ -411,14 +406,9 @@ describe("serviço de notificações", () => {
   it("não consulta curtidas/comentários nem conversas quando a usuária não tem post nem conversa", async () => {
     const client = clienteComUsuario();
     mockFrom(client, {
-      rede_perfis: {
-        select: (cols: string) => {
-          if (cols === "notificacoes_vistas_em") {
-            return PERFIL_SEM_CURSOR.select();
-          }
-          return perfisHandler([]).select();
-        },
-      },
+      rede_notificacoes_cursor: CURSOR_VAZIO,
+      rede_bloqueios: SEM_BLOQUEIOS,
+      rede_perfis: perfisHandler([]),
       rede_posts: {
         select: () => ({
           eq: () => Promise.resolve({ data: [], error: null }),
@@ -444,16 +434,115 @@ describe("serviço de notificações", () => {
 
   it("avança o cursor de notificações vistas pra usuária autenticada", async () => {
     const client = clienteComUsuario();
-    const eq = vi.fn().mockResolvedValue({ error: null });
-    const update = vi.fn().mockReturnValue({ eq });
-    client.from.mockReturnValue({ update });
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    client.from.mockReturnValue({ upsert });
 
     await marcarNotificacoesVistas(client as never);
 
-    expect(update).toHaveBeenCalledWith({
-      notificacoes_vistas_em: expect.any(String),
+    expect(client.from).toHaveBeenCalledWith("rede_notificacoes_cursor");
+    expect(upsert).toHaveBeenCalledWith(
+      { user_id: "user-1", vistas_em: expect.any(String) },
+      { onConflict: "user_id" }
+    );
+  });
+
+  it("não gera notificação de curtida/comentário/solicitação de quem está bloqueado em qualquer sentido", async () => {
+    const client = clienteComUsuario();
+    mockFrom(client, {
+      rede_notificacoes_cursor: CURSOR_VAZIO,
+      rede_bloqueios: {
+        select: () => ({
+          eq: (col: string) =>
+            col === "bloqueado_id"
+              ? Promise.resolve({ data: [], error: null })
+              : Promise.resolve({
+                  data: [{ bloqueado_id: "user-2" }],
+                  error: null,
+                }),
+        }),
+      },
+      rede_perfis: perfisHandler([
+        {
+          user_id: "user-2",
+          nome_exibicao: "Bia Bloqueada",
+          cor_avatar: "#abc",
+          bio: null,
+        },
+        {
+          user_id: "user-3",
+          nome_exibicao: "Carla",
+          cor_avatar: "#def",
+          bio: null,
+        },
+      ]),
+      rede_posts: {
+        select: () => ({
+          eq: () => Promise.resolve({ data: [{ id: "post-1" }], error: null }),
+        }),
+      },
+      rede_conversas_participantes: {
+        select: () => ({
+          eq: () => Promise.resolve({ data: [], error: null }),
+        }),
+      },
+      rede_amizades: {
+        select: () => ({
+          eq: () => ({
+            eq: () =>
+              Promise.resolve({
+                data: [
+                  {
+                    id: "amz-1",
+                    solicitante_id: "user-2",
+                    criado_em: "2026-01-01T00:02:00.000Z",
+                  },
+                  {
+                    id: "amz-2",
+                    solicitante_id: "user-3",
+                    criado_em: "2026-01-01T00:02:30.000Z",
+                  },
+                ],
+                error: null,
+              }),
+          }),
+        }),
+      },
+      rede_curtidas: {
+        select: () => ({
+          in: () =>
+            Promise.resolve({
+              data: [
+                {
+                  post_id: "post-1",
+                  user_id: "user-2",
+                  criado_em: "2026-01-01T00:00:00.000Z",
+                },
+              ],
+              error: null,
+            }),
+        }),
+      },
+      rede_comentarios: {
+        select: () => ({
+          in: () =>
+            Promise.resolve({
+              data: [
+                {
+                  id: "com-1",
+                  post_id: "post-1",
+                  autor_id: "user-2",
+                  texto: "comentário de quem bloqueou",
+                  criado_em: "2026-01-01T00:01:00.000Z",
+                },
+              ],
+              error: null,
+            }),
+        }),
+      },
     });
-    expect(eq).toHaveBeenCalledWith("user_id", "user-1");
+
+    const result = await listarNotificacoes(client as never);
+    expect(result.map((n) => n.id)).toEqual(["solicitacao:amz-2"]);
   });
 
   it("recusa sem usuário autenticado", async () => {

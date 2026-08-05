@@ -87,26 +87,47 @@ export async function POST(request: NextRequest) {
 
   const supabaseAdmin = getSupabaseAdmin();
 
-  const [{ data: perfil }, { data: subs }] = await Promise.all([
-    supabaseAdmin
-      .from("rede_perfis")
-      .select("nome_exibicao")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    supabaseAdmin
-      .from("push_subscriptions")
-      .select("id, endpoint, p256dh, auth")
-      .in("user_id", destinatarios),
-  ]);
+  const [{ data: perfil }, { data: subs, error: subsError }] =
+    await Promise.all([
+      supabaseAdmin
+        .from("rede_perfis")
+        .select("nome_exibicao")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("push_subscriptions")
+        .select("id, endpoint, p256dh, auth")
+        .in("user_id", destinatarios),
+    ]);
+
+  // Erro real de banco não é "ninguém inscrito" -- tratar os dois igual
+  // escondia falhas de infraestrutura atrás de um `sent: 0` silencioso.
+  if (subsError) {
+    console.error("[notificar mensagem] falha ao buscar inscrições", subsError);
+    return NextResponse.json(
+      { error: "Não foi possível notificar" },
+      { status: 500 }
+    );
+  }
 
   if (!subs || subs.length === 0) {
     return NextResponse.json({ sent: 0 });
   }
 
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    console.error("[notificar mensagem] VAPID keys não configuradas");
+    return NextResponse.json(
+      { error: "Push não configurado" },
+      { status: 500 }
+    );
+  }
+
   webpush.setVapidDetails(
     "mailto:suporte@jobapp.app",
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
+    vapidPublicKey,
+    vapidPrivateKey
   );
 
   const payload = JSON.stringify({
@@ -130,10 +151,18 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       const status = (err as { statusCode?: number }).statusCode;
       if (status === 404 || status === 410) {
-        await supabaseAdmin
+        const { error: deleteError } = await supabaseAdmin
           .from("push_subscriptions")
           .delete()
           .eq("id", sub.id);
+        if (deleteError) {
+          console.error(
+            "[notificar mensagem] falha ao remover inscrição expirada",
+            deleteError
+          );
+        }
+      } else {
+        console.error("[notificar mensagem] falha ao enviar push", err);
       }
     }
   }

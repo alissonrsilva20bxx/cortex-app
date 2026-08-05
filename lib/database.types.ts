@@ -589,6 +589,29 @@ export type Database = {
           },
         ];
       };
+      rede_notificacoes_cursor: {
+        Row: {
+          user_id: string;
+          vistas_em: string;
+        };
+        Insert: {
+          user_id: string;
+          vistas_em?: string;
+        };
+        Update: {
+          user_id?: string;
+          vistas_em?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rede_notificacoes_cursor_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "rede_perfis";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
       rede_perfis: {
         Row: {
           area_atuacao: string | null;
@@ -597,7 +620,6 @@ export type Database = {
           cor_avatar: string;
           criado_em: string;
           nome_exibicao: string;
-          notificacoes_vistas_em: string | null;
           user_id: string;
         };
         Insert: {
@@ -607,7 +629,6 @@ export type Database = {
           cor_avatar: string;
           criado_em?: string;
           nome_exibicao: string;
-          notificacoes_vistas_em?: string | null;
           user_id: string;
         };
         Update: {
@@ -617,7 +638,6 @@ export type Database = {
           cor_avatar?: string;
           criado_em?: string;
           nome_exibicao?: string;
-          notificacoes_vistas_em?: string | null;
           user_id?: string;
         };
         Relationships: [];
@@ -683,10 +703,7 @@ export type Database = {
         Args: { outro_user_id: string };
         Returns: string;
       };
-      rede_gerar_convite: {
-        Args: { codigo_hash: string };
-        Returns: Json;
-      };
+      rede_gerar_convite: { Args: { codigo_hash: string }; Returns: Json };
       rede_is_admin: { Args: never; Returns: boolean };
       rede_is_conversation_participant: {
         Args: { target_conversa_id: string };
@@ -695,7 +712,20 @@ export type Database = {
       rede_is_member: { Args: never; Returns: boolean };
       rede_reordenar_livelinks: {
         Args: { livelink_ids: string[] };
-        Returns: Database["public"]["Tables"]["rede_livelinks"]["Row"][];
+        Returns: {
+          criado_em: string;
+          id: string;
+          ordem: number;
+          titulo: string;
+          url: string;
+          user_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "rede_livelinks";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       rede_resgatar_convite: {
         Args: { codigo_hash: string; ip_hash: string };

@@ -105,3 +105,52 @@ real pendente).
   `RD-18`).
 - Não aplica nem toca nenhuma migration nova — reutiliza integralmente o
   schema já mesclado em `agent/claude-backend-foundation`.
+
+## 6. Atualização 2026-08-05 — causa raiz confirmada do teste instável
+
+Rodando esta suíte contra Postgres real local (`supabase db reset` +
+`npm test`), o teste `keeps exactly one like row when the same user
+toggles the same post in parallel`
+(`tests/rede/concurrency/curtidas.concurrency.test.ts`) falha de forma
+intermitente: em ~10 execuções isoladas, falhou 2 vezes com
+`contarCurtidas` retornando `0` em vez de `1`. Nunca falhou com `rejected`
+(a asserção `expect(rejected).toHaveLength(0)` nunca quebrou) e nunca
+produziu mais de uma linha — só o valor final oscila entre `0` e `1`.
+
+**Não é flakiness de infraestrutura de teste.** É uma condição de corrida
+real em `lib/rede/feed.ts#alternarCurtida` (linhas ~298–338): a função lê
+o estado atual (`SELECT ... maybeSingle()`) e só depois decide inserir ou
+apagar — leitura e escrita são duas chamadas HTTP separadas ao PostgREST,
+cada uma sua própria transação implícita, sem lock nem transação única
+cobrindo as duas. O comentário original do teste ("quem segura a corrida
+é a PK composta... combinada com upsert `ignoreDuplicates`") descreve
+metade da proteção real: a PK composta `(post_id, user_id)` garante que
+nunca sobra mais de uma linha nem duas escritas conflitantes erram — mas
+não garante _qual_ será o estado final quando 5 chamadas do mesmo usuário
+disparam em paralelo a partir de "não curtido". Se uma leitura de uma
+chamada posterior acontece depois que outra já commitou seu insert, essa
+chamada decide apagar; dependendo de quantas chamadas leem o estado antes
+vs. depois de escritas concorrentes, o número líquido de inserts vs.
+deletes pode fechar em 0 ou em 1 — ambos são resultados válidos do
+código atual, não um bug no teste.
+
+**Efeito em produção:** sem crash, sem duplicidade, sem corrupção de
+dados nem vazamento entre usuárias — o pior caso é uma usuária que
+clica/toca "curtir" várias vezes muito rápido (ex.: duplo toque, retry de
+rede) podendo terminar com o post no estado oposto ao que ela via na
+tela no último toque. É um bug de UX/consistência menor, não um problema
+de segurança ou isolamento.
+
+**O que não foi feito nesta rodada, deliberadamente:** o código de
+`alternarCurtida` não foi alterado (não fazia parte do escopo desta
+revisão, que era limitado aos itens de segurança/integridade
+explicitamente listados) e o teste não foi enfraquecido, marcado como
+`skip` ou re-escrito para tolerar `0` — isso mascararia a causa real.
+`RD-19` permanece com este teste conhecido como instável até que
+`alternarCurtida` seja reescrito como uma operação atômica única (ex.:
+uma função `SECURITY DEFINER` que decide e executa a troca de estado
+dentro de uma única transação/lock de linha, no mesmo padrão já usado por
+`rede_criar_conversa_1a1` e `rede_resgatar_convite`). Ticket de
+acompanhamento sugerido: novo item em `BACKEND_TICKETS.md` referenciando
+esta seção antes de `alternarCurtida` ser considerado seguro sob
+concorrência real de UI (double-tap).

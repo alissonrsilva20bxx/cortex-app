@@ -298,4 +298,65 @@ describe("RLS: rede_perfis + rede_livelinks", () => {
       expect(ownerDelete.data).toEqual([{ id: livelinkId }]);
     });
   });
+
+  /**
+   * Migration 0016: `notificacoes_vistas_em` saiu de coluna em `rede_perfis`
+   * (legível por qualquer membro via "rede_perfis: member select", já que
+   * RLS é por linha, não por coluna) pra tabela dedicada com select
+   * restrito ao dono. Este bloco prova a razão de existir da migration:
+   * um membro não consegue ler nem escrever o cursor de outro membro.
+   */
+  describe("rede_notificacoes_cursor", () => {
+    // Runs before any cursor row exists for memberA, so a rejection here can
+    // only come from RLS (with_check), never from the primary key conflict
+    // the later tests' own upsert would otherwise create.
+    it("rejects a different member trying to insert a cursor row impersonating another member", async () => {
+      const { error } = await untyped(memberB.client)
+        .from("rede_notificacoes_cursor")
+        .insert({ user_id: memberA.id, vistas_em: new Date().toISOString() });
+
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe("42501");
+    });
+
+    it("lets the owner upsert and read their own cursor row", async () => {
+      const inserted = await untyped(memberA.client)
+        .from("rede_notificacoes_cursor")
+        .upsert(
+          { user_id: memberA.id, vistas_em: new Date().toISOString() },
+          { onConflict: "user_id" }
+        )
+        .select("user_id");
+      expect(inserted.error).toBeNull();
+      expect(inserted.data).toEqual([{ user_id: memberA.id }]);
+
+      const read = await untyped(memberA.client)
+        .from("rede_notificacoes_cursor")
+        .select("user_id")
+        .eq("user_id", memberA.id);
+      expect(read.error).toBeNull();
+      expect(read.data).toEqual([{ user_id: memberA.id }]);
+    });
+
+    it("hides another member's existing cursor row from SELECT, unlike rede_perfis", async () => {
+      const { data, error } = await untyped(memberB.client)
+        .from("rede_notificacoes_cursor")
+        .select("user_id")
+        .eq("user_id", memberA.id);
+
+      expect(error).toBeNull();
+      expect(data).toHaveLength(0);
+    });
+
+    it("rejects a different member trying to update another member's existing cursor row", async () => {
+      const { data, error } = await untyped(memberB.client)
+        .from("rede_notificacoes_cursor")
+        .update({ vistas_em: new Date().toISOString() })
+        .eq("user_id", memberA.id)
+        .select("user_id");
+
+      expect(error).toBeNull();
+      expect(data).toHaveLength(0);
+    });
+  });
 });
