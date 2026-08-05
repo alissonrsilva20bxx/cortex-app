@@ -7,6 +7,7 @@ import {
   listarConversas,
   listarMensagens,
   marcarMensagemComoLida,
+  reconcileConfirmedMessage,
 } from "../../../lib/rede/mensagens";
 
 function clienteComUsuario(userId = "user-1") {
@@ -374,5 +375,100 @@ describe("serviço de mensagens", () => {
     ).rejects.toThrow("Usuário não autenticado");
     expect(client.from).not.toHaveBeenCalled();
     expect(client.channel).not.toHaveBeenCalled();
+  });
+});
+
+describe("reconcileConfirmedMessage", () => {
+  function otimista(id: string, texto: string) {
+    return { id, texto, deMim: true, status: "sending" as const };
+  }
+
+  it("substitui a mensagem otimista pela confirmada quando o REST responde antes do Realtime (casa por localId)", () => {
+    const atual = [otimista("temp-1", "Oi")];
+    const confirmada = { id: "real-1", texto: "Oi", deMim: true };
+
+    expect(reconcileConfirmedMessage(atual, confirmada, "temp-1")).toEqual([
+      confirmada,
+    ]);
+  });
+
+  it("substitui a mensagem otimista pendente quando o eco do Realtime chega antes do REST (casa por texto+deMim, sem localId)", () => {
+    const atual = [otimista("temp-1", "Oi")];
+    const confirmada = { id: "real-1", texto: "Oi", deMim: true };
+
+    // Simula o eco do Realtime, que não sabe o localId gerado no cliente.
+    expect(reconcileConfirmedMessage(atual, confirmada)).toEqual([confirmada]);
+  });
+
+  it("não duplica quando a mensagem já reconciliada (por id real) chega de novo pela outra via", () => {
+    const confirmada = { id: "real-1", texto: "Oi", deMim: true };
+    // Já reconciliada uma vez (por exemplo pelo REST) -- o eco do Realtime
+    // pro mesmo id real não deve criar uma segunda entrada.
+    const atual = [confirmada];
+
+    expect(reconcileConfirmedMessage(atual, confirmada)).toBe(atual);
+    expect(reconcileConfirmedMessage(atual, confirmada, "temp-1")).toBe(atual);
+  });
+
+  it("reconcilia em ordem FIFO quando o mesmo texto foi enviado duas vezes seguidas", () => {
+    const atual = [otimista("temp-1", "oi"), otimista("temp-2", "oi")];
+    const primeiraConfirmada = { id: "real-1", texto: "oi", deMim: true };
+
+    const depoisDaPrimeira = reconcileConfirmedMessage(
+      atual,
+      primeiraConfirmada
+    );
+    expect(depoisDaPrimeira).toEqual([
+      primeiraConfirmada,
+      otimista("temp-2", "oi"),
+    ]);
+
+    const segundaConfirmada = { id: "real-2", texto: "oi", deMim: true };
+    const depoisDaSegunda = reconcileConfirmedMessage(
+      depoisDaPrimeira,
+      segundaConfirmada
+    );
+    expect(depoisDaSegunda).toEqual([primeiraConfirmada, segundaConfirmada]);
+  });
+
+  it("anexa mensagem de outra pessoa sem tentar casar contra placeholders próprios pendentes", () => {
+    const atual = [otimista("temp-1", "Oi")];
+    const daOutraPessoa = { id: "real-9", texto: "E aí", deMim: false };
+
+    expect(reconcileConfirmedMessage(atual, daOutraPessoa)).toEqual([
+      ...atual,
+      daOutraPessoa,
+    ]);
+  });
+
+  it("anexa mensagem própria vinda de outra aba/sessão (sem placeholder local pendente) em vez de descartá-la", () => {
+    const atual: ReturnType<typeof otimista>[] = [];
+    const deOutraSessao = {
+      id: "real-5",
+      texto: "Mandado do celular",
+      deMim: true,
+    };
+
+    expect(reconcileConfirmedMessage(atual, deOutraSessao)).toEqual([
+      deOutraSessao,
+    ]);
+  });
+
+  it("reconcilia uma mensagem marcada como 'error' (ack perdido) quando o eco do Realtime confirma que o envio deu certo", () => {
+    // enviarMensagem perdeu a resposta (queda de rede), doSendMessage marcou
+    // a bolha local como "error" -- mas o insert já tinha ido pro banco, e
+    // o eco do Realtime chega depois confirmando. Sem casar contra "error"
+    // também, isso viraria uma segunda bolha ao lado da que ficou travada.
+    const falhou = {
+      id: "temp-1",
+      texto: "Oi",
+      deMim: true,
+      status: "error" as const,
+    };
+    const confirmada = { id: "real-1", texto: "Oi", deMim: true };
+
+    expect(reconcileConfirmedMessage([falhou], confirmada)).toEqual([
+      confirmada,
+    ]);
   });
 });

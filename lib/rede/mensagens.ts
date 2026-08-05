@@ -52,6 +52,56 @@ export type AssinarMensagensConversaInput = {
   onMensagem: (mensagem: Mensagem) => void;
 };
 
+type MensagemReconciliavel = {
+  id: string;
+  texto: string;
+  deMim: boolean;
+  status?: "sending" | "error";
+};
+
+/** Reconcilia uma mensagem confirmada (por REST ou por eco do Realtime, em
+ * qualquer ordem de chegada) contra a lista atual de mensagens de uma
+ * conversa, sem duplicar. `assinarMensagensConversa` entrega de volta pro
+ * próprio remetente o INSERT das mensagens que ele mesmo mandou (necessário
+ * pra sincronizar outra aba/sessão do mesmo usuário) -- sem essa
+ * reconciliação, a mensagem otimista local (id temporário, status
+ * "sending") e o eco do Realtime (id real) viram duas bolhas.
+ *
+ * `localId`, quando informado (chamada vinda da confirmação REST do próprio
+ * envio), casa direto pelo id local. Sem `localId` (chamada vinda do
+ * Realtime), casa pela primeira mensagem própria ainda pendente (status
+ * "sending" OU "error") com o mesmo texto -- ordem de chegada FIFO, cobre
+ * inclusive dois envios idênticos em sequência. Casar "error" também é
+ * necessário: se o `enviarMensagem` perder a confirmação por queda de rede
+ * mas o insert já tiver ido pro banco, a mensagem local vira "error" antes
+ * do eco do Realtime chegar -- sem casar contra "error" também, esse eco
+ * tardio vira uma segunda bolha ao lado da que ficou travada como falha. */
+export function reconcileConfirmedMessage<T extends MensagemReconciliavel>(
+  atual: T[],
+  confirmed: T,
+  localId?: string
+): T[] {
+  if (atual.some((m) => m.id === confirmed.id)) {
+    return atual;
+  }
+
+  const idx = atual.findIndex((m) =>
+    localId
+      ? m.id === localId
+      : (m.status === "sending" || m.status === "error") &&
+        m.deMim === confirmed.deMim &&
+        m.texto === confirmed.texto
+  );
+
+  if (idx === -1) {
+    return [...atual, confirmed];
+  }
+
+  const next = [...atual];
+  next[idx] = confirmed;
+  return next;
+}
+
 async function obterUsuarioId(client: RedeClient): Promise<string> {
   const {
     data: { user },

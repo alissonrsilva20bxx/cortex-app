@@ -5,6 +5,7 @@ import { RedeTeaserGate, type GateSheet } from "./RedeTeaserGate";
 import { SerialKeySheet } from "./SerialKeySheet";
 import { RedeTab } from "./RedeTab";
 import { supabase } from "@/lib/supabase";
+import { verificarAcessoConvite } from "@/lib/rede/acesso";
 import type { Usuario } from "@/lib/types";
 
 interface Props {
@@ -47,16 +48,11 @@ export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
       return;
     }
 
-    supabase
-      .from("rede_convites")
-      .select("id")
-      .eq("usado_por", usuario.id)
-      .limit(1)
-      .then(({ data }) => {
-        if (!ativo) return;
-        if (data && data.length > 0) setUnlocked(true);
-        setVerificandoAcesso(false);
-      });
+    verificarAcessoConvite(supabase, usuario.id).then((resultado) => {
+      if (!ativo) return;
+      if (resultado.unlocked) setUnlocked(true);
+      setVerificandoAcesso(false);
+    });
     return () => {
       ativo = false;
     };

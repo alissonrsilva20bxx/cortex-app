@@ -85,6 +85,7 @@ import {
   marcarMensagemComoLida,
   abrirConversa1a1,
   assinarMensagensConversa,
+  reconcileConfirmedMessage,
   type ConversaResumo,
 } from "@/lib/rede/mensagens";
 import {
@@ -297,22 +298,21 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         );
       }
 
-      canal = await assinarMensagensConversa(supabase, {
+      const canalAssinado = await assinarMensagensConversa(supabase, {
         conversaId,
         onMensagem: (nova) => {
-          setMessages((prev) => {
-            const atual = prev[conversaId] ?? [];
-            if (atual.some((m) => m.id === nova.id)) return prev;
-            const msg: ChatMessage = {
+          if (!ativo) return;
+          setMessages((prev) => ({
+            ...prev,
+            [conversaId]: reconcileConfirmedMessage(prev[conversaId] ?? [], {
               id: nova.id,
               autorId: nova.autor_id,
               texto: nova.texto,
               criadoEm: nova.criado_em,
               lidaEm: nova.lida_em,
               deMim: nova.autor_id === usuario.id,
-            };
-            return { ...prev, [conversaId]: [...atual, msg] };
-          });
+            }),
+          }));
           const deOutraPessoa = nova.autor_id !== usuario.id;
           setConversations((prev) =>
             prev.map((c) =>
@@ -335,6 +335,16 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           }
         },
       });
+
+      // Trocou de conversa (ou desmontou) enquanto a assinatura ainda
+      // estava em andamento -- o cleanup abaixo já rodou sem `canal`
+      // atribuído, então sem isto o canal ficava vazado (nunca removido,
+      // continuando a atualizar estado/marcar como lida em segundo plano).
+      if (!ativo) {
+        void supabase.removeChannel(canalAssinado);
+        return;
+      }
+      canal = canalAssinado;
     })().catch((e) => {
       console.error("[RedeTab thread]", e);
       toast.error("Não foi possível carregar a conversa.");
@@ -763,8 +773,10 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       const confirmada = mensagemFromRow(created);
       setMessages((prev) => ({
         ...prev,
-        [conversationId]: (prev[conversationId] ?? []).map((m) =>
-          m.id === localId ? confirmada : m
+        [conversationId]: reconcileConfirmedMessage(
+          prev[conversationId] ?? [],
+          confirmada,
+          localId
         ),
       }));
       fetch("/api/rede/mensagens/notificar", {
