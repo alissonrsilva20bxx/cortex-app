@@ -57,7 +57,7 @@ export function BottomNav({ activeTab, onChange }: Props) {
             className="flex items-center justify-center transition-all duration-200"
             style={{
               height: "44px",
-              width: active ? "56px" : "40px",
+              width: active ? "56px" : "44px",
               borderRadius: "999px",
               background: active ? "var(--accent)" : "transparent",
               color: active ? "#fff" : "var(--text-muted)",
