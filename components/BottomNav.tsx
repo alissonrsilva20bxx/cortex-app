@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 import type { TabId } from "@/lib/types";
 import { useScrollCompact } from "@/lib/useScrollCompact";
+import {
+  BOTTOM_NAV_MIN_TOUCH_TARGET,
+  getBottomNavCompactStyle,
+} from "@/lib/bottomNavCompactStyle";
 
 const TABS: { id: TabId; label: string; Icon: typeof Home }[] = [
   { id: "home", label: "Início", Icon: Home },
@@ -32,28 +36,35 @@ interface Props {
  * consciente, não descuido.
  */
 export function BottomNav({ activeTab, onChange }: Props) {
-  // Compacta ao rolar pra baixo, expande ao rolar pra cima — só desloca e
-  // esmaece a pílula (transform/opacity). Os botões nunca mudam de
-  // tamanho: a pílula continua com o mesmo miolo aprovado, touch target
-  // de 44px incluído (ver fb6b6c9).
+  // Compacta ao rolar pra baixo, expande ao rolar pra cima — reproduz o
+  // efeito aprovado no laboratório visual (jobapp-visual-launch,
+  // /dev-preview/launch): a pílula ENCOLHE (bordas avançam, padding cai,
+  // botão ativo estreita) com só um leve acomodar vertical de 4px — não
+  // é um slide pra fora de tela. Botão inativo e altura ficam sempre no
+  // touch target mínimo de 44px (fb6b6c9); só o botão ativo (48/56px,
+  // ambos acima do mínimo) e as bordas do container acompanham o compact.
   const compact = useScrollCompact(activeTab);
+  const navStyle = getBottomNavCompactStyle(compact);
 
   return (
     <nav
-      className="fixed z-50 flex items-center justify-between transition-[transform,opacity] duration-300 ease-out"
+      className="fixed z-50 flex items-center justify-between"
       style={{
-        left: "18px",
-        right: "18px",
+        left: `${navStyle.edgeInset}px`,
+        right: `${navStyle.edgeInset}px`,
         bottom: "calc(18px + env(safe-area-inset-bottom, 0px))",
-        padding: "8px",
+        padding: `${navStyle.padding}px`,
         borderRadius: "999px",
-        background: "rgb(var(--bg-rgb) / 0.72)",
+        background: `rgb(var(--bg-rgb) / ${navStyle.backgroundOpacity})`,
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         border: "1px solid rgb(var(--accent-rgb) / 0.14)",
-        boxShadow: "0 16px 40px rgb(0 0 0 / 0.45)",
-        transform: compact ? "translateY(42%)" : "translateY(0)",
-        opacity: compact ? 0.9 : 1,
+        boxShadow: navStyle.shadow,
+        transform: `translateY(${navStyle.translateY}px)`,
+        transitionProperty:
+          "left, right, padding, background-color, box-shadow, transform",
+        transitionDuration: "220ms",
+        transitionTimingFunction: "cubic-bezier(0.2, 0.8, 0.2, 1)",
       }}
     >
       {TABS.map(({ id, label, Icon }) => {
@@ -65,8 +76,10 @@ export function BottomNav({ activeTab, onChange }: Props) {
             aria-label={label}
             className="flex items-center justify-center transition-all duration-200"
             style={{
-              height: "44px",
-              width: active ? "56px" : "44px",
+              height: `${BOTTOM_NAV_MIN_TOUCH_TARGET}px`,
+              width: active
+                ? `${navStyle.activeWidth}px`
+                : `${BOTTOM_NAV_MIN_TOUCH_TARGET}px`,
               borderRadius: "999px",
               background: active ? "var(--accent)" : "transparent",
               color: active ? "#fff" : "var(--text-muted)",
