@@ -33,9 +33,9 @@ export function GreetingHeader({ usuario }: Props) {
     <div className="flex items-center justify-between">
       <div>
         <h1
-          className="font-extrabold leading-none"
+          className="font-bold leading-[30px]"
           style={{
-            fontSize: "27px",
+            fontSize: "24px",
             letterSpacing: "-0.03em",
             color: "var(--text)",
           }}
@@ -43,22 +43,23 @@ export function GreetingHeader({ usuario }: Props) {
           {greeting}, {firstName}
         </h1>
         <p
-          className="capitalize font-medium mt-1.5"
+          className="capitalize font-medium mt-1 leading-[18px]"
           style={{ fontSize: "13px", color: "var(--text-muted)" }}
         >
           {date}
         </p>
       </div>
 
-      {/* Avatar with accent glow ring */}
+      {/* Avatar — dado real (foto/inicial), moldura sóbria (sem glow),
+          seguindo a disciplina do laboratório: brilho só em seleção/
+          progresso/ação primária, nunca decorativo. */}
       <div
         className="relative flex items-center justify-center rounded-full shrink-0 overflow-hidden"
         style={{
-          width: "46px",
-          height: "46px",
-          border: "1.5px solid var(--accent)",
-          boxShadow:
-            "0 0 0 3px rgb(var(--accent-rgb) / 0.1), 0 0 16px rgb(var(--accent-rgb) / 0.28)",
+          width: "44px",
+          height: "44px",
+          border: "1px solid var(--border-color)",
+          background: "var(--surface)",
         }}
       >
         {usuario.avatarUrl ? (
