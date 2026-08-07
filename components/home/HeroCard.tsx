@@ -12,10 +12,25 @@ interface Props {
 }
 
 /**
+ * Superfície sólida e legível (sem blur), como no laboratório visual —
+ * `.jobapp-visual-launch` reserva o vidro pra navegação/sheets e usa
+ * superfícies mais sólidas em cards de conteúdo. Repetido por arquivo
+ * (não extraído pra um helper compartilhado) porque o escopo deste
+ * ticket é só estes 4 componentes de Início — nada em `components/ui/`.
+ */
+const SOLID_SURFACE_STYLE = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  boxShadow:
+    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
+} as const;
+
+/**
  * O card-herói: a projeção viva das metas. Peça central da Home e o
  * diferencial defensável do app — mostra "o quanto ela já construiu" e,
- * no ritmo dela, aonde isso chega. Único lugar onde o neon brilha
- * (valor + barra). Enquadramento sempre empoderador, nunca de saída.
+ * no ritmo dela, aonde isso chega. Enquadramento sempre empoderador,
+ * nunca de saída.
  */
 export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
   const p = monthProjection(jobs, metas);
@@ -48,10 +63,11 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
 
   return (
     <GlassCard
-      radius="xl"
+      radius="lg"
       onClick={onGoToFinanceiro}
       ariaLabel="Ver detalhes financeiros"
       className="p-6"
+      style={SOLID_SURFACE_STYLE}
     >
       {/* Rótulo + chip "no seu ritmo" */}
       <div className="flex items-center justify-between mb-3">
@@ -70,14 +86,17 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
         </span>
       </div>
 
-      {/* Valor — o momento herói (único neon de texto) */}
+      {/* Valor — protagonista da tela (Início: "resumo financeiro como
+          protagonista"), mas o brilho fica discreto — a disciplina Apple
+          reserva neon pra seleção/progresso/ação primária, não pra todo
+          texto de destaque. */}
       <p
-        className="font-black tabular-nums leading-none"
+        className="font-extrabold tabular-nums leading-none"
         style={{
-          fontSize: "40px",
-          letterSpacing: "-0.04em",
+          fontSize: "34px",
+          letterSpacing: "-0.03em",
           color: "var(--accent)",
-          textShadow: "0 0 32px rgb(var(--accent-rgb) / 0.55)",
+          textShadow: "0 0 20px rgb(var(--accent-rgb) / 0.28)",
         }}
       >
         {formatBRL(p.earned)}
