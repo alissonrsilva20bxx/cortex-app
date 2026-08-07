@@ -9,6 +9,7 @@ import {
   Settings,
 } from "lucide-react";
 import type { TabId } from "@/lib/types";
+import { useScrollCompact } from "@/lib/useScrollCompact";
 
 const TABS: { id: TabId; label: string; Icon: typeof Home }[] = [
   { id: "home", label: "Início", Icon: Home },
@@ -31,9 +32,15 @@ interface Props {
  * consciente, não descuido.
  */
 export function BottomNav({ activeTab, onChange }: Props) {
+  // Compacta ao rolar pra baixo, expande ao rolar pra cima — só desloca e
+  // esmaece a pílula (transform/opacity). Os botões nunca mudam de
+  // tamanho: a pílula continua com o mesmo miolo aprovado, touch target
+  // de 44px incluído (ver fb6b6c9).
+  const compact = useScrollCompact(activeTab);
+
   return (
     <nav
-      className="fixed z-50 flex items-center justify-between"
+      className="fixed z-50 flex items-center justify-between transition-[transform,opacity] duration-300 ease-out"
       style={{
         left: "18px",
         right: "18px",
@@ -45,6 +52,8 @@ export function BottomNav({ activeTab, onChange }: Props) {
         WebkitBackdropFilter: "blur(20px)",
         border: "1px solid rgb(var(--accent-rgb) / 0.14)",
         boxShadow: "0 16px 40px rgb(0 0 0 / 0.45)",
+        transform: compact ? "translateY(42%)" : "translateY(0)",
+        opacity: compact ? 0.9 : 1,
       }}
     >
       {TABS.map(({ id, label, Icon }) => {
