@@ -47,7 +47,7 @@ const formatTime = (hora: string) => {
 };
 
 /** Dia/mês curto pro selo de data — "21" + "AGO", como no laboratório. */
-function formatDayBadge(data: string): { day: string; month: string } {
+export function formatDayBadge(data: string): { day: string; month: string } {
   const d = new Date(data + "T00:00:00");
   return {
     day: String(d.getDate()),
@@ -58,9 +58,21 @@ function formatDayBadge(data: string): { day: string; month: string } {
   };
 }
 
+/**
+ * Superfície sólida (sem blur), como no laboratório visual — mesmo
+ * tratamento de HeroCard/ObjetivosCard, nomeado aqui (em vez de inline)
+ * pra ficar consistente com os outros dois arquivos deste ticket.
+ */
+const SOLID_SURFACE_STYLE = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+} as const;
+
 export function NextJobCard({ jobs }: Props) {
   const [expanded, setExpanded] = useState(false);
   const job = getProximoJob(jobs);
+  const dayBadge = job ? formatDayBadge(job.data) : null;
 
   return (
     <GlassCard
@@ -68,9 +80,7 @@ export function NextJobCard({ jobs }: Props) {
       onClick={job ? () => setExpanded((v) => !v) : undefined}
       radius="md"
       style={{
-        backdropFilter: "none",
-        WebkitBackdropFilter: "none",
-        background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+        ...SOLID_SURFACE_STYLE,
         boxShadow: expanded
           ? "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 2px 1px rgb(0 0 0 / 0.12), 0 12px 32px rgb(0 0 0 / 0.22), var(--glow-sm)"
           : "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
@@ -122,13 +132,13 @@ export function NextJobCard({ jobs }: Props) {
                     color: "var(--text)",
                   }}
                 >
-                  {formatDayBadge(job.data).day}
+                  {dayBadge?.day}
                 </span>
                 <span
                   className="mt-0.5 font-semibold uppercase"
                   style={{ fontSize: "9px", color: "var(--text-muted)" }}
                 >
-                  {formatDayBadge(job.data).month}
+                  {dayBadge?.month}
                 </span>
               </div>
 
