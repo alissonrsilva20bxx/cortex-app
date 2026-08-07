@@ -18,10 +18,27 @@ const OBJ_CAT_EMOJIS: Record<string, string> = {
   outros: "📌",
 };
 
+/**
+ * Superfície sólida (sem blur), como no laboratório visual. O laboratório
+ * mostra "Objetivos" como barras de progresso percentuais (metas
+ * financeiras) — o dado real de `Objetivo` é binário (`concluido`), sem
+ * campo de percentual. Manter o contrato atual (checklist binário) e não
+ * inventar uma % que não existe é a decisão registrada no ticket T2
+ * (#29) e no princípio 3 do plano de integração visual: entregar com o
+ * contrato atual, registrar a UI percentual como pendência de produto.
+ */
+const SOLID_SURFACE_STYLE = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  boxShadow:
+    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
+} as const;
+
 export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   if (objetivos.length === 0) {
     return (
-      <GlassCard className="p-5">
+      <GlassCard className="p-5" radius="md" style={SOLID_SURFACE_STYLE}>
         <div className="flex items-center gap-3 mb-4">
           <div
             className="flex items-center justify-center rounded-xl shrink-0"
@@ -70,7 +87,7 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   );
 
   return (
-    <GlassCard className="p-5">
+    <GlassCard className="p-5" radius="md" style={SOLID_SURFACE_STYLE}>
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="section-label">Objetivos</p>
