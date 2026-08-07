@@ -375,16 +375,26 @@
 /* ── Base ───────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;
+  /* Fonte nativa do sistema para a interface (spec de lançamento,
+     decisão aprovada em 05/08/2026) — Plus Jakarta Sans fica reservada
+     para títulos/identidade via --font-display abaixo. */
   font-family:
-    var(--font-jakarta),
-    "Plus Jakarta Sans",
-    Inter,
-    system-ui,
     -apple-system,
     BlinkMacSystemFont,
+    "SF Pro Text",
     "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
     sans-serif;
   font-feature-settings: "cv11", "ss01";
+  --font-display: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
 }
 
 html {
@@ -427,6 +437,32 @@ select {
 ::selection {
   background: var(--selection-bg);
   color: #ffffff;
+}
+
+/* ── Acessibilidade — foco de teclado ──────────────────────────────── */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Legibilidade mínima ───────────────────────────────────────────
+   Textos em text-[8px]/[9px]/[10px] (metadados, rótulos pequenos)
+   ficam ilegíveis em tamanho real; eleva o piso sem mexer em layout. */
+.text-\[8px\] {
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.text-\[9px\] {
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.text-\[10px\] {
+  font-size: 12px;
+  line-height: 17px;
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────── */
@@ -526,4 +562,19 @@ select {
 
 .animate-fade-up {
   animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Movimento reduzido ─────────────────────────────────────────────
+   Amortece as transições/animações já existentes (fade de aba, FAB,
+   progress bar etc.) para quem pede prefers-reduced-motion, sem
+   precisar reescrever cada uma individualmente. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
