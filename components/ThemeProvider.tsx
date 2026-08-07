@@ -23,24 +23,51 @@ const ThemeContext = createContext<ThemeContextValue>({
   setMode: () => {},
 });
 
+function readStoredTheme(): Theme {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+  return stored && (THEMES as readonly string[]).includes(stored)
+    ? stored
+    : DEFAULT_THEME;
+}
+
+function readStoredMode(): "dark" | "light" {
+  const stored = localStorage.getItem(MODE_STORAGE_KEY);
+  return stored === "light" ? "light" : "dark";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // State starts at the same default the server rendered (localStorage
+  // isn't readable during SSR), then a mount-only effect below corrects it
+  // from the real stored value. localStorage is written only from the
+  // setTheme/setMode wrappers — i.e. only in response to an explicit user
+  // action, never from a [theme]/[mode]-dependent effect. That effect
+  // pattern used to race itself: with React Strict Mode's double effect
+  // invocation in dev, a write-effect's first pass ran with the
+  // still-default state and stomped the real stored value before a
+  // separate read-effect's setState could land, silently resetting the
+  // theme on every reload. Decoupling "persist" from "state changed"
+  // removes the race, and starting from the SSR default avoids a
+  // hydration mismatch in anything that renders conditionally on theme.
   const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
   const [mode, setModeState] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    if (storedTheme && (THEMES as readonly string[]).includes(storedTheme)) {
-      setThemeState(storedTheme);
-    }
-    const storedMode = localStorage.getItem(MODE_STORAGE_KEY);
-    if (storedMode === "light" || storedMode === "dark") {
-      setModeState(storedMode as "dark" | "light");
-    }
+    setThemeState(readStoredTheme());
+    setModeState(readStoredMode());
   }, []);
+
+  function setTheme(next: Theme) {
+    setThemeState(next);
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+  }
+
+  function setMode(next: "dark" | "light") {
+    setModeState(next);
+    localStorage.setItem(MODE_STORAGE_KEY, next);
+  }
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
   useEffect(() => {
@@ -49,7 +76,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       document.documentElement.removeAttribute("data-mode");
     }
-    localStorage.setItem(MODE_STORAGE_KEY, mode);
   }, [mode]);
 
   // Sem isso, a barra de status/área segura do Safari fica sempre preta
@@ -66,9 +92,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme, mode]);
 
   return (
-    <ThemeContext.Provider
-      value={{ theme, setTheme: setThemeState, mode, setMode: setModeState }}
-    >
+    <ThemeContext.Provider value={{ theme, setTheme, mode, setMode }}>
       {children}
     </ThemeContext.Provider>
   );
