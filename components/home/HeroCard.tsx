@@ -17,11 +17,21 @@ interface Props {
  * superfícies mais sólidas em cards de conteúdo. Repetido por arquivo
  * (não extraído pra um helper compartilhado) porque o escopo deste
  * ticket é só estes 4 componentes de Início — nada em `components/ui/`.
+ *
+ * `border` sobrescreve a borda cor-de-destaque de `.glass-card`
+ * (globals.css) por uma neutra — mais perto do `border-white/[0.075]`
+ * do laboratório. Uma coisa que o `style` inline NÃO alcança:
+ * `.glass-card::before` (o "shine" — gradiente translúcido) continua
+ * pintando por cima, porque pseudo-elemento não é afetado por inline
+ * style. Removê-lo exigiria editar `components/ui/GlassCard.tsx` ou o
+ * `.glass-card` global, fora do escopo permitido deste ticket — fica
+ * registrado como resíduo aceito, não como fidelidade completa.
  */
 const SOLID_SURFACE_STYLE = {
   backdropFilter: "none",
   WebkitBackdropFilter: "none",
   background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  border: "1px solid var(--border-color)",
   boxShadow:
     "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
 } as const;
@@ -91,10 +101,10 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
           reserva neon pra seleção/progresso/ação primária, não pra todo
           texto de destaque. */}
       <p
-        className="font-extrabold tabular-nums leading-none"
+        className="font-semibold tabular-nums leading-none"
         style={{
-          fontSize: "34px",
-          letterSpacing: "-0.03em",
+          fontSize: "30px",
+          letterSpacing: "-0.065em",
           color: "var(--accent)",
           textShadow: "0 0 20px rgb(var(--accent-rgb) / 0.28)",
         }}

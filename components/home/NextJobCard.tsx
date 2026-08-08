@@ -62,11 +62,15 @@ export function formatDayBadge(data: string): { day: string; month: string } {
  * Superfície sólida (sem blur), como no laboratório visual — mesmo
  * tratamento de HeroCard/ObjetivosCard, nomeado aqui (em vez de inline)
  * pra ficar consistente com os outros dois arquivos deste ticket.
+ * `border` sobrescreve a borda cor-de-destaque de `.glass-card` por uma
+ * neutra (mais perto do laboratório); o "shine" de `.glass-card::before`
+ * não é alcançável por inline style — resíduo aceito, ver HeroCard.tsx.
  */
 const SOLID_SURFACE_STYLE = {
   backdropFilter: "none",
   WebkitBackdropFilter: "none",
   background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  border: "1px solid var(--border-color)",
 } as const;
 
 export function NextJobCard({ jobs }: Props) {
