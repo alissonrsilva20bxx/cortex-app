@@ -89,6 +89,9 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
 
   return (
     <GlassCard className="p-5" radius="md" style={SOLID_SURFACE_STYLE}>
+      {/* "Ver todos" no cabeçalho, não mais um botão de largura total
+          abaixo da lista — mesma posição do laboratório (page.tsx:388-397,
+          "Objetivos" + "Ver todos" na mesma linha). */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="section-label">Objetivos</p>
@@ -96,7 +99,7 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             {concluidos}/{todos} concluídos
           </p>
         </div>
-        {allDone && (
+        {allDone ? (
           <span
             className="text-[11px] font-bold px-2.5 py-1 rounded-full"
             style={{
@@ -107,10 +110,24 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
           >
             🎉 Todos feitos!
           </span>
+        ) : (
+          <button
+            onClick={onGoToMetas}
+            className="flex items-center gap-0.5 font-bold shrink-0"
+            style={{
+              fontSize: "11px",
+              color: "var(--accent)",
+              minHeight: "44px",
+              padding: "0 4px",
+            }}
+          >
+            Ver todos
+            <ChevronRight size={13} />
+          </button>
         )}
       </div>
 
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2">
         {visible.map((obj) => (
           <button
             key={obj.id}
@@ -150,19 +167,6 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
           </button>
         ))}
       </div>
-
-      <button
-        onClick={onGoToMetas}
-        className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.98]"
-        style={{
-          background: "rgb(var(--accent-rgb) / 0.08)",
-          color: "var(--accent)",
-          border: "1px solid rgb(var(--accent-rgb) / 0.2)",
-        }}
-      >
-        Ver todos
-        <ChevronRight size={13} />
-      </button>
     </GlassCard>
   );
 }
