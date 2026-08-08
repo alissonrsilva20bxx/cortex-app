@@ -1,9 +1,13 @@
 "use client";
 
-import { ArrowUpRight, ChevronRight } from "lucide-react";
+import { ChevronRight, Target } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { formatBRL, monthProjection } from "@/lib/finance";
 import type { Job, Meta } from "@/lib/types";
+
+/** Geometria do anel — raio 37 (mesmo do laboratório: circunferência 232.5). */
+const RING_RADIUS = 37;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 interface Props {
   jobs: Job[];
@@ -41,6 +45,14 @@ const SOLID_SURFACE_STYLE = {
  * diferencial defensável do app — mostra "o quanto ela já construiu" e,
  * no ritmo dela, aonde isso chega. Enquadramento sempre empoderador,
  * nunca de saída.
+ *
+ * Nota de escopo: o card-herói do laboratório também tem um recorte
+ * "Entrou este mês / Saiu este mês" (entradas/saídas, page.tsx:336-351).
+ * Não portado aqui — este componente só recebe `jobs`/`metas`, sem
+ * despesas/receitas avulsas; calcular esse split exigiria lógica nova em
+ * `lib/finance.ts` e fiação nova em `app/page.tsx`, ambos fora da lista
+ * de arquivos permitidos deste ticket (T2/#29). Registrado como
+ * pendência de produto, não implementado.
  */
 export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
   const p = monthProjection(jobs, metas);
@@ -71,75 +83,106 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
     secondary = "Defina uma meta para acompanhar de perto.";
   }
 
+  // Mesma leitura em dois lugares (anel + barra fina): rumo à meta se
+  // houver, senão rumo ao projetado — igual à barra de baixo, sem
+  // inventar um segundo número. 100% real: p.pct/p.barFraction, nunca
+  // um valor fixo.
+  const ringFraction = p.pct !== null ? p.pct / 100 : p.barFraction;
+  const ringOffset = RING_CIRCUMFERENCE * (1 - Math.min(1, ringFraction));
+
   return (
     <GlassCard
       radius="lg"
       onClick={onGoToFinanceiro}
       ariaLabel="Ver detalhes financeiros"
-      className="p-6"
+      className="p-5"
       style={SOLID_SURFACE_STYLE}
     >
-      {/* Rótulo + chip "no seu ritmo" */}
-      <div className="flex items-center justify-between mb-3">
-        <p className="section-label">Você já construiu</p>
-        <span
-          className="flex items-center gap-1 font-semibold rounded-full px-2.5 py-1"
-          style={{
-            fontSize: "11px",
-            background: "rgb(var(--accent-rgb) / 0.12)",
-            color: "var(--accent)",
-            border: "1px solid rgb(var(--accent-rgb) / 0.22)",
-          }}
-        >
-          <ArrowUpRight size={12} />
-          no seu ritmo
-        </span>
-      </div>
-
-      {/* Valor — protagonista da tela (Início: "resumo financeiro como
-          protagonista"), mas o brilho fica discreto — a disciplina Apple
-          reserva neon pra seleção/progresso/ação primária, não pra todo
-          texto de destaque. */}
-      <p
-        className="font-semibold tabular-nums leading-none"
-        style={{
-          fontSize: "30px",
-          letterSpacing: "-0.065em",
-          color: "var(--accent)",
-          textShadow: "0 0 20px rgb(var(--accent-rgb) / 0.28)",
-        }}
-      >
-        {formatBRL(p.earned)}
-        <span
-          className="font-semibold"
-          style={{ fontSize: "14px", color: "var(--text-muted)" }}
-        >
-          {" "}
-          este mês
-        </span>
-      </p>
-
-      {/* Projeção viva — duas leituras */}
-      <div className="mt-4">
-        <p
-          className="font-semibold leading-snug"
-          style={{ fontSize: "15px", color: "var(--text)" }}
-        >
-          {primary}
-        </p>
-        {secondary && (
+      {/* Duas colunas — valor à esquerda, anel de progresso à direita —
+          mesma composição do card-herói do laboratório (page.tsx:282-330,
+          grid-cols-[1fr_92px]). O anel usa a MESMA fração real que a
+          barra fina abaixo (p.pct ou p.barFraction); não é decorativo. */}
+      <div className="grid grid-cols-[1fr_86px] items-center gap-4">
+        <div className="min-w-0">
+          <p className="section-label">Você já construiu</p>
           <p
-            className="font-medium mt-1 leading-snug"
-            style={{ fontSize: "13px", color: "var(--text-2)" }}
+            className="font-medium mt-0.5"
+            style={{ fontSize: "11px", color: "var(--text-muted)" }}
           >
-            {secondary}
+            {p.monthLabel} · no seu ritmo
           </p>
-        )}
+
+          {/* Valor — protagonista da tela (Início: "resumo financeiro
+              como protagonista"), mas o brilho fica discreto — a
+              disciplina Apple reserva neon pra seleção/progresso/ação
+              primária, não pra todo texto de destaque. Número e
+              tracking literais do laboratório (page.tsx:291-296). */}
+          <p
+            className="font-semibold tabular-nums leading-none mt-2"
+            style={{
+              fontSize: "30px",
+              letterSpacing: "-0.065em",
+              color: "var(--accent)",
+              textShadow: "0 0 20px rgb(var(--accent-rgb) / 0.28)",
+            }}
+          >
+            {formatBRL(p.earned)}
+          </p>
+          <p
+            className="font-medium mt-1.5"
+            style={{ fontSize: "9px", color: "var(--text-muted)" }}
+          >
+            este mês
+          </p>
+        </div>
+
+        <div
+          className="relative grid place-items-center shrink-0"
+          style={{ width: "86px", height: "86px" }}
+        >
+          <svg
+            viewBox="0 0 100 100"
+            className="h-full w-full -rotate-90"
+            aria-hidden="true"
+          >
+            <circle
+              cx="50"
+              cy="50"
+              r={RING_RADIUS}
+              fill="none"
+              stroke="rgb(var(--accent-rgb) / 0.1)"
+              strokeWidth="8"
+            />
+            {!p.isEmpty && (
+              <circle
+                cx="50"
+                cy="50"
+                r={RING_RADIUS}
+                fill="none"
+                stroke="var(--accent)"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={RING_CIRCUMFERENCE}
+                strokeDashoffset={ringOffset}
+                style={{
+                  filter: "drop-shadow(0 0 6px rgb(var(--accent-rgb) / 0.4))",
+                  transition: "stroke-dashoffset 0.6s ease",
+                }}
+              />
+            )}
+          </svg>
+          <Target
+            size={22}
+            className="absolute"
+            style={{ color: "var(--text-2)" }}
+          />
+        </div>
       </div>
 
-      {/* Barra que anda a cada atendimento (neon disciplinado) */}
+      {/* Barra fina — mesma fração do anel, legenda com o % exato e o
+          link pro Financeiro (mantido do componente real). */}
       {!p.isEmpty && (
-        <div className="mt-5">
+        <div className="mt-4">
           <div className="progress-track">
             <div
               className="progress-fill"
@@ -165,6 +208,30 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
           )}
         </div>
       )}
+
+      {/* Projeção viva — duas leituras, o diferencial defensável do app.
+          Sem equivalente no laboratório (que só mostra "72%" fixo) —
+          fica no rodapé, onde o laboratório mostra entradas/saídas (dado
+          que HeroCard não recebe; ver nota de escopo no topo do arquivo). */}
+      <div
+        className="mt-4 pt-3"
+        style={{ borderTop: "1px solid var(--divider, var(--border-color))" }}
+      >
+        <p
+          className="font-semibold leading-snug"
+          style={{ fontSize: "13px", color: "var(--text)" }}
+        >
+          {primary}
+        </p>
+        {secondary && (
+          <p
+            className="font-medium mt-1 leading-snug"
+            style={{ fontSize: "11px", color: "var(--text-2)" }}
+          >
+            {secondary}
+          </p>
+        )}
+      </div>
     </GlassCard>
   );
 }
