@@ -116,7 +116,13 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
               como protagonista"), mas o brilho fica discreto — a
               disciplina Apple reserva neon pra seleção/progresso/ação
               primária, não pra todo texto de destaque. Número e
-              tracking literais do laboratório (page.tsx:291-296). */}
+              tracking literais do laboratório (page.tsx:291-296).
+              Hierarquia igual à do laboratório: quando há meta, o
+              número gigante é o PERCENTUAL (não o valor em reais) — o
+              real vem como legenda menor embaixo, igual ao "R$ 4.860
+              de R$ 6.750,00" do laboratório. Sem meta não há percentual
+              real pra mostrar (p.pct é null), então o valor em reais
+              volta a ser o protagonista — nunca um % inventado. */}
           <p
             className="font-semibold tabular-nums leading-none mt-2"
             style={{
@@ -126,13 +132,15 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
               textShadow: "0 0 20px rgb(var(--accent-rgb) / 0.28)",
             }}
           >
-            {formatBRL(p.earned)}
+            {p.pct !== null ? `${Math.round(p.pct)}%` : formatBRL(p.earned)}
           </p>
           <p
             className="font-medium mt-1.5"
             style={{ fontSize: "9px", color: "var(--text-muted)" }}
           >
-            este mês
+            {p.pct !== null
+              ? `${formatBRL(p.earned)} de ${formatBRL(p.meta as number)}`
+              : "este mês"}
           </p>
         </div>
 
