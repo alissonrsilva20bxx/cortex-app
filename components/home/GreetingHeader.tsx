@@ -30,34 +30,43 @@ export function GreetingHeader({ usuario }: Props) {
   const firstName = getFirstName(usuario.nome);
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-start justify-between">
       <div>
+        {/* Escala literal do laboratório (page.tsx:256-260): 17px/-0.035em
+            título, 10px/-0.01em data — bem mais discreto que o título de
+            27px que o app tinha antes. */}
         <h1
-          className="font-bold leading-[30px]"
+          className="font-semibold leading-none"
           style={{
-            fontSize: "24px",
-            letterSpacing: "-0.03em",
+            fontSize: "17px",
+            letterSpacing: "-0.035em",
             color: "var(--text)",
           }}
         >
           {greeting}, {firstName}
         </h1>
         <p
-          className="capitalize font-medium mt-1 leading-[18px]"
-          style={{ fontSize: "13px", color: "var(--text-muted)" }}
+          className="capitalize font-medium mt-1 leading-none"
+          style={{
+            fontSize: "10px",
+            letterSpacing: "-0.01em",
+            color: "var(--text-muted)",
+          }}
         >
           {date}
         </p>
       </div>
 
-      {/* Avatar — dado real (foto/inicial), moldura sóbria (sem glow),
-          seguindo a disciplina do laboratório: brilho só em seleção/
-          progresso/ação primária, nunca decorativo. */}
+      {/* Avatar — dado real (foto/inicial), moldura sóbria do laboratório
+          (border-white/[0.07] + bg-white/[0.035], sem glow): brilho só em
+          seleção/progresso/ação primária, nunca decorativo. 36px como os
+          botões de ícone do laboratório (não é alvo de toque — decorativo,
+          sem onClick — então não se aplica a regra de 44px mínimo). */}
       <div
         className="relative flex items-center justify-center rounded-full shrink-0 overflow-hidden"
         style={{
-          width: "44px",
-          height: "44px",
+          width: "36px",
+          height: "36px",
           border: "1px solid var(--border-color)",
           background: "var(--surface)",
         }}
