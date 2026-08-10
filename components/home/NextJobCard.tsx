@@ -41,34 +41,72 @@ const formatBRL = (v: number) =>
     v
   );
 
-const formatDate = (data: string) =>
-  new Date(data + "T00:00:00").toLocaleDateString("pt-BR", {
-    day: "numeric",
-    month: "short",
-  });
-
 const formatTime = (hora: string) => {
   const [h, m] = hora.split(":");
   return `${h}h${m}`;
 };
 
+/** Dia/mês curto pro selo de data — "21" + "AGO", como no laboratório. */
+export function formatDayBadge(data: string): { day: string; month: string } {
+  const d = new Date(data + "T00:00:00");
+  return {
+    day: String(d.getDate()),
+    month: d
+      .toLocaleDateString("pt-BR", { month: "short" })
+      .replace(".", "")
+      .toUpperCase(),
+  };
+}
+
+/**
+ * Superfície sólida (sem blur), como no laboratório visual — mesmo
+ * tratamento de HeroCard/ObjetivosCard, nomeado aqui (em vez de inline)
+ * pra ficar consistente com os outros dois arquivos deste ticket.
+ * `border` sobrescreve a borda cor-de-destaque de `.glass-card` por uma
+ * neutra (mais perto do laboratório); o "shine" de `.glass-card::before`
+ * não é alcançável por inline style — resíduo aceito, ver HeroCard.tsx.
+ */
+const SOLID_SURFACE_STYLE = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  border: "1px solid var(--border-color)",
+} as const;
+
 export function NextJobCard({ jobs }: Props) {
   const [expanded, setExpanded] = useState(false);
   const job = getProximoJob(jobs);
+  const dayBadge = job ? formatDayBadge(job.data) : null;
 
   return (
     <GlassCard
       className="p-5 duration-300"
       onClick={job ? () => setExpanded((v) => !v) : undefined}
+      radius="md"
       style={{
+        ...SOLID_SURFACE_STYLE,
         boxShadow: expanded
-          ? `inset 0 1px 0 rgb(255 255 255 / 0.07), 0 2px 1px rgb(0 0 0 / 0.12), 0 12px 40px rgb(0 0 0 / 0.28), var(--glow-sm), 0 0 0 0.5px rgb(var(--accent-rgb) / 0.06)`
-          : undefined,
+          ? "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 2px 1px rgb(0 0 0 / 0.12), 0 12px 32px rgb(0 0 0 / 0.22), var(--glow-sm)"
+          : "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
       }}
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
-        <p className="section-label">Próximo atendimento</p>
+        {/* Título de seção — 13px/semibold/-0.035em, cor de texto plena,
+            como o <h2> do laboratório (app/dev-preview/launch/page.tsx,
+            bloco "home"). NÃO é `.section-label`: ver nota de causa-raiz
+            em HeroCard.tsx (mesmo diagnóstico vale pros 3 arquivos deste
+            ticket). */}
+        <h2
+          className="font-semibold"
+          style={{
+            fontSize: "13px",
+            letterSpacing: "-0.035em",
+            color: "var(--text)",
+          }}
+        >
+          Próximo atendimento
+        </h2>
         {job && (
           <ChevronDown
             size={15}
@@ -90,27 +128,61 @@ export function NextJobCard({ jobs }: Props) {
         </p>
       ) : (
         <>
-          {/* Summary row */}
+          {/* Summary row — selo de dia/mês à esquerda, como no laboratório
+              (troca o "12 jul" solto por um bloco de data compacto). */}
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p
-                className="font-bold truncate"
+            <div className="flex items-start gap-3 min-w-0">
+              <div
+                className="grid shrink-0 place-items-center"
                 style={{
-                  fontSize: "17px",
-                  letterSpacing: "-0.025em",
-                  color: "var(--text)",
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--surface)",
                 }}
               >
-                {job.clienteNome}
-              </p>
-              <div className="flex items-center gap-1.5 mt-1.5">
-                <Clock size={11} style={{ color: "var(--text-muted)" }} />
                 <span
-                  className="font-medium"
-                  style={{ fontSize: "12.5px", color: "var(--text-muted)" }}
+                  className="font-semibold leading-none"
+                  style={{
+                    fontSize: "18px",
+                    letterSpacing: "-0.03em",
+                    color: "var(--text)",
+                  }}
                 >
-                  {formatDate(job.data)} · {formatTime(job.hora)}
+                  {dayBadge?.day}
                 </span>
+                <span
+                  className="mt-0.5 font-semibold uppercase"
+                  style={{ fontSize: "9px", color: "var(--text-muted)" }}
+                >
+                  {dayBadge?.month}
+                </span>
+              </div>
+
+              <div className="min-w-0">
+                <p
+                  className="font-bold truncate"
+                  style={{
+                    fontSize: "15px",
+                    letterSpacing: "-0.02em",
+                    color: "var(--text)",
+                  }}
+                >
+                  {job.clienteNome}
+                </p>
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  <Clock size={11} style={{ color: "var(--text-muted)" }} />
+                  <span
+                    className="font-medium truncate"
+                    style={{ fontSize: "12.5px", color: "var(--text-muted)" }}
+                  >
+                    {formatTime(job.hora)} ·{" "}
+                    {job.modalidade === "online"
+                      ? "Online"
+                      : (job.local ?? "Presencial")}
+                  </span>
+                </div>
               </div>
             </div>
 

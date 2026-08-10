@@ -18,10 +18,28 @@ const OBJ_CAT_EMOJIS: Record<string, string> = {
   outros: "📌",
 };
 
+/**
+ * Superfície sólida (sem blur), como no laboratório visual. O laboratório
+ * mostra "Objetivos" como barras de progresso percentuais (metas
+ * financeiras) — o dado real de `Objetivo` é binário (`concluido`), sem
+ * campo de percentual. Manter o contrato atual (checklist binário) e não
+ * inventar uma % que não existe é a decisão registrada no ticket T2
+ * (#29) e no princípio 3 do plano de integração visual: entregar com o
+ * contrato atual, registrar a UI percentual como pendência de produto.
+ */
+const SOLID_SURFACE_STYLE = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  border: "1px solid var(--border-color)",
+  boxShadow:
+    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
+} as const;
+
 export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   if (objetivos.length === 0) {
     return (
-      <GlassCard className="p-5">
+      <GlassCard className="p-5" radius="md" style={SOLID_SURFACE_STYLE}>
         <div className="flex items-center gap-3 mb-4">
           <div
             className="flex items-center justify-center rounded-xl shrink-0"
@@ -34,7 +52,21 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             <ListChecks size={16} style={{ color: "var(--accent)" }} />
           </div>
           <div>
-            <p className="section-label">Objetivos</p>
+            {/* Título de seção — 13px/semibold/-0.035em, cor plena, como
+                o <h2> "Objetivos" do laboratório
+                (app/dev-preview/launch/page.tsx, bloco "home"). NÃO é
+                `.section-label` — ver nota de causa-raiz em
+                HeroCard.tsx. */}
+            <h2
+              className="font-semibold"
+              style={{
+                fontSize: "13px",
+                letterSpacing: "-0.035em",
+                color: "var(--text)",
+              }}
+            >
+              Objetivos
+            </h2>
             <p
               className="text-xs mt-0.5"
               style={{ color: "var(--text-muted)" }}
@@ -43,6 +75,9 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             </p>
           </div>
         </div>
+        {/* minHeight: 44px — alvo de toque mínimo (spec, "Alvos de toque
+            44×44px"); py-2.5 + text-xs sozinho renderiza ~36px. Mesmo
+            padrão já usado no botão "Ver todos" deste arquivo. */}
         <button
           onClick={onGoToMetas}
           className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.98]"
@@ -50,6 +85,7 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             background: "rgb(var(--accent-rgb) / 0.08)",
             color: "var(--accent)",
             border: "1px solid rgb(var(--accent-rgb) / 0.2)",
+            minHeight: "44px",
           }}
         >
           Adicionar objetivo
@@ -70,15 +106,28 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   );
 
   return (
-    <GlassCard className="p-5">
+    <GlassCard className="p-5" radius="md" style={SOLID_SURFACE_STYLE}>
+      {/* "Ver todos" no cabeçalho, não mais um botão de largura total
+          abaixo da lista — mesma posição do laboratório (page.tsx:388-397,
+          "Objetivos" + "Ver todos" na mesma linha). */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="section-label">Objetivos</p>
+          {/* Mesmo tratamento do estado vazio acima — ver comentário lá. */}
+          <h2
+            className="font-semibold"
+            style={{
+              fontSize: "13px",
+              letterSpacing: "-0.035em",
+              color: "var(--text)",
+            }}
+          >
+            Objetivos
+          </h2>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {concluidos}/{todos} concluídos
           </p>
         </div>
-        {allDone && (
+        {allDone ? (
           <span
             className="text-[11px] font-bold px-2.5 py-1 rounded-full"
             style={{
@@ -89,10 +138,24 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
           >
             🎉 Todos feitos!
           </span>
+        ) : (
+          <button
+            onClick={onGoToMetas}
+            className="flex items-center gap-0.5 font-bold shrink-0"
+            style={{
+              fontSize: "11px",
+              color: "var(--accent)",
+              minHeight: "44px",
+              padding: "0 4px",
+            }}
+          >
+            Ver todos
+            <ChevronRight size={13} />
+          </button>
         )}
       </div>
 
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2">
         {visible.map((obj) => (
           <button
             key={obj.id}
@@ -103,6 +166,9 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
                 ? "rgb(var(--accent-rgb) / 0.06)"
                 : "var(--surface)",
               border: `1px solid ${obj.concluido ? "rgb(var(--accent-rgb) / 0.2)" : "var(--border-color)"}`,
+              // minHeight: 44px — alvo de toque mínimo (spec); px-3 py-2.5
+              // + text-sm sozinho renderiza ~40px.
+              minHeight: "44px",
             }}
           >
             <div
@@ -132,19 +198,6 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
           </button>
         ))}
       </div>
-
-      <button
-        onClick={onGoToMetas}
-        className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.98]"
-        style={{
-          background: "rgb(var(--accent-rgb) / 0.08)",
-          color: "var(--accent)",
-          border: "1px solid rgb(var(--accent-rgb) / 0.2)",
-        }}
-      >
-        Ver todos
-        <ChevronRight size={13} />
-      </button>
     </GlassCard>
   );
 }
