@@ -75,6 +75,9 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             </p>
           </div>
         </div>
+        {/* minHeight: 44px — alvo de toque mínimo (spec, "Alvos de toque
+            44×44px"); py-2.5 + text-xs sozinho renderiza ~36px. Mesmo
+            padrão já usado no botão "Ver todos" deste arquivo. */}
         <button
           onClick={onGoToMetas}
           className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.98]"
@@ -82,6 +85,7 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             background: "rgb(var(--accent-rgb) / 0.08)",
             color: "var(--accent)",
             border: "1px solid rgb(var(--accent-rgb) / 0.2)",
+            minHeight: "44px",
           }}
         >
           Adicionar objetivo
@@ -162,6 +166,9 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
                 ? "rgb(var(--accent-rgb) / 0.06)"
                 : "var(--surface)",
               border: `1px solid ${obj.concluido ? "rgb(var(--accent-rgb) / 0.2)" : "var(--border-color)"}`,
+              // minHeight: 44px — alvo de toque mínimo (spec); px-3 py-2.5
+              // + text-sm sozinho renderiza ~40px.
+              minHeight: "44px",
             }}
           >
             <div
