@@ -6,6 +6,17 @@ import { formatBRL, formatShortDate } from "@/lib/finance";
 import { CAT_LABELS, CAT_EMOJIS } from "./constants";
 import type { Despesa } from "@/lib/types";
 
+/**
+ * Superfície sólida — mesmo padrão de VisaoTab.tsx/EntradasTab.tsx (T4),
+ * Início (T2) e Agenda (T3).
+ */
+const SOLID_SURFACE_STYLE = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  border: "1px solid var(--border-color)",
+} as const;
+
 interface Props {
   despesas: Despesa[];
   despMes: Despesa[];
@@ -37,9 +48,17 @@ export function SaidasTab({
       <GlassCard
         radius="md"
         className="p-4 mb-4 flex items-center justify-between"
+        style={SOLID_SURFACE_STYLE}
       >
         <div>
-          <p className="section-label mb-0.5">Total este mês</p>
+          {/* Legenda sentence-case — não `.section-label`, mesma
+              causa-raiz já corrigida em T2/T4. */}
+          <p
+            className="mb-0.5"
+            style={{ fontSize: "11px", color: "var(--text-muted)" }}
+          >
+            Total este mês
+          </p>
           <p
             className="font-extrabold text-[22px] tabular-nums"
             style={{ color: "var(--danger)" }}
@@ -69,8 +88,13 @@ export function SaidasTab({
 
       {/* Breakdown por categoria */}
       {catEntries.length > 0 && (
-        <GlassCard radius="md" className="p-4 mb-4">
-          <p className="section-label mb-3">Por categoria</p>
+        <GlassCard radius="md" className="p-4 mb-4" style={SOLID_SURFACE_STYLE}>
+          <p
+            className="mb-3"
+            style={{ fontSize: "11px", color: "var(--text-muted)" }}
+          >
+            Por categoria
+          </p>
           {catEntries.map(([cat, val]) => (
             <div key={cat} className="flex items-center gap-3 mb-2.5">
               <span style={{ fontSize: 16 }}>{CAT_EMOJIS[cat] ?? "📦"}</span>
@@ -118,6 +142,7 @@ export function SaidasTab({
               key={d.id}
               radius="md"
               className="flex items-center gap-3 px-4 py-3"
+              style={SOLID_SURFACE_STYLE}
             >
               <span style={{ fontSize: 20 }}>
                 {CAT_EMOJIS[d.categoria] ?? "📦"}
@@ -143,12 +168,15 @@ export function SaidasTab({
               >
                 -{formatBRL(d.valor)}
               </span>
+              {/* 44×44px — alvo de toque mínimo (spec); era 28×28px
+                  (achado P1-6 do relatório de paridade). */}
               <button
                 onClick={() => onDeleteDespesa(d.id)}
+                aria-label="Excluir despesa"
                 className="shrink-0 flex items-center justify-center rounded-lg transition-opacity active:opacity-50"
                 style={{
-                  width: 28,
-                  height: 28,
+                  width: 44,
+                  height: 44,
                   background: "rgb(var(--danger-rgb) / 0.1)",
                 }}
               >
