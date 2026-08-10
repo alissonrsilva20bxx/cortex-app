@@ -173,7 +173,15 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
           >
             {job ? "Editar atendimento" : "Novo atendimento"}
           </p>
-          <button onClick={onClose} className="p-1 mt-2 active:opacity-70">
+          {/* minWidth/minHeight 44px — alvo de toque mínimo (spec); o ícone
+              de 20px com p-1 sozinho renderiza ~28×28px (achado P1 #5 do
+              relatório de paridade visual da Agenda). */}
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="mt-2 flex items-center justify-center active:opacity-70"
+            style={{ minWidth: "44px", minHeight: "44px" }}
+          >
             <X size={20} style={{ color: "var(--text-muted)" }} />
           </button>
         </div>
