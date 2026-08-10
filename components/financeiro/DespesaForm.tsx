@@ -99,10 +99,12 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
           >
             Nova Despesa
           </h3>
+          {/* 44×44px — alvo de toque mínimo; era 34×34px (achado P1-5). */}
           <button
             onClick={onClose}
+            aria-label="Fechar"
             className="flex items-center justify-center rounded-xl"
-            style={{ width: 34, height: 34, background: "var(--surface)" }}
+            style={{ width: 44, height: 44, background: "var(--surface)" }}
           >
             <X size={16} style={{ color: "var(--text-muted)" }} />
           </button>
