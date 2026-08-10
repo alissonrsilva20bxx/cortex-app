@@ -52,7 +52,21 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             <ListChecks size={16} style={{ color: "var(--accent)" }} />
           </div>
           <div>
-            <p className="section-label">Objetivos</p>
+            {/* Título de seção — 13px/semibold/-0.035em, cor plena, como
+                o <h2> "Objetivos" do laboratório
+                (app/dev-preview/launch/page.tsx, bloco "home"). NÃO é
+                `.section-label` — ver nota de causa-raiz em
+                HeroCard.tsx. */}
+            <h2
+              className="font-semibold"
+              style={{
+                fontSize: "13px",
+                letterSpacing: "-0.035em",
+                color: "var(--text)",
+              }}
+            >
+              Objetivos
+            </h2>
             <p
               className="text-xs mt-0.5"
               style={{ color: "var(--text-muted)" }}
@@ -94,7 +108,17 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
           "Objetivos" + "Ver todos" na mesma linha). */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="section-label">Objetivos</p>
+          {/* Mesmo tratamento do estado vazio acima — ver comentário lá. */}
+          <h2
+            className="font-semibold"
+            style={{
+              fontSize: "13px",
+              letterSpacing: "-0.035em",
+              color: "var(--text)",
+            }}
+          >
+            Objetivos
+          </h2>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {concluidos}/{todos} concluídos
           </p>
