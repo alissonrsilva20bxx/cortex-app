@@ -92,7 +92,21 @@ export function NextJobCard({ jobs }: Props) {
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
-        <p className="section-label">Próximo atendimento</p>
+        {/* Título de seção — 13px/semibold/-0.035em, cor de texto plena,
+            como o <h2> do laboratório (app/dev-preview/launch/page.tsx,
+            bloco "home"). NÃO é `.section-label`: ver nota de causa-raiz
+            em HeroCard.tsx (mesmo diagnóstico vale pros 3 arquivos deste
+            ticket). */}
+        <h2
+          className="font-semibold"
+          style={{
+            fontSize: "13px",
+            letterSpacing: "-0.035em",
+            color: "var(--text)",
+          }}
+        >
+          Próximo atendimento
+        </h2>
         {job && (
           <ChevronDown
             size={15}
