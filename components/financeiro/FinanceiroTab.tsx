@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { calcEarnings } from "@/lib/finance";
@@ -19,6 +19,22 @@ import type {
 } from "@/lib/types";
 
 type InnerTab = "visao" | "entradas" | "saidas" | "metas";
+
+/**
+ * "Agosto de 2026" — mês/ano corrente por extenso, capitalizado. O
+ * laboratório mostra uma pílula de período ("Maio de 2025 ⌄") como
+ * seletor decorativo (sem função real, nunca muda o mês de referência
+ * dos cálculos). Não portamos o seletor (exigiria lógica nova, fora do
+ * escopo visual deste ticket) — só o rótulo de contexto, calculado a
+ * partir da data real, sem seta/chevron (não é clicável).
+ */
+function getMonthYearLabel(): string {
+  const label = new Date().toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric",
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
 
 const TABS: { id: InnerTab; label: string }[] = [
   { id: "visao", label: "Visão" },
@@ -56,6 +72,7 @@ export function FinanceiroTab({
   const [receitas, setReceitas] = useState<ReceitaAvulsa[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<InnerTab>("visao");
+  const monthYearLabel = useMemo(getMonthYearLabel, []);
 
   function changeTab(t: InnerTab) {
     setTab(t);
@@ -157,9 +174,26 @@ export function FinanceiroTab({
 
   return (
     <div className="pb-4">
-      <h2 className="text-xl font-bold mb-4" style={{ color: "var(--text)" }}>
+      {/* Cabeçalho — 22px/semibold/-0.055em, como o `ScreenTitle` do
+          laboratório (LaunchScreens.tsx:677-704, mesmo usado por
+          AgendaScreen). Rótulo de mês/ano abaixo é dado real (data
+          atual), não a pílula decorativa do laboratório. */}
+      <h1
+        className="font-semibold"
+        style={{
+          fontSize: "22px",
+          letterSpacing: "-0.055em",
+          color: "var(--text)",
+        }}
+      >
         Financeiro
-      </h2>
+      </h1>
+      <p
+        className="mt-1 mb-4"
+        style={{ fontSize: "11px", color: "var(--text-muted)" }}
+      >
+        {monthYearLabel}
+      </p>
 
       <SegmentedControl
         className="mb-5"
