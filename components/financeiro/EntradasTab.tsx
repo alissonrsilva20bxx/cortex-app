@@ -6,6 +6,17 @@ import { formatBRL, formatShortDate } from "@/lib/finance";
 import { REC_CAT_EMOJIS, REC_CAT_LABELS } from "./constants";
 import type { Job, ReceitaAvulsa } from "@/lib/types";
 
+/**
+ * Superfície sólida — mesmo padrão de VisaoTab.tsx (T4), Início (T2) e
+ * Agenda (T3).
+ */
+const SOLID_SURFACE_STYLE = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  border: "1px solid var(--border-color)",
+} as const;
+
 interface Props {
   jobs: Job[];
   receitas: ReceitaAvulsa[];
@@ -49,9 +60,17 @@ export function EntradasTab({
       <GlassCard
         radius="md"
         className="p-4 mb-4 flex items-center justify-between"
+        style={SOLID_SURFACE_STYLE}
       >
         <div>
-          <p className="section-label mb-0.5">Total este mês</p>
+          {/* Legenda sentence-case — não `.section-label` (eyebrow
+              uppercase), mesma causa-raiz já corrigida em T2/T4. */}
+          <p
+            className="mb-0.5"
+            style={{ fontSize: "11px", color: "var(--text-muted)" }}
+          >
+            Total este mês
+          </p>
           <p
             className="font-extrabold text-[22px] tabular-nums"
             style={{ color: "var(--success)" }}
@@ -89,6 +108,7 @@ export function EntradasTab({
               key={item.tipo + item.id}
               radius="md"
               className="flex items-center gap-3 px-4 py-3"
+              style={SOLID_SURFACE_STYLE}
             >
               <span style={{ fontSize: 20 }}>
                 {item.tipo === "job"
@@ -119,12 +139,15 @@ export function EntradasTab({
                 +{formatBRL(item.valor)}
               </span>
               {item.tipo === "receita" && (
+                // 44×44px — alvo de toque mínimo (spec); era 28×28px
+                // (achado P1-6 do relatório de paridade).
                 <button
                   onClick={() => onDeleteReceita(item.id)}
+                  aria-label="Excluir entrada"
                   className="shrink-0 flex items-center justify-center rounded-lg transition-opacity active:opacity-50"
                   style={{
-                    width: 28,
-                    height: 28,
+                    width: 44,
+                    height: 44,
                     background: "rgb(var(--danger-rgb) / 0.08)",
                   }}
                 >

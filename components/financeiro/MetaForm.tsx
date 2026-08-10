@@ -140,7 +140,15 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
           >
             Editar Metas
           </p>
-          <button onClick={onClose} className="p-1 mt-2 active:opacity-70">
+          {/* minWidth/minHeight 44px — era ~28×28px (p-1 + ícone 20px),
+              mesmo padrão já corrigido em JobForm.tsx no T3 (achado
+              P1-4). */}
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="mt-2 flex items-center justify-center active:opacity-70"
+            style={{ minWidth: "44px", minHeight: "44px" }}
+          >
             <X size={20} style={{ color: "var(--text-muted)" }} />
           </button>
         </div>

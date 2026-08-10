@@ -8,6 +8,31 @@ import { calcEarnings, formatBRL } from "@/lib/finance";
 import { PERIODO_LABELS, OBJ_CATS } from "./constants";
 import type { Job, Meta, ReceitaAvulsa, Objetivo } from "@/lib/types";
 
+/**
+ * Superfície sólida — mesmo padrão dos outros arquivos de Financeiro
+ * (T4), Início (T2) e Agenda (T3).
+ */
+const SOLID_SURFACE_STYLE = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+  border: "1px solid var(--border-color)",
+} as const;
+
+/**
+ * Título de seção — 13px/semibold/-0.035em, cor plena, mesmo tratamento
+ * já usado pros títulos de card de Início/Agenda (não `.section-label`,
+ * o eyebrow uppercase cuja causa-raiz foi corrigida em T2). "Metas
+ * Financeiras" e "Objetivos de Vida" encabeçam cada seu próprio
+ * `GlassCard`, mesma proeminência de "Próximo atendimento"/"Objetivos"
+ * no Início.
+ */
+const sectionTitleStyle = {
+  fontSize: "13px",
+  letterSpacing: "-0.035em",
+  color: "var(--text)",
+} as const;
+
 interface Props {
   jobs: Job[];
   receitas: ReceitaAvulsa[];
@@ -52,10 +77,12 @@ export function MetasTab({
   return (
     <div className="space-y-4">
       {/* Metas financeiras */}
-      <GlassCard radius="md" className="p-4">
+      <GlassCard radius="md" className="p-4" style={SOLID_SURFACE_STYLE}>
         <div className="flex items-center gap-2 mb-4">
           <Target size={14} style={{ color: "var(--accent)" }} />
-          <p className="section-label">Metas Financeiras</p>
+          <h2 className="font-semibold" style={sectionTitleStyle}>
+            Metas Financeiras
+          </h2>
         </div>
         <div className="flex flex-col gap-5">
           {[...metas]
@@ -114,16 +141,20 @@ export function MetasTab({
       </GlassCard>
 
       {/* Objetivos de vida */}
-      <GlassCard radius="md" className="p-4">
+      <GlassCard radius="md" className="p-4" style={SOLID_SURFACE_STYLE}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span style={{ fontSize: 14 }}>🌟</span>
-            <p className="section-label">Objetivos de Vida</p>
+            <h2 className="font-semibold" style={sectionTitleStyle}>
+              Objetivos de Vida
+            </h2>
           </div>
+          {/* minHeight 44px — era ~28px (px-3 py-1.5 + text-xs). */}
           <button
             onClick={() => setObjFormOpen((v) => !v)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+            className="flex items-center gap-1 px-3 rounded-xl text-xs font-bold transition-all active:scale-95"
             style={{
+              minHeight: "44px",
               background: objFormOpen
                 ? "var(--accent)"
                 : "rgb(var(--accent-rgb) / 0.12)",
@@ -159,11 +190,13 @@ export function MetasTab({
             />
             <div className="flex gap-1.5 flex-wrap mb-3">
               {OBJ_CATS.map((c) => (
+                // minHeight 44px — alvo de toque mínimo.
                 <button
                   key={c.id}
                   onClick={() => setObjCat(c.id)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all"
+                  className="px-2.5 rounded-lg text-[11px] font-bold transition-all"
                   style={{
+                    minHeight: "44px",
                     background:
                       objCat === c.id ? "var(--accent)" : "var(--surface)",
                     color: objCat === c.id ? "#fff" : "var(--text-muted)",
@@ -174,11 +207,13 @@ export function MetasTab({
                 </button>
               ))}
             </div>
+            {/* minHeight 44px em ambos — eram ~24px (py-2 + text-xs). */}
             <div className="flex gap-2">
               <button
                 onClick={() => setObjFormOpen(false)}
-                className="flex-1 py-2 rounded-xl text-xs font-bold"
+                className="flex-1 rounded-xl text-xs font-bold"
                 style={{
+                  minHeight: "44px",
                   background: "var(--surface)",
                   color: "var(--text-muted)",
                 }}
@@ -188,8 +223,9 @@ export function MetasTab({
               <button
                 onClick={saveObjetivo}
                 disabled={objSaving || !objTitulo.trim()}
-                className="flex-1 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                className="flex-1 rounded-xl text-xs font-bold transition-all active:scale-95"
                 style={{
+                  minHeight: "44px",
                   background: "var(--accent)",
                   color: "#fff",
                   opacity: objSaving || !objTitulo.trim() ? 0.6 : 1,
