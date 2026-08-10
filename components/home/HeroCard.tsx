@@ -104,7 +104,23 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
           barra fina abaixo (p.pct ou p.barFraction); não é decorativo. */}
       <div className="grid grid-cols-[1fr_86px] items-center gap-4">
         <div className="min-w-0">
-          <p className="section-label">Você já construiu</p>
+          {/* Legenda do card-herói — sentence case, 11px/medium, -0.015em,
+              texto a 55% de opacidade, como no laboratório
+              (app/dev-preview/launch/page.tsx, bloco "home"). NÃO é
+              `.section-label`: aquele eyebrow em caixa-alta com tracking
+              positivo (10.5px/700/0.1em/uppercase) não é usado em nenhum
+              header da tela Início no laboratório — era a causa raiz de
+              PR #41 ter sido reprovada por "ainda parecer o app antigo". */}
+          <p
+            className="font-medium"
+            style={{
+              fontSize: "11px",
+              letterSpacing: "-0.015em",
+              color: "color-mix(in srgb, var(--text) 55%, transparent)",
+            }}
+          >
+            Você já construiu
+          </p>
           <p
             className="font-medium mt-0.5"
             style={{ fontSize: "11px", color: "var(--text-muted)" }}
