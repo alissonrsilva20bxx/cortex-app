@@ -133,8 +133,9 @@ describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug
     expect(src).toMatch(/const\s*\[\s*unlocked\s*,\s*setUnlocked\s*\]\s*=\s*useState\(false\)/);
   });
 
-  it("gates entry on pinHash && !unlocked, rendering ONLY the real PinScreen — no sensitive JSX reachable first", () => {
-    expect(src).toMatch(/if\s*\(\s*pinHash\s*&&\s*!unlocked\s*\)\s*{\s*\r?\n?\s*return\s*<PinScreen/);
+  it("gates entry on pinHash && !unlocked, rendering ONLY the real PinScreen (via portal) — no sensitive JSX reachable first", () => {
+    expect(src).toMatch(/if\s*\(\s*pinHash\s*&&\s*!unlocked\s*\)\s*{/);
+    expect(src).toMatch(/return\s*createPortal\(\s*\r?\n?\s*<PinScreen/);
     const gateIdx = src.indexOf("if (pinHash && !unlocked)");
     const mainReturnIdx = src.indexOf('return (\n    <div className="pb-4">');
     expect(gateIdx).toBeGreaterThan(-1);
@@ -232,6 +233,57 @@ describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug
 
   it("documents native biometrics as a future iOS-app integration, not implemented today", () => {
     expect(src).toMatch(/integração futura do aplicativo iOS/);
+  });
+});
+
+describe("CofreTab.tsx locked gate renders through a portal (fixes the visual-jump defect)", () => {
+  const src = read("components/cofre/CofreTab.tsx");
+
+  it("imports createPortal from react-dom, not a duplicate/local reimplementation", () => {
+    expect(src).toMatch(/import\s*{\s*createPortal\s*}\s*from\s*"react-dom"/);
+  });
+
+  it("renders the locked gate via createPortal(..., document.body), detached from TabPanel's animated wrapper", () => {
+    expect(src).toMatch(
+      /return\s*createPortal\(\s*\r?\n?\s*<PinScreen[\s\S]*?document\.body/
+    );
+  });
+
+  it("guards the portal target with a client-only mounted flag (SSR-safe, not a visual timeout)", () => {
+    expect(src).toMatch(/const\s*\[\s*mounted\s*,\s*setMounted\s*\]\s*=\s*useState\(false\)/);
+    expect(src).toMatch(/if\s*\(\s*!mounted\s*\)\s*return\s*null;/);
+    // The gate must never rely on a delay to mask the mispositioned frame —
+    // only a one-shot hydration flag (setMounted(true) in an empty-dep effect).
+    expect(src).not.toMatch(/setTimeout\(/);
+  });
+
+  it("does not touch the shared TabPanel/animate-fade-up (out of this ticket's scope; the portal escapes it instead)", () => {
+    const tabPanelSrc = read("components/TabPanel.tsx");
+    expect(tabPanelSrc).toContain("animate-fade-up");
+  });
+
+  it("still never uses scrollIntoView/scrollTo/autoFocus/.focus() (the jump was a CSS containing-block bug, not a focus-driven scroll)", () => {
+    expect(src).not.toMatch(/scrollIntoView|scrollTo\(|autoFocus|\.focus\(/);
+    const pinScreenSrc = read("components/pin/PinScreen.tsx");
+    expect(pinScreenSrc).not.toMatch(/scrollIntoView|scrollTo\(|autoFocus|\.focus\(/);
+  });
+
+  it("PinScreen (the real gate UI, reused unchanged) has no native text input to trigger a mobile keyboard", () => {
+    const pinScreenSrc = read("components/pin/PinScreen.tsx");
+    expect(pinScreenSrc).not.toMatch(/<input\b/);
+  });
+
+  it("PinScreen respects safe-area insets top/bottom (390x844 / notched viewports)", () => {
+    const pinScreenSrc = read("components/pin/PinScreen.tsx");
+    expect(pinScreenSrc).toContain("env(safe-area-inset-top, 0px)");
+    expect(pinScreenSrc).toContain("env(safe-area-inset-bottom, 0px)");
+  });
+
+  it("does not modify the global prefers-reduced-motion rule (fix is structural, not animation-timing-dependent)", () => {
+    const css = read("styles/globals.css");
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\s*\r?\n\s*\*,\s*\r?\n\s*\*::before,\s*\r?\n\s*\*::after \{/
+    );
   });
 });
 
