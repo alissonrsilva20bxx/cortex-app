@@ -117,29 +117,103 @@ describe("CofreTab.tsx never copies the lab's fabricated storage numbers", () =>
   });
 });
 
-describe("CofreTab.tsx implements the privacy-on-background cover", () => {
+describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug fix)", () => {
   const src = read("components/cofre/CofreTab.tsx");
+  const lines = src.split("\n");
+  const lineOf = (needle: string) => lines.findIndex((l) => l.includes(needle));
 
-  it("reacts to visibilitychange, pagehide and blur to cover sensitive content", () => {
+  it("takes pinHash/active as real props, not internal mock/hardcoded state", () => {
+    expect(src).toContain("pinHash: string | null");
+    expect(src).toContain("active: boolean");
+    expect(src).not.toMatch(/const\s+pinHash\s*=/); // never locally invented
+  });
+
+  it("starts locked: unlocked defaults to false", () => {
+    expect(src).toContain("useState(false)");
+    expect(src).toMatch(/const\s*\[\s*unlocked\s*,\s*setUnlocked\s*\]\s*=\s*useState\(false\)/);
+  });
+
+  it("gates entry on pinHash && !unlocked, rendering ONLY the real PinScreen — no sensitive JSX reachable first", () => {
+    expect(src).toMatch(/if\s*\(\s*pinHash\s*&&\s*!unlocked\s*\)\s*{\s*\r?\n?\s*return\s*<PinScreen/);
+    const gateIdx = src.indexOf("if (pinHash && !unlocked)");
+    const mainReturnIdx = src.indexOf('return (\n    <div className="pb-4">');
+    expect(gateIdx).toBeGreaterThan(-1);
+    expect(mainReturnIdx).toBeGreaterThan(-1);
+    expect(gateIdx).toBeLessThan(mainReturnIdx);
+  });
+
+  it("uses the real PinScreen/verifyPin mechanism, never a parallel/mock PIN check", () => {
+    expect(src).toMatch(
+      /import\s*{\s*PinScreen\s*}\s*from\s*"@\/components\/pin\/PinScreen"/
+    );
+    // Prose explaining the reuse is fine (and expected); actually calling or
+    // (re)defining verifyPin/hashPin here would mean a parallel PIN check.
+    expect(src).not.toMatch(/verifyPin\(|hashPin\(|function verifyPin|function hashPin/);
+  });
+
+  it("only unlocks via PinScreen's onUnlock callback (fires only after a verified PIN)", () => {
+    expect(src).toMatch(/onUnlock=\{?\(\)\s*=>\s*setUnlocked\(true\)\}?/);
+  });
+
+  it("the real PinScreen only calls onUnlock after verifyPin resolves true (control check on the reused component)", () => {
+    const pinScreenSrc = read("components/pin/PinScreen.tsx");
+    expect(pinScreenSrc).toMatch(
+      /verifyPin\([\s\S]*?\)\.then\(\(ok\)\s*=>\s*{\s*\r?\n\s*if\s*\(ok\)\s*{\s*\r?\n\s*onUnlock\(\);/
+    );
+  });
+
+  it("gates the file-fetching effect on authorization too (no sensitive fetch before validation)", () => {
+    expect(src).toMatch(/const authorized = !pinHash \|\| unlocked;/);
+    expect(src).toMatch(/if\s*\(\s*!authorized\s*\)\s*return;/);
+  });
+
+  it("leaving the Cofre tab (active=false) invalidates the unlock — re-entering always re-asks", () => {
+    expect(src).toMatch(/useEffect\(\(\) => \{\s*\n\s*if \(!active\) \{\s*\n\s*setUnlocked\(false\);/);
+  });
+
+  it("losing focus/visibility/pagehide re-locks immediately, with NO grace period and NO auto-unlock on return", () => {
     expect(src).toContain('addEventListener("visibilitychange"');
     expect(src).toContain('addEventListener("pagehide"');
     expect(src).toContain('addEventListener("blur"');
-  });
-
-  it("uncovers on focus/visible return, without inventing a stricter lock than app/page.tsx", () => {
-    expect(src).toContain('addEventListener("focus"');
     expect(src).toContain('document.visibilityState === "hidden"');
+    // Only PIN entry re-authorizes — no listener flips unlocked back to true.
+    expect(src).not.toMatch(/addEventListener\("focus"/);
+    const setUnlockedTrueCount = (src.match(/setUnlocked\(true\)/g) || []).length;
+    expect(setUnlockedTrueCount).toBe(1); // the one and only place: PinScreen's onUnlock
   });
 
   it("cleans up every listener it adds (no leak, no runaway loop)", () => {
-    for (const evt of ["visibilitychange", "pagehide", "blur", "focus"]) {
+    for (const evt of ["visibilitychange", "pagehide", "blur"]) {
       expect(src).toContain(`removeEventListener("${evt}"`);
     }
   });
 
-  it("renders an opaque, full-viewport cover when privacyCover is active", () => {
-    expect(src).toMatch(/privacyCover\s*&&/);
-    expect(src).toContain("fixed inset-0");
+  it("clears fetched files from memory on lock (defense in depth, not just a visual gate)", () => {
+    expect(src).toMatch(/setUnlocked\(false\);\s*\n\s*setFiles\(\[\]\);/);
+  });
+
+  it("app-session authorization (usuario/locked from app/page.tsx) is never referenced as a Cofre-unlock condition", () => {
+    // Prose comments explaining "unlocked is independent of app/page.tsx's
+    // locked" legitimately name that variable; only actual code use (an
+    // identifier read outside a comment) would mean the two got conflated.
+    const codeOnly = src
+      .split("\n")
+      .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+      .join("\n");
+    expect(codeOnly).not.toMatch(/\busuario\b/);
+    expect(codeOnly).not.toMatch(/\blocked\b(?!Hash)/);
+  });
+
+  it("app/page.tsx and the dev-preview harness actually pass pinHash/active down (real wiring, not just component capability)", () => {
+    for (const file of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
+      const pageSrc = read(file);
+      expect(pageSrc).toMatch(/<CofreTab[\s\S]*?pinHash=\{pinHash\}[\s\S]*?\/>/);
+      expect(pageSrc).toMatch(/<CofreTab[\s\S]*?active=\{activeTab === "cofre"\}[\s\S]*?\/>/);
+    }
+  });
+
+  it("never logs, tests-against, or otherwise exposes the PIN/hash value", () => {
+    expect(src).not.toMatch(/console\.(log|warn|error|info)\([^)]*pinHash/i);
   });
 
   it("does not call any biometric/WebAuthn API (none implemented yet, web or native — prose explaining that absence is fine, an actual call is not)", () => {
