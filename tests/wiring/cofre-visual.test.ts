@@ -133,14 +133,22 @@ describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug
     expect(src).toMatch(/const\s*\[\s*unlocked\s*,\s*setUnlocked\s*\]\s*=\s*useState\(false\)/);
   });
 
-  it("gates entry on pinHash && !unlocked, rendering ONLY the real PinScreen (via portal) — no sensitive JSX reachable first", () => {
-    expect(src).toMatch(/if\s*\(\s*pinHash\s*&&\s*!unlocked\s*\)\s*{/);
+  it("gates entry on computeGateState === 'locked', rendering ONLY the real PinScreen (via portal) — no sensitive JSX reachable first", () => {
+    expect(src).toMatch(
+      /import\s*{[^}]*\bcomputeGateState\b[^}]*}\s*from\s*"\.\/lockGate"/
+    );
+    expect(src).toMatch(/const gateState = computeGateState\(/);
+    expect(src).toMatch(/if\s*\(\s*gateState\s*===\s*"locked"\s*\)\s*{/);
     expect(src).toMatch(/return\s*createPortal\(\s*\r?\n?\s*<PinScreen/);
-    const gateIdx = src.indexOf("if (pinHash && !unlocked)");
+    const gateIdx = src.indexOf('if (gateState === "locked")');
     const mainReturnIdx = src.indexOf('return (\n    <div className="pb-4">');
     expect(gateIdx).toBeGreaterThan(-1);
     expect(mainReturnIdx).toBeGreaterThan(-1);
     expect(gateIdx).toBeLessThan(mainReturnIdx);
+  });
+
+  it("hides everything (not just the sensitive content) whenever the tab is inactive — computeGateState's own contract", () => {
+    expect(src).toMatch(/if\s*\(\s*gateState\s*===\s*"hidden"\s*\)\s*{\s*\r?\n\s*return null;/);
   });
 
   it("uses the real PinScreen/verifyPin mechanism, never a parallel/mock PIN check", () => {
@@ -163,13 +171,18 @@ describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug
     );
   });
 
-  it("gates the file-fetching effect on authorization too (no sensitive fetch before validation)", () => {
-    expect(src).toMatch(/const authorized = !pinHash \|\| unlocked;/);
-    expect(src).toMatch(/if\s*\(\s*!authorized\s*\)\s*return;/);
+  it("gates the file-fetching effect on gateState === 'content' too (no sensitive fetch before validation, and none while inactive)", () => {
+    expect(src).toMatch(/if\s*\(\s*gateState\s*!==\s*"content"\s*\)\s*return;/);
+    expect(src).toMatch(/}, \[userId, refreshTrigger, gateState\]\);/);
   });
 
-  it("leaving the Cofre tab (active=false) invalidates the unlock — re-entering always re-asks", () => {
-    expect(src).toMatch(/useEffect\(\(\) => \{\s*\n\s*if \(!active\) \{\s*\n\s*setUnlocked\(false\);/);
+  it("leaving the Cofre tab (active=false) invalidates the unlock via the tested nextUnlockedOnActiveChange — re-entering always re-asks", () => {
+    expect(src).toMatch(
+      /import\s*{[^}]*\bnextUnlockedOnActiveChange\b[^}]*}\s*from\s*"\.\/lockGate"/
+    );
+    expect(src).toMatch(
+      /setUnlocked\(\(prev\) => nextUnlockedOnActiveChange\(active, prev\)\)/
+    );
   });
 
   it("losing focus/visibility/pagehide re-locks immediately, with NO grace period and NO auto-unlock on return", () => {
@@ -190,19 +203,24 @@ describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug
   });
 
   it("clears fetched files from memory on lock (defense in depth, not just a visual gate)", () => {
-    expect(src).toMatch(/setUnlocked\(false\);\s*\n\s*setFiles\(\[\]\);/);
+    expect(src).toMatch(/if \(!active\) setFiles\(\[\]\);/);
+    expect(src).toMatch(/setUnlocked\(nextUnlockedOnLoseFocus\(\)\);\s*\r?\n\s*setFiles\(\[\]\);/);
   });
 
   it("app-session authorization (usuario/locked from app/page.tsx) is never referenced as a Cofre-unlock condition", () => {
     // Prose comments explaining "unlocked is independent of app/page.tsx's
-    // locked" legitimately name that variable; only actual code use (an
-    // identifier read outside a comment) would mean the two got conflated.
+    // locked" legitimately name that variable, and the GateState union's
+    // "locked" string value is a different thing entirely (Cofre's own
+    // gate state, not the app's `locked` state variable) — only an actual
+    // bare-word CODE reference to the app's own `locked`/`usuario`
+    // identifiers would mean the two got conflated.
     const codeOnly = src
       .split("\n")
       .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
       .join("\n");
     expect(codeOnly).not.toMatch(/\busuario\b/);
-    expect(codeOnly).not.toMatch(/\blocked\b(?!Hash)/);
+    // Excludes the string literal "locked" (GateState value) and "unlocked".
+    expect(codeOnly).not.toMatch(/(?<!["'])\blocked\b(?!["'])(?!Hash)/);
   });
 
   it("app/page.tsx and the dev-preview harness actually pass pinHash/active down (real wiring, not just component capability)", () => {
@@ -251,7 +269,7 @@ describe("CofreTab.tsx locked gate renders through a portal (fixes the visual-ju
 
   it("guards the portal target with a client-only mounted flag (SSR-safe, not a visual timeout)", () => {
     expect(src).toMatch(/const\s*\[\s*mounted\s*,\s*setMounted\s*\]\s*=\s*useState\(false\)/);
-    expect(src).toMatch(/if\s*\(\s*!mounted\s*\)\s*return\s*null;/);
+    expect(src).toMatch(/if\s*\(\s*!pinHash\s*\|\|\s*!mounted\s*\)\s*return\s*null;/);
     // The gate must never rely on a delay to mask the mispositioned frame —
     // only a one-shot hydration flag (setMounted(true) in an empty-dep effect).
     expect(src).not.toMatch(/setTimeout\(/);
