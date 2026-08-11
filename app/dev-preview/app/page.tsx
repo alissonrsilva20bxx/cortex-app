@@ -246,7 +246,12 @@ export default function DevPreviewApp() {
         </TabPanel>
 
         <TabPanel tab="cofre" activeTab={activeTab}>
-          <CofreTab userId={usuario.id} refreshTrigger={cofreRefreshKey} />
+          <CofreTab
+            userId={usuario.id}
+            refreshTrigger={cofreRefreshKey}
+            pinHash={pinHash}
+            active={activeTab === "cofre"}
+          />
         </TabPanel>
 
         <TabPanel tab="rede" activeTab={activeTab}>

@@ -17,9 +17,24 @@ interface Props {
   children: ReactNode;
   /** Rodapé fixo (ex.: botão de ação). Ganha borda superior. */
   footer?: ReactNode;
+  /**
+   * Alvo de toque mínimo de 44×44px no botão fechar (relatório de
+   * paridade do Cofre, achado P1-5 — o botão media ~28×28px). Omitido/
+   * false preserva o tamanho original, sem regredir os outros 18
+   * consumidores deste shell (Rede, PinSetup, RecapSheet…), fora do
+   * escopo deste ticket. Só o Cofre (`UploadSheet`) passa `true`.
+   */
+  largeCloseTarget?: boolean;
 }
 
-export function BottomSheet({ open, onClose, title, children, footer }: Props) {
+export function BottomSheet({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  largeCloseTarget = false,
+}: Props) {
   return (
     <>
       {open && (
@@ -72,7 +87,12 @@ export function BottomSheet({ open, onClose, title, children, footer }: Props) {
           <button
             onClick={onClose}
             aria-label="Fechar"
-            className="p-1 mt-2 active:opacity-70"
+            className={
+              largeCloseTarget
+                ? "flex items-center justify-center active:opacity-70"
+                : "p-1 mt-2 active:opacity-70"
+            }
+            style={largeCloseTarget ? { width: 44, height: 44 } : undefined}
           >
             <X size={20} style={{ color: "var(--text-muted)" }} />
           </button>

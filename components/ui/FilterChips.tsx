@@ -22,6 +22,14 @@ interface Props<T extends string> {
   /** Número de colunas para layout em grade; omitido = rolagem horizontal. */
   columns?: number;
   className?: string;
+  /**
+   * Alvo de toque mínimo de 44px (relatório de paridade do Cofre, achado
+   * P1-6 — o próprio laboratório já usa `min-h-11` no mesmo tipo de chip).
+   * Omitido/false preserva a altura original de ~28px, sem regredir os
+   * outros consumidores (`components/rede/**`), fora do escopo deste
+   * ticket. Só o Cofre passa `true`.
+   */
+  minTouchTarget?: boolean;
 }
 
 export function FilterChips<T extends string>({
@@ -30,6 +38,7 @@ export function FilterChips<T extends string>({
   onChange,
   columns,
   className = "",
+  minTouchTarget = false,
 }: Props<T>) {
   return (
     <div
@@ -52,6 +61,7 @@ export function FilterChips<T extends string>({
             onClick={() => onChange(id)}
             className={`${columns ? "" : "shrink-0"} px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all`}
             style={{
+              ...(minTouchTarget ? { minHeight: "44px" } : {}),
               background: active
                 ? "rgb(var(--accent-rgb) / 0.18)"
                 : "var(--surface)",

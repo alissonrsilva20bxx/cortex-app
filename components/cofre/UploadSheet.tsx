@@ -56,6 +56,7 @@ export function UploadSheet({ open, userId, onClose, onUploaded }: Props) {
       open={open}
       onClose={handleClose}
       title="Enviar arquivo"
+      largeCloseTarget
       footer={
         <button
           onClick={handleUpload}
@@ -81,6 +82,7 @@ export function UploadSheet({ open, userId, onClose, onUploaded }: Props) {
             value={categoria}
             onChange={setCategoria}
             columns={2}
+            minTouchTarget
           />
         </div>
 

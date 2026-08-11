@@ -44,7 +44,11 @@ export function PinScreen({ pinHash, onUnlock }: Props) {
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-0"
-      style={{ background: "var(--body-bg)" }}
+      style={{
+        background: "var(--body-bg)",
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
     >
       {/* Logo */}
       <div className="flex flex-col items-center mb-10">

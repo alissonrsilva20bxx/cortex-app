@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Briefcase, TrendingUp, Image } from "lucide-react";
+import { Plus, Briefcase, TrendingUp, Upload } from "lucide-react";
 import type { TabId } from "@/lib/types";
 
 interface SheetAction {
@@ -26,9 +26,11 @@ const SHEET_ACTIONS: Partial<Record<TabId, SheetAction>> = {
     Icon: TrendingUp,
   },
   cofre: {
-    label: "Enviar Foto",
-    description: "Adicionar imagem ao cofre",
-    Icon: Image,
+    // Copy corrigida (achado P2 do relatório de paridade do Cofre): o
+    // UploadSheet real aceita imagem, PDF, Office e texto — não só foto.
+    label: "Enviar arquivo",
+    description: "Adicionar arquivo ao cofre",
+    Icon: Upload,
   },
 };
 
