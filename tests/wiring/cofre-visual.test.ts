@@ -141,7 +141,13 @@ describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug
     expect(src).toMatch(/if\s*\(\s*gateState\s*===\s*"locked"\s*\)\s*{/);
     expect(src).toMatch(/return\s*createPortal\(\s*\r?\n?\s*<PinScreen/);
     const gateIdx = src.indexOf('if (gateState === "locked")');
-    const mainReturnIdx = src.indexOf('return (\n    <div className="pb-4">');
+    // CRLF-tolerant: a fresh checkout on Windows normalizes line endings,
+    // so an LF-only literal here would false-negative depending on which
+    // worktree/checkout wrote this file to disk (confirmed happening).
+    const mainReturnMatch = src.match(
+      /return \(\r?\n\s*<div className="pb-4">/
+    );
+    const mainReturnIdx = mainReturnMatch?.index ?? -1;
     expect(gateIdx).toBeGreaterThan(-1);
     expect(mainReturnIdx).toBeGreaterThan(-1);
     expect(gateIdx).toBeLessThan(mainReturnIdx);
