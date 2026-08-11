@@ -1,13 +1,25 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { getFocusCycleTarget } from "./focusTrap";
 
 /**
  * Casca de bottom-sheet única (overlay com blur + painel deslizante +
  * pega + cabeçalho com título e fechar). Unifica as cópias literais de
  * UploadSheet (Cofre) e PinSetup — o inventário apontou o mesmo shell
  * reinventado. O conteúdo e o rodapé são compostos por quem usa.
+ *
+ * Focus trap / role="dialog" / Esc / restauração de foco (T6 — relatório
+ * de paridade do Gate da Rede, achado P1-3): nenhum dos ~18 consumidores
+ * deste shell tinha isso — corrigido aqui na causa-raiz, a partir da
+ * implementação de referência do laboratório
+ * (`NetworkGateScreen.tsx:80-116`), não como patch local de um sheet só.
+ * Aditivo por natureza (nenhum consumidor dependia de Tab escapando do
+ * sheet ou de Esc fazendo algo específico — comportamento uniformemente
+ * ausente antes, não uma variação intencional entre consumidores), então
+ * aplicado como padrão pra todos, sem prop opt-in (diferente do
+ * `largeCloseTarget` abaixo, que é puramente visual/dimensional).
  */
 
 interface Props {
@@ -35,6 +47,46 @@ export function BottomSheet({
   footer,
   largeCloseTarget = false,
 }: Props) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    function focusable() {
+      return Array.from(
+        panel?.querySelectorAll<HTMLElement>(
+          'button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      );
+    }
+    focusable()[0]?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      const target = getFocusCycleTarget(
+        items,
+        document.activeElement as HTMLElement | null,
+        event.shiftKey
+      );
+      if (target) {
+        event.preventDefault();
+        target.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [open, onClose]);
+
   return (
     <>
       {open && (
@@ -50,6 +102,10 @@ export function BottomSheet({
       )}
 
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className="fixed left-0 right-0 z-[60] flex flex-col ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: 0,
