@@ -16,6 +16,11 @@ import { supabase } from "@/lib/supabase";
 import { FilterChips } from "@/components/ui/FilterChips";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PinScreen } from "@/components/pin/PinScreen";
+import {
+  computeGateState,
+  nextUnlockedOnActiveChange,
+  nextUnlockedOnLoseFocus,
+} from "./lockGate";
 
 type Categoria =
   | "todos"
@@ -145,6 +150,23 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
    * pausado (não busca metadado sensível pra memória antes da
    * validação). Sem PIN configurado (`pinHash` nulo), o Cofre abre
    * direto — mesmo comportamento que o resto do app já tem hoje.
+   *
+   * BUG confirmado manualmente depois da primeira versão desta correção:
+   * o gate checava só `pinHash && !unlocked`, sem checar `active`. Como
+   * `CofreTab` nunca desmonta de verdade (`TabPanel`, compartilhado, só
+   * alterna `display:none`) e o `PinScreen` renderiza via portal em
+   * `document.body` — fora do `display:none` do `TabPanel` —, ele
+   * aparecia (ou o conteúdo liberava) em QUALQUER aba, não só no Cofre:
+   * ao montar em segundo plano (Início ativo) já mostrava o portal por
+   * cima de tudo; entrar nele com PIN já digitado ali (sem perceber que
+   * não era a trava do app) deixava `unlocked=true` vazar pra quando o
+   * Cofre virasse a aba ativa de verdade; e sair da aba fazia o portal
+   * reaparecer "atrasado" sobre a aba nova. A decisão do que renderizar
+   * agora vem inteira de `computeGateState` (`./lockGate.ts`, função
+   * pura testada em `tests/wiring/cofre-lock-gate.test.ts`): `active`
+   * decide primeiro — inativo é sempre `"hidden"` (nem PinScreen nem
+   * conteúdo), só quando `active` é verdadeiro é que `pinHash`/
+   * `unlocked` decidem entre `"locked"`/`"content"`.
    */
   const [unlocked, setUnlocked] = useState(false);
 
@@ -181,15 +203,13 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!active) {
-      setUnlocked(false);
-      setFiles([]);
-    }
+    setUnlocked((prev) => nextUnlockedOnActiveChange(active, prev));
+    if (!active) setFiles([]);
   }, [active]);
 
   useEffect(() => {
     function lock() {
-      setUnlocked(false);
+      setUnlocked(nextUnlockedOnLoseFocus());
       setFiles([]);
     }
     function onVisibilityChange() {
@@ -217,10 +237,10 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
    * nesta tela até essa integração existir de verdade.
    */
 
-  const authorized = !pinHash || unlocked;
+  const gateState = computeGateState({ active, pinHash, unlocked });
 
   useEffect(() => {
-    if (!authorized) return;
+    if (gateState !== "content") return;
     setLoading(true);
     const cats = ["comprovantes", "conversas", "documentos", "pessoal"];
     Promise.all(
@@ -252,10 +272,18 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
       setFiles(all);
       setLoading(false);
     });
-  }, [userId, refreshTrigger, authorized]);
+  }, [userId, refreshTrigger, gateState]);
 
-  if (pinHash && !unlocked) {
-    if (!mounted) return null;
+  if (gateState === "hidden") {
+    return null;
+  }
+
+  if (gateState === "locked") {
+    // `pinHash` is guaranteed truthy here by computeGateState's contract
+    // (it only returns "locked" when pinHash is set) — re-checked anyway
+    // so a locked gate NEVER falls through to sensitive content below,
+    // even if that contract were ever violated.
+    if (!pinHash || !mounted) return null;
     return createPortal(
       <PinScreen pinHash={pinHash} onUnlock={() => setUnlocked(true)} />,
       document.body
