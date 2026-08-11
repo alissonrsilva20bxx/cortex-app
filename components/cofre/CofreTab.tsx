@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   FileText,
   Image,
@@ -147,6 +148,38 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
    */
   const [unlocked, setUnlocked] = useState(false);
 
+  /**
+   * Portal pro `<body>` — corrige o salto visual confirmado manualmente.
+   * Causa raiz: `TabPanel` (componente compartilhado, fora do escopo
+   * deste ticket) envolve TODO conteúdo de aba num `<div
+   * className="animate-fade-up">`, que roda a keyframe `fade-up`
+   * (`transform: translateY(8px) → translateY(0)`, 0.4s). Por spec CSS,
+   * um ancestral com `transform` diferente de `none` — mesmo só durante
+   * uma animação — vira o containing block de qualquer descendente
+   * `position: fixed`. `PinScreen` é `fixed inset-0`; sem o portal, ele
+   * herdava esse containing block por 0.4s (posicionado relativo ao
+   * `TabPanel` animando dentro do `main` rolado/com padding, não ao
+   * viewport) — daí o salto: primeiro aparecia deslocado, e só
+   * "recentralizava" quando a animação terminava e o ancestral perdia o
+   * `transform`. Isso nunca afetou a trava de nível de app
+   * (`app/page.tsx`) porque aquela substitui a árvore inteira, sem
+   * nenhum ancestral `.animate-fade-up` no caminho — é uma regressão
+   * nova, específica de renderizar um `fixed` dentro do `TabPanel`.
+   *
+   * `createPortal` desanexa o `PinScreen` da subárvore do `TabPanel`
+   * inteiramente, renderizando direto em `document.body` — sem ancestral
+   * animado, sem containing block acidental, centralizado desde o
+   * primeiro frame, sem depender de a animação terminar. `mounted` só
+   * existe pra evitar chamar `document.body` durante SSR (Next.js
+   * renderiza este componente no servidor antes de hidratar) — não é um
+   * temporizador nem esconde o problema, é a forma padrão de portal
+   * seguro no React/Next.
+   */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!active) {
       setUnlocked(false);
@@ -222,7 +255,11 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
   }, [userId, refreshTrigger, authorized]);
 
   if (pinHash && !unlocked) {
-    return <PinScreen pinHash={pinHash} onUnlock={() => setUnlocked(true)} />;
+    if (!mounted) return null;
+    return createPortal(
+      <PinScreen pinHash={pinHash} onUnlock={() => setUnlocked(true)} />,
+      document.body
+    );
   }
 
   async function openFile(path: string) {
