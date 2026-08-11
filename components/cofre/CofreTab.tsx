@@ -6,7 +6,6 @@ import {
   Image,
   File,
   ExternalLink,
-  ShieldCheck,
   Shield,
   Search,
   Lock,
@@ -15,6 +14,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { FilterChips } from "@/components/ui/FilterChips";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { PinScreen } from "@/components/pin/PinScreen";
 
 type Categoria =
   | "todos"
@@ -99,15 +99,95 @@ const formatDate = (iso: string) =>
 interface Props {
   userId: string;
   refreshTrigger: number;
+  /** Hash do PIN real do app (`app/page.tsx`), ou `null` se a usuária
+   * nunca configurou um — mesma fonte que `PinScreen` já usa, nenhum PIN
+   * paralelo. Só existe pra alimentar o gate próprio do Cofre abaixo. */
+  pinHash: string | null;
+  /** Se a aba Cofre é a aba selecionada agora (`activeTab === "cofre"`
+   * no componente pai). Sair da aba invalida o desbloqueio do Cofre —
+   * ver o efeito logo abaixo. */
+  active: boolean;
 }
 
-export function CofreTab({ userId, refreshTrigger }: Props) {
+export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
   const [files, setFiles] = useState<CofreFile[]>([]);
   const [filter, setFilter] = useState<Categoria>("todos");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Gate próprio do Cofre — corrige o defeito confirmado manualmente:
+   * com o app já destravado (sessão autenticada, ou dentro da janela de
+   * 30s de graça da trava do app em `app/page.tsx`), o Cofre sempre
+   * renderizou seu conteúdo completo assim que montado, sem nenhuma
+   * verificação própria — a autorização da SESSÃO do app nunca deveria
+   * ter sido suficiente pra abrir a tela mais sensível do app. `unlocked`
+   * é um estado 100% independente do `locked` do app: começa `false`
+   * (Cofre sempre entra bloqueado), e só vira `true` via `PinScreen` —
+   * o mesmo componente e o mesmo `verifyPin`/`lib/pin` que a trava do
+   * app já usa, sem PIN paralelo/mockado/hardcoded.
+   *
+   * Reseta pra `false` (re-bloqueia) em dois casos, cada um cobrindo um
+   * requisito distinto do achado:
+   * — a aba deixa de ser a ativa (`!active`): sair do Cofre invalida o
+   *   desbloqueio, mesmo sem nenhum backgrounding real ter acontecido.
+   * — `visibilitychange`→hidden, `pagehide`, `blur` da janela: perder
+   *   foco cobre o conteúdo IMEDIATAMENTE e exige PIN de novo ao
+   *   voltar — sem período de graça (mais estrito que os ~30s da trava
+   *   do app; deliberado, só pro Cofre). Por isso não há um handler de
+   *   "focus"/"visible" que desbloqueie de volta: só o PIN correto
+   *   desbloqueia.
+   *
+   * Enquanto `pinHash` existir e `unlocked` for `false`, a função
+   * retorna só `<PinScreen>` — nada de busca, filtro, resumo ou lista é
+   * renderizado, e o efeito de busca de arquivos abaixo também fica
+   * pausado (não busca metadado sensível pra memória antes da
+   * validação). Sem PIN configurado (`pinHash` nulo), o Cofre abre
+   * direto — mesmo comportamento que o resto do app já tem hoje.
+   */
+  const [unlocked, setUnlocked] = useState(false);
+
   useEffect(() => {
+    if (!active) {
+      setUnlocked(false);
+      setFiles([]);
+    }
+  }, [active]);
+
+  useEffect(() => {
+    function lock() {
+      setUnlocked(false);
+      setFiles([]);
+    }
+    function onVisibilityChange() {
+      if (document.visibilityState === "hidden") lock();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener("pagehide", lock);
+    window.addEventListener("blur", lock);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("pagehide", lock);
+      window.removeEventListener("blur", lock);
+    };
+  }, []);
+
+  /**
+   * Biometria (relatório de paridade §7): nada disso usa Face ID/Touch
+   * ID — não existe nenhuma API biométrica implementada hoje, nem
+   * web/PWA nem nativa. A trava de hoje é só PIN (`PinScreen`/
+   * `lib/pin`, real, reaproveitado acima). Face ID/Touch ID de verdade
+   * (via `LocalAuthentication` do iOS) só é alcançável com um wrapper
+   * nativo publicado na App Store (Capacitor/React Native/Swift) — não
+   * implementado; é integração futura do aplicativo iOS, fora do
+   * escopo deste ticket. Nenhum ícone ou texto de biometria é mostrado
+   * nesta tela até essa integração existir de verdade.
+   */
+
+  const authorized = !pinHash || unlocked;
+
+  useEffect(() => {
+    if (!authorized) return;
     setLoading(true);
     const cats = ["comprovantes", "conversas", "documentos", "pessoal"];
     Promise.all(
@@ -139,58 +219,11 @@ export function CofreTab({ userId, refreshTrigger }: Props) {
       setFiles(all);
       setLoading(false);
     });
-  }, [userId, refreshTrigger]);
+  }, [userId, refreshTrigger, authorized]);
 
-  /**
-   * Privacidade ao perder foco (T5 — relatório de paridade §6/§7): a
-   * trava do app já re-trava via PIN ~30s depois de voltar de segundo
-   * plano (`app/page.tsx`) — mas o snapshot do app-switcher do sistema
-   * operacional é tirado no INSTANTE em que o app sai de foco, antes
-   * desse temporizador existir. Este cover local esconde o conteúdo do
-   * Cofre imediatamente ao perder foco/ficar oculto
-   * (visibilitychange→hidden, pagehide, blur da janela) e some assim
-   * que o foco volta (visibilitychange→visible, focus da janela) — sem
-   * inventar uma trava mais rígida que a já definida em `app/page.tsx`:
-   * se a ausência ultrapassar os ~30s, é a trava do PIN que assume (o
-   * `CofreTab` nem chega a remontar até o PIN ser digitado de novo,
-   * porque `app/page.tsx` retorna só a `PinScreen` enquanto `locked`).
-   * Sem loop: cada evento liga/desliga um único booleano, sem
-   * temporizadores encadeados.
-   *
-   * Biometria (relatório §7): nada disso usa Face ID/Touch ID — não
-   * existe nenhuma API biométrica implementada hoje, nem web/PWA nem
-   * nativa. A trava de hoje é só PIN (`app/page.tsx`) + este cover de
-   * privacidade (CSS/JS puro, sem sensor nenhum). Face ID/Touch ID de
-   * verdade (via `LocalAuthentication` do iOS) só é alcançável com um
-   * wrapper nativo publicado na App Store (Capacitor/React Native/
-   * Swift) — não implementado; é integração futura do aplicativo iOS,
-   * fora do escopo deste ticket. Nenhum ícone ou texto de biometria é
-   * mostrado nesta tela até essa integração existir de verdade.
-   */
-  const [privacyCover, setPrivacyCover] = useState(false);
-
-  useEffect(() => {
-    function cover() {
-      setPrivacyCover(true);
-    }
-    function uncover() {
-      setPrivacyCover(false);
-    }
-    function onVisibilityChange() {
-      if (document.visibilityState === "hidden") cover();
-      else uncover();
-    }
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    document.addEventListener("pagehide", cover);
-    window.addEventListener("blur", cover);
-    window.addEventListener("focus", uncover);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      document.removeEventListener("pagehide", cover);
-      window.removeEventListener("blur", cover);
-      window.removeEventListener("focus", uncover);
-    };
-  }, []);
+  if (pinHash && !unlocked) {
+    return <PinScreen pinHash={pinHash} onUnlock={() => setUnlocked(true)} />;
+  }
 
   async function openFile(path: string) {
     const { data } = await supabase.storage
@@ -217,23 +250,6 @@ export function CofreTab({ userId, refreshTrigger }: Props) {
 
   return (
     <div className="pb-4">
-      {/* Cover de privacidade — ver comentário acima do efeito que o
-          controla. Cobre a tela inteira (não só a lista) porque o
-          objetivo é impedir que o snapshot do app-switcher do sistema
-          capture qualquer coisa sensível, inclusive o que estiver atrás
-          (FAB, bottom nav, sheet de upload aberto). */}
-      {privacyCover && (
-        <div
-          className="fixed inset-0 flex flex-col items-center justify-center gap-3"
-          style={{ zIndex: 90, background: "var(--body-bg)" }}
-        >
-          <ShieldCheck size={28} style={{ color: "var(--accent)" }} />
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Cofre protegido
-          </p>
-        </div>
-      )}
-
       {/* Cabeçalho — "Cofre", 22px/semibold/-0.055em + ícone de escudo à
           direita, literal do laboratório (ScreenTitle,
           LaunchScreens.tsx:316-318/677-704). Ícone decorativo (sem
@@ -265,8 +281,9 @@ export function CofreTab({ userId, refreshTrigger }: Props) {
           className="text-[11px] leading-snug"
           style={{ color: "var(--text-muted)" }}
         >
-          Só você acessa seus arquivos: guardados na sua conta, protegidos pela
-          trava do app.
+          {pinHash
+            ? "Só você acessa seus arquivos: guardados na sua conta, PIN pedido toda vez que você entra no Cofre."
+            : "Só você acessa seus arquivos: guardados na sua conta, protegidos pela trava do app."}
         </p>
       </div>
 
