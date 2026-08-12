@@ -8,6 +8,7 @@ import { RedeHeader } from "./RedeHeader";
 import { ContextualBlock } from "./ContextualBlock";
 import { PostCard } from "./PostCard";
 import { Avatar } from "./Avatar";
+import { SkeletonList } from "./Skeleton";
 import { DISCOVER_PEOPLE, WISHLIST_ITEMS, findUser } from "@/lib/mockRede";
 import type { FeedPost } from "@/lib/rede/feed";
 import type { Usuario } from "@/lib/types";
@@ -20,6 +21,13 @@ interface ContextualBlockDef {
   title: string;
   subtitle: string;
   onClick: () => void;
+  /**
+   * Bloco alimentado por fixture local (lib/mockRede.ts), sem tabela real
+   * por trás — precisa de rótulo visível pra não ficar indistinguível dos
+   * blocos reais (solicitações de amizade, mensagens não lidas). Ver T7,
+   * achado P0 do relatório de paridade do Feed.
+   */
+  demo?: boolean;
 }
 
 interface Props {
@@ -29,6 +37,10 @@ interface Props {
   pendingRequestsCount: number;
   unreadChats: number;
   unreadNotifs: number;
+  /** Carregamento inicial do feed real (listarFeed) — mostra skeleton, não o empty-state. */
+  loading: boolean;
+  /** listarFeed falhou — estado persistente, distinto do empty-state de "sem posts". */
+  error: boolean;
   onOpenSearch: () => void;
   onOpenNotifs: () => void;
   onOpenChat: () => void;
@@ -50,6 +62,8 @@ export function FeedScreen({
   pendingRequestsCount,
   unreadChats,
   unreadNotifs,
+  loading,
+  error,
   onOpenSearch,
   onOpenNotifs,
   onOpenChat,
@@ -108,6 +122,7 @@ export function FeedScreen({
       title: "Desejo próximo da meta",
       subtitle: `${wishlistPertoDaMeta.nome} — ${Math.round((wishlistPertoDaMeta.valorAtual / wishlistPertoDaMeta.valorAlvo) * 100)}%`,
       onClick: onOpenWishlist,
+      demo: true,
     });
   }
   if (discover.length > 0) {
@@ -117,6 +132,7 @@ export function FeedScreen({
       title: "Pessoas que talvez você conheça",
       subtitle: discover.map((u) => u!.nome.split(" ")[0]).join(", "),
       onClick: onOpenAmigas,
+      demo: true,
     });
   }
 
@@ -146,7 +162,7 @@ export function FeedScreen({
 
       {/* Compositor — entrada estática, abre o composer completo em sheet */}
       <GlassCard
-        as="div"
+        as="button"
         radius="lg"
         onClick={onOpenComposer}
         className="flex items-center gap-3 px-4 py-3.5 mb-4"
@@ -171,7 +187,16 @@ export function FeedScreen({
       />
 
       <div className="space-y-3">
-        {items.length === 0 ? (
+        {loading ? (
+          <SkeletonList rows={3} />
+        ) : error ? (
+          <p
+            className="text-sm text-center py-12"
+            style={{ color: "var(--danger)" }}
+          >
+            Não foi possível carregar o feed. Tente novamente mais tarde.
+          </p>
+        ) : items.length === 0 ? (
           <p
             className="text-sm text-center py-12"
             style={{ color: "var(--text-muted)" }}
@@ -193,13 +218,23 @@ export function FeedScreen({
                 onOpenAutor={onOpenAutor}
               />
             ) : (
-              <ContextualBlock
-                key={item.block.key}
-                icon={item.block.icon}
-                title={item.block.title}
-                subtitle={item.block.subtitle}
-                onClick={item.block.onClick}
-              />
+              <div key={item.block.key}>
+                <ContextualBlock
+                  icon={item.block.icon}
+                  title={item.block.title}
+                  subtitle={item.block.subtitle}
+                  onClick={item.block.onClick}
+                />
+                {item.block.demo && (
+                  <p
+                    className="text-center text-[11px] font-semibold mt-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Demonstração — sugestão de exemplo, ainda sem dado real por
+                    trás
+                  </p>
+                )}
+              </div>
             )
           )
         )}
