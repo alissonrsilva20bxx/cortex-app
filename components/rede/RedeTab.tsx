@@ -22,6 +22,7 @@ import { PerfilPublicoScreen } from "./PerfilPublicoScreen";
 import { WishlistScreen } from "./WishlistScreen";
 import { WishlistForm, WISHLIST_PALETTE } from "./WishlistForm";
 import { ClientesScreen } from "./ClientesScreen";
+import { BlockedUsersScreen } from "./BlockedUsersScreen";
 import { ClienteDetailSheet } from "./ClienteDetailSheet";
 import { ClienteForm } from "./ClienteForm";
 import { PostComposer } from "./PostComposer";
@@ -76,8 +77,10 @@ import {
   recusarPedidoAmizade,
   removerAmizade,
   bloquearUsuario,
+  desbloquearUsuario,
   type SolicitacaoAmizade,
 } from "@/lib/rede/social";
+import { listarBloqueadosComNome } from "@/lib/rede/bloqueiosGerenciamento";
 import {
   listarConversas,
   listarMensagens,
@@ -121,7 +124,8 @@ type RedeScreen =
   | { type: "meuEspaco" }
   | { type: "perfilPublico"; userId: string }
   | { type: "wishlist" }
-  | { type: "clientes" };
+  | { type: "clientes" }
+  | { type: "bloqueados" };
 
 interface Props {
   usuario: Usuario;
@@ -142,6 +146,9 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const [otherProfiles, setOtherProfiles] = useState<
     Record<string, { nome: string; bio: string; cor: string }>
   >({});
+  const [perfilError, setPerfilError] = useState(false);
+  const [otherProfileLoading, setOtherProfileLoading] = useState(false);
+  const [otherProfileError, setOtherProfileError] = useState(false);
 
   // Existir em rede_perfis é o opt-in de entrar na Rede -- quem chegou até
   // aqui já passou pelo gate, então cria silenciosamente na primeira visita
@@ -165,6 +172,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     })().catch((e) => {
       console.error("[RedeTab perfil]", e);
       toast.error("Não foi possível carregar seu perfil da Rede.");
+      setPerfilError(true);
     });
     return () => {
       ativo = false;
@@ -604,9 +612,15 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   // que não são reais até a ticket 11), buildProfile cai no mock abaixo.
   function openAutor(autorId: string) {
     push({ type: "perfilPublico", userId: autorId });
-    if (autorId === usuario.id || otherProfiles[autorId]) return;
+    setOtherProfileError(false);
+    if (autorId === usuario.id || otherProfiles[autorId]) {
+      setOtherProfileLoading(false);
+      return;
+    }
+    setOtherProfileLoading(true);
     buscarPerfil(supabase, autorId)
       .then((p) => {
+        setOtherProfileLoading(false);
         if (!p) return;
         setOtherProfiles((prev) => ({
           ...prev,
@@ -617,7 +631,11 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           },
         }));
       })
-      .catch((e) => console.error("[RedeTab perfil autor]", e));
+      .catch((e) => {
+        console.error("[RedeTab perfil autor]", e);
+        setOtherProfileError(true);
+        setOtherProfileLoading(false);
+      });
   }
 
   // ── Amigas ──
@@ -673,6 +691,41 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     } catch (e) {
       console.error("[RedeTab bloquear]", e);
       toast.error("Não foi possível bloquear.");
+    }
+  }
+
+  // ── Pessoas bloqueadas (T8, P0 -- bloquear era irreversível pelo app até
+  // este ticket) -- carregado sob demanda ao abrir a tela, não no mount,
+  // mesmo padrão de Amigas/Chat serem eager só por serem destinos
+  // frequentes; bloqueios são raros o bastante pra não justificar isso. ──
+  const [bloqueados, setBloqueados] = useState<PessoaResumo[]>([]);
+  const [bloqueadosLoading, setBloqueadosLoading] = useState(true);
+  const [bloqueadosError, setBloqueadosError] = useState(false);
+
+  function openBloqueados() {
+    push({ type: "bloqueados" });
+    setBloqueadosLoading(true);
+    setBloqueadosError(false);
+    listarBloqueadosComNome(supabase)
+      .then((data) => {
+        setBloqueados(data);
+        setBloqueadosLoading(false);
+      })
+      .catch((e) => {
+        console.error("[RedeTab bloqueados]", e);
+        setBloqueadosError(true);
+        setBloqueadosLoading(false);
+      });
+  }
+
+  async function unblockUser(userId: string) {
+    try {
+      await desbloquearUsuario(supabase, { bloqueadoId: userId });
+      setBloqueados((prev) => prev.filter((b) => b.id !== userId));
+      toast.success("Usuária desbloqueada");
+    } catch (e) {
+      console.error("[RedeTab desbloquear]", e);
+      toast.error("Não foi possível desbloquear.");
     }
   }
 
@@ -1195,6 +1248,8 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           wishlistItems={wishlistItems}
           clientesCount={clientes.length}
           defaultPrivacidade={defaultPrivacidade}
+          loading={perfil === null && !perfilError}
+          error={perfilError}
           onBack={pop}
           onMoveLiveLink={moveLiveLink}
           onEditLiveLink={(link) => {
@@ -1210,6 +1265,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           onShareProfile={shareProfile}
           onOpenWishlist={() => push({ type: "wishlist" })}
           onOpenClientes={() => push({ type: "clientes" })}
+          onOpenBloqueados={openBloqueados}
           onOpenPerfilPublico={() =>
             push({ type: "perfilPublico", userId: usuario.id })
           }
@@ -1243,6 +1299,8 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
               liveLinks={livelinksExibidos}
               wishlistPublico={wishlistPublico}
               posts={posts.filter((p) => p.autorId === screen.userId)}
+              loading={!profile.isMe && otherProfileLoading}
+              error={!profile.isMe && otherProfileError}
               onBack={pop}
               onOpenChat={() => openChatWithUser(screen.userId)}
               onSendRequest={() => sendRequest(screen.userId)}
@@ -1279,6 +1337,16 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
             setClienteFormOpen(true);
           }}
           onOpenCliente={setClienteDetail}
+        />
+      )}
+
+      {screen.type === "bloqueados" && (
+        <BlockedUsersScreen
+          items={bloqueados}
+          loading={bloqueadosLoading}
+          error={bloqueadosError}
+          onBack={pop}
+          onUnblock={unblockUser}
         />
       )}
 

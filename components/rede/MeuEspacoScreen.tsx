@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Share2, ChevronRight, Users2, Pencil } from "lucide-react";
+import { Share2, ChevronRight, Users2, Pencil, ShieldOff } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -22,6 +21,10 @@ interface Props {
   wishlistItems: WishlistItem[];
   clientesCount: number;
   defaultPrivacidade: Privacidade;
+  /** Carregamento real do próprio perfil (RedeTab) -- não um timeout fixo. */
+  loading: boolean;
+  /** Falha real ao carregar o próprio perfil -- estado persistente. */
+  error: boolean;
   onBack: () => void;
   onMoveLiveLink: (id: string, direction: "up" | "down") => void;
   onEditLiveLink: (link: LiveLink) => void;
@@ -31,6 +34,7 @@ interface Props {
   onShareProfile: () => void;
   onOpenWishlist: () => void;
   onOpenClientes: () => void;
+  onOpenBloqueados: () => void;
   onOpenPerfilPublico: () => void;
   onChangeDefaultPrivacidade: (p: Privacidade) => void;
   onToggleLike: (id: string) => void;
@@ -48,6 +52,8 @@ export function MeuEspacoScreen({
   wishlistItems,
   clientesCount,
   defaultPrivacidade,
+  loading,
+  error,
   onBack,
   onMoveLiveLink,
   onEditLiveLink,
@@ -57,6 +63,7 @@ export function MeuEspacoScreen({
   onShareProfile,
   onOpenWishlist,
   onOpenClientes,
+  onOpenBloqueados,
   onOpenPerfilPublico,
   onChangeDefaultPrivacidade,
   onToggleLike,
@@ -64,13 +71,6 @@ export function MeuEspacoScreen({
   onShare,
   onOpenMenu,
 }: Props) {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 420);
-    return () => clearTimeout(t);
-  }, []);
-
   return (
     <div className="pb-4">
       <ScreenHeader title="Meu espaço" onBack={onBack} />
@@ -84,6 +84,13 @@ export function MeuEspacoScreen({
             <SkeletonList rows={1} />
           </div>
         </>
+      ) : error ? (
+        <p
+          className="text-sm text-center py-12"
+          style={{ color: "var(--danger)" }}
+        >
+          Não foi possível carregar seu espaço. Tente novamente mais tarde.
+        </p>
       ) : (
         <>
           {/* Identidade */}
@@ -99,7 +106,8 @@ export function MeuEspacoScreen({
               <button
                 onClick={onEditProfile}
                 aria-label="Editar perfil"
-                className="p-1 active:opacity-60"
+                className="flex items-center justify-center active:opacity-60"
+                style={{ width: 44, height: 44, margin: "-15px" }}
               >
                 <Pencil size={14} style={{ color: "var(--text-muted)" }} />
               </button>
@@ -206,6 +214,12 @@ export function MeuEspacoScreen({
               </div>
               <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
             </GlassCard>
+            <p
+              className="text-center text-[11px] font-semibold mt-1.5"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Demonstração — sem tabela real ainda, não persiste entre sessões
+            </p>
           </section>
 
           {/* Minhas publicações */}
@@ -253,6 +267,42 @@ export function MeuEspacoScreen({
                   { id: "comunidade", label: "Comunidade" },
                 ]}
               />
+            </GlassCard>
+          </section>
+
+          {/* Segurança */}
+          <section>
+            <p className="section-label mb-3">Segurança</p>
+            <GlassCard
+              radius="md"
+              onClick={onOpenBloqueados}
+              className="flex items-center gap-3.5 px-4 py-4"
+            >
+              <div
+                className="flex items-center justify-center rounded-xl shrink-0"
+                style={{
+                  width: 36,
+                  height: 36,
+                  background: "rgb(var(--danger-rgb) / 0.12)",
+                }}
+              >
+                <ShieldOff size={16} style={{ color: "var(--danger)" }} />
+              </div>
+              <div className="text-left flex-1">
+                <p
+                  className="font-semibold text-sm"
+                  style={{ color: "var(--text)" }}
+                >
+                  Pessoas bloqueadas
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Ver e desbloquear
+                </p>
+              </div>
+              <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
             </GlassCard>
           </section>
         </>
