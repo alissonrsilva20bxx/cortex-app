@@ -1,7 +1,32 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  DEV_PREVIEW_SESSION_HEADER,
+  isDevPreviewEnvironment,
+  isDevPreviewGatePath,
+  isDevPreviewSessionBootstrapPath,
+} from "./lib/devPreview/session";
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // /dev-preview/app has no real Supabase Auth cookie, so the Gate's two
+  // real endpoints (solicitar-beta, convites) always hit the redirect
+  // below and fetch() silently followed it to /login, breaking res.json()
+  // client-side (T6 follow-up). Narrowly let those two exact paths
+  // through — never a prefix match, never any other route — so the route
+  // handler can authenticate the request itself via the dev-preview
+  // bearer token (lib/devPreview/serverAuth.ts) instead. Inert whenever
+  // NODE_ENV === "production", regardless of path or header, so this can
+  // never affect a real deployment.
+  if (
+    isDevPreviewEnvironment() &&
+    isDevPreviewGatePath(path) &&
+    request.headers.get(DEV_PREVIEW_SESSION_HEADER)
+  ) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -29,11 +54,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
   const isPublic =
     path === "/login" ||
     path.startsWith("/auth") ||
-    path.startsWith("/dev-preview");
+    path.startsWith("/dev-preview") ||
+    (isDevPreviewEnvironment() && isDevPreviewSessionBootstrapPath(path));
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
