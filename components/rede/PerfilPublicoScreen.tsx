@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   MessageCircle,
   UserPlus,
@@ -30,6 +30,11 @@ interface Props {
   liveLinks: LiveLink[];
   wishlistPublico: WishlistItem[];
   posts: FeedPost[];
+  /** Carregamento real de buscarPerfil (RedeTab) -- só verdadeiro na primeira
+   * visita a um perfil ainda não cacheado, não um timeout fixo. */
+  loading: boolean;
+  /** buscarPerfil falhou -- estado persistente, distinto do fallback estático. */
+  error: boolean;
   onBack: () => void;
   onOpenChat?: () => void;
   onSendRequest?: () => void;
@@ -51,6 +56,8 @@ export function PerfilPublicoScreen({
   liveLinks,
   wishlistPublico,
   posts,
+  loading,
+  error,
   onBack,
   onOpenChat,
   onSendRequest,
@@ -60,13 +67,7 @@ export function PerfilPublicoScreen({
   onShare,
   onOpenMenu,
 }: Props) {
-  const [loading, setLoading] = useState(true);
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 420);
-    return () => clearTimeout(t);
-  }, []);
 
   return (
     <div className="pb-4">
@@ -83,6 +84,13 @@ export function PerfilPublicoScreen({
             <SkeletonGrid items={2} />
           </div>
         </>
+      ) : error ? (
+        <p
+          className="text-sm text-center py-12"
+          style={{ color: "var(--danger)" }}
+        >
+          Não foi possível carregar este perfil. Tente novamente mais tarde.
+        </p>
       ) : (
         <>
           <div className="flex flex-col items-center text-center mb-5">
@@ -146,8 +154,8 @@ export function PerfilPublicoScreen({
                     aria-label="Mais opções"
                     className="flex items-center justify-center rounded-full transition-opacity active:opacity-70"
                     style={{
-                      width: 34,
-                      height: 34,
+                      width: 44,
+                      height: 44,
                       border: "1px solid var(--border-color)",
                       color: "var(--text-muted)",
                     }}
