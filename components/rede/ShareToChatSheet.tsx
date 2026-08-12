@@ -19,7 +19,12 @@ export function ShareToChatSheet({
   onSelectConversation,
 }: Props) {
   return (
-    <BottomSheet open={open} onClose={onClose} title="Enviar para">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title="Enviar para"
+      largeCloseTarget
+    >
       <div className="px-5 py-3 pb-6 space-y-1">
         {conversations.length === 0 ? (
           <p

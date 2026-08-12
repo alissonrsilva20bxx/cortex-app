@@ -182,6 +182,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   // ── Feed real ──
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
+  const [feedError, setFeedError] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -189,11 +190,14 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       .then((data) => {
         if (!ativo) return;
         setPosts(data);
+        setFeedError(false);
         setFeedLoading(false);
       })
       .catch((e) => {
         console.error("[RedeTab feed]", e);
         toast.error("Não foi possível carregar o feed.");
+        if (!ativo) return;
+        setFeedError(true);
         setFeedLoading(false);
       });
     return () => {
@@ -1109,6 +1113,8 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           pendingRequestsCount={requests.length}
           unreadChats={unreadChats}
           unreadNotifs={unreadNotifs}
+          loading={feedLoading}
+          error={feedError}
           onOpenSearch={() => push({ type: "busca" })}
           onOpenNotifs={() => setNotifSheetOpen(true)}
           onOpenChat={() => push({ type: "chatList" })}

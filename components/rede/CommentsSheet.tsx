@@ -42,6 +42,7 @@ export function CommentsSheet({
       open={!!postId}
       onClose={onClose}
       title="Comentários"
+      largeCloseTarget
       footer={
         <div className="flex items-center gap-2">
           <Avatar nome={usuarioNome} size="sm" />
@@ -64,7 +65,7 @@ export function CommentsSheet({
             disabled={!texto.trim()}
             aria-label="Enviar comentário"
             className="flex items-center justify-center rounded-full shrink-0 transition-opacity active:opacity-70 disabled:opacity-40"
-            style={{ width: 38, height: 38, background: "var(--accent)" }}
+            style={{ width: 44, height: 44, background: "var(--accent)" }}
           >
             <Send size={15} color="#fff" />
           </button>
@@ -109,7 +110,12 @@ export function CommentsSheet({
                 <button
                   onClick={() => onReportComment(c)}
                   aria-label="Mais opções"
-                  className="p-1 -m-1 shrink-0 active:opacity-60"
+                  className="flex items-center justify-center shrink-0 active:opacity-60"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    margin: "-13px -13px -13px 0",
+                  }}
                 >
                   <MoreHorizontal
                     size={16}

@@ -72,6 +72,7 @@ export function PostComposer({
         onClose();
       }}
       title={editingPost ? "Editar publicação" : "Nova publicação"}
+      largeCloseTarget
       footer={
         <button
           onClick={handlePublish}
@@ -107,6 +108,7 @@ export function PostComposer({
             options={CATEGORIA_OPTIONS}
             value={categoria}
             onChange={setCategoria}
+            minTouchTarget
           />
         </div>
       </div>
