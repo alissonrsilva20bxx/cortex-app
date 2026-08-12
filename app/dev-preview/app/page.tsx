@@ -26,6 +26,11 @@ import { useToast } from "@/components/Toast";
 import { supabase, __setMockSupabaseClient } from "@/lib/supabase";
 import { createMockSupabaseClient } from "@/lib/mockSupabase";
 import { buildMockAppSeed, MOCK_APP_USUARIO } from "@/lib/mockAppData";
+import {
+  enableDevPreviewGateSession,
+  disableDevPreviewGateSession,
+  type DevPreviewSessionStatus,
+} from "@/lib/devPreview/clientSession";
 import type {
   TabId,
   Job,
@@ -63,6 +68,26 @@ export default function DevPreviewApp() {
 
   const toast = useToast();
   const usuario = MOCK_APP_USUARIO;
+
+  // Só afeta as duas chamadas reais do Gate da Rede (solicitar-beta,
+  // convites) — anexa um bearer token de uma conta de teste local
+  // descartável via window.fetch, sem RedeTeaserGate/SerialKeySheet
+  // saberem que isso existe (mesmo princípio do __setMockSupabaseClient
+  // acima: mock só no harness, nunca no componente real). Sem Supabase
+  // local rodando, o status fica "unavailable" com o motivo exato — ver
+  // banner na aba Rede logo abaixo.
+  const [devPreviewSession, setDevPreviewSession] =
+    useState<DevPreviewSessionStatus>({ kind: "loading" });
+  useEffect(() => {
+    let ativo = true;
+    enableDevPreviewGateSession().then((status) => {
+      if (ativo) setDevPreviewSession(status);
+    });
+    return () => {
+      ativo = false;
+      disableDevPreviewGateSession();
+    };
+  }, []);
 
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [fabOpen, setFabOpen] = useState(false);
@@ -255,6 +280,24 @@ export default function DevPreviewApp() {
         </TabPanel>
 
         <TabPanel tab="rede" activeTab={activeTab}>
+          {devPreviewSession.kind === "unavailable" && (
+            <div
+              className="mb-4 p-3 rounded-xl text-xs leading-relaxed"
+              style={{
+                background: "rgb(255 180 60 / 0.12)",
+                border: "1px solid rgb(255 180 60 / 0.3)",
+                color: "var(--text-2)",
+              }}
+            >
+              <strong style={{ color: "var(--text)" }}>
+                Sessão de teste local indisponível.
+              </strong>{" "}
+              {devPreviewSession.message} Solicitar beta e resgatar código vão
+              mostrar esse mesmo estado até o Supabase local estar de pé — o
+              resto do fluxo (abrir o sheet de código, validações de campo
+              vazio, foco, 44px) continua testável normalmente.
+            </div>
+          )}
           <RedeGatedTab
             usuario={usuario}
             onChatFocusChange={setChatComposerFocused}
