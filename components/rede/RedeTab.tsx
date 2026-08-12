@@ -22,6 +22,7 @@ import { PerfilPublicoScreen } from "./PerfilPublicoScreen";
 import { WishlistScreen } from "./WishlistScreen";
 import { WishlistForm, WISHLIST_PALETTE } from "./WishlistForm";
 import { ClientesScreen } from "./ClientesScreen";
+import { BlockedUsersScreen } from "./BlockedUsersScreen";
 import { ClienteDetailSheet } from "./ClienteDetailSheet";
 import { ClienteForm } from "./ClienteForm";
 import { PostComposer } from "./PostComposer";
@@ -76,8 +77,10 @@ import {
   recusarPedidoAmizade,
   removerAmizade,
   bloquearUsuario,
+  desbloquearUsuario,
   type SolicitacaoAmizade,
 } from "@/lib/rede/social";
+import { listarBloqueadosComNome } from "@/lib/rede/bloqueiosGerenciamento";
 import {
   listarConversas,
   listarMensagens,
@@ -121,7 +124,8 @@ type RedeScreen =
   | { type: "meuEspaco" }
   | { type: "perfilPublico"; userId: string }
   | { type: "wishlist" }
-  | { type: "clientes" };
+  | { type: "clientes" }
+  | { type: "bloqueados" };
 
 interface Props {
   usuario: Usuario;
@@ -676,6 +680,41 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
+  // ── Pessoas bloqueadas (T8, P0 -- bloquear era irreversível pelo app até
+  // este ticket) -- carregado sob demanda ao abrir a tela, não no mount,
+  // mesmo padrão de Amigas/Chat serem eager só por serem destinos
+  // frequentes; bloqueios são raros o bastante pra não justificar isso. ──
+  const [bloqueados, setBloqueados] = useState<PessoaResumo[]>([]);
+  const [bloqueadosLoading, setBloqueadosLoading] = useState(true);
+  const [bloqueadosError, setBloqueadosError] = useState(false);
+
+  function openBloqueados() {
+    push({ type: "bloqueados" });
+    setBloqueadosLoading(true);
+    setBloqueadosError(false);
+    listarBloqueadosComNome(supabase)
+      .then((data) => {
+        setBloqueados(data);
+        setBloqueadosLoading(false);
+      })
+      .catch((e) => {
+        console.error("[RedeTab bloqueados]", e);
+        setBloqueadosError(true);
+        setBloqueadosLoading(false);
+      });
+  }
+
+  async function unblockUser(userId: string) {
+    try {
+      await desbloquearUsuario(supabase, { bloqueadoId: userId });
+      setBloqueados((prev) => prev.filter((b) => b.id !== userId));
+      toast.success("Usuária desbloqueada");
+    } catch (e) {
+      console.error("[RedeTab desbloquear]", e);
+      toast.error("Não foi possível desbloquear.");
+    }
+  }
+
   // ── Notificações ──
   // Curtida/comentário/pedido de amizade não têm leitura por item (só um
   // cursor único no perfil, ver lib/rede/notificacoes.ts) -- clicar navega
@@ -1210,6 +1249,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           onShareProfile={shareProfile}
           onOpenWishlist={() => push({ type: "wishlist" })}
           onOpenClientes={() => push({ type: "clientes" })}
+          onOpenBloqueados={openBloqueados}
           onOpenPerfilPublico={() =>
             push({ type: "perfilPublico", userId: usuario.id })
           }
@@ -1279,6 +1319,16 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
             setClienteFormOpen(true);
           }}
           onOpenCliente={setClienteDetail}
+        />
+      )}
+
+      {screen.type === "bloqueados" && (
+        <BlockedUsersScreen
+          items={bloqueados}
+          loading={bloqueadosLoading}
+          error={bloqueadosError}
+          onBack={pop}
+          onUnblock={unblockUser}
         />
       )}
 

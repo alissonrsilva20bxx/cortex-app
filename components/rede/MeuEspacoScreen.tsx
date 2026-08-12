@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Share2, ChevronRight, Users2, Pencil } from "lucide-react";
+import { Share2, ChevronRight, Users2, Pencil, ShieldOff } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -31,6 +31,7 @@ interface Props {
   onShareProfile: () => void;
   onOpenWishlist: () => void;
   onOpenClientes: () => void;
+  onOpenBloqueados: () => void;
   onOpenPerfilPublico: () => void;
   onChangeDefaultPrivacidade: (p: Privacidade) => void;
   onToggleLike: (id: string) => void;
@@ -57,6 +58,7 @@ export function MeuEspacoScreen({
   onShareProfile,
   onOpenWishlist,
   onOpenClientes,
+  onOpenBloqueados,
   onOpenPerfilPublico,
   onChangeDefaultPrivacidade,
   onToggleLike,
@@ -253,6 +255,42 @@ export function MeuEspacoScreen({
                   { id: "comunidade", label: "Comunidade" },
                 ]}
               />
+            </GlassCard>
+          </section>
+
+          {/* Segurança */}
+          <section>
+            <p className="section-label mb-3">Segurança</p>
+            <GlassCard
+              radius="md"
+              onClick={onOpenBloqueados}
+              className="flex items-center gap-3.5 px-4 py-4"
+            >
+              <div
+                className="flex items-center justify-center rounded-xl shrink-0"
+                style={{
+                  width: 36,
+                  height: 36,
+                  background: "rgb(var(--danger-rgb) / 0.12)",
+                }}
+              >
+                <ShieldOff size={16} style={{ color: "var(--danger)" }} />
+              </div>
+              <div className="text-left flex-1">
+                <p
+                  className="font-semibold text-sm"
+                  style={{ color: "var(--text)" }}
+                >
+                  Pessoas bloqueadas
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Ver e desbloquear
+                </p>
+              </div>
+              <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
             </GlassCard>
           </section>
         </>
