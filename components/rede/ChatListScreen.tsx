@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, WifiOff } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
@@ -11,15 +11,25 @@ import type { ConversaResumo } from "@/lib/rede/mensagens";
 interface Props {
   loading: boolean;
   conversations: ConversaResumo[];
+  /** Falha persistente ao carregar a lista -- distinta de "sem conversa
+   * nenhuma ainda" (achado P1 #6 da auditoria de T9). */
+  error?: boolean;
+  /** `navigator.onLine` -- a lista já carregada continua navegável
+   * (é só leitura), mas avisa que pode estar desatualizada. */
+  offline?: boolean;
   onBack: () => void;
   onOpenThread: (conversationId: string) => void;
+  onRetryLoad?: () => void;
 }
 
 export function ChatListScreen({
   loading,
   conversations,
+  error = false,
+  offline = false,
   onBack,
   onOpenThread,
+  onRetryLoad,
 }: Props) {
   const [query, setQuery] = useState("");
 
@@ -37,7 +47,22 @@ export function ChatListScreen({
     <div className="pb-4">
       <ScreenHeader title="Conversas" onBack={onBack} />
 
-      {!loading && conversations.length > 0 && (
+      {offline && (
+        <div
+          className="flex items-center gap-2 px-3.5 py-2.5 mb-4 text-xs font-medium"
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border-color)",
+            borderRadius: "var(--radius-lg)",
+            color: "var(--text-2)",
+          }}
+        >
+          <WifiOff size={14} style={{ color: "var(--text-muted)" }} />
+          Você está offline. Mostrando conversas já carregadas.
+        </div>
+      )}
+
+      {!loading && !error && conversations.length > 0 && (
         <div
           className="flex items-center gap-2.5 px-4 mb-4"
           style={{
@@ -60,6 +85,21 @@ export function ChatListScreen({
 
       {loading ? (
         <SkeletonList rows={4} />
+      ) : error ? (
+        <div className="text-center py-12">
+          <p className="text-sm" style={{ color: "var(--danger)" }}>
+            Não foi possível carregar suas conversas.
+          </p>
+          {onRetryLoad && (
+            <button
+              onClick={onRetryLoad}
+              className="text-sm font-semibold mt-2 active:opacity-70"
+              style={{ color: "var(--accent)" }}
+            >
+              Tentar novamente
+            </button>
+          )}
+        </div>
       ) : conversations.length === 0 ? (
         <p
           className="text-sm text-center py-12"
