@@ -350,8 +350,8 @@ export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
       </button>
       <button
         onClick={() => onSheetChange("chave")}
-        className="w-full py-2.5 text-xs font-semibold active:opacity-70"
-        style={{ color: "var(--text-muted)" }}
+        className="w-full flex items-center justify-center text-xs font-semibold active:opacity-70"
+        style={{ color: "var(--text-muted)", minHeight: "44px" }}
       >
         Já tem um código de convite? Digite aqui
       </button>
@@ -368,6 +368,7 @@ export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
         open={sheet === "confirmacao"}
         onClose={() => onSheetChange(null)}
         title="Solicitação de beta"
+        largeCloseTarget
       >
         <div className="px-5 py-5">
           <p
@@ -385,6 +386,7 @@ export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
         open={sheet === "preview"}
         onClose={() => onSheetChange(null)}
         title="O que vem por aí"
+        largeCloseTarget
       >
         <div className="px-5 py-3 pb-6">
           <ComingSoonRow

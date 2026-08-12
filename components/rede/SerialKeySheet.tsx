@@ -72,6 +72,7 @@ export function SerialKeySheet({ open, onClose, onConfirm }: Props) {
       open={open}
       onClose={handleClose}
       title="Código de acesso"
+      largeCloseTarget
       footer={
         <button
           onClick={handleConfirm}
