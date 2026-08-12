@@ -266,13 +266,31 @@ describe("RLS: RD-04 social graph", () => {
       expectPermissionDenied(requester.error, "rede_amizades");
     });
 
-    it("rejects the same unordered pair in the opposite direction", async () => {
+    it("rejects the same unordered pair in the opposite direction (blocked, so RLS denies before the unique constraint even runs)", async () => {
+      // userA and userB are also blocked in this fixture (blockAB) — since
+      // the block-aware RLS fix, that denial fires before insert ever
+      // reaches rede_amizades_par_unico_idx. See the control case below for
+      // the same unordered-pair collision on a pair with no block.
       const { error } = await redeClient(userB.client)
         .from("rede_amizades")
         .insert({
           solicitante_id: userB.id,
           destinatario_id: userA.id,
         });
+
+      expectRlsDenied(error);
+    });
+
+    it("still rejects the same unordered pair in the opposite direction when there is no block (control)", async () => {
+      const first = await redeClient(userC.client)
+        .from("rede_amizades")
+        .insert({ solicitante_id: userC.id, destinatario_id: userD.id })
+        .select("id");
+      expect(first.error).toBeNull();
+
+      const { error } = await redeClient(userD.client)
+        .from("rede_amizades")
+        .insert({ solicitante_id: userD.id, destinatario_id: userC.id });
 
       expectConstraintViolation(error, "23505");
     });
