@@ -46,7 +46,7 @@ function ChipButton({
     <button
       onClick={onClick}
       className="flex items-center justify-center rounded-full font-semibold transition-opacity active:opacity-70"
-      style={{ height: 34, width: 34, ...styles[variant] }}
+      style={{ height: 44, width: 44, ...styles[variant] }}
     >
       {children}
     </button>

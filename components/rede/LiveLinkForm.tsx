@@ -56,6 +56,7 @@ export function LiveLinkForm({ open, link, onClose, onSave }: Props) {
     <BottomSheet
       open={open}
       onClose={onClose}
+      largeCloseTarget
       title={link ? "Editar LiveLink" : "Novo LiveLink"}
       footer={
         <button
