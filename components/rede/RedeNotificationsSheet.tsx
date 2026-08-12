@@ -6,6 +6,7 @@ import {
   UserPlus,
   MessageCircle,
   CheckCheck,
+  WifiOff,
 } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Avatar } from "./Avatar";
@@ -24,30 +25,61 @@ interface Props {
   open: boolean;
   onClose: () => void;
   loading: boolean;
+  /** Falha persistente ao carregar -- distinta de "sem notificação
+   * nenhuma ainda" (achado P1 #6 da auditoria de T9). */
+  error?: boolean;
+  /** `navigator.onLine` -- "marcar todas como lidas" escreve no cursor
+   * real (upsert), não faz sentido oferecer offline. */
+  offline?: boolean;
   notificacoes: Notificacao[];
   onOpenNotificacao: (n: Notificacao) => void;
   onMarkAllRead: () => void;
+  onRetryLoad?: () => void;
 }
 
 export function RedeNotificationsSheet({
   open,
   onClose,
   loading,
+  error = false,
+  offline = false,
   notificacoes,
   onOpenNotificacao,
   onMarkAllRead,
+  onRetryLoad,
 }: Props) {
   const unreadCount = notificacoes.filter((n) => !n.lida).length;
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Notificações">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title="Notificações"
+      largeCloseTarget
+    >
       <div className="overflow-y-auto" style={{ maxHeight: "70dvh" }}>
-        {!loading && unreadCount > 0 && (
+        {offline && (
+          <div
+            className="flex items-center gap-2 mx-5 mt-3 px-3.5 py-2.5 text-xs font-medium"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "var(--radius-lg)",
+              color: "var(--text-2)",
+            }}
+          >
+            <WifiOff size={14} style={{ color: "var(--text-muted)" }} />
+            Você está offline.
+          </div>
+        )}
+
+        {!loading && !error && unreadCount > 0 && (
           <div className="flex justify-end px-5 pt-3">
             <button
               onClick={onMarkAllRead}
-              className="flex items-center gap-1.5 text-xs font-semibold active:opacity-70"
-              style={{ color: "var(--accent)" }}
+              disabled={offline}
+              className="flex items-center justify-end gap-1.5 text-xs font-semibold active:opacity-70 disabled:opacity-40"
+              style={{ color: "var(--accent)", minHeight: 44 }}
             >
               <CheckCheck size={13} />
               Marcar todas como lidas
@@ -60,6 +92,21 @@ export function RedeNotificationsSheet({
             <SkeletonRow />
             <SkeletonRow />
             <SkeletonRow />
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-sm" style={{ color: "var(--danger)" }}>
+              Não foi possível carregar suas notificações.
+            </p>
+            {onRetryLoad && (
+              <button
+                onClick={onRetryLoad}
+                className="text-sm font-semibold mt-2 active:opacity-70"
+                style={{ color: "var(--accent)" }}
+              >
+                Tentar novamente
+              </button>
+            )}
           </div>
         ) : notificacoes.length === 0 ? (
           <p

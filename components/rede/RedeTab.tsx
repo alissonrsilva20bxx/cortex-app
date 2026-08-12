@@ -255,11 +255,43 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   // ── Chat real ──
   const [conversations, setConversations] = useState<ConversaResumo[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
+  // Falha persistente (distinta de "carregou e está vazio de verdade",
+  // achado P1 #6 da auditoria de T9) + chave de recarga pro botão
+  // "Tentar novamente" poder re-disparar o efeito abaixo sem duplicar a
+  // lógica de fetch numa função solta fora do efeito.
+  const [conversationsError, setConversationsError] = useState(false);
+  const [conversationsReloadKey, setConversationsReloadKey] = useState(0);
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [threadLoading, setThreadLoading] = useState(false);
+  const [threadError, setThreadError] = useState(false);
+  const [threadReloadKey, setThreadReloadKey] = useState(0);
+
+  // ── Offline (navigator.onLine) -- compartilhado por Conversas/Chat/
+  // Notificações, os 3 destinos deste ticket que fazem escrita de rede
+  // (enviar mensagem, marcar como lida/vista). Lista já carregada
+  // continua navegável offline (só leitura); envio/escrita ficam
+  // desabilitados nos componentes que recebem esta prop. ──
+  const [online, setOnline] = useState(
+    typeof navigator === "undefined" ? true : navigator.onLine
+  );
+  useEffect(() => {
+    function goOnline() {
+      setOnline(true);
+    }
+    function goOffline() {
+      setOnline(false);
+    }
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   useEffect(() => {
     let ativo = true;
+    setConversationsError(false);
     listarConversas(supabase)
       .then((data) => {
         if (!ativo) return;
@@ -269,13 +301,19 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       .catch((e) => {
         console.error("[RedeTab conversas]", e);
         toast.error("Não foi possível carregar as conversas.");
+        setConversationsError(true);
         setConversationsLoading(false);
       });
     return () => {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [conversationsReloadKey]);
+
+  function retryLoadConversations() {
+    setConversationsLoading(true);
+    setConversationsReloadKey((k) => k + 1);
+  }
 
   const abertaConversaId =
     screen.type === "chatThread" ? screen.conversationId : null;
@@ -287,6 +325,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     let canal: Awaited<ReturnType<typeof assinarMensagensConversa>> | null =
       null;
     setThreadLoading(true);
+    setThreadError(false);
 
     (async () => {
       const data = await listarMensagens(supabase, conversaId);
@@ -360,6 +399,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     })().catch((e) => {
       console.error("[RedeTab thread]", e);
       toast.error("Não foi possível carregar a conversa.");
+      setThreadError(true);
       setThreadLoading(false);
     });
 
@@ -368,15 +408,23 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       if (canal) void supabase.removeChannel(canal);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abertaConversaId]);
+  }, [abertaConversaId, threadReloadKey]);
+
+  function retryLoadThread() {
+    setThreadLoading(true);
+    setThreadReloadKey((k) => k + 1);
+  }
 
   // ── Notificações real -- eager, o sino no header mostra a contagem já
   // na primeira tela (mesmo motivo de Amigas ser eager, ver acima) ──
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [notificacoesLoading, setNotificacoesLoading] = useState(true);
+  const [notificacoesError, setNotificacoesError] = useState(false);
+  const [notificacoesReloadKey, setNotificacoesReloadKey] = useState(0);
 
   useEffect(() => {
     let ativo = true;
+    setNotificacoesError(false);
     listarNotificacoes(supabase)
       .then((data) => {
         if (!ativo) return;
@@ -386,13 +434,19 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       .catch((e) => {
         console.error("[RedeTab notificacoes]", e);
         toast.error("Não foi possível carregar as notificações.");
+        setNotificacoesError(true);
         setNotificacoesLoading(false);
       });
     return () => {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [notificacoesReloadKey]);
+
+  function retryLoadNotificacoes() {
+    setNotificacoesLoading(true);
+    setNotificacoesReloadKey((k) => k + 1);
+  }
 
   // ── Dados mockados, mutáveis localmente ──
   const [wishlistItems, setWishlistItems] =
@@ -434,6 +488,15 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     id: string;
   } | null>(null);
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
+  // Confirmação antes de bloquear a partir do menu da conversa -- achado
+  // de produto P1 #4 da auditoria de T9: "Bloquear" executava direto num
+  // só toque, diferente do fluxo já confirmado de PerfilPublicoScreen, e
+  // agravado por bloqueio ainda ser irreversível pelo app (T8, P0 #2).
+  // Mesmo padrão de segundo OptionsSheet que PerfilPublicoScreen já usa.
+  const [chatBlockConfirm, setChatBlockConfirm] = useState<{
+    userId: string;
+    nome: string;
+  } | null>(null);
 
   // Comentários do post atualmente aberto no CommentsSheet -- buscados sob
   // demanda (rede_posts não guarda a lista, só existe agregada aqui).
@@ -1211,9 +1274,12 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       {screen.type === "chatList" && (
         <ChatListScreen
           loading={conversationsLoading}
+          error={conversationsError}
+          offline={!online}
           conversations={conversations}
           onBack={pop}
           onOpenThread={openChatThread}
+          onRetryLoad={retryLoadConversations}
         />
       )}
 
@@ -1228,11 +1294,14 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
               conversation={convo}
               messages={messages[convo.id] ?? []}
               loading={threadLoading}
+              error={threadError}
+              offline={!online}
               onBack={pop}
               onOpenAutor={openAutor}
               onOpenMenu={() => setChatMenuOpen(true)}
               onSend={(texto) => sendMessage(convo.id, texto)}
               onRetry={(messageId) => retrySend(convo.id, messageId)}
+              onRetryLoad={retryLoadThread}
               onComposerFocusChange={onChatFocusChange}
             />
           );
@@ -1380,9 +1449,12 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         open={notifSheetOpen}
         onClose={() => setNotifSheetOpen(false)}
         loading={notificacoesLoading}
+        error={notificacoesError}
+        offline={!online}
         notificacoes={notificacoes}
         onOpenNotificacao={openNotificacao}
         onMarkAllRead={markAllNotifsRead}
+        onRetryLoad={retryLoadNotificacoes}
       />
 
       <OptionsSheet
@@ -1465,10 +1537,11 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
                     label: "Bloquear",
                     Icon: Ban,
                     danger: true,
-                    onSelect: () => {
-                      blockUser(convo.outroUserId);
-                      pop();
-                    },
+                    onSelect: () =>
+                      setChatBlockConfirm({
+                        userId: convo.outroUserId,
+                        nome: convo.outroNome,
+                      }),
                   },
                   {
                     key: "cancelar",
@@ -1479,6 +1552,33 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
                 ];
               })()
         }
+      />
+
+      <OptionsSheet
+        open={!!chatBlockConfirm}
+        title={
+          chatBlockConfirm ? `Bloquear ${chatBlockConfirm.nome}?` : "Bloquear?"
+        }
+        onClose={() => setChatBlockConfirm(null)}
+        options={[
+          {
+            key: "confirmar",
+            label: "Sim, bloquear",
+            Icon: Ban,
+            danger: true,
+            onSelect: () => {
+              if (!chatBlockConfirm) return;
+              blockUser(chatBlockConfirm.userId);
+              pop();
+            },
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
+          },
+        ]}
       />
 
       <OptionsSheet
