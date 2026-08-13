@@ -27,6 +27,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // /dev-preview/** serves a fully mocked Rede (fictional profiles, no real
+  // Supabase) and used to be public unconditionally, regardless of
+  // NODE_ENV. Same isDevPreviewEnvironment() signal already used for the
+  // session-bootstrap endpoint below -- inert whenever NODE_ENV ===
+  // "production", so this never affects local dev or preview deployments,
+  // but blocks the mock surface entirely in production, before any auth
+  // check runs.
+  if (path.startsWith("/dev-preview") && !isDevPreviewEnvironment()) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
