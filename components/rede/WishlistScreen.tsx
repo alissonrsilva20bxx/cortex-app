@@ -53,6 +53,13 @@ export function WishlistScreen({ items, onBack, onAddNew, onOpenItem }: Props) {
         }
       />
 
+      <p
+        className="text-center text-[11px] font-semibold mb-4"
+        style={{ color: "var(--text-muted)" }}
+      >
+        Demonstração — sem tabela real ainda, não persiste entre sessões
+      </p>
+
       <FilterChips
         options={FILTROS}
         value={filtro}
