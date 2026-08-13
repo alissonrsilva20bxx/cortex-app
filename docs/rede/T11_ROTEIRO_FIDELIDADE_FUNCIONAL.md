@@ -85,7 +85,9 @@ Nenhum item P0 está marcado FAIL. Nenhum ticket de área é reaberto por este r
 | §4-P1-1 | Gráfico "Evolução do saldo" respeita chartType de Ajustes         | AUTOMATIZADO (existente, parcial)    | `tests/wiring/financeiro-visual.test.ts` confirma dado real; troca visual por chartType é MANUAL (roteiro abaixo, passo 5) |
 | §4-P1-2 | "Insight do mês" real ou removido                                 | AUTOMATIZADO (existente)             | `tests/wiring/financeiro-visual.test.ts` (confirmado removido)                                                             |
 
-**5/5 P0 roteados, 2/2 P1 roteados.**
+**5/5 linhas de roteiro, cobrindo os 6 itens P0 do checklist original; 2/2 P1 roteados.**
+
+> **Nota de fusão (ver "Resumo geral" para o efeito na contagem total):** o checklist original tem 6 bullets `[P0]` nesta seção — o primeiro ("maior gap confirmado: mock é uma tela única sem sub-abas") e o segundo ("as 4 sub-abas devem continuar existindo com FAB contextual próprio") são, respectivamente, o achado e o requisito do mesmo fato; `§4-P0-1` cobre os dois com a mesma evidência (a suíte que prova que as 4 sub-abas existem prova ao mesmo tempo que o gap do mock não foi herdado). Por isso esta seção tem 5 linhas de roteiro para 6 itens do checklist original.
 
 ---
 
@@ -109,15 +111,16 @@ Nenhum item P0 está marcado FAIL. Nenhum ticket de área é reaberto por este r
 
 ## Seção 6.1 — Gate (apresentação antes do feed)
 
-| ID        | Item                                                       | Status                   | Evidência                                                                                        |
-| --------- | ---------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------ |
-| §6.1-P0-1 | Sem constante/comparação de código local                   | AUTOMATIZADO (existente) | `tests/wiring/bottomsheet-focus-trap.test.ts`                                                    |
-| §6.1-P0-2 | Desbloqueio depende de `verificarAcessoConvite` no backend | AUTOMATIZADO (existente) | `tests/wiring/bottomsheet-focus-trap.test.ts` + `tests/rede/services/acesso.test.ts`             |
-| §6.1-P0-3 | Fail-closed em `verificarAcessoConvite`                    | AUTOMATIZADO (existente) | `tests/rede/services/acesso.test.ts`                                                             |
-| §6.1-P0-4 | "Quero participar da beta" chama rota real idempotente     | AUTOMATIZADO (existente) | `tests/wiring/bottomsheet-focus-trap.test.ts` + `tests/rede/routes/solicitar-beta.route.test.ts` |
-| §6.1-P1-1 | Override `?vitrine=1` para QA                              | AUTOMATIZADO (novo, T11) | `tests/wiring/rede-gap-visual.test.ts`                                                           |
+| ID        | Item                                                                                                                                                   | Status                   | Evidência                                                                                                                                                                                                                                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §6.1-P0-1 | Sem constante/comparação de código local                                                                                                               | AUTOMATIZADO (existente) | `tests/wiring/bottomsheet-focus-trap.test.ts`                                                                                                                                                                                                                                                                                           |
+| §6.1-P0-2 | Desbloqueio depende de `verificarAcessoConvite` no backend                                                                                             | AUTOMATIZADO (existente) | `tests/wiring/bottomsheet-focus-trap.test.ts` + `tests/rede/services/acesso.test.ts`                                                                                                                                                                                                                                                    |
+| §6.1-P0-3 | Fail-closed em `verificarAcessoConvite`                                                                                                                | AUTOMATIZADO (existente) | `tests/rede/services/acesso.test.ts`                                                                                                                                                                                                                                                                                                    |
+| §6.1-P0-4 | "Quero participar da beta" chama rota real idempotente                                                                                                 | AUTOMATIZADO (existente) | `tests/wiring/bottomsheet-focus-trap.test.ts` + `tests/rede/routes/solicitar-beta.route.test.ts`                                                                                                                                                                                                                                        |
+| §6.1-P1-1 | Override `?vitrine=1` para QA                                                                                                                          | AUTOMATIZADO (novo, T11) | `tests/wiring/rede-gap-visual.test.ts`                                                                                                                                                                                                                                                                                                  |
+| §6.1-P1-2 | Conteúdo de exemplo do Gate (Hero, 3 posts, benefícios, bottom sheet de código) — divergência textual frente ao laboratório é tolerada, não bloqueante | MANUAL                   | Item de tolerância de conteúdo, não de comportamento — não há o que travar por regex sem recriar um teste frágil a qualquer texto novo. Confirmado por leitura de `components/rede/RedeTeaserGate.tsx` que as 4 peças de conteúdo (hero/posts de exemplo/benefícios/`SerialKeySheet`) existem na tela; roteiro manual abaixo, passo 12. |
 
-**4/4 P0 cobertos, 1/1 P1 coberto.**
+**4/4 P0 cobertos, 2/2 P1 roteados.**
 
 ## Seção 6.2 — Resgate e persistência do código único
 
@@ -169,14 +172,15 @@ Nenhum item P0 está marcado FAIL. Nenhum ticket de área é reaberto por este r
 
 ## Seção 6.7 — Perfis completos e LiveLinks
 
-| ID        | Item                                                            | Status                               | Evidência                                                                                                                                                                                                                                                                                                                      |
-| --------- | --------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| §6.7-P0-1 | LiveLinks de terceiros sempre vazios (`isMe ? liveLinks : []`)  | AUTOMATIZADO (novo, T11)             | `tests/wiring/rede-gap-visual.test.ts`                                                                                                                                                                                                                                                                                         |
-| §6.7-P0-2 | Bloqueio a partir do Perfil Público com confirmação dedicada    | AUTOMATIZADO (novo, T11)             | `tests/wiring/rede-gap-visual.test.ts`                                                                                                                                                                                                                                                                                         |
-| §6.7-P0-3 | CRUD de LiveLinks (mover/editar/excluir/até 5, validação HTTPS) | AUTOMATIZADO (existente + novo, T11) | `tests/rede/services/perfis.test.ts` + `tests/rede/services/perfis.integration.test.ts` (CRUD/reorder/HTTPS) + `tests/wiring/rede-gap-visual.test.ts` (limite de 5 no client). **Achado:** limite de 5 não é reforçado no banco — ver issue [#61](https://github.com/alissonrsilva20bxx/cortex-app/issues/61), não bloqueante. |
-| §6.7-P1-1 | Edição de perfil (nome+bio) persiste                            | AUTOMATIZADO (existente, parcial)    | `tests/rede/services/perfis.test.ts` cobre `atualizarPerfil`; wiring do `ProfileEditForm` é MANUAL (roteiro abaixo, passo 9)                                                                                                                                                                                                   |
+| ID        | Item                                                                                                                                                                 | Status                               | Evidência                                                                                                                                                                                                                                                                                                                      |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| §6.7-P0-1 | LiveLinks de terceiros sempre vazios (`isMe ? liveLinks : []`)                                                                                                       | AUTOMATIZADO (novo, T11)             | `tests/wiring/rede-gap-visual.test.ts`                                                                                                                                                                                                                                                                                         |
+| §6.7-P0-2 | Bloqueio a partir do Perfil Público com confirmação dedicada                                                                                                         | AUTOMATIZADO (novo, T11)             | `tests/wiring/rede-gap-visual.test.ts`                                                                                                                                                                                                                                                                                         |
+| §6.7-P0-3 | CRUD de LiveLinks (mover/editar/excluir/até 5, validação HTTPS)                                                                                                      | AUTOMATIZADO (existente + novo, T11) | `tests/rede/services/perfis.test.ts` + `tests/rede/services/perfis.integration.test.ts` (CRUD/reorder/HTTPS) + `tests/wiring/rede-gap-visual.test.ts` (limite de 5 no client). **Achado:** limite de 5 não é reforçado no banco — ver issue [#61](https://github.com/alissonrsilva20bxx/cortex-app/issues/61), não bloqueante. |
+| §6.7-P1-1 | Edição de perfil (nome+bio) persiste                                                                                                                                 | AUTOMATIZADO (existente, parcial)    | `tests/rede/services/perfis.test.ts` cobre `atualizarPerfil`; wiring do `ProfileEditForm` é MANUAL (roteiro abaixo, passo 9)                                                                                                                                                                                                   |
+| §6.7-P1-2 | "Compartilhar perfil" já é no-op no funcional hoje (só toast, sem clipboard real) — não pode piorar (laboratório caía num sheet com título quebrado "share-profile") | AUTOMATIZADO (novo, T11)             | `tests/wiring/rede-gap-visual.test.ts` confirma que `RedeTab.shareProfile()` continua sendo só `toast.success`, sem nenhuma chamada de clipboard; busca em todo `components/`/`lib/`/`app/` confirma que a string quebrada `"share-profile"` do laboratório não existe em nenhuma tela migrada.                                |
 
-**3/3 P0 cobertos, 1/1 P1 roteado.**
+**3/3 P0 cobertos, 2/2 P1 roteados.**
 
 ## Seção 6.8 — Pedidos de amizade, amizades e bloqueios
 
@@ -243,12 +247,21 @@ Nenhum item P0 está marcado FAIL. Nenhum ticket de área é reaberto por este r
 
 ## Resumo geral
 
-| Prioridade                    | Total | Automatizado | Manual (roteirizado) | Superado/N/A  |
-| ----------------------------- | ----- | ------------ | -------------------- | ------------- |
-| P0                            | 56    | 54           | 1 (§3-P0-5)          | 1 (§3-P0-1)   |
-| P1 (relevantes ao lançamento) | 33    | 24           | 8                    | 1 (§6.8-P1-1) |
+Contagem obtida somando o `Status` de cada linha das 17 tabelas por seção acima (não estimada) — ver nota de rastreabilidade logo abaixo da tabela.
 
-**56/56 itens P0 têm um roteiro verificável** (54 automatizados + 1 manual documentado + 1 superado por decisão humana registrada). **33/33 itens P1 têm um roteiro verificável** (24 automatizados + 8 manuais documentados + 1 confirmado N/A).
+| Prioridade                    | Total (itens do checklist original) | Linhas de roteiro | Automatizado | Manual (roteirizado) | Superado | N/A |
+| ----------------------------- | ----------------------------------- | ----------------- | ------------ | -------------------- | -------- | --- |
+| P0                            | 56                                  | 55                | 53           | 2                    | 1        | 0   |
+| P1 (relevantes ao lançamento) | 33                                  | 33                | 26           | 6                    | 0        | 1   |
+
+**Rastreabilidade da diferença entre "Total" e "Linhas de roteiro" em P0 (56 vs. 55):** a única fusão do documento é `§4-P0-1`, que cobre 2 bullets `[P0]` do checklist original da Seção 4 (Financeiro) com uma única linha/evidência — ver nota logo após a tabela da Seção 4. Nenhuma outra seção funde itens; em P1 não há fusão (33 linhas = 33 itens).
+
+- **P0 — 53 automatizados:** soma direta das linhas `AUTOMATIZADO (...)` em todas as 17 tabelas (52 linhas), mais 1 pelo item extra coberto pela fusão de `§4-P0-1`.
+- **P0 — 2 manuais:** `§3-P0-5` (JobForm completo) e `§4-P0-2` (DespesaForm/ReceitaForm/MetaForm completos) — ambos represados pela mesma lacuna de infraestrutura (nota após a tabela da Seção 3).
+- **P0 — 1 superado:** `§3-P0-1` (paradigma de navegação da Agenda), decisão humana na issue #30.
+- **P1 — 26 automatizados, 6 manuais, 1 N/A:** soma direta das 33 linhas de roteiro após a correção desta revisão (adição de `§6.1-P1-2` e `§6.7-P1-2`, ambas ausentes do documento original — achado da revisão do Claude 2 no PR #62).
+
+**56/56 itens P0 têm um roteiro verificável** (53 automatizados + 2 manuais documentados + 1 superado por decisão humana registrada). **33/33 itens P1 têm um roteiro verificável** (26 automatizados + 6 manuais documentados + 1 confirmado N/A).
 
 Nenhum item P0 falhou. Nenhuma condição de bloqueio deste ticket foi acionada.
 
@@ -269,6 +282,7 @@ Passos objetivos para execução manual, um teste local em `/dev-preview/app` po
 9. **(§6.7-P1-1, edição de perfil)** Editar nome e bio no `ProfileEditForm`, salvar, recarregar e confirmar persistência real.
 10. **(§6.9-P1-1, badge de não-lidas)** Enviar uma mensagem de uma conta B para uma conta A; confirmar que o badge de não-lidas aparece na lista de conversas de A; abrir a conversa em A e confirmar que o badge zera e não reaparece após reload.
 11. **(§6.11-P1-1, padrão de erro consistente)** Provocar um erro de rede (offline) em 3 telas migradas diferentes (ex. Feed, Amigas, Cofre) e confirmar toast + nenhum botão de "tentar novamente" fora do chat (no chat, confirmar que o retry existe e funciona).
+12. **(§6.1-P1-2, conteúdo de exemplo do Gate)** Abrir o Gate (`?vitrine=1` numa conta já desbloqueada, ou uma conta nova antes do resgate) e confirmar que Hero, os 3 posts de exemplo, a lista de benefícios e o bottom sheet de código aparecem e são legíveis; não é necessário que o texto bata literalmente com o laboratório (nomes/legendas podem divergir) — confirmar apenas que nada quebra visualmente e que o fluxo de resgate a partir do bottom sheet funciona.
 
 ---
 
@@ -281,6 +295,6 @@ Passos objetivos para execução manual, um teste local em `/dev-preview/app` po
 
 ## Validações obrigatórias executadas
 
-- `npx vitest run` (suíte completa): **502 passando, 2 falhas pré-existentes e não relacionadas** (`#58`, `#60`) — baseline antes de T11 era 424/426 com as mesmas 2 falhas; T11 adicionou 78 novos testes automatizados (68 em `tests/wiring/**` + 10 em `tests/rede/routes/notificar-mensagem.route.test.ts`), todos passando.
+- `npx vitest run` (suíte completa): **505/506 passando** (última execução; a única falha é a pré-existente `tests/wiring/cofre-visual.test.ts`, #58 — o flake conhecido de `curtidas.concurrency.test.ts`, #60, não se manifestou nesta rodada, mas já foi observado falhando em execuções anteriores da mesma suíte) — baseline antes de T11 era 424/426 com as mesmas 2 falhas pré-existentes; T11 adicionou **80 novos testes automatizados** (70 em `tests/wiring/**` + 10 em `tests/rede/routes/notificar-mensagem.route.test.ts`), todos passando. Os 2 testes acrescentados nesta revisão (correção de `§6.7-P1-2`) estão incluídos nesse total.
 - `npx tsc --noEmit`: limpo.
 - `npx eslint` nos arquivos novos: limpo.

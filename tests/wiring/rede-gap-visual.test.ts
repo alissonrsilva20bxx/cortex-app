@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { CATEGORIA_META } from "../../lib/rede/feed";
 
@@ -11,9 +11,9 @@ import { CATEGORIA_META } from "../../lib/rede/feed";
  * mesmo padrão de inspeção de código-fonte já usado em
  * `bottomsheet-focus-trap.test.ts` e `rede-gate-code-entry-independence.test.ts`.
  *
- * IDs: §6.3-P0-1, §6.3-P1-1, §6.4-P0-1, §6.5-P0-1, §6.5-P0-2, §6.6-P1-1,
- * §6.7-P0-1, §6.7-P0-2, §6.8-P0-1, §6.8-P0-2, §6.9-P0-1, §6.10-P1-1
- * (parte), §6.11-P0-1.
+ * IDs: §6.1-P1-1, §6.3-P0-1, §6.3-P1-1, §6.4-P0-1, §6.5-P0-1, §6.5-P0-2,
+ * §6.6-P1-1, §6.7-P0-1, §6.7-P0-2, §6.7-P0-3, §6.7-P1-2, §6.8-P0-1,
+ * §6.8-P0-2, §6.9-P0-1, §6.10-P1-1 (parte), §6.11-P0-1.
  */
 
 const ROOT = join(__dirname, "..", "..");
@@ -23,6 +23,18 @@ function read(relPath: string): string {
 
 const redeTab = read("components/rede/RedeTab.tsx");
 const feedScreen = read("components/rede/FeedScreen.tsx");
+
+function listSourceFiles(relDir: string): string[] {
+  const dir = join(ROOT, relDir);
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+    const rel = join(relDir, entry.name);
+    if (entry.isDirectory()) out.push(...listSourceFiles(rel));
+    else if (/\.(ts|tsx)$/.test(entry.name)) out.push(rel);
+  }
+  return out;
+}
 
 describe("§6.1-P1-1 — override ?vitrine=1 continua existindo para forçar apresentação para QA", () => {
   it("RedeGatedTab lê o parâmetro vitrine da URL", () => {
@@ -112,6 +124,24 @@ describe("§6.7-P0-2 — bloqueio a partir do Perfil Público exige confirmaçã
   it("PerfilPublicoScreen mostra confirmação 'Bloquear {nome}?' antes de bloquear", () => {
     const src = read("components/rede/PerfilPublicoScreen.tsx");
     expect(src).toMatch(/title=\{`Bloquear \$\{nome\}\?`\}/);
+  });
+});
+
+describe('§6.7-P1-2 — "Compartilhar perfil" continua no-op (toast, sem clipboard real), sem piorar', () => {
+  it("RedeTab.shareProfile() só mostra um toast de sucesso, nenhuma chamada de clipboard", () => {
+    expect(redeTab).toMatch(
+      /function shareProfile\(\) \{\s*\r?\n\s*toast\.success\("Link do perfil copiado!"\);\s*\r?\n\s*\}/
+    );
+    expect(redeTab).not.toMatch(/navigator\.clipboard/);
+  });
+
+  it('a string quebrada "share-profile" do laboratório não sobreviveu em nenhuma tela migrada', () => {
+    const offenders = [
+      ...listSourceFiles("components"),
+      ...listSourceFiles("lib"),
+      ...listSourceFiles("app"),
+    ].filter((relPath) => read(relPath).includes("share-profile"));
+    expect(offenders).toEqual([]);
   });
 });
 
