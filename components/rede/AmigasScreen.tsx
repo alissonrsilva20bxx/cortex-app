@@ -86,6 +86,9 @@ export function AmigasScreen({
 }: Props) {
   const [tab, setTab] = useState<SubTab>("amigas");
   const [menuUser, setMenuUser] = useState<PessoaResumo | null>(null);
+  const [blockConfirmUser, setBlockConfirmUser] = useState<PessoaResumo | null>(
+    null
+  );
 
   return (
     <div className="pb-4">
@@ -237,8 +240,31 @@ export function AmigasScreen({
             Icon: Ban,
             danger: true,
             onSelect: () => {
-              if (menuUser) onBlock(menuUser.id);
+              if (menuUser) setBlockConfirmUser(menuUser);
             },
+          },
+        ]}
+      />
+
+      <OptionsSheet
+        open={!!blockConfirmUser}
+        title={`Bloquear ${blockConfirmUser?.nome ?? ""}?`}
+        onClose={() => setBlockConfirmUser(null)}
+        options={[
+          {
+            key: "confirmar",
+            label: "Sim, bloquear",
+            Icon: Ban,
+            danger: true,
+            onSelect: () => {
+              if (blockConfirmUser) onBlock(blockConfirmUser.id);
+            },
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
           },
         ]}
       />

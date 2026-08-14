@@ -65,11 +65,21 @@ export function PinSetup({ open, userId, onClose, onSaved }: Props) {
 
   async function savePin(pin: string) {
     setSaving(true);
+    setError(null);
     const h = await hashPin(pin);
-    await supabase
+    const { error: upsertError } = await supabase
       .from("configuracoes")
       .upsert({ user_id: userId, pin_hash: h }, { onConflict: "user_id" });
     setSaving(false);
+
+    if (upsertError) {
+      setError("Não foi possível salvar o PIN. Tente novamente.");
+      setDigits([]);
+      setFirst([]);
+      setStep("enter");
+      return;
+    }
+
     onSaved(h);
     handleClose();
   }
