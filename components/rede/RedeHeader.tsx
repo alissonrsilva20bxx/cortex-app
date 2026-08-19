@@ -29,7 +29,7 @@ function IconButton({
       onClick={onClick}
       aria-label={label}
       className="relative flex items-center justify-center rounded-full transition-opacity active:opacity-70"
-      style={{ width: 40, height: 40, background: "var(--surface)" }}
+      style={{ width: 44, height: 44, background: "var(--surface)" }}
     >
       {children}
       {!!badge && (

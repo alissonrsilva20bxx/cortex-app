@@ -34,8 +34,14 @@ function ActionButton({
     <button
       onClick={onClick}
       aria-label={label}
-      className="flex items-center gap-1.5 py-1 pr-2 transition-opacity active:opacity-60"
-      style={{ color: active ? activeColor : "var(--text-muted)" }}
+      className="flex items-center gap-1.5 pr-2 transition-opacity active:opacity-60"
+      style={{
+        paddingTop: 13,
+        paddingBottom: 13,
+        marginTop: -13,
+        marginBottom: -13,
+        color: active ? activeColor : "var(--text-muted)",
+      }}
     >
       {icon}
       {count !== undefined && (
@@ -91,7 +97,8 @@ export function PostCard({
         <button
           onClick={() => onOpenMenu(post)}
           aria-label="Mais opções"
-          className="p-1 -m-1 shrink-0 active:opacity-60"
+          className="flex items-center justify-center shrink-0 active:opacity-60"
+          style={{ width: 44, height: 44, margin: -13 }}
         >
           <MoreHorizontal size={18} style={{ color: "var(--text-muted)" }} />
         </button>
