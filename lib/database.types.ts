@@ -642,6 +642,83 @@ export type Database = {
         };
         Relationships: [];
       };
+      rede_personas_auditoria: {
+        Row: {
+          acao: string;
+          admin_id: string | null;
+          admin_id_auditoria: string;
+          conteudo: Json | null;
+          criado_em: string;
+          id: string;
+          persona_id: string;
+        };
+        Insert: {
+          acao: string;
+          admin_id?: string | null;
+          admin_id_auditoria: string;
+          conteudo?: Json | null;
+          criado_em?: string;
+          id?: string;
+          persona_id: string;
+        };
+        Update: {
+          acao?: string;
+          admin_id?: string | null;
+          admin_id_auditoria?: string;
+          conteudo?: Json | null;
+          criado_em?: string;
+          id?: string;
+          persona_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rede_personas_auditoria_persona_id_fkey";
+            columns: ["persona_id"];
+            isOneToOne: false;
+            referencedRelation: "rede_personas_editoriais";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      rede_personas_editoriais: {
+        Row: {
+          atualizado_em: string;
+          biografia: string | null;
+          cor_avatar: string;
+          criado_em: string;
+          criado_por: string | null;
+          criado_por_auditoria: string;
+          id: string;
+          is_editorial: boolean;
+          nome: string;
+          status: Database["public"]["Enums"]["rede_persona_status"];
+        };
+        Insert: {
+          atualizado_em?: string;
+          biografia?: string | null;
+          cor_avatar: string;
+          criado_em?: string;
+          criado_por?: string | null;
+          criado_por_auditoria: string;
+          id?: string;
+          is_editorial?: boolean;
+          nome: string;
+          status?: Database["public"]["Enums"]["rede_persona_status"];
+        };
+        Update: {
+          atualizado_em?: string;
+          biografia?: string | null;
+          cor_avatar?: string;
+          criado_em?: string;
+          criado_por?: string | null;
+          criado_por_auditoria?: string;
+          id?: string;
+          is_editorial?: boolean;
+          nome?: string;
+          status?: Database["public"]["Enums"]["rede_persona_status"];
+        };
+        Relationships: [];
+      };
       rede_posts: {
         Row: {
           atualizado_em: string;
@@ -710,6 +787,14 @@ export type Database = {
         Returns: boolean;
       };
       rede_is_member: { Args: never; Returns: boolean };
+      rede_listar_bloqueados: {
+        Args: never;
+        Returns: {
+          cor_avatar: string;
+          nome_exibicao: string;
+          user_id: string;
+        }[];
+      };
       rede_reordenar_livelinks: {
         Args: { livelink_ids: string[] };
         Returns: {
@@ -741,6 +826,7 @@ export type Database = {
       rede_denuncia_alvo_tipo: "post" | "comentario" | "usuario" | "mensagem";
       rede_denuncia_motivo: "spam" | "assedio" | "conteudo_impropio" | "outro";
       rede_denuncia_status: "pendente" | "revisada" | "resolvida";
+      rede_persona_status: "ativa" | "pausada" | "arquivada";
       rede_post_categoria: "conquista" | "dica" | "duvida" | "desabafo";
       rede_solicitacao_beta_status: "pendente" | "convidado" | "recusado";
       tema:
@@ -893,6 +979,7 @@ export const Constants = {
       rede_denuncia_alvo_tipo: ["post", "comentario", "usuario", "mensagem"],
       rede_denuncia_motivo: ["spam", "assedio", "conteudo_impropio", "outro"],
       rede_denuncia_status: ["pendente", "revisada", "resolvida"],
+      rede_persona_status: ["ativa", "pausada", "arquivada"],
       rede_post_categoria: ["conquista", "dica", "duvida", "desabafo"],
       rede_solicitacao_beta_status: ["pendente", "convidado", "recusado"],
       tema: [
