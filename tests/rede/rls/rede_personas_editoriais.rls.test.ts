@@ -148,6 +148,9 @@ describe("RLS: personas editoriais (moderação sem impersonação, #80/#81)", (
   });
 
   it("rejects an explicit attempt to insert is_editorial = false", async () => {
+    // No column-level grant for is_editorial at all, so this is denied at
+    // the permission layer before it could ever reach the CHECK constraint
+    // that also guards it (belt-and-suspenders per the #81 spec).
     const { error } = await redeClient(admin.client)
       .from("rede_personas_editoriais")
       .insert({
@@ -157,6 +160,22 @@ describe("RLS: personas editoriais (moderação sem impersonação, #80/#81)", (
         criado_por_auditoria: admin.id,
         is_editorial: false,
       });
+
+    expectPermissionDenied(error, "rede_personas_editoriais");
+  });
+
+  it("still rejects is_editorial = false at the CHECK constraint even with direct database access", async () => {
+    // service_role bypasses RLS and column grants entirely, so this is the
+    // one layer left standing against "alguém com acesso direto ao banco
+    // poderia converter uma persona em conta real" (#80's own risk list).
+    const service = redeClient(adminClient());
+    const { error } = await service.from("rede_personas_editoriais").insert({
+      nome: "Persona Convertida Via Banco",
+      cor_avatar: "#232323",
+      criado_por: admin.id,
+      criado_por_auditoria: admin.id,
+      is_editorial: false,
+    });
 
     expectConstraintViolation(error);
   });
