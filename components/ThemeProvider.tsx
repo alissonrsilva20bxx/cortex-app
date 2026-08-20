@@ -35,21 +35,38 @@ function readStoredMode(): "dark" | "light" {
   return stored === "light" ? "light" : "dark";
 }
 
+// layout.tsx's head script already corrects <html data-theme> from
+// localStorage before paint. Reading that attribute back here (instead of
+// always starting from DEFAULT_THEME) means the [theme] effect below
+// re-applies the value that's already on the DOM instead of stomping it
+// back to the SSR default for one commit — that stomp-then-correct is what
+// used to flash the real theme to DEFAULT_THEME right after hydration.
+function readInitialTheme(): Theme {
+  if (typeof document === "undefined") return DEFAULT_THEME;
+  const attr = document.documentElement.getAttribute("data-theme");
+  return attr && (THEMES as readonly string[]).includes(attr as Theme)
+    ? (attr as Theme)
+    : DEFAULT_THEME;
+}
+
+function readInitialMode(): "dark" | "light" {
+  if (typeof document === "undefined") return "dark";
+  return document.documentElement.getAttribute("data-mode") === "light"
+    ? "light"
+    : "dark";
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // State starts at the same default the server rendered (localStorage
-  // isn't readable during SSR), then a mount-only effect below corrects it
-  // from the real stored value. localStorage is written only from the
-  // setTheme/setMode wrappers — i.e. only in response to an explicit user
-  // action, never from a [theme]/[mode]-dependent effect. That effect
-  // pattern used to race itself: with React Strict Mode's double effect
-  // invocation in dev, a write-effect's first pass ran with the
-  // still-default state and stomped the real stored value before a
-  // separate read-effect's setState could land, silently resetting the
-  // theme on every reload. Decoupling "persist" from "state changed"
-  // removes the race, and starting from the SSR default avoids a
-  // hydration mismatch in anything that renders conditionally on theme.
-  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
-  const [mode, setModeState] = useState<"dark" | "light">("dark");
+  // localStorage is written only from the setTheme/setMode wrappers — i.e.
+  // only in response to an explicit user action, never from a
+  // [theme]/[mode]-dependent effect. That effect pattern used to race
+  // itself: with React Strict Mode's double effect invocation in dev, a
+  // write-effect's first pass ran with the still-default state and
+  // stomped the real stored value before a separate read-effect's setState
+  // could land, silently resetting the theme on every reload. Decoupling
+  // "persist" from "state changed" removes the race.
+  const [theme, setThemeState] = useState<Theme>(readInitialTheme);
+  const [mode, setModeState] = useState<"dark" | "light">(readInitialMode);
 
   useEffect(() => {
     setThemeState(readStoredTheme());

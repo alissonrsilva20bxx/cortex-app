@@ -20,6 +20,7 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
+import { OpeningMotion } from "@/components/entry/OpeningMotion";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
@@ -59,6 +60,9 @@ export default function Page() {
 
   const [pinHash, setPinHash] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
+
+  // Roda em paralelo com o fetch de usuário/PIN abaixo, não em sequência.
+  const [entryDone, setEntryDone] = useState(false);
 
   // Distingue "ainda não sei se ela tem dados" de "confirmei que não tem" —
   // sem isso, uma usuária antiga com dados reais veria o onboarding piscar
@@ -245,6 +249,10 @@ export default function Page() {
     setObjetivos((prev) =>
       prev.map((o) => (o.id === id ? { ...o, concluido } : o))
     );
+  }
+
+  if (!entryDone) {
+    return <OpeningMotion onDone={() => setEntryDone(true)} />;
   }
 
   if (locked && pinHash) {
