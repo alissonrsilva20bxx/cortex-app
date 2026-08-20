@@ -34,7 +34,9 @@ export function Avatar({
   onClick,
   className = "",
 }: Props) {
-  const px = SIZES[size];
+  // Alvo de toque mínimo de 44px (achado #56) quando interativo — só sm/md
+  // crescem, lg/xl já passam de 44.
+  const px = onClick ? Math.max(SIZES[size], 44) : SIZES[size];
   const Tag = onClick ? "button" : "div";
 
   return (

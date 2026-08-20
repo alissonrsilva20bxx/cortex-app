@@ -18,10 +18,16 @@ interface Props {
   onClose: () => void;
 }
 
-/** Sheet genérico de opções — usado pelo menu de publicação e compartilhar. */
+/**
+ * Sheet genérico de opções — usado pelo menu de publicação e compartilhar.
+ * Botão fechar sempre em 44×44 (achado #56) — diferente do `BottomSheet`
+ * genérico, aqui não há motivo pra manter o alvo pequeno em nenhum dos
+ * três consumidores atuais (Amigas, Perfil público, Feed), então o
+ * passthrough vem fixo em vez de opt-in por chamador.
+ */
 export function OptionsSheet({ open, title, options, onClose }: Props) {
   return (
-    <BottomSheet open={open} onClose={onClose} title={title}>
+    <BottomSheet open={open} onClose={onClose} title={title} largeCloseTarget>
       <div className="px-5 py-3 pb-6 space-y-1">
         {options.map(({ key, label, Icon, danger, onSelect }) => (
           <button

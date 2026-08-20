@@ -22,7 +22,7 @@ export function ScreenHeader({ title, onBack, action }: Props) {
         onClick={onBack}
         aria-label="Voltar"
         className="flex items-center justify-center rounded-full shrink-0 transition-opacity active:opacity-70"
-        style={{ width: 40, height: 40, background: "var(--surface)" }}
+        style={{ width: 44, height: 44, background: "var(--surface)" }}
       >
         <ArrowLeft size={18} style={{ color: "var(--text)" }} />
       </button>
