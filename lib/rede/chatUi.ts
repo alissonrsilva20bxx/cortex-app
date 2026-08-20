@@ -58,3 +58,47 @@ export function resolveScrollBehavior(
 ): ScrollBehavior {
   return prefersReducedMotion ? "auto" : "smooth";
 }
+
+export type ShouldLoadMoreMessagesInput = {
+  /** `window.scrollY` -- 0 = topo absoluto da página. */
+  scrollTopPx: number;
+  hasMore: boolean;
+  loadingMore: boolean;
+  thresholdPx?: number;
+};
+
+const DEFAULT_NEAR_TOP_THRESHOLD_PX = 80;
+
+/** Issue #54 -- dispara o carregamento de mensagens mais antigas quando
+ * quem está lendo chega perto do topo, mas só se ainda houver mais pra
+ * carregar e nenhum carregamento já estiver em andamento (evita disparos
+ * duplicados a cada evento de scroll enquanto a página ainda está
+ * crescendo por causa do carregamento anterior). */
+export function shouldLoadMoreMessages({
+  scrollTopPx,
+  hasMore,
+  loadingMore,
+  thresholdPx = DEFAULT_NEAR_TOP_THRESHOLD_PX,
+}: ShouldLoadMoreMessagesInput): boolean {
+  return hasMore && !loadingMore && scrollTopPx <= thresholdPx;
+}
+
+export type ComputeScrollAdjustmentInput = {
+  previousScrollHeight: number;
+  newScrollHeight: number;
+  previousScrollTop: number;
+};
+
+/** Ao prepender mensagens antigas no topo, o conteúdo cresce por cima do
+ * que já estava visível -- sem compensar, o navegador mantém o mesmo
+ * `scrollTop` em pixels, que passa a apontar pra um ponto mais abaixo no
+ * conteúdo novo, fazendo a tela "pular" pra baixo. Ajusta `scrollTop`
+ * pela mesma diferença de altura que o conteúdo novo introduziu,
+ * mantendo a mesma mensagem visível no mesmo lugar da tela. */
+export function computeScrollAdjustment({
+  previousScrollHeight,
+  newScrollHeight,
+  previousScrollTop,
+}: ComputeScrollAdjustmentInput): number {
+  return previousScrollTop + (newScrollHeight - previousScrollHeight);
+}
