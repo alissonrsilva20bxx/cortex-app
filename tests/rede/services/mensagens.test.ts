@@ -7,6 +7,7 @@ import {
   listarConversas,
   listarMensagens,
   marcarMensagemComoLida,
+  ocultarConversa,
   reconcileConfirmedMessage,
 } from "../../../lib/rede/mensagens";
 
@@ -44,11 +45,11 @@ describe("serviço de mensagens", () => {
       if (table === "rede_conversas_participantes") {
         return {
           select: (cols: string) => {
-            if (cols === "conversa_id") {
+            if (cols === "conversa_id,oculta_desde") {
               return {
                 eq: () =>
                   Promise.resolve({
-                    data: [{ conversa_id: "conversa-1" }],
+                    data: [{ conversa_id: "conversa-1", oculta_desde: null }],
                     error: null,
                   }),
               };
@@ -135,6 +136,155 @@ describe("serviço de mensagens", () => {
 
     await expect(listarConversas(client as never)).resolves.toEqual([]);
     expect(client.from).toHaveBeenCalledTimes(1);
+  });
+
+  it("issue #55: omite uma conversa excluída sem mensagem nova desde então", async () => {
+    const client = clienteComUsuario();
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_conversas_participantes") {
+        return {
+          select: (cols: string) =>
+            cols === "conversa_id,oculta_desde"
+              ? {
+                  eq: () =>
+                    Promise.resolve({
+                      data: [
+                        {
+                          conversa_id: "conversa-1",
+                          oculta_desde: "2026-01-02T00:00:00.000Z",
+                        },
+                      ],
+                      error: null,
+                    }),
+                }
+              : {
+                  in: () =>
+                    Promise.resolve({
+                      data: [
+                        { conversa_id: "conversa-1", user_id: "user-1" },
+                        { conversa_id: "conversa-1", user_id: "user-2" },
+                      ],
+                      error: null,
+                    }),
+                },
+        };
+      }
+      if (table === "rede_mensagens") {
+        return {
+          select: () => ({
+            in: () => ({
+              order: () =>
+                Promise.resolve({
+                  // Última mensagem é ANTES da exclusão -- continua oculta.
+                  data: [
+                    {
+                      conversa_id: "conversa-1",
+                      autor_id: "user-2",
+                      texto: "Oi!",
+                      criado_em: "2026-01-01T00:00:00.000Z",
+                      lida_em: null,
+                    },
+                  ],
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+
+    await expect(listarConversas(client as never)).resolves.toEqual([]);
+  });
+
+  it("issue #55: uma conversa excluída reaparece se chegou mensagem depois da exclusão", async () => {
+    const client = clienteComUsuario();
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_conversas_participantes") {
+        return {
+          select: (cols: string) =>
+            cols === "conversa_id,oculta_desde"
+              ? {
+                  eq: () =>
+                    Promise.resolve({
+                      data: [
+                        {
+                          conversa_id: "conversa-1",
+                          oculta_desde: "2026-01-01T00:00:00.000Z",
+                        },
+                      ],
+                      error: null,
+                    }),
+                }
+              : {
+                  in: () =>
+                    Promise.resolve({
+                      data: [
+                        { conversa_id: "conversa-1", user_id: "user-1" },
+                        { conversa_id: "conversa-1", user_id: "user-2" },
+                      ],
+                      error: null,
+                    }),
+                },
+        };
+      }
+      if (table === "rede_mensagens") {
+        return {
+          select: () => ({
+            in: () => ({
+              order: () =>
+                Promise.resolve({
+                  // Última mensagem é DEPOIS da exclusão -- reaparece.
+                  data: [
+                    {
+                      conversa_id: "conversa-1",
+                      autor_id: "user-2",
+                      texto: "Oi de novo!",
+                      criado_em: "2026-01-02T00:00:00.000Z",
+                      lida_em: null,
+                    },
+                  ],
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      }
+      if (table === "rede_perfis") {
+        return {
+          select: () => ({
+            in: () =>
+              Promise.resolve({
+                data: [
+                  {
+                    user_id: "user-2",
+                    nome_exibicao: "Bia",
+                    cor_avatar: "#abc",
+                    bio: null,
+                  },
+                ],
+                error: null,
+              }),
+          }),
+        };
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+
+    const [conversa] = await listarConversas(client as never);
+    expect(conversa.ultimaMensagem).toBe("Oi de novo!");
+  });
+
+  it("oculta a conversa pelo RPC dedicado", async () => {
+    const client = clienteComUsuario();
+    client.rpc.mockResolvedValue({ data: null, error: null });
+
+    await expect(
+      ocultarConversa(client as never, { conversaId: "conversa-1" })
+    ).resolves.toBeUndefined();
+    expect(client.rpc).toHaveBeenCalledWith("rede_ocultar_conversa", {
+      alvo_conversa_id: "conversa-1",
+    });
   });
 
   it("lista mensagens em ordem cronológica, marcando deMim contra o usuário autenticado", async () => {

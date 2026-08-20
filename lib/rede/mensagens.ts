@@ -126,7 +126,7 @@ export async function listarConversas(
 
   const { data: minhasParticipacoes, error } = await client
     .from("rede_conversas_participantes")
-    .select("conversa_id")
+    .select("conversa_id,oculta_desde")
     .eq("user_id", userId);
 
   if (error) {
@@ -137,6 +137,13 @@ export async function listarConversas(
   if (conversaIds.length === 0) {
     return [];
   }
+
+  // Issue #55: "excluir conversa" só marca oculta_desde na própria linha
+  // de participação de quem excluiu -- não some pra sempre, reaparece
+  // sozinha se a outra pessoa mandar mensagem depois da exclusão.
+  const ocultaDesdePorConversa = new Map<string, string | null>(
+    (minhasParticipacoes ?? []).map((p) => [p.conversa_id, p.oculta_desde])
+  );
 
   const [
     { data: participantes, error: participantesError },
@@ -160,18 +167,6 @@ export async function listarConversas(
     throw mensagensError;
   }
 
-  const outroPorConversa = new Map<string, string>();
-  for (const p of participantes ?? []) {
-    if (p.user_id !== userId) {
-      outroPorConversa.set(p.conversa_id, p.user_id);
-    }
-  }
-
-  const perfis = await buscarPerfisPorIds(
-    client,
-    Array.from(new Set(outroPorConversa.values()))
-  );
-
   const ultimaPorConversa = new Map<
     string,
     { texto: string; criado_em: string }
@@ -192,7 +187,27 @@ export async function listarConversas(
     }
   }
 
-  return conversaIds
+  // Filtra ANTES de buscar perfis -- uma conversa ainda oculta não precisa
+  // do perfil da outra pessoa, evita consulta desnecessária.
+  const idsVisiveis = conversaIds.filter((id) => {
+    const ocultaDesde = ocultaDesdePorConversa.get(id);
+    const ultima = ultimaPorConversa.get(id);
+    return !ocultaDesde || (ultima && ultima.criado_em > ocultaDesde);
+  });
+
+  const outroPorConversa = new Map<string, string>();
+  for (const p of participantes ?? []) {
+    if (idsVisiveis.includes(p.conversa_id) && p.user_id !== userId) {
+      outroPorConversa.set(p.conversa_id, p.user_id);
+    }
+  }
+
+  const perfis = await buscarPerfisPorIds(
+    client,
+    Array.from(new Set(outroPorConversa.values()))
+  );
+
+  return idsVisiveis
     .map((id) => {
       const outroId = outroPorConversa.get(id);
       const perfil = outroId ? perfis.get(outroId) : undefined;
@@ -214,6 +229,24 @@ export async function listarConversas(
     .sort((a, b) =>
       (b.ultimaMensagemEm ?? "").localeCompare(a.ultimaMensagemEm ?? "")
     );
+}
+
+export type OcultarConversaInput = {
+  conversaId: string;
+};
+
+/** Issue #55: "excluir conversa" -- esconde só do lado de quem chama. */
+export async function ocultarConversa(
+  client: RedeClient,
+  input: OcultarConversaInput
+): Promise<void> {
+  const { error } = await client.rpc("rede_ocultar_conversa", {
+    alvo_conversa_id: input.conversaId,
+  });
+
+  if (error) {
+    throw error;
+  }
 }
 
 export async function listarMensagens(

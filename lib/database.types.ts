@@ -384,14 +384,17 @@ export type Database = {
       rede_conversas_participantes: {
         Row: {
           conversa_id: string;
+          oculta_desde: string | null;
           user_id: string;
         };
         Insert: {
           conversa_id: string;
+          oculta_desde?: string | null;
           user_id: string;
         };
         Update: {
           conversa_id?: string;
+          oculta_desde?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -710,6 +713,18 @@ export type Database = {
         Returns: boolean;
       };
       rede_is_member: { Args: never; Returns: boolean };
+      rede_listar_bloqueados: {
+        Args: never;
+        Returns: {
+          cor_avatar: string;
+          nome_exibicao: string;
+          user_id: string;
+        }[];
+      };
+      rede_ocultar_conversa: {
+        Args: { alvo_conversa_id: string };
+        Returns: undefined;
+      };
       rede_reordenar_livelinks: {
         Args: { livelink_ids: string[] };
         Returns: {
