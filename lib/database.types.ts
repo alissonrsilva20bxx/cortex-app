@@ -328,6 +328,50 @@ export type Database = {
         };
         Relationships: [];
       };
+      rede_clientes: {
+        Row: {
+          criado_em: string;
+          etiquetas: string[];
+          id: string;
+          nome: string;
+          observacoes: string;
+          status: string;
+          telefone: string;
+          ultimo_contato: string;
+          user_id: string;
+        };
+        Insert: {
+          criado_em?: string;
+          etiquetas?: string[];
+          id?: string;
+          nome: string;
+          observacoes?: string;
+          status?: string;
+          telefone?: string;
+          ultimo_contato?: string;
+          user_id: string;
+        };
+        Update: {
+          criado_em?: string;
+          etiquetas?: string[];
+          id?: string;
+          nome?: string;
+          observacoes?: string;
+          status?: string;
+          telefone?: string;
+          ultimo_contato?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rede_clientes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "rede_perfis";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
       rede_comentarios: {
         Row: {
           autor_id: string;
@@ -690,11 +734,59 @@ export type Database = {
         };
         Relationships: [];
       };
+      rede_wishlist_items: {
+        Row: {
+          cor: string;
+          criado_em: string;
+          estado: string;
+          id: string;
+          nome: string;
+          privacidade: string;
+          user_id: string;
+          valor_alvo: number;
+          valor_atual: number;
+        };
+        Insert: {
+          cor: string;
+          criado_em?: string;
+          estado?: string;
+          id?: string;
+          nome: string;
+          privacidade?: string;
+          user_id: string;
+          valor_alvo: number;
+          valor_atual?: number;
+        };
+        Update: {
+          cor?: string;
+          criado_em?: string;
+          estado?: string;
+          id?: string;
+          nome?: string;
+          privacidade?: string;
+          user_id?: string;
+          valor_alvo?: number;
+          valor_atual?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rede_wishlist_items_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "rede_perfis";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      rede_aprovar_solicitacao_beta: {
+        Args: { solicitacao_id: string };
+        Returns: Json;
+      };
       rede_conversation_is_unblocked: {
         Args: { target_conversa_id: string };
         Returns: boolean;
@@ -710,6 +802,14 @@ export type Database = {
         Returns: boolean;
       };
       rede_is_member: { Args: never; Returns: boolean };
+      rede_listar_bloqueados: {
+        Args: never;
+        Returns: {
+          cor_avatar: string;
+          nome_exibicao: string;
+          user_id: string;
+        }[];
+      };
       rede_reordenar_livelinks: {
         Args: { livelink_ids: string[] };
         Returns: {

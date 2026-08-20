@@ -33,14 +33,7 @@ import { ShareToChatSheet } from "./ShareToChatSheet";
 import { LiveLinkForm } from "./LiveLinkForm";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { type LiveLink } from "./LiveLinksSection";
-import {
-  WISHLIST_ITEMS,
-  CLIENTES,
-  findUser,
-  type WishlistItem,
-  type Cliente,
-  type Privacidade,
-} from "@/lib/mockRede";
+import { findUser, type Privacidade } from "@/lib/mockRede";
 import { supabase } from "@/lib/supabase";
 import {
   buscarPerfil,
@@ -54,6 +47,20 @@ import {
   buscarPessoas,
   type PessoaResumo,
 } from "@/lib/rede/perfis";
+import {
+  criarWishlistItem,
+  atualizarWishlistItem,
+  listarWishlistItems,
+  excluirWishlistItem,
+  type WishlistItem,
+} from "@/lib/rede/wishlist";
+import {
+  criarCliente,
+  atualizarCliente,
+  listarClientes,
+  excluirCliente,
+  type Cliente,
+} from "@/lib/rede/clientes";
 import {
   listarFeed,
   criarPost,
@@ -166,9 +173,15 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       }
       if (!ativo) return;
       setPerfil(p);
-      const links = await listarLiveLinks(supabase, usuario.id);
+      const [links, wishlist, clientesData] = await Promise.all([
+        listarLiveLinks(supabase, usuario.id),
+        listarWishlistItems(supabase, usuario.id),
+        listarClientes(supabase, usuario.id),
+      ]);
       if (!ativo) return;
       setLiveLinks(links);
+      setWishlistItems(wishlist);
+      setClientes(clientesData);
     })().catch((e) => {
       console.error("[RedeTab perfil]", e);
       toast.error("Não foi possível carregar seu perfil da Rede.");
@@ -448,10 +461,9 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     setNotificacoesReloadKey((k) => k + 1);
   }
 
-  // ── Dados mockados, mutáveis localmente ──
-  const [wishlistItems, setWishlistItems] =
-    useState<WishlistItem[]>(WISHLIST_ITEMS);
-  const [clientes, setClientes] = useState<Cliente[]>(CLIENTES);
+  // ── Wishlist e Clientes reais (issue #64 -- antes eram mock local) ──
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [defaultPrivacidade, setDefaultPrivacidade] =
     useState<Privacidade>("amigas");
 
@@ -1053,8 +1065,8 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
-  // ── Wishlist ──
-  function saveWishlist(
+  // ── Wishlist (issue #64 -- persistência real) ──
+  async function saveWishlist(
     form: {
       nome: string;
       valorAlvo: string;
@@ -1064,48 +1076,55 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     },
     existing: WishlistItem | null
   ) {
-    if (existing) {
-      setWishlistItems((prev) =>
-        prev.map((w) =>
-          w.id === existing.id
-            ? {
-                ...w,
-                nome: form.nome,
-                valorAlvo: Number(form.valorAlvo) || w.valorAlvo,
-                valorAtual: Number(form.valorAtual) || 0,
-                estado: form.estado,
-                privacidade: form.privacidade,
-              }
-            : w
-        )
-      );
-      toast.success("Desejo atualizado!");
-    } else {
-      const novo: WishlistItem = {
-        id: `w-${Date.now()}`,
-        nome: form.nome,
-        cor: WISHLIST_PALETTE[wishlistItems.length % WISHLIST_PALETTE.length],
-        valorAlvo: Number(form.valorAlvo) || 0,
-        valorAtual: Number(form.valorAtual) || 0,
-        estado: form.estado,
-        privacidade: form.privacidade,
-      };
-      setWishlistItems((prev) => [novo, ...prev]);
-      toast.success("Desejo adicionado!");
+    try {
+      if (existing) {
+        const atualizado = await atualizarWishlistItem(supabase, {
+          itemId: existing.id,
+          nome: form.nome,
+          valorAlvo: Number(form.valorAlvo) || existing.valorAlvo,
+          valorAtual: Number(form.valorAtual) || 0,
+          estado: form.estado,
+          privacidade: form.privacidade,
+        });
+        setWishlistItems((prev) =>
+          prev.map((w) => (w.id === atualizado.id ? atualizado : w))
+        );
+        toast.success("Desejo atualizado!");
+      } else {
+        const criado = await criarWishlistItem(supabase, {
+          nome: form.nome,
+          cor: WISHLIST_PALETTE[wishlistItems.length % WISHLIST_PALETTE.length],
+          valorAlvo: Number(form.valorAlvo) || 0,
+          valorAtual: Number(form.valorAtual) || 0,
+          estado: form.estado,
+          privacidade: form.privacidade,
+        });
+        setWishlistItems((prev) => [criado, ...prev]);
+        toast.success("Desejo adicionado!");
+      }
+      setWishlistFormOpen(false);
+      setEditingWishlist(null);
+    } catch (e) {
+      console.error("[RedeTab salvar desejo]", e);
+      toast.error("Não foi possível salvar o desejo.");
     }
-    setWishlistFormOpen(false);
-    setEditingWishlist(null);
   }
-  function deleteWishlist(id: string) {
-    setWishlistItems((prev) => prev.filter((w) => w.id !== id));
-    setDeleteConfirmWishlist(null);
-    setWishlistFormOpen(false);
-    setEditingWishlist(null);
-    toast.success("Desejo excluído");
+  async function deleteWishlist(id: string) {
+    try {
+      await excluirWishlistItem(supabase, { itemId: id });
+      setWishlistItems((prev) => prev.filter((w) => w.id !== id));
+      setDeleteConfirmWishlist(null);
+      setWishlistFormOpen(false);
+      setEditingWishlist(null);
+      toast.success("Desejo excluído");
+    } catch (e) {
+      console.error("[RedeTab excluir desejo]", e);
+      toast.error("Não foi possível excluir o desejo.");
+    }
   }
-  // Wishlist ainda é só mock (sem tabela real) -- rede_posts não tem como
-  // guardar um card de desejo embutido, então isso vira um post de texto
-  // normal descrevendo o progresso, publicado de verdade no Feed.
+  // rede_posts não tem como guardar um card de desejo embutido, então
+  // compartilhar vira um post de texto normal descrevendo o progresso,
+  // publicado de verdade no Feed.
   async function shareWishlistToFeed(item: WishlistItem) {
     const progresso = Math.round((item.valorAtual / item.valorAlvo) * 100);
     try {
@@ -1124,8 +1143,8 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
-  // ── Clientes ──
-  function saveCliente(
+  // ── Clientes (issue #64 -- persistência real) ──
+  async function saveCliente(
     form: {
       nome: string;
       telefone: string;
@@ -1139,44 +1158,50 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    if (existing) {
-      setClientes((prev) =>
-        prev.map((c) =>
-          c.id === existing.id
-            ? {
-                ...c,
-                nome: form.nome,
-                telefone: form.telefone,
-                status: form.status,
-                etiquetas,
-                observacoes: form.observacoes,
-              }
-            : c
-        )
-      );
-      toast.success("Cliente atualizado!");
-    } else {
-      const novo: Cliente = {
-        id: `cl-${Date.now()}`,
-        nome: form.nome,
-        telefone: form.telefone,
-        status: form.status,
-        etiquetas,
-        ultimoContato: new Date().toISOString().slice(0, 10),
-        observacoes: form.observacoes,
-      };
-      setClientes((prev) => [novo, ...prev]);
-      toast.success("Cliente adicionado!");
+    try {
+      if (existing) {
+        const atualizado = await atualizarCliente(supabase, {
+          clienteId: existing.id,
+          nome: form.nome,
+          telefone: form.telefone,
+          status: form.status,
+          etiquetas,
+          observacoes: form.observacoes,
+        });
+        setClientes((prev) =>
+          prev.map((c) => (c.id === atualizado.id ? atualizado : c))
+        );
+        toast.success("Cliente atualizado!");
+      } else {
+        const criado = await criarCliente(supabase, {
+          nome: form.nome,
+          telefone: form.telefone,
+          status: form.status,
+          etiquetas,
+          observacoes: form.observacoes,
+        });
+        setClientes((prev) => [criado, ...prev]);
+        toast.success("Cliente adicionado!");
+      }
+      setClienteFormOpen(false);
+      setEditingCliente(null);
+      setClienteDetail(null);
+    } catch (e) {
+      console.error("[RedeTab salvar cliente]", e);
+      toast.error("Não foi possível salvar o cliente.");
     }
-    setClienteFormOpen(false);
-    setEditingCliente(null);
-    setClienteDetail(null);
   }
-  function deleteCliente(id: string) {
-    setClientes((prev) => prev.filter((c) => c.id !== id));
-    setDeleteConfirmCliente(null);
-    setClienteDetail(null);
-    toast.success("Cliente excluído");
+  async function deleteCliente(id: string) {
+    try {
+      await excluirCliente(supabase, { clienteId: id });
+      setClientes((prev) => prev.filter((c) => c.id !== id));
+      setDeleteConfirmCliente(null);
+      setClienteDetail(null);
+      toast.success("Cliente excluído");
+    } catch (e) {
+      console.error("[RedeTab excluir cliente]", e);
+      toast.error("Não foi possível excluir o cliente.");
+    }
   }
 
   // ── Perfil público: dados derivados ──
@@ -1226,6 +1251,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           usuario={usuario}
           posts={posts}
           friends={friends.map((f) => f.id)}
+          wishlistItems={wishlistItems}
           pendingRequestsCount={requests.length}
           unreadChats={unreadChats}
           unreadNotifs={unreadNotifs}
