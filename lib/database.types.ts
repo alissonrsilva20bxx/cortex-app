@@ -428,14 +428,17 @@ export type Database = {
       rede_conversas_participantes: {
         Row: {
           conversa_id: string;
+          oculta_desde: string | null;
           user_id: string;
         };
         Insert: {
           conversa_id: string;
+          oculta_desde?: string | null;
           user_id: string;
         };
         Update: {
           conversa_id?: string;
+          oculta_desde?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -819,6 +822,10 @@ export type Database = {
           ultima_mensagem: string;
           ultima_mensagem_em: string;
         }[];
+      };
+      rede_ocultar_conversa: {
+        Args: { alvo_conversa_id: string };
+        Returns: undefined;
       };
       rede_reordenar_livelinks: {
         Args: { livelink_ids: string[] };

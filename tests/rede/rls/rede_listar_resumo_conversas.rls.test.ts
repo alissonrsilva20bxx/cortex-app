@@ -204,4 +204,46 @@ describe("RLS: rede_listar_resumo_conversas", () => {
     expect(fromTarget.error).toBeNull();
     expect(fromTarget.data).toEqual([]);
   });
+
+  // Issue #55, reconciliado nesta RPC pela migration 0024 (mesma regra que
+  // antes vivia em JS em listarConversas): oculta_desde só continua
+  // escondendo enquanto não houver mensagem nova depois da exclusão.
+  it("omits a conversation the caller hid (issue #55) until a new message arrives", async () => {
+    const { error: hideError } = await redeClient(userA.client).rpc(
+      "rede_ocultar_conversa",
+      { alvo_conversa_id: conversationAB }
+    );
+    expect(hideError).toBeNull();
+
+    const hidden = await redeClient(userA.client).rpc(
+      "rede_listar_resumo_conversas"
+    );
+    expect(hidden.error).toBeNull();
+    expect(hidden.data).toEqual([]);
+
+    // B continua vendo normalmente -- oculta_desde só existe na linha de A.
+    const stillVisibleForB = await redeClient(userB.client).rpc(
+      "rede_listar_resumo_conversas"
+    );
+    expect((stillVisibleForB.data as ResumoRow[])[0]?.conversa_id).toBe(
+      conversationAB
+    );
+
+    const { error: newMessageError } = await redeClient(userB.client)
+      .from("rede_mensagens")
+      .insert({
+        conversa_id: conversationAB,
+        autor_id: userB.id,
+        texto: "Ainda por aqui?",
+      });
+    expect(newMessageError).toBeNull();
+
+    const reappeared = await redeClient(userA.client).rpc(
+      "rede_listar_resumo_conversas"
+    );
+    expect(reappeared.error).toBeNull();
+    const rows = reappeared.data as ResumoRow[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].ultima_mensagem).toBe("Ainda por aqui?");
+  });
 });

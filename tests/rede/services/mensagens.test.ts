@@ -7,6 +7,7 @@ import {
   listarConversas,
   listarMensagens,
   marcarMensagemComoLida,
+  ocultarConversa,
   reconcileConfirmedMessage,
 } from "../../../lib/rede/mensagens";
 
@@ -130,6 +131,23 @@ describe("serviço de mensagens", () => {
 
     await expect(listarConversas(client as never)).resolves.toEqual([]);
     expect(client.from).not.toHaveBeenCalled();
+  });
+
+  // Issue #55: o filtro de "conversa excluída" agora mora inteiramente na
+  // RPC (migration 0024, reconciliando com a agregação de #54) -- coberto
+  // por RLS (rede_listar_resumo_conversas.rls.test.ts) e por integração
+  // real (ocultar-conversa.integration.test.ts), não faz mais sentido
+  // mockar aqui.
+  it("oculta a conversa pelo RPC dedicado", async () => {
+    const client = clienteComUsuario();
+    client.rpc.mockResolvedValue({ data: null, error: null });
+
+    await expect(
+      ocultarConversa(client as never, { conversaId: "conversa-1" })
+    ).resolves.toBeUndefined();
+    expect(client.rpc).toHaveBeenCalledWith("rede_ocultar_conversa", {
+      alvo_conversa_id: "conversa-1",
+    });
   });
 
   it("lista mensagens da página mais recente, em ordem cronológica ascendente", async () => {

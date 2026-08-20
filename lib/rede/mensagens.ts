@@ -146,6 +146,10 @@ export async function listarConversas(
     throw error;
   }
 
+  // Issue #55: conversas ocultadas (excluir conversa) já vêm filtradas
+  // pela própria RPC (migration 0024) -- reaparecem sozinhas se a outra
+  // pessoa mandar mensagem depois da exclusão, sem nenhuma ação de
+  // "desocultar". Nada a fazer aqui além de mapear o que a RPC devolveu.
   const rows = data as ResumoConversaRow[];
   const perfis = await buscarPerfisPorIds(
     client,
@@ -172,6 +176,24 @@ export async function listarConversas(
     .sort((a, b) =>
       (b.ultimaMensagemEm ?? "").localeCompare(a.ultimaMensagemEm ?? "")
     );
+}
+
+export type OcultarConversaInput = {
+  conversaId: string;
+};
+
+/** Issue #55: "excluir conversa" -- esconde só do lado de quem chama. */
+export async function ocultarConversa(
+  client: RedeClient,
+  input: OcultarConversaInput
+): Promise<void> {
+  const { error } = await client.rpc("rede_ocultar_conversa", {
+    alvo_conversa_id: input.conversaId,
+  });
+
+  if (error) {
+    throw error;
+  }
 }
 
 /** Tamanho de página padrão de `listarMensagens` (issue #54). */

@@ -97,6 +97,7 @@ import {
   abrirConversa1a1,
   assinarMensagensConversa,
   reconcileConfirmedMessage,
+  ocultarConversa,
   type ConversaResumo,
 } from "@/lib/rede/mensagens";
 import {
@@ -549,6 +550,12 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     userId: string;
     nome: string;
   } | null>(null);
+  // Issue #55: mesmo padrão de confirmação de "Bloquear" acima -- excluir
+  // conversa também some sem aviso, não deveria disparar num só toque.
+  const [chatDeleteConfirm, setChatDeleteConfirm] = useState<{
+    conversaId: string;
+    nome: string;
+  } | null>(null);
 
   // Comentários do post atualmente aberto no CommentsSheet -- buscados sob
   // demanda (rede_posts não guarda a lista, só existe agregada aqui).
@@ -806,6 +813,23 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     } catch (e) {
       console.error("[RedeTab bloquear]", e);
       toast.error("Não foi possível bloquear.");
+    }
+  }
+
+  // Issue #55: "excluir conversa" esconde só do meu lado -- a outra
+  // pessoa continua vendo tudo normalmente, e a conversa reaparece na
+  // minha lista sozinha se ela mandar mensagem depois.
+  async function hideConversation(conversaId: string) {
+    try {
+      await ocultarConversa(supabase, { conversaId });
+      setConversations((prev) => prev.filter((c) => c.id !== conversaId));
+      if (abertaConversaId === conversaId) {
+        pop();
+      }
+      toast.success("Conversa excluída");
+    } catch (e) {
+      console.error("[RedeTab excluir conversa]", e);
+      toast.error("Não foi possível excluir a conversa.");
     }
   }
 
@@ -1613,6 +1637,17 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
                       }),
                   },
                   {
+                    key: "excluir",
+                    label: "Excluir conversa",
+                    Icon: Trash2,
+                    danger: true,
+                    onSelect: () =>
+                      setChatDeleteConfirm({
+                        conversaId: convo.id,
+                        nome: convo.outroNome,
+                      }),
+                  },
+                  {
                     key: "cancelar",
                     label: "Cancelar",
                     Icon: X,
@@ -1621,6 +1656,34 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
                 ];
               })()
         }
+      />
+
+      <OptionsSheet
+        open={!!chatDeleteConfirm}
+        title={
+          chatDeleteConfirm
+            ? `Excluir conversa com ${chatDeleteConfirm.nome}?`
+            : "Excluir conversa?"
+        }
+        onClose={() => setChatDeleteConfirm(null)}
+        options={[
+          {
+            key: "confirmar",
+            label: "Sim, excluir",
+            Icon: Trash2,
+            danger: true,
+            onSelect: () => {
+              if (!chatDeleteConfirm) return;
+              hideConversation(chatDeleteConfirm.conversaId);
+            },
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
+          },
+        ]}
       />
 
       <OptionsSheet
