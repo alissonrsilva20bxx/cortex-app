@@ -204,4 +204,141 @@ describe("RLS: block relationship excludes rede_perfis/rede_livelinks read and r
         .eq("id", data![0].id);
     });
   });
+
+  describe("unblocking restores access (full cycle)", () => {
+    const cycleUsers: TestUser[] = [];
+    let cycleBlocker: TestUser;
+    let cycleBlocked: TestUser;
+
+    beforeAll(async () => {
+      for (let index = 0; index < 2; index += 1) {
+        cycleUsers.push(await createTestUser());
+      }
+      [cycleBlocker, cycleBlocked] = cycleUsers;
+
+      const service = redeClient(adminClient());
+      const now = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      const { error: membershipError } = await service
+        .from("rede_convites")
+        .insert(
+          cycleUsers.map((user) => ({
+            codigo_hash: `bloqueios-rls-cycle-${user.id}`,
+            usado_por: user.id,
+            usado_em: now,
+            expira_em: expiresAt,
+          }))
+        );
+      if (membershipError) {
+        throw new Error(
+          `Failed to seed memberships: ${membershipError.message}`
+        );
+      }
+
+      for (const user of cycleUsers) {
+        const { error } = await redeClient(user.client)
+          .from("rede_perfis")
+          .insert({
+            user_id: user.id,
+            nome_exibicao: `Cycle ${user.id.slice(0, 8)}`,
+            cor_avatar: "#654321",
+          });
+        if (error) throw new Error(`Failed to seed profile: ${error.message}`);
+
+        const { error: linkError } = await redeClient(user.client)
+          .from("rede_livelinks")
+          .insert({
+            user_id: user.id,
+            titulo: "Site",
+            url: "https://example.test",
+          });
+        if (linkError) {
+          throw new Error(`Failed to seed livelink: ${linkError.message}`);
+        }
+      }
+    });
+
+    afterAll(async () => {
+      const cleanup = await Promise.allSettled(cycleUsers.map(deleteTestUser));
+      const failures = cleanup.filter((result) => result.status === "rejected");
+      if (failures.length > 0) {
+        throw new Error(
+          `Failed to delete ${failures.length} local test user(s)`
+        );
+      }
+    });
+
+    it("denies profile/LiveLinks reads and friend-request insert while blocked, then restores all three once the block row is deleted", async () => {
+      const { error: blockError } = await redeClient(cycleBlocker.client)
+        .from("rede_bloqueios")
+        .insert({
+          bloqueador_id: cycleBlocker.id,
+          bloqueado_id: cycleBlocked.id,
+        });
+      if (blockError) {
+        throw new Error(`Failed to seed block: ${blockError.message}`);
+      }
+
+      const deniedProfile = await redeClient(cycleBlocked.client)
+        .from("rede_perfis")
+        .select("user_id")
+        .eq("user_id", cycleBlocker.id);
+      expect(deniedProfile.error).toBeNull();
+      expect(deniedProfile.data).toHaveLength(0);
+
+      const deniedLivelinks = await redeClient(cycleBlocked.client)
+        .from("rede_livelinks")
+        .select("user_id")
+        .eq("user_id", cycleBlocker.id);
+      expect(deniedLivelinks.error).toBeNull();
+      expect(deniedLivelinks.data).toHaveLength(0);
+
+      const deniedFriendRequest = await redeClient(cycleBlocked.client)
+        .from("rede_amizades")
+        .insert({
+          solicitante_id: cycleBlocked.id,
+          destinatario_id: cycleBlocker.id,
+        });
+      expectRlsDenied(deniedFriendRequest.error);
+
+      const { error: unblockError } = await redeClient(cycleBlocker.client)
+        .from("rede_bloqueios")
+        .delete()
+        .eq("bloqueador_id", cycleBlocker.id)
+        .eq("bloqueado_id", cycleBlocked.id);
+      if (unblockError) {
+        throw new Error(`Failed to remove block: ${unblockError.message}`);
+      }
+
+      const restoredProfile = await redeClient(cycleBlocked.client)
+        .from("rede_perfis")
+        .select("user_id")
+        .eq("user_id", cycleBlocker.id);
+      expect(restoredProfile.error).toBeNull();
+      expect(restoredProfile.data).toEqual([{ user_id: cycleBlocker.id }]);
+
+      const restoredLivelinks = await redeClient(cycleBlocked.client)
+        .from("rede_livelinks")
+        .select("user_id")
+        .eq("user_id", cycleBlocker.id);
+      expect(restoredLivelinks.error).toBeNull();
+      expect(restoredLivelinks.data).toEqual([{ user_id: cycleBlocker.id }]);
+
+      const restoredFriendRequest = await redeClient(cycleBlocked.client)
+        .from("rede_amizades")
+        .insert({
+          solicitante_id: cycleBlocked.id,
+          destinatario_id: cycleBlocker.id,
+        })
+        .select("id");
+      expect(restoredFriendRequest.error).toBeNull();
+      expect(restoredFriendRequest.data).toHaveLength(1);
+
+      // cleanup so this test stays independent of insertion order/reruns
+      await redeClient(adminClient())
+        .from("rede_amizades")
+        .delete()
+        .eq("id", restoredFriendRequest.data![0].id);
+    });
+  });
 });
