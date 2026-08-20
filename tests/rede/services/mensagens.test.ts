@@ -38,62 +38,21 @@ describe("serviço de mensagens", () => {
     });
   });
 
-  it("lista conversas com a última mensagem, não lidas e o outro participante", async () => {
+  it("lista conversas a partir do resumo agregado no banco (issue #54)", async () => {
     const client = clienteComUsuario();
+    client.rpc.mockResolvedValue({
+      data: [
+        {
+          conversa_id: "conversa-1",
+          outro_user_id: "user-2",
+          ultima_mensagem: "Tudo bem?",
+          ultima_mensagem_em: "2026-01-01T00:01:00.000Z",
+          nao_lidas: 2,
+        },
+      ],
+      error: null,
+    });
     client.from.mockImplementation((table: string) => {
-      if (table === "rede_conversas_participantes") {
-        return {
-          select: (cols: string) => {
-            if (cols === "conversa_id") {
-              return {
-                eq: () =>
-                  Promise.resolve({
-                    data: [{ conversa_id: "conversa-1" }],
-                    error: null,
-                  }),
-              };
-            }
-            return {
-              in: () =>
-                Promise.resolve({
-                  data: [
-                    { conversa_id: "conversa-1", user_id: "user-1" },
-                    { conversa_id: "conversa-1", user_id: "user-2" },
-                  ],
-                  error: null,
-                }),
-            };
-          },
-        };
-      }
-      if (table === "rede_mensagens") {
-        return {
-          select: () => ({
-            in: () => ({
-              order: () =>
-                Promise.resolve({
-                  data: [
-                    {
-                      conversa_id: "conversa-1",
-                      autor_id: "user-2",
-                      texto: "Oi!",
-                      criado_em: "2026-01-01T00:00:00.000Z",
-                      lida_em: null,
-                    },
-                    {
-                      conversa_id: "conversa-1",
-                      autor_id: "user-2",
-                      texto: "Tudo bem?",
-                      criado_em: "2026-01-01T00:01:00.000Z",
-                      lida_em: null,
-                    },
-                  ],
-                  error: null,
-                }),
-            }),
-          }),
-        };
-      }
       if (table === "rede_perfis") {
         return {
           select: () => ({
@@ -126,27 +85,57 @@ describe("serviço de mensagens", () => {
         naoLidas: 2,
       },
     ]);
+    expect(client.rpc).toHaveBeenCalledWith("rede_listar_resumo_conversas");
   });
 
-  it("devolve lista vazia sem consultar mais nada quando não participa de nenhuma conversa", async () => {
+  it("trata uma conversa sem mensagem nenhuma ainda (última mensagem null)", async () => {
     const client = clienteComUsuario();
-    const eq = vi.fn().mockResolvedValue({ data: [], error: null });
-    client.from.mockReturnValue({ select: vi.fn().mockReturnValue({ eq }) });
+    client.rpc.mockResolvedValue({
+      data: [
+        {
+          conversa_id: "conversa-1",
+          outro_user_id: "user-2",
+          ultima_mensagem: null,
+          ultima_mensagem_em: null,
+          nao_lidas: 0,
+        },
+      ],
+      error: null,
+    });
+    client.from.mockReturnValue({
+      select: () => ({
+        in: () =>
+          Promise.resolve({
+            data: [
+              {
+                user_id: "user-2",
+                nome_exibicao: "Bia",
+                cor_avatar: "#abc",
+                bio: null,
+              },
+            ],
+            error: null,
+          }),
+      }),
+    });
+
+    const [conversa] = await listarConversas(client as never);
+    expect(conversa.ultimaMensagem).toBe("");
+    expect(conversa.ultimaMensagemEm).toBeNull();
+  });
+
+  it("devolve lista vazia sem consultar perfis quando não participa de nenhuma conversa", async () => {
+    const client = clienteComUsuario();
+    client.rpc.mockResolvedValue({ data: [], error: null });
 
     await expect(listarConversas(client as never)).resolves.toEqual([]);
-    expect(client.from).toHaveBeenCalledTimes(1);
+    expect(client.from).not.toHaveBeenCalled();
   });
 
-  it("lista mensagens em ordem cronológica, marcando deMim contra o usuário autenticado", async () => {
-    const mensagens = [
-      {
-        id: "m1",
-        conversa_id: "conversa-1",
-        autor_id: "user-1",
-        texto: "Oi",
-        criado_em: "2026-01-01T00:00:00.000Z",
-        lida_em: null,
-      },
+  it("lista mensagens da página mais recente, em ordem cronológica ascendente", async () => {
+    // O banco devolve mais-recente-primeiro (limit real); o serviço
+    // reverte pra cronológica ascendente antes de devolver.
+    const mensagensDesc = [
       {
         id: "m2",
         conversa_id: "conversa-1",
@@ -155,8 +144,19 @@ describe("serviço de mensagens", () => {
         criado_em: "2026-01-01T00:01:00.000Z",
         lida_em: null,
       },
+      {
+        id: "m1",
+        conversa_id: "conversa-1",
+        autor_id: "user-1",
+        texto: "Oi",
+        criado_em: "2026-01-01T00:00:00.000Z",
+        lida_em: null,
+      },
     ];
-    const order = vi.fn().mockResolvedValue({ data: mensagens, error: null });
+    const limit = vi
+      .fn()
+      .mockResolvedValue({ data: mensagensDesc, error: null });
+    const order = vi.fn().mockReturnValue({ limit });
     const eq = vi.fn().mockReturnValue({ order });
     const select = vi.fn().mockReturnValue({ eq });
     const client = clienteComUsuario();
@@ -182,6 +182,36 @@ describe("serviço de mensagens", () => {
         deMim: false,
       },
     ]);
+    expect(order).toHaveBeenCalledWith("criado_em", { ascending: false });
+    expect(limit).toHaveBeenCalledWith(30);
+  });
+
+  it("pagina com um cursor (antesDe) e um limite customizado", async () => {
+    // O código faz .limit(n) primeiro e só condicionalmente encadeia
+    // .lt(...) depois -- o retorno de limit() precisa ser tanto
+    // aguardável (sem antesDe) quanto expor .lt() (com antesDe).
+    const ltResult = Promise.resolve({ data: [], error: null });
+    const lt = vi.fn().mockReturnValue(ltResult);
+    const limitResult = Object.assign(
+      Promise.resolve({ data: [], error: null }),
+      {
+        lt,
+      }
+    );
+    const limit = vi.fn().mockReturnValue(limitResult);
+    const order = vi.fn().mockReturnValue({ limit });
+    const eq = vi.fn().mockReturnValue({ order });
+    const select = vi.fn().mockReturnValue({ eq });
+    const client = clienteComUsuario();
+    client.from.mockReturnValue({ select });
+
+    await listarMensagens(client as never, "conversa-1", {
+      limit: 10,
+      antesDe: "2026-01-01T00:00:00.000Z",
+    });
+
+    expect(limit).toHaveBeenCalledWith(10);
+    expect(lt).toHaveBeenCalledWith("criado_em", "2026-01-01T00:00:00.000Z");
   });
 
   it("envia texto como o usuário autenticado", async () => {

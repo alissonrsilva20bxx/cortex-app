@@ -84,6 +84,7 @@ import { listarBloqueadosComNome } from "@/lib/rede/bloqueiosGerenciamento";
 import {
   listarConversas,
   listarMensagens,
+  MENSAGENS_PAGE_SIZE,
   enviarMensagem,
   marcarMensagemComoLida,
   abrirConversa1a1,
@@ -265,6 +266,11 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const [threadLoading, setThreadLoading] = useState(false);
   const [threadError, setThreadError] = useState(false);
   const [threadReloadKey, setThreadReloadKey] = useState(0);
+  // ── Issue #54: paginação de mensagens antigas ──
+  const [hasMoreMessages, setHasMoreMessages] = useState<
+    Record<string, boolean>
+  >({});
+  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
 
   // ── Offline (navigator.onLine) -- compartilhado por Conversas/Chat/
   // Notificações, os 3 destinos deste ticket que fazem escrita de rede
@@ -331,6 +337,10 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       const data = await listarMensagens(supabase, conversaId);
       if (!ativo) return;
       setMessages((prev) => ({ ...prev, [conversaId]: data }));
+      setHasMoreMessages((prev) => ({
+        ...prev,
+        [conversaId]: data.length === MENSAGENS_PAGE_SIZE,
+      }));
       setThreadLoading(false);
 
       const naoLidas = data.filter((m) => !m.deMim && !m.lidaEm);
@@ -413,6 +423,36 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   function retryLoadThread() {
     setThreadLoading(true);
     setThreadReloadKey((k) => k + 1);
+  }
+
+  // Issue #54: busca a página anterior ao cursor da mensagem mais antiga
+  // já carregada e a prependa -- ChatThreadScreen dispara isto ao rolar
+  // pro topo, e ajusta scrollTop sozinho pra tela não "pular".
+  async function loadMoreMessages() {
+    if (!abertaConversaId || loadingMoreMessages) return;
+    const conversaId = abertaConversaId;
+    const maisAntiga = (messages[conversaId] ?? [])[0];
+    if (!maisAntiga) return;
+
+    setLoadingMoreMessages(true);
+    try {
+      const pagina = await listarMensagens(supabase, conversaId, {
+        antesDe: maisAntiga.criadoEm,
+      });
+      setMessages((prev) => ({
+        ...prev,
+        [conversaId]: [...pagina, ...(prev[conversaId] ?? [])],
+      }));
+      setHasMoreMessages((prev) => ({
+        ...prev,
+        [conversaId]: pagina.length === MENSAGENS_PAGE_SIZE,
+      }));
+    } catch (e) {
+      console.error("[RedeTab carregar mais mensagens]", e);
+      toast.error("Não foi possível carregar mensagens antigas.");
+    } finally {
+      setLoadingMoreMessages(false);
+    }
   }
 
   // ── Notificações real -- eager, o sino no header mostra a contagem já
@@ -1303,6 +1343,9 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
               onRetry={(messageId) => retrySend(convo.id, messageId)}
               onRetryLoad={retryLoadThread}
               onComposerFocusChange={onChatFocusChange}
+              hasMoreMessages={hasMoreMessages[convo.id] ?? false}
+              loadingMoreMessages={loadingMoreMessages}
+              onLoadMoreMessages={loadMoreMessages}
             />
           );
         })()}

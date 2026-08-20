@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   computeKeyboardInset,
+  computeScrollAdjustment,
   resolveScrollBehavior,
   shouldAutoScrollOnNewMessage,
+  shouldLoadMoreMessages,
 } from "../../../lib/rede/chatUi";
 
 describe("shouldAutoScrollOnNewMessage", () => {
@@ -120,5 +122,98 @@ describe("resolveScrollBehavior", () => {
 
   it("returns auto (instant) when the reader prefers reduced motion", () => {
     expect(resolveScrollBehavior(true)).toBe("auto");
+  });
+});
+
+describe("shouldLoadMoreMessages", () => {
+  it("loads more when near the top, more exists, and nothing is already loading", () => {
+    expect(
+      shouldLoadMoreMessages({
+        scrollTopPx: 20,
+        hasMore: true,
+        loadingMore: false,
+      })
+    ).toBe(true);
+  });
+
+  it("does not load more when scrolled well below the top", () => {
+    expect(
+      shouldLoadMoreMessages({
+        scrollTopPx: 500,
+        hasMore: true,
+        loadingMore: false,
+      })
+    ).toBe(false);
+  });
+
+  it("does not load more when there is nothing left to load", () => {
+    expect(
+      shouldLoadMoreMessages({
+        scrollTopPx: 0,
+        hasMore: false,
+        loadingMore: false,
+      })
+    ).toBe(false);
+  });
+
+  it("does not re-trigger while a load is already in flight", () => {
+    expect(
+      shouldLoadMoreMessages({
+        scrollTopPx: 0,
+        hasMore: true,
+        loadingMore: true,
+      })
+    ).toBe(false);
+  });
+
+  it("respects a custom threshold", () => {
+    expect(
+      shouldLoadMoreMessages({
+        scrollTopPx: 150,
+        hasMore: true,
+        loadingMore: false,
+        thresholdPx: 200,
+      })
+    ).toBe(true);
+    expect(
+      shouldLoadMoreMessages({
+        scrollTopPx: 150,
+        hasMore: true,
+        loadingMore: false,
+        thresholdPx: 100,
+      })
+    ).toBe(false);
+  });
+
+  it("treats being exactly at the threshold as near enough", () => {
+    expect(
+      shouldLoadMoreMessages({
+        scrollTopPx: 80,
+        hasMore: true,
+        loadingMore: false,
+      })
+    ).toBe(true);
+  });
+});
+
+describe("computeScrollAdjustment", () => {
+  it("keeps the same content visible by shifting scrollTop by the height the new content added", () => {
+    expect(
+      computeScrollAdjustment({
+        previousScrollHeight: 2000,
+        newScrollHeight: 2600,
+        previousScrollTop: 40,
+      })
+    ).toBe(640);
+  });
+
+  it("is a no-op when the content didn't actually grow", () => {
+    expect(
+      computeScrollAdjustment({
+        previousScrollHeight: 2000,
+        newScrollHeight: 2000,
+        previousScrollTop: 40,
+      })
+    ).toBe(40);
   });
 });

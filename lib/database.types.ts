@@ -710,6 +710,24 @@ export type Database = {
         Returns: boolean;
       };
       rede_is_member: { Args: never; Returns: boolean };
+      rede_listar_bloqueados: {
+        Args: never;
+        Returns: {
+          cor_avatar: string;
+          nome_exibicao: string;
+          user_id: string;
+        }[];
+      };
+      rede_listar_resumo_conversas: {
+        Args: never;
+        Returns: {
+          conversa_id: string;
+          nao_lidas: number;
+          outro_user_id: string;
+          ultima_mensagem: string;
+          ultima_mensagem_em: string;
+        }[];
+      };
       rede_reordenar_livelinks: {
         Args: { livelink_ids: string[] };
         Returns: {

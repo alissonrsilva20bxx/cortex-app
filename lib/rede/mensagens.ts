@@ -119,95 +119,53 @@ async function obterUsuarioId(client: RedeClient): Promise<string> {
   return user.id;
 }
 
+/**
+ * Issue #54: buscava todas as mensagens de todas as conversas só pra
+ * reduzir, em memória, à última mensagem de cada uma (e contar não
+ * lidas). Agregação movida pro banco (`rede_listar_resumo_conversas`,
+ * migration 0022) -- uma linha por conversa, sem trazer mensagem nenhuma
+ * que não seja a mais recente.
+ */
+type ResumoConversaRow = {
+  conversa_id: string;
+  outro_user_id: string;
+  // Os tipos gerados marcam essas duas como não-nulas, mas a migration
+  // 0022 as produz via LEFT JOIN LATERAL -- uma conversa sem nenhuma
+  // mensagem ainda (par recém-criado) devolve null pra ambas.
+  ultima_mensagem: string | null;
+  ultima_mensagem_em: string | null;
+  nao_lidas: number;
+};
+
 export async function listarConversas(
   client: RedeClient
 ): Promise<ConversaResumo[]> {
-  const userId = await obterUsuarioId(client);
-
-  const { data: minhasParticipacoes, error } = await client
-    .from("rede_conversas_participantes")
-    .select("conversa_id")
-    .eq("user_id", userId);
+  const { data, error } = await client.rpc("rede_listar_resumo_conversas");
 
   if (error) {
     throw error;
   }
 
-  const conversaIds = (minhasParticipacoes ?? []).map((p) => p.conversa_id);
-  if (conversaIds.length === 0) {
-    return [];
-  }
-
-  const [
-    { data: participantes, error: participantesError },
-    { data: mensagens, error: mensagensError },
-  ] = await Promise.all([
-    client
-      .from("rede_conversas_participantes")
-      .select("conversa_id,user_id")
-      .in("conversa_id", conversaIds),
-    client
-      .from("rede_mensagens")
-      .select("conversa_id,autor_id,texto,criado_em,lida_em")
-      .in("conversa_id", conversaIds)
-      .order("criado_em", { ascending: true }),
-  ]);
-
-  if (participantesError) {
-    throw participantesError;
-  }
-  if (mensagensError) {
-    throw mensagensError;
-  }
-
-  const outroPorConversa = new Map<string, string>();
-  for (const p of participantes ?? []) {
-    if (p.user_id !== userId) {
-      outroPorConversa.set(p.conversa_id, p.user_id);
-    }
-  }
-
+  const rows = data as ResumoConversaRow[];
   const perfis = await buscarPerfisPorIds(
     client,
-    Array.from(new Set(outroPorConversa.values()))
+    Array.from(new Set(rows.map((r) => r.outro_user_id)))
   );
 
-  const ultimaPorConversa = new Map<
-    string,
-    { texto: string; criado_em: string }
-  >();
-  const naoLidasPorConversa = new Map<string, number>();
-  for (const m of mensagens ?? []) {
-    // Ordenado por criado_em asc -- a última sobrescrita ganha, então fica
-    // com a mensagem mais recente sem precisar de outra query.
-    ultimaPorConversa.set(m.conversa_id, {
-      texto: m.texto,
-      criado_em: m.criado_em,
-    });
-    if (m.autor_id !== userId && !m.lida_em) {
-      naoLidasPorConversa.set(
-        m.conversa_id,
-        (naoLidasPorConversa.get(m.conversa_id) ?? 0) + 1
-      );
-    }
-  }
-
-  return conversaIds
-    .map((id) => {
-      const outroId = outroPorConversa.get(id);
-      const perfil = outroId ? perfis.get(outroId) : undefined;
-      if (!outroId || !perfil) {
+  return rows
+    .map((r) => {
+      const perfil = perfis.get(r.outro_user_id);
+      if (!perfil) {
         return null;
       }
-      const ultima = ultimaPorConversa.get(id);
       return {
-        id,
-        outroUserId: outroId,
+        id: r.conversa_id,
+        outroUserId: r.outro_user_id,
         outroNome: perfil.nome,
         outroCor: perfil.cor,
-        ultimaMensagem: ultima?.texto ?? "",
-        ultimaMensagemEm: ultima?.criado_em ?? null,
-        naoLidas: naoLidasPorConversa.get(id) ?? 0,
+        ultimaMensagem: r.ultima_mensagem ?? "",
+        ultimaMensagemEm: r.ultima_mensagem_em,
+        naoLidas: r.nao_lidas,
       };
     })
     .filter((c): c is ConversaResumo => !!c)
@@ -216,29 +174,56 @@ export async function listarConversas(
     );
 }
 
+/** Tamanho de página padrão de `listarMensagens` (issue #54). */
+export const MENSAGENS_PAGE_SIZE = 30;
+
+export type ListarMensagensOptions = {
+  /** Máximo de mensagens retornadas. */
+  limit?: number;
+  /** Cursor de paginação -- busca só mensagens estritamente mais antigas
+   * que este `criado_em` (ISO). Omitido = página mais recente. */
+  antesDe?: string;
+};
+
+/**
+ * Issue #54: buscava o histórico inteiro da conversa toda vez que a tela
+ * abria, sem paginação. Agora busca só a página mais recente (ou, com
+ * `antesDe`, a página anterior a um cursor) -- sempre devolvida em ordem
+ * cronológica ascendente (mais antiga primeiro), igual antes.
+ */
 export async function listarMensagens(
   client: RedeClient,
-  conversaId: string
+  conversaId: string,
+  options: ListarMensagensOptions = {}
 ): Promise<MensagemChat[]> {
   const userId = await obterUsuarioId(client);
-  const { data, error } = await client
+  let query = client
     .from("rede_mensagens")
     .select("*")
     .eq("conversa_id", conversaId)
-    .order("criado_em", { ascending: true });
+    .order("criado_em", { ascending: false })
+    .limit(options.limit ?? MENSAGENS_PAGE_SIZE);
+
+  if (options.antesDe) {
+    query = query.lt("criado_em", options.antesDe);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []).map((m) => ({
-    id: m.id,
-    autorId: m.autor_id,
-    texto: m.texto,
-    criadoEm: m.criado_em,
-    lidaEm: m.lida_em,
-    deMim: m.autor_id === userId,
-  }));
+  return (data ?? [])
+    .map((m) => ({
+      id: m.id,
+      autorId: m.autor_id,
+      texto: m.texto,
+      criadoEm: m.criado_em,
+      lidaEm: m.lida_em,
+      deMim: m.autor_id === userId,
+    }))
+    .reverse();
 }
 
 async function exigirAcessoConversa(

@@ -15,8 +15,10 @@ import { Avatar } from "./Avatar";
 import { formatRelativeTime } from "@/lib/mockRede";
 import {
   computeKeyboardInset,
+  computeScrollAdjustment,
   resolveScrollBehavior,
   shouldAutoScrollOnNewMessage,
+  shouldLoadMoreMessages,
 } from "@/lib/rede/chatUi";
 import type { ConversaResumo, MensagemChat } from "@/lib/rede/mensagens";
 
@@ -45,6 +47,11 @@ interface Props {
   onRetryLoad?: () => void;
   /** Simula o teclado empurrando o compositor pra cima e escondendo a BottomNav. */
   onComposerFocusChange?: (focused: boolean) => void;
+  /** Issue #54: `messages` só traz a página mais recente -- estes três
+   * controlam o carregamento de páginas mais antigas ao rolar pro topo. */
+  hasMoreMessages?: boolean;
+  loadingMoreMessages?: boolean;
+  onLoadMoreMessages?: () => void;
 }
 
 function getDistanceFromBottomPx(): number {
@@ -68,6 +75,9 @@ export function ChatThreadScreen({
   onRetry,
   onRetryLoad,
   onComposerFocusChange,
+  hasMoreMessages = false,
+  loadingMoreMessages = false,
+  onLoadMoreMessages,
 }: Props) {
   const [texto, setTexto] = useState("");
   const [focused, setFocused] = useState(false);
@@ -110,6 +120,18 @@ export function ChatThreadScreen({
   const [showNewMessagePill, setShowNewMessagePill] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
+  // ── Issue #54: carregar mensagens mais antigas ao rolar pro topo, sem
+  // deixar a tela "pular" quando elas são prependadas. ──
+  const requestingMoreRef = useRef(false);
+  const prependPendingRef = useRef<{
+    scrollHeight: number;
+    scrollTop: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!loadingMoreMessages) requestingMoreRef.current = false;
+  }, [loadingMoreMessages]);
+
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -122,20 +144,57 @@ export function ChatThreadScreen({
   useEffect(() => {
     function onScroll() {
       distanceFromBottomRef.current = getDistanceFromBottomPx();
+      if (
+        onLoadMoreMessages &&
+        !requestingMoreRef.current &&
+        shouldLoadMoreMessages({
+          scrollTopPx: window.scrollY,
+          hasMore: hasMoreMessages,
+          loadingMore: loadingMoreMessages,
+        })
+      ) {
+        requestingMoreRef.current = true;
+        prependPendingRef.current = {
+          scrollHeight: document.documentElement.scrollHeight,
+          scrollTop: window.scrollY,
+        };
+        onLoadMoreMessages();
+      }
     }
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [hasMoreMessages, loadingMoreMessages, onLoadMoreMessages]);
 
   useEffect(() => {
     hasJumpedRef.current = false;
     prevMessagesLenRef.current = 0;
+    requestingMoreRef.current = false;
+    prependPendingRef.current = null;
     setShowNewMessagePill(false);
   }, [conversation.id]);
 
   useEffect(() => {
     if (loading || error) return;
+    if (prependPendingRef.current) {
+      // Mensagens antigas acabaram de ser prependadas no topo -- ajusta
+      // scrollTop pela mesma altura que o novo conteúdo introduziu, em
+      // vez de rodar a lógica de "mensagem nova chegou no fundo" abaixo
+      // (que interpretaria o crescimento errado e mostraria o aviso
+      // "Nova mensagem" por engano).
+      const pending = prependPendingRef.current;
+      prependPendingRef.current = null;
+      window.scrollTo(
+        0,
+        computeScrollAdjustment({
+          previousScrollHeight: pending.scrollHeight,
+          newScrollHeight: document.documentElement.scrollHeight,
+          previousScrollTop: pending.scrollTop,
+        })
+      );
+      prevMessagesLenRef.current = messages.length;
+      return;
+    }
     if (!hasJumpedRef.current) {
       // Primeira renderização com dados de verdade: pula pro fundo sem
       // animação -- é abrir a conversa, não uma mensagem chegando.
@@ -243,6 +302,14 @@ export function ChatThreadScreen({
 
       {/* Bolhas */}
       <div className="space-y-2.5">
+        {!loading && !error && loadingMoreMessages && (
+          <p
+            className="text-xs text-center py-2"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Carregando mensagens antigas…
+          </p>
+        )}
         {loading ? (
           <p
             className="text-sm text-center py-12"
