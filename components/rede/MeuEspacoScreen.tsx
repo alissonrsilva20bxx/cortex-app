@@ -178,12 +178,6 @@ export function MeuEspacoScreen({
                 />
               ))}
             </div>
-            <p
-              className="text-center text-[11px] font-semibold mt-1.5"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Demonstração — sem tabela real ainda, não persiste entre sessões
-            </p>
           </section>
 
           {/* Clientes */}
@@ -220,12 +214,6 @@ export function MeuEspacoScreen({
               </div>
               <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
             </GlassCard>
-            <p
-              className="text-center text-[11px] font-semibold mt-1.5"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Demonstração — sem tabela real ainda, não persiste entre sessões
-            </p>
           </section>
 
           {/* Minhas publicações */}

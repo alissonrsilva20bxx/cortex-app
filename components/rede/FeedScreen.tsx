@@ -9,8 +9,9 @@ import { ContextualBlock } from "./ContextualBlock";
 import { PostCard } from "./PostCard";
 import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
-import { DISCOVER_PEOPLE, WISHLIST_ITEMS, findUser } from "@/lib/mockRede";
+import { DISCOVER_PEOPLE, findUser } from "@/lib/mockRede";
 import type { FeedPost } from "@/lib/rede/feed";
+import type { WishlistItem } from "@/lib/rede/wishlist";
 import type { Usuario } from "@/lib/types";
 
 type Segmento = "paraVoce" | "amigas";
@@ -34,6 +35,7 @@ interface Props {
   usuario: Usuario;
   posts: FeedPost[];
   friends: string[];
+  wishlistItems: WishlistItem[];
   pendingRequestsCount: number;
   unreadChats: number;
   unreadNotifs: number;
@@ -59,6 +61,7 @@ export function FeedScreen({
   usuario,
   posts,
   friends,
+  wishlistItems,
   pendingRequestsCount,
   unreadChats,
   unreadNotifs,
@@ -89,7 +92,7 @@ export function FeedScreen({
     [posts, segmento, friends]
   );
 
-  const wishlistPertoDaMeta = WISHLIST_ITEMS.find(
+  const wishlistPertoDaMeta = wishlistItems.find(
     (w) => w.estado !== "conquistado" && w.valorAtual / w.valorAlvo >= 0.7
   );
   const discover = DISCOVER_PEOPLE.map((d) => findUser(d.userId)).filter(
@@ -122,7 +125,6 @@ export function FeedScreen({
       title: "Desejo próximo da meta",
       subtitle: `${wishlistPertoDaMeta.nome} — ${Math.round((wishlistPertoDaMeta.valorAtual / wishlistPertoDaMeta.valorAlvo) * 100)}%`,
       onClick: onOpenWishlist,
-      demo: true,
     });
   }
   if (discover.length > 0) {

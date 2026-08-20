@@ -81,13 +81,6 @@ export function ClientesScreen({
         </p>
       </div>
 
-      <p
-        className="text-center text-[11px] font-semibold mb-4"
-        style={{ color: "var(--text-muted)" }}
-      >
-        Demonstração — sem tabela real ainda, não persiste entre sessões
-      </p>
-
       <div
         className="flex items-center gap-2.5 px-4 mb-4"
         style={{

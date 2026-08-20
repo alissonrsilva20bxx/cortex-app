@@ -3,15 +3,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * T12 rodada corretiva (PR #63), item 6 — confirma que os blocos
- * contextuais do Feed alimentados por `lib/mockRede.ts` ("Pessoas que
- * talvez você conheça", "Desejo próximo da meta") continuam marcados
- * `demo: true` e, por isso, renderizam o aviso "Demonstração", e que os
- * blocos reais (solicitações de amizade, mensagens não lidas — contagens
- * vindas de props reais) nunca são marcados como demo. Não havia teste
- * fixando esse invariante antes desta rodada; sem gap de código encontrado
- * (achado do relatório T12 seção 3.3 já descrevia isso como mitigado desde
- * T7) — este teste só evita regressão futura.
+ * T12 rodada corretiva (PR #63), item 6 — confirma que o bloco contextual
+ * do Feed ainda alimentado por fixture local (`DISCOVER_PEOPLE`, "Pessoas
+ * que talvez você conheça") continua marcado `demo: true` e, por isso,
+ * renderiza o aviso "Demonstração", e que os blocos com dado real
+ * (solicitações de amizade, mensagens não lidas, e — desde a issue #64 —
+ * "Desejo próximo da meta", agora lido de `wishlistItems` real em vez de
+ * `WISHLIST_ITEMS` fixture) nunca são marcados como demo.
  */
 
 const src = readFileSync(
@@ -26,10 +24,6 @@ function blockDef(key: string): string {
 }
 
 describe("Feed — blocos fabricados continuam rotulados como demonstração", () => {
-  it("o bloco 'wishlist' (fixture local) está marcado demo: true", () => {
-    expect(blockDef("wishlist")).toMatch(/demo: true/);
-  });
-
   it("o bloco 'descobrir' (fixture local) está marcado demo: true", () => {
     expect(blockDef("descobrir")).toMatch(/demo: true/);
   });
@@ -40,6 +34,11 @@ describe("Feed — blocos fabricados continuam rotulados como demonstração", (
 
   it("o bloco 'mensagens' (dado real, prop unreadChats) NÃO é demo", () => {
     expect(blockDef("mensagens")).not.toMatch(/demo: true/);
+  });
+
+  it("o bloco 'wishlist' (dado real desde a issue #64, prop wishlistItems) NÃO é demo", () => {
+    expect(blockDef("wishlist")).not.toMatch(/demo: true/);
+    expect(src).not.toMatch(/WISHLIST_ITEMS/);
   });
 
   it("o rótulo 'Demonstração' só renderiza quando item.block.demo é truthy", () => {
