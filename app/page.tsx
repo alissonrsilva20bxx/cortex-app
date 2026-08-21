@@ -26,6 +26,7 @@ import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase";
+import { isFreshAccount } from "@/lib/onboarding";
 import type {
   TabId,
   Usuario,
@@ -36,6 +37,17 @@ import type {
   CardStyleConfig,
   ChartPrefConfig,
 } from "@/lib/types";
+
+// Mesmo aparelho já viu o onboarding terminar (com ou sem PIN, mesmo que
+// meta/atendimento tenham sido pulados) — sem isso, uma conta que só pula
+// tudo nunca escreve em `jobs`/`metas`, `isFreshAccount` continua `true`
+// pra sempre, e o onboarding reaparece em todo reload/nova sessão (achado
+// da revisão independente em #99). Escopada por usuario.id — sem isso, a
+// 1ª conta a completar o onboarding num aparelho bloqueia o onboarding de
+// qualquer conta nova depois no mesmo navegador (comum em QA, achado numa
+// 2ª rodada de revisão do mesmo #99). Não resolve entre aparelhos — versão
+// robusta fica pra uma issue separada, mesmo padrão de #98.
+const onboardingDoneKey = (userId: string) => `jobapp-onboarding-done:${userId}`;
 
 const DEFAULT_HOME_CARDS: HomeCardConfig = {
   nextJob: true,
@@ -69,6 +81,15 @@ export default function Page() {
   // na janela entre revelar `usuario` e o fetch de jobs/metas terminar.
   const [dataLoaded, setDataLoaded] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(false);
+  // Trava a decisão "é 1º uso?" na 1ª leitura confirmada dos dados, em vez
+  // de recalcular a cada render: sem isso, o próprio ato de completar uma
+  // etapa do onboarding (ex.: salvar a 1ª meta) muda `metas` o bastante
+  // pra isFreshAccount virar false NO MEIO do fluxo, ejetando a usuária
+  // pra home normal antes das etapas seguintes (T17/#70, critério de
+  // aceite #3 — não pode perder o fluxo no meio do caminho).
+  const [isNewUserSession, setIsNewUserSession] = useState<boolean | null>(
+    null
+  );
 
   const [jobFormOpen, setJobFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
@@ -198,6 +219,19 @@ export default function Page() {
   }, [usuario, locked, jobsRefreshKey, financeiroRefreshKey]);
 
   useEffect(() => {
+    if (isNewUserSession !== null) return; // já decidido, não reavalia
+    if (!usuario) return;
+    try {
+      if (localStorage.getItem(onboardingDoneKey(usuario.id))) {
+        setIsNewUserSession(false);
+        return;
+      }
+    } catch (_) {}
+    if (!dataLoaded) return;
+    setIsNewUserSession(isFreshAccount(jobs, metas));
+  }, [usuario, dataLoaded, jobs, metas, isNewUserSession]);
+
+  useEffect(() => {
     if (!usuario || locked) return;
     supabase
       .from("objetivos")
@@ -259,14 +293,12 @@ export default function Page() {
     return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
   }
 
-  // 1º uso: sem meta e sem atendimento nenhum, uma vez confirmado (não só
-  // "ainda carregando"). Guia até o "aha" antes de soltar as abas (§6).
-  const isNewUser =
-    !!usuario &&
-    dataLoaded &&
-    jobs.length === 0 &&
-    metas.length === 0 &&
-    !onboardingDone;
+  // 1º uso: decidido uma única vez (isNewUserSession, ver efeito acima) a
+  // partir da 1ª leitura confirmada de jobs/metas — preenchimentos feitos
+  // DURANTE o próprio onboarding (ex.: salvar a meta) não devem contar
+  // como "não é mais nova" e ejetar a usuária pro app normal no meio do
+  // fluxo (§6, T17/#70).
+  const isNewUser = isNewUserSession === true && !onboardingDone;
 
   return (
     <div className="relative flex flex-col min-h-screen">
@@ -287,7 +319,12 @@ export default function Page() {
             }}
             onMetaSaved={() => setFinanceiroRefreshKey((k) => k + 1)}
             onPinSaved={(h) => setPinHash(h)}
-            onComplete={() => setOnboardingDone(true)}
+            onComplete={() => {
+              try {
+                localStorage.setItem(onboardingDoneKey(usuario.id), "1");
+              } catch (_) {}
+              setOnboardingDone(true);
+            }}
           />
         )}
 
