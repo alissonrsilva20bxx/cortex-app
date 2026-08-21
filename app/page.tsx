@@ -38,6 +38,14 @@ import type {
   ChartPrefConfig,
 } from "@/lib/types";
 
+// Mesmo aparelho já viu o onboarding terminar (com ou sem PIN, mesmo que
+// meta/atendimento tenham sido pulados) — sem isso, uma conta que só pula
+// tudo nunca escreve em `jobs`/`metas`, `isFreshAccount` continua `true`
+// pra sempre, e o onboarding reaparece em todo reload/nova sessão (achado
+// da revisão independente em #99). Não resolve entre aparelhos — versão
+// robusta fica pra uma issue separada, mesmo padrão de #98.
+const ONBOARDING_DONE_KEY = "jobapp-onboarding-done";
+
 const DEFAULT_HOME_CARDS: HomeCardConfig = {
   nextJob: true,
   financeSummary: true,
@@ -209,7 +217,14 @@ export default function Page() {
 
   useEffect(() => {
     if (isNewUserSession !== null) return; // já decidido, não reavalia
-    if (!usuario || !dataLoaded) return;
+    if (!usuario) return;
+    try {
+      if (localStorage.getItem(ONBOARDING_DONE_KEY)) {
+        setIsNewUserSession(false);
+        return;
+      }
+    } catch (_) {}
+    if (!dataLoaded) return;
     setIsNewUserSession(isFreshAccount(jobs, metas));
   }, [usuario, dataLoaded, jobs, metas, isNewUserSession]);
 
@@ -301,7 +316,12 @@ export default function Page() {
             }}
             onMetaSaved={() => setFinanceiroRefreshKey((k) => k + 1)}
             onPinSaved={(h) => setPinHash(h)}
-            onComplete={() => setOnboardingDone(true)}
+            onComplete={() => {
+              try {
+                localStorage.setItem(ONBOARDING_DONE_KEY, "1");
+              } catch (_) {}
+              setOnboardingDone(true);
+            }}
           />
         )}
 

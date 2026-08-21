@@ -114,9 +114,13 @@ describe("§1-P0-6 — handleSignOut é real (supabase.auth.signOut + redirect),
 });
 
 describe("§1-P0-7 — OnboardingFlow dispara para conta nova antes de BottomNav/FAB", () => {
-  it("isNewUser exige dataLoaded, zero jobs, zero metas e onboarding não concluído", () => {
+  it("isNewUser deriva da decisão travada de 1º uso (isNewUserSession) e de onboarding não concluído", () => {
+    // Pré-T17/#70 isNewUser recalculava direto de jobs.length===0 &&
+    // metas.length===0 a cada render — trocado por uma trava de sessão
+    // (isNewUserSession) pra sobreviver ao próprio onboarding mudando esses
+    // dados (ver tests/wiring/onboarding-new-user-latch.test.ts).
     expect(page).toMatch(
-      /const isNewUser =\s*\r?\n\s*!!usuario &&\s*\r?\n\s*dataLoaded &&\s*\r?\n\s*jobs\.length === 0 &&\s*\r?\n\s*metas\.length === 0 &&\s*\r?\n\s*!onboardingDone;/
+      /const isNewUser = isNewUserSession === true && !onboardingDone;/
     );
   });
 
