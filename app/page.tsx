@@ -42,9 +42,12 @@ import type {
 // meta/atendimento tenham sido pulados) — sem isso, uma conta que só pula
 // tudo nunca escreve em `jobs`/`metas`, `isFreshAccount` continua `true`
 // pra sempre, e o onboarding reaparece em todo reload/nova sessão (achado
-// da revisão independente em #99). Não resolve entre aparelhos — versão
+// da revisão independente em #99). Escopada por usuario.id — sem isso, a
+// 1ª conta a completar o onboarding num aparelho bloqueia o onboarding de
+// qualquer conta nova depois no mesmo navegador (comum em QA, achado numa
+// 2ª rodada de revisão do mesmo #99). Não resolve entre aparelhos — versão
 // robusta fica pra uma issue separada, mesmo padrão de #98.
-const ONBOARDING_DONE_KEY = "jobapp-onboarding-done";
+const onboardingDoneKey = (userId: string) => `jobapp-onboarding-done:${userId}`;
 
 const DEFAULT_HOME_CARDS: HomeCardConfig = {
   nextJob: true,
@@ -219,7 +222,7 @@ export default function Page() {
     if (isNewUserSession !== null) return; // já decidido, não reavalia
     if (!usuario) return;
     try {
-      if (localStorage.getItem(ONBOARDING_DONE_KEY)) {
+      if (localStorage.getItem(onboardingDoneKey(usuario.id))) {
         setIsNewUserSession(false);
         return;
       }
@@ -318,7 +321,7 @@ export default function Page() {
             onPinSaved={(h) => setPinHash(h)}
             onComplete={() => {
               try {
-                localStorage.setItem(ONBOARDING_DONE_KEY, "1");
+                localStorage.setItem(onboardingDoneKey(usuario.id), "1");
               } catch (_) {}
               setOnboardingDone(true);
             }}
