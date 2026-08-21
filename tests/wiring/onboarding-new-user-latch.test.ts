@@ -102,7 +102,7 @@ describe("app/page.tsx — decisão de 1º uso trava em vez de reavaliar a cada 
     // onboarding de qualquer conta nova após a 1ª conta completar o fluxo
     // no mesmo navegador (comum em QA com múltiplas contas).
     expect(src).toMatch(
-      /const onboardingDoneKey = \(userId: string\) => `jobapp-onboarding-done:\$\{userId\}`;/
+      /const onboardingDoneKey = \(userId: string\) =>\s*`jobapp-onboarding-done:\$\{userId\}`;/
     );
     expect(src).not.toMatch(
       /localStorage\.(get|set)Item\("jobapp-onboarding-done"/
