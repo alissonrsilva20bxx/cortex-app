@@ -1,23 +1,43 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import {
+  requestPasswordReset,
+  signInWithEmail,
+  signUpWithEmail,
+} from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import { OpeningMotion } from "@/components/entry/OpeningMotion";
 import styles from "./entry.module.css";
 
-type Stage = "motion" | "login";
+type Stage = "motion" | "login" | "signup" | "forgot" | "check-email";
+type CheckEmailContext = "signup" | "reset";
 
 export default function LoginPage() {
+  const router = useRouter();
   const toast = useToast();
   const [stage, setStage] = useState<Stage>("motion");
+  const [checkEmailContext, setCheckEmailContext] =
+    useState<CheckEmailContext>("signup");
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (stage === "login") emailRef.current?.focus({ preventScroll: true });
+    if (stage === "login" || stage === "signup" || stage === "forgot") {
+      emailRef.current?.focus({ preventScroll: true });
+    }
   }, [stage]);
 
   async function handleGoogleLogin() {
@@ -28,12 +48,190 @@ export default function LoginPage() {
     });
   }
 
-  function notAvailableYet() {
-    toast.error("Login por e-mail chega em breve — use o Google por agora.");
+  function readField(form: HTMLFormElement, name: string): string {
+    return String(new FormData(form).get(name) ?? "").trim();
+  }
+
+  async function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const email = readField(event.currentTarget, "email");
+    const password = readField(event.currentTarget, "password");
+    setSubmitting(true);
+    const { error } = await signInWithEmail(email, password);
+    setSubmitting(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    router.push("/");
+    router.refresh();
+  }
+
+  async function handleSignupSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const email = readField(event.currentTarget, "email");
+    const password = readField(event.currentTarget, "password");
+    setSubmitting(true);
+    const { error, needsConfirmation } = await signUpWithEmail(
+      email,
+      password,
+      `${window.location.origin}/auth/callback`
+    );
+    setSubmitting(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    if (needsConfirmation) {
+      setCheckEmailContext("signup");
+      setStage("check-email");
+      return;
+    }
+    router.push("/");
+    router.refresh();
+  }
+
+  async function handleForgotSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const email = readField(event.currentTarget, "email");
+    setSubmitting(true);
+    const { error } = await requestPasswordReset(
+      email,
+      `${window.location.origin}/auth/callback?next=/login/nova-senha`
+    );
+    setSubmitting(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setCheckEmailContext("reset");
+    setStage("check-email");
   }
 
   if (stage === "motion") {
     return <OpeningMotion onDone={() => setStage("login")} />;
+  }
+
+  if (stage === "signup") {
+    return (
+      <div className={styles.page}>
+        <div className={`${styles.screen} ${styles.loginArrival}`}>
+          <BackHeader onBack={() => setStage("login")} />
+          <section className={styles.intro}>
+            <h1>Criar conta</h1>
+            <p>Leva menos de um minuto.</p>
+          </section>
+          <form className={styles.form} onSubmit={handleSignupSubmit}>
+            <label>
+              <span>E-mail</span>
+              <div>
+                <Mail />
+                <input
+                  ref={emailRef}
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  inputMode="email"
+                  placeholder="voce@exemplo.com"
+                />
+              </div>
+            </label>
+            <label>
+              <span>Senha</span>
+              <div>
+                <LockKeyhole />
+                <input
+                  name="password"
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Pelo menos 6 caracteres"
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Ocultar senha" : "Exibir senha"}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </button>
+              </div>
+            </label>
+            <button
+              type="submit"
+              className={styles.primary}
+              disabled={submitting}
+            >
+              {submitting ? "Criando…" : "Criar conta"} <ArrowRight />
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (stage === "forgot") {
+    return (
+      <div className={styles.page}>
+        <div className={`${styles.screen} ${styles.loginArrival}`}>
+          <BackHeader onBack={() => setStage("login")} />
+          <section className={styles.intro}>
+            <h1>Recuperar senha</h1>
+            <p>Enviamos um link pra você criar uma senha nova.</p>
+          </section>
+          <form className={styles.form} onSubmit={handleForgotSubmit}>
+            <label>
+              <span>E-mail</span>
+              <div>
+                <Mail />
+                <input
+                  ref={emailRef}
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  inputMode="email"
+                  placeholder="voce@exemplo.com"
+                />
+              </div>
+            </label>
+            <button
+              type="submit"
+              className={styles.primary}
+              disabled={submitting}
+            >
+              {submitting ? "Enviando…" : "Enviar link"} <ArrowRight />
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (stage === "check-email") {
+    return (
+      <div className={styles.page}>
+        <div className={`${styles.screen} ${styles.loginArrival}`}>
+          <BackHeader onBack={() => setStage("login")} />
+          <section className={styles.intro}>
+            <h1>Verifique seu e-mail</h1>
+            <p>
+              {checkEmailContext === "signup"
+                ? "Mandamos um link de confirmação. Depois de confirmar, é só entrar normalmente."
+                : "Se esse e-mail tiver uma conta, mandamos um link pra criar uma senha nova."}
+            </p>
+          </section>
+          <button
+            type="button"
+            className={styles.primary}
+            onClick={() => setStage("login")}
+          >
+            Voltar para entrar
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -72,13 +270,7 @@ export default function LoginPage() {
           <p>Entre para continuar de onde parou.</p>
         </section>
 
-        <form
-          className={styles.form}
-          onSubmit={(event) => {
-            event.preventDefault();
-            notAvailableYet();
-          }}
-        >
+        <form className={styles.form} onSubmit={handleLoginSubmit}>
           <label>
             <span>E-mail</span>
             <div>
@@ -117,18 +309,17 @@ export default function LoginPage() {
           <button
             type="button"
             className={`${styles.linkButton} ${styles.rowEnd}`}
-            disabled
-            aria-disabled
+            onClick={() => setStage("forgot")}
           >
             Esqueci minha senha
           </button>
-          <button type="submit" className={styles.primary}>
-            Entrar <ArrowRight />
+          <button
+            type="submit"
+            className={styles.primary}
+            disabled={submitting}
+          >
+            {submitting ? "Entrando…" : "Entrar"} <ArrowRight />
           </button>
-          <p className={styles.emailNote}>
-            Login por e-mail chega em breve. Por enquanto, entre com o Google
-            abaixo.
-          </p>
         </form>
 
         <section
@@ -163,8 +354,7 @@ export default function LoginPage() {
             <button
               type="button"
               className={styles.linkButton}
-              disabled
-              aria-disabled
+              onClick={() => setStage("signup")}
             >
               Criar conta
             </button>
@@ -172,6 +362,30 @@ export default function LoginPage() {
         </footer>
       </div>
     </div>
+  );
+}
+
+function BackHeader({ onBack }: { onBack: () => void }) {
+  return (
+    <header className={styles.brand}>
+      <button
+        type="button"
+        aria-label="Voltar"
+        onClick={onBack}
+        style={{
+          width: 34,
+          height: 34,
+          display: "grid",
+          placeItems: "center",
+          borderRadius: 11,
+          background: "rgb(var(--accent-rgb) / 0.14)",
+          border: "1px solid rgb(var(--accent-rgb) / 0.22)",
+          color: "var(--accent)",
+        }}
+      >
+        <ArrowLeft width={16} height={16} />
+      </button>
+    </header>
   );
 }
 
