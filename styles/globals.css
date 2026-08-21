@@ -379,14 +379,8 @@
      decisão aprovada em 05/08/2026) — Plus Jakarta Sans fica reservada
      para títulos/identidade via --font-display abaixo. */
   font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "Segoe UI",
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
   font-feature-settings: "cv11", "ss01";
   --font-display: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
 }
@@ -399,6 +393,10 @@ h3 {
 
 html {
   scroll-behavior: smooth;
+  /* Fallback pra qualquer tira que 100vh deixe descoberta no rodapé (ver
+     comentário no body abaixo) -- nunca deve aparecer, mas se aparecer,
+     preto é bem menos visível que o cinza padrão do WKWebView. */
+  background: #000;
 }
 
 html,
@@ -409,7 +407,12 @@ body {
 }
 
 body {
+  /* iOS PWA em modo standalone: 100vh não inclui a área segura (home
+     indicator) de forma confiável, deixando uma tira sem o fundo do body
+     abaixo da BottomNav -- 100dvh (viewport dinâmico) resolve; 100vh fica
+     como fallback pra navegadores sem suporte a dvh. */
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--body-bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
