@@ -48,7 +48,17 @@ npm run supabase:stop       # derruba os containers quando terminar
 
 Ver `docs/rede/TEST_HARNESS_EVIDENCE.md` — saída real de `supabase start` + `npm test` rodados neste worktree contra o Supabase local, provando: 2 usuários de teste criados, autenticados individualmente, e as três asserções de RLS (owner lê, terceiro não lê, terceiro não escreve) passando.
 
-## 5. O que este ticket não faz
+## 6. Checklist de aprovação humana para correções de segurança/RLS
+
+Issue #49 — a revisão independente do PR #47 (fix de segurança/RLS) aprovou o merge só com base na descrição do PR e no build passando, sem reexecutar `npm test` (evitou perturbar uma instância local do Supabase aparentemente em uso concorrente por outra sessão). Para qualquer correção de segurança/RLS futura, o passo abaixo é obrigatório antes de aprovar o merge, não opcional:
+
+1. Confirmar que nenhuma outra sessão está usando o Supabase local no momento (`npx supabase status` — se algo já estiver rodando e for de outra sessão ativa, subir uma instância descartável separada em vez de derrubar a existente).
+2. Rodar `npm test` (`vitest run`) localmente contra esse Supabase, não só confiar na descrição do autor do PR.
+3. Registrar o resultado (N/M passando, quais falhas são as 2 pré-existentes conhecidas — `tests/wiring/cofre-visual.test.ts` #58, `tests/rede/concurrency/curtidas.concurrency.test.ts` #60 — vs. algo novo) no comentário de aprovação.
+
+Baseline atual (2026-08-21, `origin/mockuptesterede` @ `6ab716a`): **571/573 passando**, as 2 falhas são exatamente as pré-existentes acima — nenhuma regressão nova.
+
+## 7. O que este ticket não faz
 
 - Não escreve testes para tabelas da Rede (isso é `RD-18`).
 - Não escreve testes de concorrência (isso é `RD-19`).
