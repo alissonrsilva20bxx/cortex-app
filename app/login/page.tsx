@@ -2,9 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { requestPasswordReset, signInWithEmail, signUpWithEmail } from "@/lib/auth";
+import {
+  requestPasswordReset,
+  signInWithEmail,
+  signUpWithEmail,
+} from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import { OpeningMotion } from "@/components/entry/OpeningMotion";
 import styles from "./entry.module.css";
@@ -147,7 +158,11 @@ export default function LoginPage() {
                 </button>
               </div>
             </label>
-            <button type="submit" className={styles.primary} disabled={submitting}>
+            <button
+              type="submit"
+              className={styles.primary}
+              disabled={submitting}
+            >
               {submitting ? "Criando…" : "Criar conta"} <ArrowRight />
             </button>
           </form>
@@ -181,7 +196,11 @@ export default function LoginPage() {
                 />
               </div>
             </label>
-            <button type="submit" className={styles.primary} disabled={submitting}>
+            <button
+              type="submit"
+              className={styles.primary}
+              disabled={submitting}
+            >
               {submitting ? "Enviando…" : "Enviar link"} <ArrowRight />
             </button>
           </form>
@@ -294,7 +313,11 @@ export default function LoginPage() {
           >
             Esqueci minha senha
           </button>
-          <button type="submit" className={styles.primary} disabled={submitting}>
+          <button
+            type="submit"
+            className={styles.primary}
+            disabled={submitting}
+          >
             {submitting ? "Entrando…" : "Entrar"} <ArrowRight />
           </button>
         </form>

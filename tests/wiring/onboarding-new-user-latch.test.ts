@@ -28,13 +28,17 @@ import { join } from "node:path";
  * (`onboardingDoneKey(userId)`) pra corrigir.
  */
 
-const src = readFileSync(join(__dirname, "..", "..", "app", "page.tsx"), "utf-8");
+const src = readFileSync(
+  join(__dirname, "..", "..", "app", "page.tsx"),
+  "utf-8"
+);
 
 function extractLatchEffectBody(source: string): string {
   const match = source.match(
     /useEffect\(\(\) => \{\s*if \(isNewUserSession[\s\S]*?\}, \[usuario, dataLoaded, jobs, metas, isNewUserSession\]\);/
   );
-  if (!match) throw new Error("efeito de trava de isNewUserSession não encontrado");
+  if (!match)
+    throw new Error("efeito de trava de isNewUserSession não encontrado");
   return match[0];
 }
 
@@ -54,7 +58,9 @@ describe("app/page.tsx — decisão de 1º uso trava em vez de reavaliar a cada 
   it("decide a partir de isFreshAccount só quando há usuário e dados confirmados", () => {
     expect(effect).toMatch(/if \(!usuario\) return;/);
     expect(effect).toMatch(/if \(!dataLoaded\) return;/);
-    expect(effect).toMatch(/setIsNewUserSession\(isFreshAccount\(jobs, metas\)\)/);
+    expect(effect).toMatch(
+      /setIsNewUserSession\(isFreshAccount\(jobs, metas\)\)/
+    );
   });
 
   it("checa o flag de onboarding já concluído (localStorage, escopado por usuário) antes de recalcular isFreshAccount", () => {
@@ -65,7 +71,9 @@ describe("app/page.tsx — decisão de 1º uso trava em vez de reavaliar a cada 
     // a checagem do flag precisa vir ANTES do early-return de !dataLoaded,
     // senão uma conta que pulou tudo fica esperando dataLoaded de novo
     // toda sessão em vez de sair direto pela flag persistida.
-    const flagCheckIdx = effect.indexOf("localStorage.getItem(onboardingDoneKey(usuario.id))");
+    const flagCheckIdx = effect.indexOf(
+      "localStorage.getItem(onboardingDoneKey(usuario.id))"
+    );
     const dataLoadedGuardIdx = effect.indexOf("if (!dataLoaded) return;");
     expect(flagCheckIdx).toBeGreaterThan(-1);
     expect(dataLoadedGuardIdx).toBeGreaterThan(-1);
@@ -80,9 +88,7 @@ describe("app/page.tsx — decisão de 1º uso trava em vez de reavaliar a cada 
   });
 
   it("grava o flag em localStorage (escopado por usuário) quando o onboarding termina (onComplete), antes de destravar onboardingDone", () => {
-    const onCompleteMatch = src.match(
-      /onComplete=\{\(\) => \{[\s\S]*?\}\}/
-    );
+    const onCompleteMatch = src.match(/onComplete=\{\(\) => \{[\s\S]*?\}\}/);
     expect(onCompleteMatch).not.toBeNull();
     const onCompleteBody = onCompleteMatch![0];
     expect(onCompleteBody).toMatch(
@@ -96,8 +102,10 @@ describe("app/page.tsx — decisão de 1º uso trava em vez de reavaliar a cada 
     // onboarding de qualquer conta nova após a 1ª conta completar o fluxo
     // no mesmo navegador (comum em QA com múltiplas contas).
     expect(src).toMatch(
-      /const onboardingDoneKey = \(userId: string\) => `jobapp-onboarding-done:\$\{userId\}`;/
+      /const onboardingDoneKey = \(userId: string\) =>\s*`jobapp-onboarding-done:\$\{userId\}`;/
     );
-    expect(src).not.toMatch(/localStorage\.(get|set)Item\("jobapp-onboarding-done"/);
+    expect(src).not.toMatch(
+      /localStorage\.(get|set)Item\("jobapp-onboarding-done"/
+    );
   });
 });

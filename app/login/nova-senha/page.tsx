@@ -60,7 +60,11 @@ export default function NovaSenhaPage() {
               </button>
             </div>
           </label>
-          <button type="submit" className={styles.primary} disabled={submitting}>
+          <button
+            type="submit"
+            className={styles.primary}
+            disabled={submitting}
+          >
             {submitting ? "Salvando…" : "Salvar senha"} <ArrowRight />
           </button>
         </form>

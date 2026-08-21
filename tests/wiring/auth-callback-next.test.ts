@@ -38,9 +38,7 @@ describe("GET /auth/callback — next param", () => {
 
   it("redireciona pro next informado quando a troca de code dá certo (fluxo de recuperação de senha)", async () => {
     mocks.exchangeCodeForSession.mockResolvedValue({ error: null });
-    const res = await GET(
-      request("?code=abc&next=/login/nova-senha") as never
-    );
+    const res = await GET(request("?code=abc&next=/login/nova-senha") as never);
     expect(res.headers.get("location")).toBe(
       "http://localhost:3000/login/nova-senha"
     );
@@ -49,7 +47,9 @@ describe("GET /auth/callback — next param", () => {
   it("ignora next que não começa com / (redirect aberto pra outro host)", async () => {
     mocks.exchangeCodeForSession.mockResolvedValue({ error: null });
     const res = await GET(
-      request("?code=abc&next=" + encodeURIComponent("https://evil.example")) as never
+      request(
+        "?code=abc&next=" + encodeURIComponent("https://evil.example")
+      ) as never
     );
     expect(res.headers.get("location")).toBe("http://localhost:3000/");
   });
@@ -65,7 +65,9 @@ describe("GET /auth/callback — next param", () => {
   it("ignora next com barra invertida (/\\\\host) — o parser de URL trata como separador de host, bypass real achado na revisão", async () => {
     mocks.exchangeCodeForSession.mockResolvedValue({ error: null });
     const res = await GET(
-      request("?code=abc&next=" + encodeURIComponent("/\\\\evil.example")) as never
+      request(
+        "?code=abc&next=" + encodeURIComponent("/\\\\evil.example")
+      ) as never
     );
     expect(res.headers.get("location")).toBe("http://localhost:3000/");
   });
@@ -86,9 +88,7 @@ describe("GET /auth/callback — next param", () => {
     mocks.exchangeCodeForSession.mockResolvedValue({
       error: { message: "invalid code" },
     });
-    const res = await GET(
-      request("?code=abc&next=/login/nova-senha") as never
-    );
+    const res = await GET(request("?code=abc&next=/login/nova-senha") as never);
     expect(res.headers.get("location")).toBe(
       "http://localhost:3000/login?error=invalid%20code"
     );

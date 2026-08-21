@@ -47,7 +47,8 @@ import type {
 // qualquer conta nova depois no mesmo navegador (comum em QA, achado numa
 // 2ª rodada de revisão do mesmo #99). Não resolve entre aparelhos — versão
 // robusta fica pra uma issue separada, mesmo padrão de #98.
-const onboardingDoneKey = (userId: string) => `jobapp-onboarding-done:${userId}`;
+const onboardingDoneKey = (userId: string) =>
+  `jobapp-onboarding-done:${userId}`;
 
 const DEFAULT_HOME_CARDS: HomeCardConfig = {
   nextJob: true,

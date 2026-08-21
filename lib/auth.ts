@@ -49,7 +49,10 @@ export async function signUpWithEmail(
     options: { emailRedirectTo },
   });
   if (error) {
-    return { error: mapAuthErrorMessage(error.message), needsConfirmation: false };
+    return {
+      error: mapAuthErrorMessage(error.message),
+      needsConfirmation: false,
+    };
   }
   // Supabase não retorna erro pra e-mail já cadastrado (evita enumeração) —
   // em vez disso devolve um user "fantasma" com identities: []. Tratamos
