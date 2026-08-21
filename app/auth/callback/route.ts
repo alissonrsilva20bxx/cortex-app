@@ -1,12 +1,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+function safeNextPath(rawNext: string | null): string {
+  // Só aceita path relativo interno ("/algo"), nunca "//host" (protocol-
+  // relative) nem uma URL absoluta pra outro host — os dois são vetores
+  // clássicos de open redirect.
+  if (!rawNext || !rawNext.startsWith("/") || rawNext.startsWith("//")) {
+    return "/";
+  }
+  return rawNext;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const next = safeNextPath(searchParams.get("next"));
 
   // Cria a resposta de redirect antes de setar cookies
-  const response = NextResponse.redirect(new URL("/", origin));
+  const response = NextResponse.redirect(new URL(next, origin));
 
   if (!code) {
     return NextResponse.redirect(new URL("/login?error=no_code", origin));
