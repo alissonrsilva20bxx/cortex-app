@@ -46,12 +46,12 @@ export const BOTTOM_NAV_EXPANDED: BottomNavCompactStyle = {
 };
 
 export const BOTTOM_NAV_COMPACT: BottomNavCompactStyle = {
-  edgeInset: 34,
-  padding: 4,
-  translateY: 4,
-  activeWidth: 48,
-  backgroundOpacity: 0.78,
-  shadow: "0 10px 28px rgb(0 0 0 / 0.38)",
+  edgeInset: 44,
+  padding: 3,
+  translateY: 8,
+  activeWidth: 44,
+  backgroundOpacity: 0.9,
+  shadow: "0 6px 20px rgb(0 0 0 / 0.3)",
 };
 
 export function getBottomNavCompactStyle(
