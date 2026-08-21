@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
@@ -34,4 +36,14 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// T19/#72 — sem SENTRY_AUTH_TOKEN (nenhum ambiente local/dev tem um
+// configurado hoje — precisa vir de um projeto Sentry real, provisionado
+// por um humano), desliga upload de sourcemap: build local/CI continua
+// idêntico a antes, sem tentar autenticar em lugar nenhum. Nunca commitar
+// esse token — só via variável de ambiente do provedor de deploy.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+});
