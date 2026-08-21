@@ -38,7 +38,9 @@ export function PostComposer({
   onSaveEdit,
 }: Props) {
   const [texto, setTexto] = useState("");
-  const [categoria, setCategoria] = useState<Categoria>("dica");
+  // "geral" é a opção neutra (migration 0025) -- quem não quer classificar
+  // a publicação numa das outras 4 categorias simplesmente não mexe aqui.
+  const [categoria, setCategoria] = useState<Categoria>("geral");
 
   useEffect(() => {
     if (!open) return;
@@ -50,7 +52,7 @@ export function PostComposer({
 
   function reset() {
     setTexto("");
-    setCategoria("dica");
+    setCategoria("geral");
   }
 
   function handlePublish() {

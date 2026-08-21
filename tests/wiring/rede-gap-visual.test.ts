@@ -59,10 +59,12 @@ describe("§6.3-P1-1 — bloco 'Novo pedido de amizade' condicional a pendingReq
   });
 });
 
-describe("§6.4-P0-1 — composer oferece exatamente as 4 categorias reais, sem opção livre", () => {
-  it("CATEGORIA_META (fonte do composer) tem exatamente as 4 chaves do enum, nenhuma a mais", () => {
+describe("§6.4-P0-1 — composer oferece exatamente as 5 categorias reais, sem opção livre", () => {
+  it("CATEGORIA_META (fonte do composer) tem exatamente as 5 chaves do enum, nenhuma a mais", () => {
+    // "geral" adicionada na migration 0025 -- opção neutra/default do
+    // composer, pra quem não quer classificar a publicação nas outras 4.
     expect(Object.keys(CATEGORIA_META).sort()).toEqual(
-      ["conquista", "desabafo", "dica", "duvida"].sort()
+      ["conquista", "desabafo", "dica", "duvida", "geral"].sort()
     );
   });
 

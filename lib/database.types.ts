@@ -858,7 +858,12 @@ export type Database = {
       rede_denuncia_alvo_tipo: "post" | "comentario" | "usuario" | "mensagem";
       rede_denuncia_motivo: "spam" | "assedio" | "conteudo_impropio" | "outro";
       rede_denuncia_status: "pendente" | "revisada" | "resolvida";
-      rede_post_categoria: "conquista" | "dica" | "duvida" | "desabafo";
+      rede_post_categoria:
+        | "conquista"
+        | "dica"
+        | "duvida"
+        | "desabafo"
+        | "geral";
       rede_solicitacao_beta_status: "pendente" | "convidado" | "recusado";
       tema:
         | "pink-neon"
@@ -1010,7 +1015,7 @@ export const Constants = {
       rede_denuncia_alvo_tipo: ["post", "comentario", "usuario", "mensagem"],
       rede_denuncia_motivo: ["spam", "assedio", "conteudo_impropio", "outro"],
       rede_denuncia_status: ["pendente", "revisada", "resolvida"],
-      rede_post_categoria: ["conquista", "dica", "duvida", "desabafo"],
+      rede_post_categoria: ["conquista", "dica", "duvida", "desabafo", "geral"],
       rede_solicitacao_beta_status: ["pendente", "convidado", "recusado"],
       tema: [
         "pink-neon",

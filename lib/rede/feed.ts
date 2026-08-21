@@ -7,10 +7,17 @@ type Post = Database["public"]["Tables"]["rede_posts"]["Row"];
 type Comentario = Database["public"]["Tables"]["rede_comentarios"]["Row"];
 export type Categoria = Database["public"]["Enums"]["rede_post_categoria"];
 
-/** As 4 categorias de `rede_post_categoria` -- único lugar que define
- * label/cor pra elas, pra não triplicar em cada componente que exibe. */
+/** As 5 categorias de `rede_post_categoria` -- único lugar que define
+ * label/cor pra elas, pra não triplicar em cada componente que exibe.
+ * "geral" vem primeiro de propósito: é o default do composer
+ * (`PostComposer.tsx`) -- a opção neutra pra quem não quer classificar a
+ * publicação em nenhuma das outras 4 (migration 0025). */
 export const CATEGORIA_META: Record<Categoria, { label: string; rgb: string }> =
   {
+    // Literal (não var(--...)): não existe um "--muted-rgb" no design
+    // system hoje -- mesmo padrão de "desabafo" logo abaixo, que também
+    // usa uma tripla RGB literal por não ter variável de tema própria.
+    geral: { label: "Geral", rgb: "148 163 184" },
     dica: { label: "Dica", rgb: "var(--info-rgb)" },
     conquista: { label: "Conquista", rgb: "var(--success-rgb)" },
     duvida: { label: "Dúvida", rgb: "var(--warning-rgb)" },
