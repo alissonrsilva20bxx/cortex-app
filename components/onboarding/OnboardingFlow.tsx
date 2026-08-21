@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { HeroCard } from "@/components/home/HeroCard";
 import { PinSetup } from "@/components/pin/PinSetup";
+import { hasNoRealGoal } from "@/lib/onboarding";
 import type { Job, Meta, Usuario } from "@/lib/types";
 
 /**
@@ -62,9 +63,11 @@ export function OnboardingFlow({
   const [savingGoal, setSavingGoal] = useState(false);
 
   const firstName = usuario.nome.split(" ")[0];
-  const hasMonthlyGoal = metas.some(
-    (m) => m.periodo === "mes" && m.valorAlvo > 0
-  );
+  // `metas` chega pré-semeada (mes: 3000) pelo trigger de criação de
+  // conta — sem isso, hasMonthlyGoal seria sempre true e a etapa nunca
+  // apareceria pra ninguém (T17/#70). hasNoRealGoal trata os valores-
+  // semente como "ainda não definida".
+  const hasMonthlyGoal = !hasNoRealGoal(metas);
 
   let step: Step;
   if (!welcomeDismissed) step = "welcome";
