@@ -161,22 +161,43 @@ export default function Page() {
   // Re-trava ~30s depois de ir para segundo plano (§5.2): "abriu, minimizou,
   // alguém pegou" fecha aqui. Mede o tempo decorrido ao voltar, sem depender
   // de um timer rodando em background (que o navegador pode suspender).
+  //
+  // Só `visibilitychange` não bastava: no PWA instalado do iOS, trocar de
+  // app às vezes não dispara esse evento de forma confiável (achado em QA
+  // ao vivo — a trava só pegava depois de uns 4min em vez de ~30s, contra
+  // o Cofre, que já usa `blur`/`pagehide` além de `visibilitychange` e
+  // sempre reage na hora — ver `components/cofre/CofreTab.tsx`). Replica
+  // aqui o mesmo conjunto de sinais do Cofre, mas mantendo o grace period
+  // de 30s (deliberadamente diferente do Cofre, que não tem nenhum) —
+  // `hiddenAt` só é setado por quem chegar primeiro, e checado só uma vez
+  // por retorno, então múltiplos eventos do mesmo evento real de
+  // segundo-plano não se pisam.
   useEffect(() => {
     if (!pinHash) return;
     let hiddenAt: number | null = null;
-    function handleVisibility() {
-      if (document.visibilityState === "hidden") {
-        hiddenAt = Date.now();
-      } else if (document.visibilityState === "visible") {
-        if (hiddenAt !== null && Date.now() - hiddenAt >= 30_000) {
-          setLocked(true);
-        }
-        hiddenAt = null;
-      }
+    function markHidden() {
+      if (hiddenAt === null) hiddenAt = Date.now();
     }
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibility);
+    function checkElapsedAndReveal() {
+      if (hiddenAt !== null && Date.now() - hiddenAt >= 30_000) {
+        setLocked(true);
+      }
+      hiddenAt = null;
+    }
+    function onVisibilityChange() {
+      if (document.visibilityState === "hidden") markHidden();
+      else if (document.visibilityState === "visible") checkElapsedAndReveal();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener("pagehide", markHidden);
+    window.addEventListener("blur", markHidden);
+    window.addEventListener("focus", checkElapsedAndReveal);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("pagehide", markHidden);
+      window.removeEventListener("blur", markHidden);
+      window.removeEventListener("focus", checkElapsedAndReveal);
+    };
   }, [pinHash]);
 
   useEffect(() => {
