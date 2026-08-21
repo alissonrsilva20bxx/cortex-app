@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import {
   DEFAULT_THEME,
   THEME_STORAGE_KEY,
@@ -73,15 +79,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setModeState(readStoredMode());
   }, []);
 
-  function setTheme(next: Theme) {
+  // Stable identity across renders -- callers (e.g. AjustesTab's user-prefs
+  // load effect) list setTheme in their own deps array, and an unstable
+  // reference here used to re-fire that effect on every theme change,
+  // racing its fresh DB read against this same click's in-flight write.
+  const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
     localStorage.setItem(THEME_STORAGE_KEY, next);
-  }
+  }, []);
 
-  function setMode(next: "dark" | "light") {
+  const setMode = useCallback((next: "dark" | "light") => {
     setModeState(next);
     localStorage.setItem(MODE_STORAGE_KEY, next);
-  }
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
