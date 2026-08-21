@@ -62,6 +62,26 @@ describe("GET /auth/callback — next param", () => {
     expect(res.headers.get("location")).toBe("http://localhost:3000/");
   });
 
+  it("ignora next com barra invertida (/\\\\host) — o parser de URL trata como separador de host, bypass real achado na revisão", async () => {
+    mocks.exchangeCodeForSession.mockResolvedValue({ error: null });
+    const res = await GET(
+      request("?code=abc&next=" + encodeURIComponent("/\\\\evil.example")) as never
+    );
+    expect(res.headers.get("location")).toBe("http://localhost:3000/");
+  });
+
+  it("preserva query string e hash de um next relativo válido", async () => {
+    mocks.exchangeCodeForSession.mockResolvedValue({ error: null });
+    const res = await GET(
+      request(
+        "?code=abc&next=" + encodeURIComponent("/login/nova-senha?foo=bar#baz")
+      ) as never
+    );
+    expect(res.headers.get("location")).toBe(
+      "http://localhost:3000/login/nova-senha?foo=bar#baz"
+    );
+  });
+
   it("nunca segue next quando a troca de code falha — continua indo pra /login com o erro", async () => {
     mocks.exchangeCodeForSession.mockResolvedValue({
       error: { message: "invalid code" },

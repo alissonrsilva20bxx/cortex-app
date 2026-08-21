@@ -52,12 +52,11 @@ export async function signUpWithEmail(
     return { error: mapAuthErrorMessage(error.message), needsConfirmation: false };
   }
   // Supabase não retorna erro pra e-mail já cadastrado (evita enumeração) —
-  // em vez disso devolve um user "fantasma" com identities: [].
+  // em vez disso devolve um user "fantasma" com identities: []. Tratamos
+  // como o mesmo "verifique seu e-mail" do caso normal, sem revelar se a
+  // conta já existia (mesmo padrão neutro do reset de senha).
   if (data.user && data.user.identities?.length === 0) {
-    return {
-      error: "Já existe uma conta com este e-mail. Tente entrar.",
-      needsConfirmation: false,
-    };
+    return { error: null, needsConfirmation: true };
   }
   const needsConfirmation = !!data.user && !data.session;
   return { error: null, needsConfirmation };

@@ -137,7 +137,7 @@ describe("signUpWithEmail", () => {
     expect(result).toEqual({ error: null, needsConfirmation: false });
   });
 
-  it("detecta e-mail já cadastrado via identities vazio (comportamento anti-enumeração do Supabase)", async () => {
+  it("trata e-mail já cadastrado (identities vazio) como sucesso silencioso — nunca revela que a conta já existia", async () => {
     mocks.signUp.mockResolvedValue({
       data: { user: { id: "u1", identities: [] }, session: null },
       error: null,
@@ -147,10 +147,10 @@ describe("signUpWithEmail", () => {
       "senha123",
       "http://localhost:3000/auth/callback"
     );
-    expect(result).toEqual({
-      error: "Já existe uma conta com este e-mail. Tente entrar.",
-      needsConfirmation: false,
-    });
+    // Mesmo resultado do caminho de signup normal (needsConfirmation
+    // sem erro) — devolver uma mensagem diferente aqui reintroduziria a
+    // enumeração de e-mail que o Supabase evita de propósito.
+    expect(result).toEqual({ error: null, needsConfirmation: true });
   });
 
   it("mapeia erro do Supabase pra português e nunca sinaliza needsConfirmation nesse caso", async () => {
