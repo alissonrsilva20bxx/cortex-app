@@ -341,9 +341,10 @@ describe("Shared FilterChips/BottomSheet touch-target fixes are opt-in, not a de
   });
 
   it("Rede's FilterChips consumers do not opt into minTouchTarget (out of this ticket's scope)", () => {
+    // PostComposer.tsx passou a usar minTouchTarget de propósito num ticket
+    // posterior (categoria do post) — ver issue #58. Removido desta lista.
     for (const file of [
       "components/rede/ClientesScreen.tsx",
-      "components/rede/PostComposer.tsx",
       "components/rede/WishlistScreen.tsx",
     ]) {
       expect(read(file)).not.toMatch(/<FilterChips[\s\S]*?minTouchTarget/);
