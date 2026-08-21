@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { TabPanel } from "@/components/TabPanel";
 import { BottomNav } from "@/components/BottomNav";
@@ -21,7 +20,6 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
-import { PinPrototypeGate } from "@/components/pin/prototype/PinScreenVariants";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
@@ -57,16 +55,7 @@ const DEFAULT_HOME_CARDS: HomeCardConfig = {
 };
 const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
 
-// `useSearchParams()` exige um ancestral <Suspense> no App Router --
-// sem ele, o Next derruba a página inteira pra client-rendering puro no
-// primeiro load (erro de hidratação "Missing ActionQueueContext",
-// reproduzido em toda a rota, não só quando `?variant=` é usado de
-// verdade). `DevPreviewApp` (default export, embaixo) é só o wrapper com
-// o Suspense; toda a lógica real continua aqui.
-function DevPreviewAppInner() {
-  // PROTOTYPE-ONLY — ver bloco perto do fim do componente.
-  const pinPrototypeVariant = useSearchParams().get("variant");
-
+export default function DevPreviewApp() {
   // Ativa o client mockado uma única vez, síncrono, antes de qualquer aba
   // filha montar e disparar seu próprio fetch (que agora cai no mock).
   const mockInitialized = useRef(false);
@@ -222,11 +211,6 @@ function DevPreviewAppInner() {
       prev.map((o) => (o.id === id ? { ...o, concluido } : o))
     );
   }
-
-  // PROTOTYPE-ONLY — ?variant=A|B|C forces one of the PinScreen redesign
-  // directions, regardless of lock state. Remove alongside
-  // components/pin/prototype/ once a direction wins.
-  if (pinPrototypeVariant) return <PinPrototypeGate />;
 
   if (locked && pinHash) {
     return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
@@ -396,13 +380,5 @@ function DevPreviewAppInner() {
         }}
       />
     </div>
-  );
-}
-
-export default function DevPreviewApp() {
-  return (
-    <Suspense fallback={null}>
-      <DevPreviewAppInner />
-    </Suspense>
   );
 }
