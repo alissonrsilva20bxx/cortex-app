@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Link2,
-  Flag,
-  Pencil,
-  Trash2,
-  Send,
-  Share2,
-  X,
-  Ban,
-} from "lucide-react";
+import { Link2, Flag, Pencil, Trash2, Send, X, Ban } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { FeedScreen } from "./FeedScreen";
 import { SearchScreen } from "./SearchScreen";
@@ -1788,12 +1779,6 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
             label: "Enviar para uma conversa",
             Icon: Send,
             onSelect: () => setShareToConvoPost(sharePost),
-          },
-          {
-            key: "externo",
-            label: "Compartilhar externamente",
-            Icon: Share2,
-            onSelect: () => toast.success("Abrindo compartilhamento…"),
           },
           {
             key: "copiar",

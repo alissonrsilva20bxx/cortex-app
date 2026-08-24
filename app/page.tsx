@@ -20,7 +20,10 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
-import { OpeningMotion } from "@/components/entry/OpeningMotion";
+import {
+  OpeningMotion,
+  SEEN_THIS_TAB_KEY,
+} from "@/components/entry/OpeningMotion";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
@@ -75,7 +78,16 @@ export default function Page() {
   const [locked, setLocked] = useState(false);
 
   // Roda em paralelo com o fetch de usuário/PIN abaixo, não em sequência.
-  const [entryDone, setEntryDone] = useState(false);
+  // Lazy init (nunca efeito) pra decidir ANTES do 1º paint: se o /login já
+  // tocou o motion completo nesta aba (acabou de logar), pula a montagem
+  // aqui inteiramente — sem isso viraria um flash em vez de zero motion no
+  // pós-login. Quem abre o app já logada numa aba nova ainda vê o motion
+  // completo normalmente (a flag não existe nessa aba ainda).
+  const [entryDone, setEntryDone] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(SEEN_THIS_TAB_KEY) === "1"
+  );
 
   // Distingue "ainda não sei se ela tem dados" de "confirmei que não tem" —
   // sem isso, uma usuária antiga com dados reais veria o onboarding piscar

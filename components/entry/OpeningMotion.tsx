@@ -11,7 +11,9 @@ interface Props {
 // Sempre toca por inteiro, mesmo pra quem já está logada — é a abertura do
 // app, não um tour de primeira visita. Home e login chamam com o mesmo
 // componente pra manter idêntico o "abriu o JobApp" em qualquer entrada.
-const SEEN_THIS_TAB_KEY = "jobapp-entry-motion-seen";
+// Exportada pra Home (app/page.tsx) poder pular a própria montagem quando o
+// login acabou de tocar essa animação nesta mesma aba — ver comentário lá.
+export const SEEN_THIS_TAB_KEY = "jobapp-entry-motion-seen";
 
 export function OpeningMotion({ onDone }: Props) {
   // Lida no render (lazy init), nunca no efeito — um efeito que lê E escreve
