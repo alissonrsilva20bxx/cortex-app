@@ -1,0 +1,304 @@
+.page {
+  --pin-accent: #e34468;
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #08080a;
+  color: #f5f1f3;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+}
+
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(227, 68, 104, 0.055), transparent 27%),
+    radial-gradient(
+      ellipse 72% 42% at 8% 6%,
+      rgba(227, 68, 104, 0.1),
+      transparent 70%
+    );
+}
+
+.page[data-vault="true"] .atmosphere {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 27%),
+    radial-gradient(
+      ellipse 72% 42% at 8% 6%,
+      rgba(255, 255, 255, 0.05),
+      transparent 70%
+    );
+}
+
+.header {
+  width: min(100%, 520px);
+  height: 76px;
+  margin: 0 auto;
+  padding: 22px clamp(24px, 5vw, 38px) 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.wordmark {
+  font-family: var(--font-display), "Plus Jakarta Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 760;
+  letter-spacing: -0.035em;
+}
+
+.modeToggle {
+  min-height: 44px;
+  margin-top: -11px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: #9f969b;
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.page[data-vault="true"] .modeToggle {
+  color: #d2c9cd;
+}
+
+.contextLabel {
+  color: #b8afb3;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.content {
+  width: min(100%, 520px);
+  min-height: calc(100dvh - 76px);
+  margin: 0 auto;
+  padding: clamp(22px, 4vh, 38px) clamp(24px, 5vw, 38px) 76px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.copy h1 {
+  max-width: 430px;
+  margin: 0;
+  font-family: var(--font-display), "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(39px, 10vw, 54px);
+  font-weight: 580;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.copy p {
+  min-height: 42px;
+  max-width: 390px;
+  margin: 14px 0 0;
+  color: #aaa0a5;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.pinRail {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: clamp(32px, 5vh, 44px) 0 clamp(26px, 4vh, 34px);
+}
+
+.pinRail i {
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.13);
+  transition:
+    background-color 150ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pinRail i.filled {
+  background: var(--pin-accent);
+  transform: scaleY(1.7);
+}
+
+.pinRail i.invalid {
+  background: #ff6262;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.keypad button,
+.keypad > span {
+  height: clamp(68px, 10vh, 82px);
+}
+
+.keypad button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #f5f1f3;
+  font-size: 23px;
+  font-weight: 520;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 110ms ease;
+}
+
+.keypad button::after {
+  content: "";
+  position: absolute;
+  inset: auto 12px 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.keypad button:nth-last-child(-n + 3)::after {
+  display: none;
+}
+
+.keypad button:active {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.keypad button:disabled {
+  opacity: 0.42;
+}
+
+.keypad svg {
+  color: #a69ca1;
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: clamp(14px, 2.5vh, 24px);
+  text-align: center;
+}
+
+.footer button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #e86a87;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.footer p {
+  max-width: 380px;
+  margin: 4px auto 0;
+  color: #8e858a;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.page :focus-visible {
+  outline: 2px solid #f7f2f4;
+  outline-offset: -3px;
+}
+
+@media (max-height: 640px) {
+  .header {
+    height: 62px;
+  }
+
+  .content {
+    min-height: calc(100dvh - 62px);
+    padding-top: 16px;
+  }
+
+  .copy h1 {
+    font-size: 32px;
+  }
+
+  .copy p {
+    margin-top: 8px;
+  }
+
+  .pinRail {
+    margin: 20px 0 16px;
+  }
+
+  .footer {
+    padding-top: 12px;
+  }
+
+  .content {
+    padding-bottom: 76px;
+  }
+}
+
+@media (min-width: 820px) and (min-height: 620px) {
+  .header {
+    width: min(100%, 920px);
+    padding-inline: 28px;
+  }
+
+  .content {
+    width: min(100%, 920px);
+    padding: 42px 28px 82px;
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(390px, 440px);
+    grid-template-rows: auto auto auto;
+    column-gap: clamp(88px, 9vw, 132px);
+    align-content: center;
+  }
+
+  .copy {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: center;
+  }
+
+  .copy h1 {
+    max-width: 390px;
+    font-size: clamp(52px, 5vw, 66px);
+  }
+
+  .copy p {
+    max-width: 330px;
+    margin-top: 18px;
+  }
+
+  .pinRail {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0 0 36px;
+  }
+
+  .keypad {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .keypad button,
+  .keypad > span {
+    height: clamp(72px, 10.5vh, 84px);
+  }
+
+  .footer {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 0;
+    padding-top: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pinRail i {
+    transition: background-color 120ms ease;
+  }
+}

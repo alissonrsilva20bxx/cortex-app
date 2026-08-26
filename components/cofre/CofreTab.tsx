@@ -285,7 +285,11 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
     // even if that contract were ever violated.
     if (!pinHash || !mounted) return null;
     return createPortal(
-      <PinScreen pinHash={pinHash} onUnlock={() => setUnlocked(true)} />,
+      <PinScreen
+        pinHash={pinHash}
+        context="vault"
+        onUnlock={() => setUnlocked(true)}
+      />,
       document.body
     );
   }
@@ -330,7 +334,10 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
         >
           Cofre
         </h1>
-        <div className="flex items-center gap-3" style={{ color: "var(--text-2)" }}>
+        <div
+          className="flex items-center gap-3"
+          style={{ color: "var(--text-2)" }}
+        >
           <Shield size={18} />
         </div>
       </div>
@@ -418,7 +425,10 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
               </p>
             </div>
             <div
-              style={{ height: "40px", borderLeft: "1px solid var(--border-color)" }}
+              style={{
+                height: "40px",
+                borderLeft: "1px solid var(--border-color)",
+              }}
             />
             <div>
               <strong
@@ -484,7 +494,11 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
             >
               <div
                 className="grid place-items-center rounded-lg shrink-0"
-                style={{ width: "36px", height: "36px", background: "var(--surface-2)" }}
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  background: "var(--surface-2)",
+                }}
               >
                 <FileIcon mime={f.mimeType} />
               </div>
