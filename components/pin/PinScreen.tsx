@@ -22,13 +22,19 @@ export function PinScreen({
   const [shake, setShake] = useState(false);
   const [error, setError] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
   const vault = context === "vault";
 
   useEffect(() => {
     if (digits.length !== 4) return;
     let cancelled = false;
+    let unlockTimer: number | undefined;
     const onUnlock = () => {
-      if (!cancelled) unlock();
+      if (cancelled) return;
+      setUnlocked(true);
+      unlockTimer = window.setTimeout(() => {
+        if (!cancelled) unlock();
+      }, 200);
     };
     setVerifying(true);
 
@@ -52,6 +58,7 @@ export function PinScreen({
 
     return () => {
       cancelled = true;
+      if (unlockTimer) window.clearTimeout(unlockTimer);
     };
   }, [digits, pinHash, unlock]);
 
@@ -70,6 +77,7 @@ export function PinScreen({
     <main
       className={`${styles.page} fixed inset-0 z-[100]`}
       data-vault={vault ? "true" : "false"}
+      data-unlocked={unlocked ? "true" : "false"}
       role="dialog"
       aria-modal="true"
       aria-labelledby="pin-screen-title"
@@ -93,11 +101,13 @@ export function PinScreen({
           <p aria-live="polite">
             {error
               ? "Esse PIN não confere. Tente novamente."
-              : verifying
-                ? "Verificando…"
-                : vault
-                  ? "Digite seu PIN para acessar seus arquivos protegidos."
-                  : "Confirme sua identidade para entrar no JobApp."}
+              : unlocked
+                ? "Acesso liberado."
+                : verifying
+                  ? "Verificando…"
+                  : vault
+                    ? "Digite seu PIN para acessar seus arquivos protegidos."
+                    : "Confirme sua identidade para entrar no JobApp."}
           </p>
         </div>
 

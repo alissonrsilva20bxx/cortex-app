@@ -133,6 +133,11 @@
   background: #ff6262;
 }
 
+.page[data-unlocked="true"] .pinRail i {
+  background: var(--pin-accent);
+  transform: scaleY(1.7);
+}
+
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
