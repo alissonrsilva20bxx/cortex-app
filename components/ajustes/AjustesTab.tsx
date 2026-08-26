@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Check,
   Sun,
@@ -17,6 +17,11 @@ import {
   Download,
   Bell,
   Smartphone,
+  ChevronRight,
+  ChevronLeft,
+  Palette,
+  Home,
+  Database,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
@@ -76,13 +81,15 @@ interface Props {
 function SettingsGroup({
   title,
   children,
+  hidden = false,
 }: {
   title: string;
   children: ReactNode;
+  hidden?: boolean;
 }) {
   return (
-    <section>
-      <p className="section-label mb-3">{title}</p>
+    <section hidden={hidden}>
+      {title ? <p className="section-label mb-3">{title}</p> : null}
       {children}
     </section>
   );
@@ -92,6 +99,72 @@ function SettingsGroup({
  * borbulhe até o `onClick` da linha inteira -- ver nota em cada uso abaixo. */
 function StopClickPropagation({ children }: { children: ReactNode }) {
   return <span onClick={(e) => e.stopPropagation()}>{children}</span>;
+}
+
+type SettingsPage =
+  | "appearance"
+  | "security"
+  | "home"
+  | "notifications"
+  | "install"
+  | "data";
+
+function SettingsMenuRow({
+  icon,
+  title,
+  detail,
+  onClick,
+  last = false,
+}: {
+  icon: ReactNode;
+  title: string;
+  detail?: string;
+  onClick: () => void;
+  last?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3.5 px-4 text-left transition-colors"
+      style={{ minHeight: 64, color: "var(--text)" }}
+    >
+      <span
+        className="grid shrink-0 place-items-center rounded-xl"
+        style={{
+          width: 36,
+          height: 36,
+          color: "var(--accent)",
+          background: "rgb(var(--accent-rgb) / 0.11)",
+        }}
+      >
+        {icon}
+      </span>
+      <span
+        className="flex min-w-0 flex-1 items-center self-stretch"
+        style={{
+          borderBottom: last ? "none" : "1px solid var(--border-color)",
+        }}
+      >
+        <span className="min-w-0 flex-1 py-3">
+          <span className="block text-sm font-semibold">{title}</span>
+          {detail ? (
+            <span
+              className="mt-0.5 block truncate text-xs"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {detail}
+            </span>
+          ) : null}
+        </span>
+        <ChevronRight
+          size={17}
+          className="shrink-0"
+          style={{ color: "var(--text-muted)" }}
+        />
+      </span>
+    </button>
+  );
 }
 
 export function AjustesTab({
@@ -122,6 +195,9 @@ export function AjustesTab({
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
   const [installSheetOpen, setInstallSheetOpen] = useState(false);
   const [standalone, setStandalone] = useState(false);
+  const [activePage, setActivePage] = useState<SettingsPage | null>(null);
+  const pageHeadingRef = useRef<HTMLHeadingElement>(null);
+  const lastMenuTriggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     supabase
@@ -150,6 +226,26 @@ export function AjustesTab({
     }
     setStandalone(isStandalone());
   }, [userId, setTheme]);
+
+  useEffect(() => {
+    const handleHistoryBack = () => setActivePage(null);
+    window.addEventListener("popstate", handleHistoryBack);
+    return () => window.removeEventListener("popstate", handleHistoryBack);
+  }, []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (activePage) pageHeadingRef.current?.focus();
+      else lastMenuTriggerRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activePage]);
+
+  useEffect(() => {
+    if (!standalone || activePage !== "install") return;
+    if (window.history.state?.jobappSettingsPage) window.history.back();
+    else setActivePage(null);
+  }, [activePage, standalone]);
 
   const estadoAssinatura = assinatura
     ? computeAssinatura(assinatura.trialStartedAt, assinatura.status)
@@ -257,24 +353,129 @@ export function AjustesTab({
     },
   ];
 
+  const pageTitles: Record<SettingsPage, string> = {
+    appearance: "Aparência",
+    security: "Segurança e PIN",
+    home: "Tela inicial",
+    notifications: "Notificações",
+    install: "Instalar JobApp",
+    data: "Assinatura e dados",
+  };
+
+  function openSettingsPage(page: SettingsPage) {
+    lastMenuTriggerRef.current = document.activeElement as HTMLElement | null;
+    window.history.pushState(
+      { ...window.history.state, jobappSettingsPage: page },
+      ""
+    );
+    setActivePage(page);
+  }
+
+  function closeSettingsPage() {
+    if (window.history.state?.jobappSettingsPage) window.history.back();
+    else setActivePage(null);
+  }
+
   return (
     <div className="pb-6">
-      <h2
-        className="font-extrabold mb-6"
-        style={{
-          fontSize: "26px",
-          letterSpacing: "-0.03em",
-          color: "var(--text)",
-        }}
-      >
-        Ajustes
-      </h2>
+      <div className="mb-6 flex min-h-11 items-center gap-2">
+        {activePage ? (
+          <button
+            type="button"
+            onClick={closeSettingsPage}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full"
+            aria-label="Voltar para Ajustes"
+            style={{ color: "var(--text)" }}
+          >
+            <ChevronLeft size={22} />
+          </button>
+        ) : null}
+        <h2
+          ref={pageHeadingRef}
+          tabIndex={activePage ? -1 : undefined}
+          className="font-extrabold"
+          style={{
+            fontSize: activePage ? "22px" : "26px",
+            letterSpacing: "-0.03em",
+            color: "var(--text)",
+          }}
+        >
+          {activePage ? pageTitles[activePage] : "Ajustes"}
+        </h2>
+      </div>
 
-      {/* Lista única de grupos, sem abas internas -- aparência do
-          laboratório (SettingsScreen/SettingGroup); toda a lógica real
-          (tema/PIN/push/exportar/personalização) segue idêntica. */}
-      <div className="space-y-6">
-        <SettingsGroup title="Aparência">
+      {!activePage ? (
+        <div className="space-y-6">
+          <SettingsGroup title="Conta">
+            <GlassCard radius="md" className="overflow-hidden p-0">
+              <SettingsMenuRow
+                icon={<Lock size={17} />}
+                title="Segurança e PIN"
+                detail={pinEnabled ? "PIN ativo" : "PIN desativado"}
+                onClick={() => openSettingsPage("security")}
+              />
+              <SettingsMenuRow
+                icon={<Database size={17} />}
+                title="Assinatura e dados"
+                detail={
+                  estadoAssinatura?.status === "ativa"
+                    ? "Assinatura ativa"
+                    : "Nuvem, privacidade e exportação"
+                }
+                onClick={() => openSettingsPage("data")}
+                last
+              />
+            </GlassCard>
+          </SettingsGroup>
+
+          <SettingsGroup title="Preferências">
+            <GlassCard radius="md" className="overflow-hidden p-0">
+              <SettingsMenuRow
+                icon={<Palette size={17} />}
+                title="Aparência"
+                detail={`${THEME_LABELS[theme]} · ${mode === "dark" ? "Escuro" : "Claro"}`}
+                onClick={() => openSettingsPage("appearance")}
+              />
+              <SettingsMenuRow
+                icon={<Home size={17} />}
+                title="Tela inicial"
+                detail="Cards e gráficos"
+                onClick={() => openSettingsPage("home")}
+                last={!pushSupported}
+              />
+              {pushSupported ? (
+                <SettingsMenuRow
+                  icon={<Bell size={17} />}
+                  title="Notificações"
+                  detail={pushEnabled ? "Ativadas" : "Desativadas"}
+                  onClick={() => openSettingsPage("notifications")}
+                  last
+                />
+              ) : null}
+            </GlassCard>
+          </SettingsGroup>
+
+          {!standalone ? (
+            <SettingsGroup title="Aplicativo">
+              <GlassCard radius="md" className="overflow-hidden p-0">
+                <SettingsMenuRow
+                  icon={<Smartphone size={17} />}
+                  title="Instalar JobApp"
+                  detail="Acesso rápido e funcionamento offline"
+                  onClick={() => openSettingsPage("install")}
+                  last
+                />
+              </GlassCard>
+            </SettingsGroup>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div
+        className="space-y-6"
+        style={{ display: activePage ? undefined : "none" }}
+      >
+        <SettingsGroup title="" hidden={activePage !== "appearance"}>
           <GlassCard radius="md" className="p-4 space-y-4">
             <div>
               <p
@@ -374,7 +575,7 @@ export function AjustesTab({
           </GlassCard>
         </SettingsGroup>
 
-        <SettingsGroup title="Segurança">
+        <SettingsGroup title="" hidden={activePage !== "security"}>
           <div className="space-y-3">
             <GlassCard
               radius="md"
@@ -434,7 +635,7 @@ export function AjustesTab({
           </div>
         </SettingsGroup>
 
-        <SettingsGroup title="Tela inicial">
+        <SettingsGroup title="" hidden={activePage !== "home"}>
           <div className="space-y-2">
             {homeCardItems.map(({ key, label, desc }) => {
               const on = homeCards[key] ?? true;
@@ -570,7 +771,7 @@ export function AjustesTab({
         {/* Notificações — opt-in, nunca spam (§7.3). Só aparece quando o
             navegador suporta; sem culpa se ela recusar a permissão. */}
         {pushSupported && (
-          <SettingsGroup title="Notificações">
+          <SettingsGroup title="" hidden={activePage !== "notifications"}>
             <GlassCard
               radius="md"
               as="div"
@@ -624,7 +825,7 @@ export function AjustesTab({
         {/* Instalar app — abre mais rápido e, no iPhone, é pré-requisito
             real pra notificação funcionar (limite da Apple, não nosso). */}
         {!standalone && (
-          <SettingsGroup title="App">
+          <SettingsGroup title="" hidden={activePage !== "install"}>
             <GlassCard
               radius="md"
               onClick={() => setInstallSheetOpen(true)}
@@ -658,7 +859,7 @@ export function AjustesTab({
           </SettingsGroup>
         )}
 
-        <SettingsGroup title="Nuvem e dados">
+        <SettingsGroup title="" hidden={activePage !== "data"}>
           <div className="space-y-3">
             {/* Assinatura — estado do teste, tom sereno, sem culpa nem
                 urgência falsa (§7.1). Nada aqui bloqueia o app. */}
@@ -795,6 +996,7 @@ export function AjustesTab({
 
       {/* FOOTER: LOGOUT - Sempre visível */}
       <div
+        hidden={activePage !== null}
         style={{
           borderTop: "1px solid rgb(var(--accent-rgb) / 0.1)",
           marginTop: "32px",
