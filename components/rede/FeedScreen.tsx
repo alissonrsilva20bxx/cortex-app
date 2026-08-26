@@ -33,6 +33,7 @@ interface ContextualBlockDef {
 
 interface Props {
   usuario: Usuario;
+  usuarioFotoUrl: string | null;
   posts: FeedPost[];
   friends: string[];
   wishlistItems: WishlistItem[];
@@ -59,6 +60,7 @@ interface Props {
 
 export function FeedScreen({
   usuario,
+  usuarioFotoUrl,
   posts,
   friends,
   wishlistItems,
@@ -154,6 +156,7 @@ export function FeedScreen({
     <div className="pb-4">
       <RedeHeader
         usuarioNome={usuario.nome}
+        usuarioFotoUrl={usuarioFotoUrl}
         unreadChats={unreadChats}
         unreadNotifs={unreadNotifs}
         onSearch={onOpenSearch}
@@ -169,7 +172,7 @@ export function FeedScreen({
         onClick={onOpenComposer}
         className="flex items-center gap-3 px-4 py-3.5 mb-4"
       >
-        <Avatar nome={usuario.nome} size="md" />
+        <Avatar nome={usuario.nome} fotoUrl={usuarioFotoUrl} size="md" />
         <span
           className="flex-1 text-sm text-left"
           style={{ color: "var(--text-muted)" }}

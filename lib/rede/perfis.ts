@@ -17,6 +17,7 @@ export type PessoaResumo = {
   nome: string;
   cor: string;
   bio: string;
+  fotoUrl: string | null;
 };
 
 function paraPessoaResumo(p: {
@@ -24,12 +25,14 @@ function paraPessoaResumo(p: {
   nome_exibicao: string;
   cor_avatar: string;
   bio: string | null;
+  avatar_url: string | null;
 }): PessoaResumo {
   return {
     id: p.user_id,
     nome: p.nome_exibicao,
     cor: p.cor_avatar,
     bio: p.bio ?? "",
+    fotoUrl: p.avatar_url,
   };
 }
 
@@ -45,6 +48,8 @@ export type AtualizarPerfilInput = {
   bio?: string;
   corAvatar?: string;
   areaAtuacao?: string;
+  /** `null` limpa a foto; `undefined` não mexe (mesmo padrão dos campos acima). */
+  avatarUrl?: string | null;
 };
 
 export type CriarLiveLinkInput = {
@@ -137,7 +142,7 @@ export async function buscarPerfisPorIds(
 
   const { data, error } = await client
     .from("rede_perfis")
-    .select("user_id,nome_exibicao,cor_avatar,bio")
+    .select("user_id,nome_exibicao,cor_avatar,bio,avatar_url")
     .in("user_id", userIds);
 
   if (error) {
@@ -164,7 +169,7 @@ export async function buscarPessoas(
   const [{ data, error }, bloqueados] = await Promise.all([
     client
       .from("rede_perfis")
-      .select("user_id,nome_exibicao,cor_avatar,bio")
+      .select("user_id,nome_exibicao,cor_avatar,bio,avatar_url")
       .ilike("nome_exibicao", `%${termo}%`)
       .limit(20),
     listarIdsBloqueados(client, userId),
@@ -191,6 +196,7 @@ export async function atualizarPerfil(
       bio: input.bio,
       cor_avatar: input.corAvatar,
       area_atuacao: input.areaAtuacao,
+      avatar_url: input.avatarUrl,
     })
     .eq("user_id", userId)
     .select()

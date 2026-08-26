@@ -58,6 +58,7 @@ export type FeedPost = {
   autorId: string;
   autorNome: string;
   autorCor: string;
+  autorFotoUrl: string | null;
   categoria: Categoria;
   texto: string;
   criadoEm: string;
@@ -72,6 +73,7 @@ export type FeedComment = {
   autorId: string;
   autorNome: string;
   autorCor: string;
+  autorFotoUrl: string | null;
   texto: string;
   criadoEm: string;
 };
@@ -124,7 +126,7 @@ export async function listarFeed(client: RedeClient): Promise<FeedPost[]> {
     client.from("rede_comentarios").select("post_id").in("post_id", postIds),
     client
       .from("rede_perfis")
-      .select("user_id,nome_exibicao,cor_avatar")
+      .select("user_id,nome_exibicao,cor_avatar,avatar_url")
       .in("user_id", autorIds),
   ]);
 
@@ -166,6 +168,7 @@ export async function listarFeed(client: RedeClient): Promise<FeedPost[]> {
       autorId: p.autor_id,
       autorNome: perfil?.nome_exibicao ?? "Usuária",
       autorCor: perfil?.cor_avatar ?? "var(--accent)",
+      autorFotoUrl: perfil?.avatar_url ?? null,
       categoria: p.categoria,
       texto: p.texto,
       criadoEm: p.criado_em,
@@ -256,7 +259,7 @@ export async function listarComentarios(
   const autorIds = Array.from(new Set(comentarios.map((c) => c.autor_id)));
   const { data: perfis, error: perfisError } = await client
     .from("rede_perfis")
-    .select("user_id,nome_exibicao,cor_avatar")
+    .select("user_id,nome_exibicao,cor_avatar,avatar_url")
     .in("user_id", autorIds);
 
   if (perfisError) {
@@ -274,6 +277,7 @@ export async function listarComentarios(
       autorId: c.autor_id,
       autorNome: perfil?.nome_exibicao ?? "Usuária",
       autorCor: perfil?.cor_avatar ?? "var(--accent)",
+      autorFotoUrl: perfil?.avatar_url ?? null,
       texto: c.texto,
       criadoEm: c.criado_em,
     };

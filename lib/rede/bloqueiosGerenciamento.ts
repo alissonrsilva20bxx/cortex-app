@@ -33,5 +33,9 @@ export async function listarBloqueadosComNome(
     nome: row.nome_exibicao,
     cor: row.cor_avatar,
     bio: "",
+    // `rede_listar_bloqueados` (0018) ainda não devolve avatar_url --
+    // pessoas bloqueadas aparecem sem foto por enquanto (fast-follow: ver
+    // migration que atualiza a função pra incluir a coluna).
+    fotoUrl: null,
   }));
 }

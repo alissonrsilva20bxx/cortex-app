@@ -134,7 +134,12 @@ export function RedeNotificationsSheet({
                   }}
                 >
                   <div className="relative shrink-0">
-                    <Avatar nome={n.pessoa.nome} cor={n.pessoa.cor} size="md" />
+                    <Avatar
+                      nome={n.pessoa.nome}
+                      cor={n.pessoa.cor}
+                      fotoUrl={n.pessoa.fotoUrl}
+                      size="md"
+                    />
                     <div
                       className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full"
                       style={{

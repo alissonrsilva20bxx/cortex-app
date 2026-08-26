@@ -1,7 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Link2, Flag, Pencil, Trash2, Send, X, Ban } from "lucide-react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  Link2,
+  Flag,
+  Pencil,
+  Trash2,
+  Send,
+  X,
+  Ban,
+  Camera,
+} from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { FeedScreen } from "./FeedScreen";
 import { SearchScreen } from "./SearchScreen";
@@ -115,6 +124,20 @@ function corAvatarAleatoria(): string {
   return CORES_AVATAR[Math.floor(Math.random() * CORES_AVATAR.length)];
 }
 
+const AVATAR_STORAGE_MARKER = "/object/public/avatares/";
+
+/** Extrai o path do objeto no Storage a partir da URL pública salva em
+ * `avatar_url`, pra poder apagar o arquivo antigo ao trocar/remover a foto
+ * (sem isso, cada troca deixa um arquivo órfão no bucket pra sempre). */
+function avatarPathFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const idx = url.indexOf(AVATAR_STORAGE_MARKER);
+  if (idx === -1) return null;
+  return url.slice(idx + AVATAR_STORAGE_MARKER.length);
+}
+
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+
 type RedeScreen =
   | { type: "feed" }
   | { type: "busca" }
@@ -141,10 +164,16 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const [liveLinks, setLiveLinks] = useState<LiveLink[]>([]);
   const [liveLinkFormOpen, setLiveLinkFormOpen] = useState(false);
   const [profileEditOpen, setProfileEditOpen] = useState(false);
+  const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
   // Perfis reais de outras autoras, buscados sob demanda ao abrir o perfil
   // público de alguém a partir de um post/comentário real (ver openAutor).
   const [otherProfiles, setOtherProfiles] = useState<
-    Record<string, { nome: string; bio: string; cor: string }>
+    Record<
+      string,
+      { nome: string; bio: string; cor: string; fotoUrl: string | null }
+    >
   >({});
   const [perfilError, setPerfilError] = useState(false);
   const [otherProfileLoading, setOtherProfileLoading] = useState(false);
@@ -645,6 +674,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       autorId: created.autor_id,
       autorNome: perfil?.nome_exibicao ?? usuario.nome,
       autorCor: perfil?.cor_avatar ?? "var(--accent)",
+      autorFotoUrl: perfil?.avatar_url ?? null,
       categoria: created.categoria,
       texto: created.texto,
       criadoEm: created.criado_em,
@@ -741,6 +771,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
             nome: p.nome_exibicao,
             bio: p.bio ?? "",
             cor: p.cor_avatar,
+            fotoUrl: p.avatar_url,
           },
         }));
       })
@@ -923,6 +954,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         outroUserId: userId,
         outroNome: perfilOutro?.nome_exibicao ?? "Usuária",
         outroCor: perfilOutro?.cor_avatar ?? "var(--accent)",
+        outroFotoUrl: perfilOutro?.avatar_url ?? null,
         ultimaMensagem: "",
         ultimaMensagemEm: null,
         naoLidas: 0,
@@ -1120,6 +1152,66 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
+  async function handleAvatarFileSelected(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione uma imagem.");
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      toast.error("A imagem deve ter até 5MB.");
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${usuario.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatares")
+        .upload(path, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatares").getPublicUrl(path);
+      const oldPath = avatarPathFromUrl(perfil?.avatar_url);
+      const updated = await atualizarPerfil(supabase, {
+        avatarUrl: publicUrl,
+      });
+      setPerfil(updated);
+      if (oldPath) {
+        supabase.storage
+          .from("avatares")
+          .remove([oldPath])
+          .catch(() => {});
+      }
+      toast.success("Foto atualizada!");
+    } catch (e) {
+      console.error("[RedeTab upload avatar]", e);
+      toast.error("Não foi possível enviar a foto.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setAvatarOptionsOpen(false);
+    const oldPath = avatarPathFromUrl(perfil?.avatar_url);
+    try {
+      const updated = await atualizarPerfil(supabase, { avatarUrl: null });
+      setPerfil(updated);
+      if (oldPath) {
+        await supabase.storage.from("avatares").remove([oldPath]);
+      }
+      toast.success("Foto removida.");
+    } catch (e) {
+      console.error("[RedeTab remover avatar]", e);
+      toast.error("Não foi possível remover a foto.");
+    }
+  }
+
   // ── Wishlist (issue #64 -- persistência real) ──
   async function saveWishlist(
     form: {
@@ -1267,6 +1359,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         handle: undefined,
         cor: perfil?.cor_avatar,
         bio: perfil?.bio ?? "",
+        fotoUrl: perfil?.avatar_url ?? null,
         isMe: true,
       };
     }
@@ -1277,6 +1370,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         handle: undefined,
         cor: real.cor,
         bio: real.bio,
+        fotoUrl: real.fotoUrl,
         isMe: false,
       };
     }
@@ -1288,6 +1382,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       handle: u?.handle,
       cor: u?.cor,
       bio: u?.bio ?? "",
+      fotoUrl: null,
       isMe: false,
     };
   }
@@ -1304,6 +1399,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       {screen.type === "feed" && (
         <FeedScreen
           usuario={usuario}
+          usuarioFotoUrl={perfil?.avatar_url ?? null}
           posts={posts}
           friends={friends.map((f) => f.id)}
           wishlistItems={wishlistItems}
@@ -1396,6 +1492,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
           bio={perfil?.bio ?? ""}
           cor={perfil?.cor_avatar ?? "var(--accent)"}
+          fotoUrl={perfil?.avatar_url ?? null}
           meusPosts={posts.filter((p) => p.autorId === usuario.id)}
           liveLinks={liveLinks}
           wishlistItems={wishlistItems}
@@ -1415,6 +1512,10 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
             setLiveLinkFormOpen(true);
           }}
           onEditProfile={() => setProfileEditOpen(true)}
+          onEditAvatar={() => {
+            if (perfil?.avatar_url) setAvatarOptionsOpen(true);
+            else avatarFileInputRef.current?.click();
+          }}
           onShareProfile={shareProfile}
           onOpenWishlist={() => push({ type: "wishlist" })}
           onOpenClientes={() => push({ type: "clientes" })}
@@ -1445,6 +1546,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
               nome={profile.nome}
               handle={profile.handle}
               cor={profile.cor}
+              fotoUrl={profile.fotoUrl}
               bio={profile.bio}
               isMe={profile.isMe}
               isFriend={isFriend}
@@ -1507,6 +1609,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       <PostComposer
         open={composerOpen}
         usuarioNome={usuario.nome}
+        usuarioFotoUrl={perfil?.avatar_url ?? null}
         editingPost={editingPost}
         onClose={() => {
           setComposerOpen(false);
@@ -1519,6 +1622,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       <CommentsSheet
         postId={commentsPostId}
         usuarioNome={usuario.nome}
+        usuarioFotoUrl={perfil?.avatar_url ?? null}
         comments={comments}
         loading={commentsLoading}
         onClose={() => setCommentsPostId(null)}
@@ -1814,6 +1918,41 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         }}
         onClose={() => setProfileEditOpen(false)}
         onSave={saveProfile}
+      />
+
+      <input
+        ref={avatarFileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAvatarFileSelected}
+      />
+
+      <OptionsSheet
+        open={avatarOptionsOpen}
+        title="Foto de perfil"
+        onClose={() => setAvatarOptionsOpen(false)}
+        options={[
+          {
+            key: "trocar",
+            label: avatarUploading ? "Enviando…" : "Trocar foto",
+            Icon: Camera,
+            onSelect: () => avatarFileInputRef.current?.click(),
+          },
+          {
+            key: "remover",
+            label: "Remover foto",
+            Icon: Trash2,
+            danger: true,
+            onSelect: removeAvatar,
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
+          },
+        ]}
       />
 
       <WishlistForm

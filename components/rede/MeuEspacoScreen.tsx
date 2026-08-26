@@ -16,6 +16,7 @@ interface Props {
   nomeExibicao: string;
   bio: string;
   cor: string;
+  fotoUrl: string | null;
   meusPosts: FeedPost[];
   liveLinks: LiveLink[];
   wishlistItems: WishlistItem[];
@@ -31,6 +32,7 @@ interface Props {
   onDeleteLiveLink: (id: string) => void;
   onAddLiveLink: () => void;
   onEditProfile: () => void;
+  onEditAvatar: () => void;
   onShareProfile: () => void;
   onOpenWishlist: () => void;
   onOpenClientes: () => void;
@@ -47,6 +49,7 @@ export function MeuEspacoScreen({
   nomeExibicao,
   bio,
   cor,
+  fotoUrl,
   meusPosts,
   liveLinks,
   wishlistItems,
@@ -60,6 +63,7 @@ export function MeuEspacoScreen({
   onDeleteLiveLink,
   onAddLiveLink,
   onEditProfile,
+  onEditAvatar,
   onShareProfile,
   onOpenWishlist,
   onOpenClientes,
@@ -95,7 +99,14 @@ export function MeuEspacoScreen({
         <>
           {/* Identidade */}
           <div className="flex flex-col items-center text-center mb-5">
-            <Avatar nome={nomeExibicao} cor={cor} size="xl" />
+            <Avatar
+              nome={nomeExibicao}
+              cor={cor}
+              fotoUrl={fotoUrl}
+              size="xl"
+              onClick={onEditAvatar}
+              editable
+            />
             <div className="flex items-center gap-1.5 mt-3">
               <p
                 className="font-bold"

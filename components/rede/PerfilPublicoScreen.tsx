@@ -23,6 +23,7 @@ interface Props {
   nome: string;
   handle?: string;
   cor?: string;
+  fotoUrl?: string | null;
   bio: string;
   isMe: boolean;
   isFriend: boolean;
@@ -49,6 +50,7 @@ export function PerfilPublicoScreen({
   nome,
   handle,
   cor,
+  fotoUrl,
   bio,
   isMe,
   isFriend,
@@ -94,7 +96,7 @@ export function PerfilPublicoScreen({
       ) : (
         <>
           <div className="flex flex-col items-center text-center mb-5">
-            <Avatar nome={nome} cor={cor} size="xl" />
+            <Avatar nome={nome} cor={cor} fotoUrl={fotoUrl} size="xl" />
             <p
               className="font-bold mt-3"
               style={{ fontSize: "18px", color: "var(--text)" }}

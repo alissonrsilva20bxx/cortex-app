@@ -58,7 +58,12 @@ export function BlockedUsersScreen({
               radius="lg"
               className="flex items-center gap-3 px-4 py-3.5"
             >
-              <Avatar nome={pessoa.nome} cor={pessoa.cor} size="md" />
+              <Avatar
+                nome={pessoa.nome}
+                cor={pessoa.cor}
+                fotoUrl={pessoa.fotoUrl}
+                size="md"
+              />
               <p
                 className="flex-1 min-w-0 text-sm font-semibold truncate"
                 style={{ color: "var(--text)" }}

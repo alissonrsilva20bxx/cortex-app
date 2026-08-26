@@ -153,7 +153,9 @@ export async function listarSugestoes(
     { data: relacoesB, error: eB },
     bloqueados,
   ] = await Promise.all([
-    client.from("rede_perfis").select("user_id,nome_exibicao,cor_avatar,bio"),
+    client
+      .from("rede_perfis")
+      .select("user_id,nome_exibicao,cor_avatar,bio,avatar_url"),
     client
       .from("rede_amizades")
       .select("destinatario_id")
@@ -189,6 +191,7 @@ export async function listarSugestoes(
       nome: p.nome_exibicao,
       cor: p.cor_avatar,
       bio: p.bio ?? "",
+      fotoUrl: p.avatar_url,
     }));
 }
 

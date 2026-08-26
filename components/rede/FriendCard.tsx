@@ -17,6 +17,7 @@ export function FriendCard({ user, subtitle, onOpenProfile, action }: Props) {
       <Avatar
         nome={user.nome}
         cor={user.cor}
+        fotoUrl={user.fotoUrl}
         size="md"
         onClick={onOpenProfile}
       />

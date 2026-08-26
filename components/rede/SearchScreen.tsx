@@ -128,7 +128,12 @@ export function SearchScreen({
                     onClick={() => onOpenAutor(u.id)}
                     className="flex items-center gap-3 px-3.5 py-3"
                   >
-                    <Avatar nome={u.nome} cor={u.cor} size="sm" />
+                    <Avatar
+                      nome={u.nome}
+                      cor={u.cor}
+                      fotoUrl={u.fotoUrl}
+                      size="sm"
+                    />
                     <div className="min-w-0 text-left">
                       <p
                         className="text-sm font-semibold truncate"

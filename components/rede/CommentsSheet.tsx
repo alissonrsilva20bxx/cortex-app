@@ -11,6 +11,7 @@ import type { FeedComment } from "@/lib/rede/feed";
 interface Props {
   postId: string | null;
   usuarioNome: string;
+  usuarioFotoUrl: string | null;
   comments: FeedComment[];
   loading: boolean;
   onClose: () => void;
@@ -22,6 +23,7 @@ interface Props {
 export function CommentsSheet({
   postId,
   usuarioNome,
+  usuarioFotoUrl,
   comments,
   loading,
   onClose,
@@ -45,7 +47,7 @@ export function CommentsSheet({
       largeCloseTarget
       footer={
         <div className="flex items-center gap-2">
-          <Avatar nome={usuarioNome} size="sm" />
+          <Avatar nome={usuarioNome} fotoUrl={usuarioFotoUrl} size="sm" />
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
@@ -92,6 +94,7 @@ export function CommentsSheet({
                 <Avatar
                   nome={c.autorNome}
                   cor={c.autorCor}
+                  fotoUrl={c.autorFotoUrl}
                   size="sm"
                   onClick={() => onOpenAutor(c.autorId)}
                 />

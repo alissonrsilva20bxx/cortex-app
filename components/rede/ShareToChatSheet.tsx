@@ -40,7 +40,12 @@ export function ShareToChatSheet({
               onClick={() => onSelectConversation(c.id)}
               className="flex items-center gap-3 w-full py-2.5 text-left transition-opacity active:opacity-70"
             >
-              <Avatar nome={c.outroNome} cor={c.outroCor} size="md" />
+              <Avatar
+                nome={c.outroNome}
+                cor={c.outroCor}
+                fotoUrl={c.outroFotoUrl}
+                size="md"
+              />
               <span
                 className="text-sm font-medium"
                 style={{ color: "var(--text)" }}

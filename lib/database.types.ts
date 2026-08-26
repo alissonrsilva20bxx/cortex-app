@@ -663,6 +663,7 @@ export type Database = {
         Row: {
           area_atuacao: string | null;
           atualizado_em: string;
+          avatar_url: string | null;
           bio: string | null;
           cor_avatar: string;
           criado_em: string;
@@ -672,6 +673,7 @@ export type Database = {
         Insert: {
           area_atuacao?: string | null;
           atualizado_em?: string;
+          avatar_url?: string | null;
           bio?: string | null;
           cor_avatar: string;
           criado_em?: string;
@@ -681,6 +683,7 @@ export type Database = {
         Update: {
           area_atuacao?: string | null;
           atualizado_em?: string;
+          avatar_url?: string | null;
           bio?: string | null;
           cor_avatar?: string;
           criado_em?: string;

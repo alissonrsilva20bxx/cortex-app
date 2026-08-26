@@ -260,6 +260,7 @@ export function ChatThreadScreen({
           <Avatar
             nome={conversation.outroNome}
             cor={conversation.outroCor}
+            fotoUrl={conversation.outroFotoUrl}
             size="sm"
           />
           <div className="min-w-0 text-left">

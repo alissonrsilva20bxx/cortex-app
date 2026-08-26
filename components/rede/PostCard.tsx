@@ -68,6 +68,7 @@ export function PostCard({
         <Avatar
           nome={post.autorNome}
           cor={post.autorCor}
+          fotoUrl={post.autorFotoUrl}
           size="md"
           onClick={() => onOpenAutor(post.autorId)}
         />

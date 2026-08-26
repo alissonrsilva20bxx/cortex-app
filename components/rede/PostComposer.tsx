@@ -15,6 +15,7 @@ interface EditingPost {
 interface Props {
   open: boolean;
   usuarioNome: string;
+  usuarioFotoUrl: string | null;
   /** Presente = editando essa publicação em vez de criar uma nova. */
   editingPost?: EditingPost | null;
   onClose: () => void;
@@ -32,6 +33,7 @@ const CATEGORIA_OPTIONS = (Object.keys(CATEGORIA_META) as Categoria[]).map(
 export function PostComposer({
   open,
   usuarioNome,
+  usuarioFotoUrl,
   editingPost,
   onClose,
   onPublish,
@@ -88,7 +90,7 @@ export function PostComposer({
     >
       <div className="px-5 py-4 space-y-4">
         <div className="flex items-start gap-3">
-          <Avatar nome={usuarioNome} size="md" />
+          <Avatar nome={usuarioNome} fotoUrl={usuarioFotoUrl} size="md" />
           <textarea
             autoFocus
             rows={3}

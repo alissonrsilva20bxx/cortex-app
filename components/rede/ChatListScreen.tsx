@@ -122,7 +122,12 @@ export function ChatListScreen({
               onClick={() => onOpenThread(c.id)}
               className="flex items-center gap-3 w-full py-3 text-left transition-opacity active:opacity-70"
             >
-              <Avatar nome={c.outroNome} cor={c.outroCor} size="lg" />
+              <Avatar
+                nome={c.outroNome}
+                cor={c.outroCor}
+                fotoUrl={c.outroFotoUrl}
+                size="lg"
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <p

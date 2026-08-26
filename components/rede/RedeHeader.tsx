@@ -5,6 +5,7 @@ import { Avatar } from "./Avatar";
 
 interface Props {
   usuarioNome: string;
+  usuarioFotoUrl: string | null;
   unreadChats: number;
   unreadNotifs: number;
   onSearch: () => void;
@@ -56,6 +57,7 @@ function IconButton({
 
 export function RedeHeader({
   usuarioNome,
+  usuarioFotoUrl,
   unreadChats,
   unreadNotifs,
   onSearch,
@@ -90,7 +92,12 @@ export function RedeHeader({
         <IconButton onClick={onOpenChat} label="Conversas" badge={unreadChats}>
           <MessageCircle size={17} style={{ color: "var(--text-muted)" }} />
         </IconButton>
-        <Avatar nome={usuarioNome} size="md" onClick={onOpenMeuEspaco} />
+        <Avatar
+          nome={usuarioNome}
+          fotoUrl={usuarioFotoUrl}
+          size="md"
+          onClick={onOpenMeuEspaco}
+        />
       </div>
     </div>
   );

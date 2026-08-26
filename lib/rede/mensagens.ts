@@ -32,6 +32,7 @@ export type ConversaResumo = {
   outroUserId: string;
   outroNome: string;
   outroCor: string;
+  outroFotoUrl: string | null;
   ultimaMensagem: string;
   ultimaMensagemEm: string | null;
   naoLidas: number;
@@ -167,6 +168,7 @@ export async function listarConversas(
         outroUserId: r.outro_user_id,
         outroNome: perfil.nome,
         outroCor: perfil.cor,
+        outroFotoUrl: perfil.fotoUrl,
         ultimaMensagem: r.ultima_mensagem ?? "",
         ultimaMensagemEm: r.ultima_mensagem_em,
         naoLidas: r.nao_lidas,
