@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
+
+// useLayoutEffect emite aviso "does nothing on the server" durante o SSR de
+// um componente client — cai pra useEffect nesse lado (nunca roda no
+// servidor mesmo, então não muda o resultado) e só usa a versão síncrona
+// de verdade no cliente, onde o timing pré-paint importa.
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { TabPanel } from "@/components/TabPanel";
 import { BottomNav } from "@/components/BottomNav";
@@ -77,17 +84,21 @@ export default function Page() {
   const [pinHash, setPinHash] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
 
-  // Roda em paralelo com o fetch de usuário/PIN abaixo, não em sequência.
-  // Lazy init (nunca efeito) pra decidir ANTES do 1º paint: se o /login já
-  // tocou o motion completo nesta aba (acabou de logar), pula a montagem
-  // aqui inteiramente — sem isso viraria um flash em vez de zero motion no
-  // pós-login. Quem abre o app já logada numa aba nova ainda vê o motion
-  // completo normalmente (a flag não existe nessa aba ainda).
-  const [entryDone, setEntryDone] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      sessionStorage.getItem(SEEN_THIS_TAB_KEY) === "1"
-  );
+  // Sempre nasce `false` (igual no servidor e no 1º render do cliente —
+  // `sessionStorage` não existe durante SSR, então um lazy init que já
+  // olhasse a flag aqui divergia do HTML do servidor e quebrava a
+  // hidratação sempre que a aba já tinha visto o motion, achado 2026-08-25
+  // logo após logar). A checagem real acontece no effect abaixo, que roda
+  // só no cliente e sincronamente antes do browser pintar o 1º frame —
+  // perde o mismatch de SSR sem reintroduzir o flash que o fix original
+  // (`0cfbe80`) queria evitar.
+  const [entryDone, setEntryDone] = useState(false);
+
+  useIsomorphicLayoutEffect(() => {
+    if (sessionStorage.getItem(SEEN_THIS_TAB_KEY) === "1") {
+      setEntryDone(true);
+    }
+  }, []);
 
   // Distingue "ainda não sei se ela tem dados" de "confirmei que não tem" —
   // sem isso, uma usuária antiga com dados reais veria o onboarding piscar
