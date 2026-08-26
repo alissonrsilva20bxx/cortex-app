@@ -28,7 +28,7 @@ export const formatShortDate = (data: string) =>
   });
 
 /** YYYY-MM-DD no fuso local (evita o off-by-one do toISOString em UTC). */
-function localKey(d: Date): string {
+export function localKey(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");

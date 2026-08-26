@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/Toast";
+import { localKey } from "@/lib/finance";
 
 const CATEGORIAS = [
   { id: "alimentacao", label: "Alimentação", emoji: "🍽️" },
@@ -34,7 +35,7 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [categoria, setCategoria] = useState("outros");
-  const [data, setData] = useState(new Date().toISOString().slice(0, 10));
+  const [data, setData] = useState(localKey(new Date()));
   const [loading, setLoading] = useState(false);
 
   async function handleSave() {
@@ -59,7 +60,7 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
     setDescricao("");
     setValor("");
     setCategoria("outros");
-    setData(new Date().toISOString().slice(0, 10));
+    setData(localKey(new Date()));
     onSaved();
     onClose();
   }
