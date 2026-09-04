@@ -1,7 +1,6 @@
 .page {
   --pin-accent: #e34468;
   min-height: 100dvh;
-  position: relative;
   overflow-x: hidden;
   overflow-y: auto;
   background: #08080a;
