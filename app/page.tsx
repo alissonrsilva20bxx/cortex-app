@@ -8,7 +8,6 @@ import { useState, useEffect, useLayoutEffect } from "react";
 // de verdade no cliente, onde o timing pré-paint importa.
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
-import { LoadingScreen } from "@/components/LoadingScreen";
 import { TabPanel } from "@/components/TabPanel";
 import { BottomNav } from "@/components/BottomNav";
 import { FAB } from "@/components/FAB";
@@ -347,8 +346,6 @@ export default function Page() {
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      <LoadingScreen isLoading={!usuario || !dataLoaded} />
-
       <main
         className="flex-1 overflow-y-auto pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}

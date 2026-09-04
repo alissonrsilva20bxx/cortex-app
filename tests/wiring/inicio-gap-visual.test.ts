@@ -125,12 +125,10 @@ describe("§2-P1-2 — homeCards controla NextJobCard/ObjetivosCard em tempo rea
   });
 });
 
-describe("§2-P1-3 — LoadingScreen cobre a Início até usuario && dataLoaded", () => {
-  it("LoadingScreen usa exatamente essa condição (!usuario || !dataLoaded), coberto globalmente em §1-P0-5", () => {
+describe("§2-P1-3 — Início aparece direto depois do PIN", () => {
+  it("não usa o loader de marca JobApp enquanto os dados terminam de carregar", () => {
     const page = read("app/page.tsx");
-    expect(page).toMatch(
-      /<LoadingScreen isLoading=\{!usuario \|\| !dataLoaded\} \/>/
-    );
+    expect(page).not.toMatch(/<LoadingScreen/);
   });
 
   it("NextJobCard resolve seu próprio estado vazio (sem atendimento agendado)", () => {

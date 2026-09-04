@@ -93,11 +93,10 @@ describe("§1-P0-4 — FAB contextual por aba abre o formulário real certo (aba
   });
 });
 
-describe("§1-P0-5 — LoadingScreen de tela cheia cobre o app enquanto !usuario || !dataLoaded", () => {
-  it("LoadingScreen é renderizado incondicionalmente com isLoading={!usuario || !dataLoaded}", () => {
-    expect(page).toMatch(
-      /<LoadingScreen isLoading=\{!usuario \|\| !dataLoaded\} \/>/
-    );
+describe("§1-P0-5 — a abertura cinematográfica não se repete depois do PIN", () => {
+  it("mantém OpeningMotion como única abertura e não monta o antigo LoadingScreen", () => {
+    expect(page).toMatch(/<OpeningMotion onDone=/);
+    expect(page).not.toMatch(/<LoadingScreen/);
   });
 });
 

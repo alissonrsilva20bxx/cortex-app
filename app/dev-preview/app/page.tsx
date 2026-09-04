@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LoadingScreen } from "@/components/LoadingScreen";
 import { TabPanel } from "@/components/TabPanel";
 import { BottomNav } from "@/components/BottomNav";
 import { FAB } from "@/components/FAB";
@@ -218,8 +217,6 @@ export default function DevPreviewApp() {
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      <LoadingScreen isLoading={!dataLoaded} />
-
       <main
         className="flex-1 overflow-y-auto pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
