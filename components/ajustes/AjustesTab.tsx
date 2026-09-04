@@ -115,12 +115,15 @@ function SettingsMenuRow({
   detail,
   onClick,
   last = false,
+  detailSuppressHydrationWarning = false,
 }: {
   icon: ReactNode;
   title: string;
   detail?: string;
   onClick: () => void;
   last?: boolean;
+  /** Só a linha de Aparência precisa disso -- ver comentário no call site. */
+  detailSuppressHydrationWarning?: boolean;
 }) {
   return (
     <button
@@ -152,6 +155,7 @@ function SettingsMenuRow({
             <span
               className="mt-0.5 block truncate text-xs"
               style={{ color: "var(--text-muted)" }}
+              suppressHydrationWarning={detailSuppressHydrationWarning}
             >
               {detail}
             </span>
@@ -435,6 +439,14 @@ export function AjustesTab({
                 title="Aparência"
                 detail={`${THEME_LABELS[theme]} · ${mode === "dark" ? "Escuro" : "Claro"}`}
                 onClick={() => openSettingsPage("appearance")}
+                // O SSR não tem acesso a localStorage e usa o default do app
+                // (app/layout.tsx), então em qualquer conta que já trocou de
+                // tema o texto real do 1º paint do cliente diverge do HTML
+                // do servidor por design -- mesmo padrão já aceito no
+                // `<html suppressHydrationWarning>` de app/layout.tsx, só
+                // que aplicado aqui no texto específico que expõe o nome do
+                // tema, não a linha inteira. Achado 2026-09-04.
+                detailSuppressHydrationWarning
               />
               <SettingsMenuRow
                 icon={<Home size={17} />}

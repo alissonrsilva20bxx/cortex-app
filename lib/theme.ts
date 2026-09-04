@@ -10,7 +10,13 @@ export const THEMES = [
 ] as const;
 export type Theme = (typeof THEMES)[number];
 
-export const DEFAULT_THEME: Theme = "grafite";
+// Precisa bater com o `data-theme="pink-neon"` hardcoded em `app/layout.tsx`
+// (o SSR não tem acesso a localStorage, então sempre renderiza esse valor
+// fixo) -- se divergir, `ThemeProvider`'s `readInitialTheme()` produz um
+// hydration mismatch real em qualquer texto que exiba o nome do tema (ex.:
+// "Aparência" em AjustesTab.tsx), porque o servidor usa este fallback mas o
+// cliente lê de volta o atributo já correto do DOM. Achado 2026-09-04.
+export const DEFAULT_THEME: Theme = "pink-neon";
 export const THEME_STORAGE_KEY = "jobapp-theme";
 export const MODE_STORAGE_KEY = "jobapp-mode";
 
