@@ -77,11 +77,17 @@ describe("§1-P0-3 — TabPanel mantém as 6 abas montadas, nunca desmonta/remon
 describe("§1-P0-4 — FAB contextual por aba abre o formulário real certo (aba + sub-aba)", () => {
   const fab = read("components/FAB.tsx");
 
-  it("FAB.tsx define SHEET_ACTIONS para home/jobs/financeiro/cofre", () => {
+  it("FAB.tsx define SHEET_ACTIONS para home/jobs/cofre, e FINANCEIRO_SHEET_ACTIONS por sub-aba", () => {
     expect(fab).toMatch(/const SHEET_ACTIONS[\s\S]*?home:/);
     expect(fab).toMatch(/jobs:/);
-    expect(fab).toMatch(/financeiro:/);
     expect(fab).toMatch(/cofre:/);
+    // Achado P1 (preflight 2026-09-04): financeiro não pode ser uma entrada
+    // fixa em SHEET_ACTIONS -- o rótulo do sheet precisa mudar por
+    // sub-aba (finInnerTab), senão diverge da ação real que abre (ver
+    // tests/wiring/fab-financeiro-label.test.ts para o contrato completo).
+    expect(fab).toMatch(/const FINANCEIRO_SHEET_ACTIONS[\s\S]*?entradas:/);
+    expect(fab).toMatch(/saidas:/);
+    expect(fab).toMatch(/metas:/);
   });
 
   it("app/page.tsx despacha a ação do FAB por aba, e dentro de financeiro por sub-aba (finInnerTab)", () => {

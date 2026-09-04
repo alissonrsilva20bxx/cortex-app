@@ -20,11 +20,6 @@ const SHEET_ACTIONS: Partial<Record<TabId, SheetAction>> = {
     description: "Registrar um novo atendimento",
     Icon: Briefcase,
   },
-  financeiro: {
-    label: "Editar Meta",
-    description: "Ajustar valor alvo do período",
-    Icon: TrendingUp,
-  },
   cofre: {
     // Copy corrigida (achado P2 do relatório de paridade do Cofre): o
     // UploadSheet real aceita imagem, PDF, Office e texto — não só foto.
@@ -34,15 +29,54 @@ const SHEET_ACTIONS: Partial<Record<TabId, SheetAction>> = {
   },
 };
 
+// Achado P1 (rodada de preflight 2026-09-04): a aba Financeiro tem 4
+// sub-abas (visão/entradas/saídas/metas) e a ação real do FAB já mudava
+// por sub-aba em `handleFabAction` (app/page.tsx) -- só o texto do sheet
+// ficava fixo em "Editar Meta" sempre, então em "Visão" (e no fallback
+// de qualquer sub-aba desconhecida) o rótulo dizia uma coisa e o form que
+// abria era outro (Nova Despesa). Espelha exatamente os mesmos 4 ramos
+// de `handleFabAction`, mesmo `else` final incluído.
+const FINANCEIRO_SHEET_ACTIONS: Record<string, SheetAction> = {
+  entradas: {
+    label: "Nova Entrada",
+    description: "Registrar uma entrada financeira",
+    Icon: TrendingUp,
+  },
+  saidas: {
+    label: "Nova Despesa",
+    description: "Registrar uma despesa",
+    Icon: TrendingUp,
+  },
+  metas: {
+    label: "Editar Meta",
+    description: "Ajustar valor alvo do período",
+    Icon: TrendingUp,
+  },
+};
+
 interface Props {
   activeTab: TabId;
+  /** Sub-aba ativa do Financeiro ("visao" | "entradas" | "saidas" | "metas")
+   * -- só usada quando activeTab === "financeiro", pra manter o rótulo do
+   * sheet igual à ação que `onAction` de fato dispara. */
+  financeiroSubTab?: string;
   open: boolean;
   onToggle: () => void;
   onAction?: () => void;
 }
 
-export function FAB({ activeTab, open, onToggle, onAction }: Props) {
-  const action = SHEET_ACTIONS[activeTab];
+export function FAB({
+  activeTab,
+  financeiroSubTab,
+  open,
+  onToggle,
+  onAction,
+}: Props) {
+  const action =
+    activeTab === "financeiro"
+      ? (financeiroSubTab && FINANCEIRO_SHEET_ACTIONS[financeiroSubTab]) ||
+        FINANCEIRO_SHEET_ACTIONS.saidas
+      : SHEET_ACTIONS[activeTab];
   if (!action) return null;
 
   const { label, description, Icon } = action;

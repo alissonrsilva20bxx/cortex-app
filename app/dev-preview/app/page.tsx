@@ -318,6 +318,7 @@ export default function DevPreviewApp() {
         <>
           <FAB
             activeTab={activeTab}
+            financeiroSubTab={finInnerTab}
             open={fabOpen}
             onToggle={() => setFabOpen((v) => !v)}
             onAction={handleFabAction}
