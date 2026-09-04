@@ -11,7 +11,7 @@ Infraestrutura mínima para rodar testes de RLS/concorrência contra um Supabase
 - `tests/rede/support/` — camada reutilizável:
   - `env.ts` — lê `SUPABASE_TEST_URL`/`SUPABASE_TEST_ANON_KEY`/`SUPABASE_TEST_SERVICE_ROLE_KEY` e **recusa qualquer host que não seja `localhost` ou `127.0.0.1`**.
   - `clients.ts` — `adminClient()` (service role, só para setup/teardown), `anonClient()`, `authenticatedClient(email, password)`.
-  - `testUsers.ts` — `createTestUser()`/`deleteTestUser()`: cria usuário descartável via `auth.admin.createUser` (email/senha, pré-confirmado) e devolve um client já autenticado como esse usuário. O app em produção só usa Google OAuth (`docs/adr/0001`); o harness usa email/senha via admin API porque é a forma de obter uma sessão real sem navegador — não altera nem participa do fluxo de login do app.
+  - `testUsers.ts` — `createTestUser()`/`deleteTestUser()`: cria usuário descartável via `auth.admin.createUser` (email/senha, pré-confirmado) e devolve um client já autenticado como esse usuário. O app em produção aceita Google OAuth e e-mail/senha (`docs/adr/0004`, supersede `docs/adr/0001`); o harness usa email/senha via admin API porque é a forma de obter uma sessão real sem navegador — não altera nem participa do fluxo de login do app.
   - `vitest.setup.ts` — carrega `.env.test.local` (gitignored, já coberto pela regra `.env*` do `.gitignore` raiz).
 - `tests/rede/rls/jobs.rls.test.ts` — teste de ponta a ponta provando o critério de aceite.
 

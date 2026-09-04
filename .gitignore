@@ -10,3 +10,4 @@ coverage
 tsconfig.tsbuildinfo
 .vercel
 .scratch
+.playwright-mcp

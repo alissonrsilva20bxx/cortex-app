@@ -17,7 +17,7 @@ Convenção usada abaixo: cada afirmação é marcada como **[código]** (verifi
 
 ## 2. Autenticação
 
-- Único método: **Google OAuth via Supabase Auth** — decisão registrada em `docs/adr/0001-google-oauth-exclusivo.md`. Não existe cadastro por e-mail/senha nem modo anônimo. **[código]**
+- Dois métodos: **Google OAuth** e **e-mail/senha**, ambos via Supabase Auth — decisão original em `docs/adr/0001-google-oauth-exclusivo.md`, revertida por `docs/adr/0004-reabertura-email-senha.md` (2026-08-20, issue #94). Não existe modo anônimo. **[código]**
 - Fluxo: `app/login/page.tsx` chama `supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: origin + '/auth/callback' })` → `app/auth/callback/route.ts` troca o `code` por sessão via `exchangeCodeForSession` e seta cookies na resposta de redirect. **[código]**
 - `middleware.ts` roda em (quase) toda rota (matcher exclui apenas assets estáticos), lê o usuário via `supabase.auth.getUser()` e redireciona para `/login` quem não está autenticado e não está em `/login` ou `/auth/*`. **[código]**
 - Não há papéis/roles de usuário — todo usuário autenticado tem o mesmo nível de acesso aos próprios dados (modelo single-tenant por `user_id`, sem admin/moderador). **[código]** — relevante para a Rede, que vai precisar de conceitos novos (bloqueio, denúncia, moderação) que hoje não existem.

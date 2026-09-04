@@ -1,6 +1,8 @@
 # ADR 0001 — Google OAuth como único método de autenticação
 
-**Status:** Aceito
+**Status:** Superseded por [ADR 0004](./0004-reabertura-email-senha.md) em
+2026-08-20 — o app passou a aceitar e-mail/senha além de Google. Mantido
+aqui por completude histórica; não reflete o comportamento atual.
 
 ## Contexto
 
