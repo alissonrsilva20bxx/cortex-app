@@ -48,6 +48,18 @@ export function BottomSheet({
   largeCloseTarget = false,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // `onClose` chega como closure nova a cada render em vários consumidores
+  // (ex.: PostComposer embrulha onClose num `() => { reset(); onClose(); }`
+  // inline) -- se o efeito abaixo dependesse de `onClose` direto, cada
+  // keystroke que re-renderiza o consumidor reexecutaria o efeito inteiro,
+  // roubando o foco do campo de volta pro botão "Fechar" (fecha o teclado
+  // no celular a cada tecla, achado real em produção 2026-09-08). Ref
+  // sempre atual em vez de dependência evita isso sem mudar o
+  // comportamento do handler.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +76,7 @@ export function BottomSheet({
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -85,7 +97,8 @@ export function BottomSheet({
       document.removeEventListener("keydown", handleKeyDown);
       previousFocus?.focus();
     };
-  }, [open, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   return (
     <>
