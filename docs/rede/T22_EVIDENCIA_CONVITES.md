@@ -1,7 +1,7 @@
 # T22 — Evidência: preparação dos 15 convites do beta fechado
 
 **Ticket:** [#75](https://github.com/alissonrsilva20bxx/cortex-app/issues/75).
-**Status deste documento:** 15 convites confirmados em produção (seção 1). Faltam: confirmação de resgate (seção 2), lista de destinatários + comunicação inicial (seção 3, T23).
+**Status deste documento:** 15 convites confirmados em produção (seção 1) e resgate validado (seção 2). Falta apenas: lista de destinatários + comunicação inicial (seção 3, T23).
 
 ## 0. Por que os convites foram gerados antes da lista final de pessoas
 
