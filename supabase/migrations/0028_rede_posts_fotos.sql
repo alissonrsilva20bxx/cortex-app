@@ -287,5 +287,11 @@ begin
 end;
 $$;
 
-revoke all on function public.rede_midia_drenar_pendentes(integer) from public;
+-- `from public` sozinho nao basta no Supabase -- o `alter default
+-- privileges` do projeto concede execute a `anon` e `authenticated`
+-- explicitamente (nao via PUBLIC), e esses grants sobrevivem ao revoke.
+-- Sem revogar dos dois, qualquer um com a anon key drena a fila de
+-- exclusao de midia via PostgREST. Ver migration 0032.
+revoke all on function public.rede_midia_drenar_pendentes(integer)
+  from public, anon, authenticated;
 grant execute on function public.rede_midia_drenar_pendentes(integer) to service_role;

@@ -28,5 +28,9 @@ begin
 end;
 $$;
 
-revoke all on function public.rede_midia_reenfileirar_pendentes(text[]) from public;
+-- `from public` sozinho nao basta no Supabase -- `alter default
+-- privileges` concede execute a `anon`/`authenticated` explicitamente.
+-- Revoga dos dois papeis expostos via PostgREST (ver migration 0032).
+revoke all on function public.rede_midia_reenfileirar_pendentes(text[])
+  from public, anon, authenticated;
 grant execute on function public.rede_midia_reenfileirar_pendentes(text[]) to service_role;

@@ -50,6 +50,14 @@ begin
 end;
 $$;
 
-revoke all on function public.rede_posts_retencao_definir_habilitada(boolean) from public;
+-- `revoke ... from public` sozinho NÃO basta no Supabase: o
+-- `alter default privileges` do projeto concede execute em toda função
+-- nova de `public` explicitamente a `anon` e `authenticated` (não via
+-- PUBLIC), e esses grants sobrevivem ao revoke acima. Sem a linha abaixo,
+-- qualquer um com a anon key (que vai no bundle do navegador) chama esta
+-- RPC via PostgREST e liga a exclusão automática de posts. Revoga
+-- explicitamente dos dois papéis expostos.
+revoke all on function public.rede_posts_retencao_definir_habilitada(boolean)
+  from public, anon, authenticated;
 grant execute on function public.rede_posts_retencao_definir_habilitada(boolean)
   to service_role;
