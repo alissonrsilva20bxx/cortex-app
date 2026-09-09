@@ -73,7 +73,7 @@ describe("RD-19 concorrência: rede_curtidas", () => {
     testUsers.push(liker);
     await seedMembership(liker.id);
 
-    const post = await criarPost(autor.client, {
+    const { post } = await criarPost(autor.client, {
       categoria: "dica",
       texto: "post para o teste de concorrência de curtidas",
     });
@@ -98,7 +98,7 @@ describe("RD-19 concorrência: rede_curtidas", () => {
       await seedMembership(liker.id);
     }
 
-    const post = await criarPost(autor.client, {
+    const { post } = await criarPost(autor.client, {
       categoria: "conquista",
       texto: "post curtido por múltiplos usuários ao mesmo tempo",
     });
