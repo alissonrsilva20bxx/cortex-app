@@ -13,14 +13,23 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
  *
  * `rede_midia_drenar_pendentes` já apaga as linhas da fila atomicamente ao
  * devolvê-las (DELETE ... RETURNING), então duas execuções concorrentes
- * nunca pegam o mesmo path. Se `storage.remove()` falhar pra um path que
- * já não existe mais (ex.: excluirPost já limpou na hora, ver
- * lib/rede/feed.ts), a linha da fila já foi consumida de qualquer forma --
- * não fica reprocessando pra sempre.
+ * nunca pegam o mesmo path. Se `storage.remove()` falhar de verdade (erro
+ * transiente de rede/API do Storage -- remover um path que já não existe
+ * mais, ex.: excluirPost já limpou na hora, não é erro, só some do
+ * resultado), os paths voltam pra fila via
+ * `rede_midia_reenfileirar_pendentes` (migration 0029) em vez de ficarem
+ * perdidos -- cron precisa ser idempotente e retomável, não só "roda uma
+ * vez e torce" (ver https://vercel.com/docs/cron-jobs/manage-cron-jobs).
  */
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET;
+  // `!cronSecret ||` é essencial: sem ela, um ambiente onde CRON_SECRET
+  // nunca foi configurado aceitaria literalmente o header
+  // "Authorization: Bearer undefined" (o template literal interpola
+  // `undefined` como texto) -- mesmo padrão do exemplo oficial da Vercel
+  // pra proteger cron jobs.
+  if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -45,8 +54,13 @@ export async function GET(request: NextRequest) {
     .remove(paths);
 
   if (removeError) {
+    await supabaseAdmin.rpc("rede_midia_reenfileirar_pendentes", { paths });
     return NextResponse.json(
-      { removidos: 0, error: removeError.message },
+      {
+        removidos: 0,
+        reenfileirados: paths.length,
+        error: removeError.message,
+      },
       { status: 500 }
     );
   }

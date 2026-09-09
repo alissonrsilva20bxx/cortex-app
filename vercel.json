@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/rede-midia-limpeza",
-      "schedule": "*/15 * * * *"
+      "schedule": "30 11 * * *"
     }
   ]
 }

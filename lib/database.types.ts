@@ -865,6 +865,10 @@ export type Database = {
         Args: { lote?: number };
         Returns: { path: string }[];
       };
+      rede_midia_reenfileirar_pendentes: {
+        Args: { paths: string[] };
+        Returns: undefined;
+      };
       rede_ocultar_conversa: {
         Args: { alvo_conversa_id: string };
         Returns: undefined;
