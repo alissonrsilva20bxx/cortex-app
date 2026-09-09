@@ -44,6 +44,7 @@ interface Props {
   onComment: (post: FeedPost) => void;
   onShare: (post: FeedPost) => void;
   onOpenMenu: (post: FeedPost) => void;
+  onRenovarFoto: (path: string) => Promise<string | null>;
 }
 
 export function PerfilPublicoScreen({
@@ -68,6 +69,7 @@ export function PerfilPublicoScreen({
   onComment,
   onShare,
   onOpenMenu,
+  onRenovarFoto,
 }: Props) {
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
 
@@ -206,6 +208,7 @@ export function PerfilPublicoScreen({
                     onShare={onShare}
                     onOpenMenu={onOpenMenu}
                     onOpenAutor={() => {}}
+                    onRenovarFoto={onRenovarFoto}
                   />
                 ))}
               </div>

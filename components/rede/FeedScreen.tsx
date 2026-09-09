@@ -61,6 +61,7 @@ interface Props {
   onShare: (post: FeedPost) => void;
   onOpenMenu: (post: FeedPost) => void;
   onOpenAutor: (autorId: string) => void;
+  onRenovarFoto: (path: string) => Promise<string | null>;
 }
 
 export function FeedScreen({
@@ -89,6 +90,7 @@ export function FeedScreen({
   onShare,
   onOpenMenu,
   onOpenAutor,
+  onRenovarFoto,
 }: Props) {
   const [segmento, setSegmento] = useState<Segmento>("paraVoce");
 
@@ -229,6 +231,7 @@ export function FeedScreen({
                 onShare={onShare}
                 onOpenMenu={onOpenMenu}
                 onOpenAutor={onOpenAutor}
+                onRenovarFoto={onRenovarFoto}
               />
             ) : (
               <div key={item.block.key}>

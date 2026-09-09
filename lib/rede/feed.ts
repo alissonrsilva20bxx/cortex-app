@@ -37,7 +37,10 @@ const FOTO_URL_TTL_SEGUNDOS = 60 * 60;
  * 0028), então um bug aqui nunca vira uma 3ª linha de verdade no banco. */
 export const MAX_FOTOS_POR_POST = 2;
 
-export type FotoPost = { url: string; ordem: number };
+/** `path` viaja junto (não só a URL já assinada) pra permitir renovar o
+ * acesso quando a URL expirar sem precisar re-buscar o post inteiro -- ver
+ * `renovarUrlFoto`. */
+export type FotoPost = { url: string; ordem: number; path: string };
 
 export type CriarPostInput = {
   categoria: Categoria;
@@ -212,7 +215,7 @@ export async function listarFeed(
     const url = urlPorPath.get(f.path);
     if (!url) continue; // assinatura falhou pra esse arquivo -- não quebra o post inteiro
     const arr = fotosPorPost.get(f.post_id) ?? [];
-    arr.push({ url, ordem: f.ordem });
+    arr.push({ url, ordem: f.ordem, path: f.path });
     fotosPorPost.set(f.post_id, arr);
   }
 
@@ -318,10 +321,33 @@ export async function criarPost(
     const { data: signed } = await client.storage
       .from(REDE_MIDIA_BUCKET)
       .createSignedUrl(path, FOTO_URL_TTL_SEGUNDOS);
-    fotos.push({ url: signed?.signedUrl ?? "", ordem });
+    fotos.push({ url: signed?.signedUrl ?? "", ordem, path });
   }
 
   return { post, fotos };
+}
+
+/**
+ * URL assinada expira em 1h (`FOTO_URL_TTL_SEGUNDOS`) -- se uma aba ficar
+ * aberta além disso sem recarregar o feed, a foto para de carregar. Chamado
+ * do `onError` da `<img>` no PostCard: pede uma URL nova pro MESMO path já
+ * conhecido, sem precisar re-buscar o post inteiro. RLS/bloqueio continuam
+ * valendo aqui (a policy de leitura do bucket é reavaliada a cada
+ * assinatura nova, não só na primeira).
+ */
+export async function renovarUrlFoto(
+  client: RedeClient,
+  path: string
+): Promise<string | null> {
+  const { data, error } = await client.storage
+    .from(REDE_MIDIA_BUCKET)
+    .createSignedUrl(path, FOTO_URL_TTL_SEGUNDOS);
+
+  if (error || !data?.signedUrl) {
+    return null;
+  }
+
+  return data.signedUrl;
 }
 
 export async function atualizarPost(

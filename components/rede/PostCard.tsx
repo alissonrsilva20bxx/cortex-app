@@ -1,6 +1,13 @@
 "use client";
 
-import { Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  MoreHorizontal,
+  RefreshCw,
+} from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Avatar } from "./Avatar";
 import { formatRelativeTime } from "@/lib/mockRede";
@@ -13,6 +20,74 @@ interface Props {
   onShare: (post: FeedPost) => void;
   onOpenMenu: (post: FeedPost) => void;
   onOpenAutor: (autorId: string) => void;
+  /** URL assinada (1h) pode expirar com a aba aberta -- chamado ao detectar
+   * falha de carregamento; devolve uma URL nova pro mesmo path, ou `null`
+   * se a renovação falhar (ex.: bloqueio mudou nesse meio tempo). */
+  onRenovarFoto: (path: string) => Promise<string | null>;
+}
+
+/** Uma foto por vez: própria URL (renovável) e estado de carregamento,
+ * independente das outras fotos do mesmo post. */
+function PostPhoto({
+  foto,
+  alt,
+  aspectRatio,
+  onRenovarFoto,
+}: {
+  foto: { url: string; path: string };
+  alt: string;
+  aspectRatio: string;
+  onRenovarFoto: (path: string) => Promise<string | null>;
+}) {
+  const [url, setUrl] = useState(foto.url);
+  const [estado, setEstado] = useState<"ok" | "renovando" | "falhou">("ok");
+
+  async function tentarRenovar() {
+    setEstado("renovando");
+    const nova = await onRenovarFoto(foto.path);
+    if (nova) {
+      setUrl(nova);
+      setEstado("ok");
+    } else {
+      setEstado("falhou");
+    }
+  }
+
+  if (estado === "falhou") {
+    return (
+      <button
+        onClick={tentarRenovar}
+        className="w-full flex flex-col items-center justify-center gap-1.5 transition-opacity active:opacity-70"
+        style={{
+          aspectRatio,
+          background: "var(--surface)",
+          color: "var(--text-muted)",
+        }}
+      >
+        <RefreshCw size={18} />
+        <span className="text-xs">
+          Não foi possível carregar — tentar de novo
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage, não um asset local
+    <img
+      src={url}
+      alt={alt}
+      onClick={() => window.open(url, "_blank")}
+      onError={() => {
+        // A 1a falha já dispara a renovação sozinha (o caso comum é só a
+        // URL de 1h ter expirado com a aba aberta) -- só vira "falhou" (e
+        // pede um toque manual) se a renovação em si não resolver.
+        if (estado === "ok") tentarRenovar();
+      }}
+      className="w-full object-cover cursor-pointer active:opacity-80 transition-opacity"
+      style={{ aspectRatio, opacity: estado === "renovando" ? 0.5 : 1 }}
+    />
+  );
 }
 
 function ActionButton({
@@ -58,6 +133,7 @@ export function PostCard({
   onShare,
   onOpenMenu,
   onOpenAutor,
+  onRenovarFoto,
 }: Props) {
   const cat = CATEGORIA_META[post.categoria];
 
@@ -123,16 +199,12 @@ export function PostCard({
           }`}
         >
           {post.fotos.map((foto) => (
-            // eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage, não um asset local
-            <img
+            <PostPhoto
               key={foto.ordem}
-              src={foto.url}
+              foto={foto}
               alt={`Foto ${foto.ordem} da publicação de ${post.autorNome}`}
-              onClick={() => window.open(foto.url, "_blank")}
-              className="w-full object-cover cursor-pointer active:opacity-80 transition-opacity"
-              style={{
-                aspectRatio: post.fotos.length === 1 ? "16/10" : "1/1",
-              }}
+              aspectRatio={post.fotos.length === 1 ? "16/10" : "1/1"}
+              onRenovarFoto={onRenovarFoto}
             />
           ))}
         </div>

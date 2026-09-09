@@ -43,6 +43,7 @@ interface Props {
   onComment: (post: FeedPost) => void;
   onShare: (post: FeedPost) => void;
   onOpenMenu: (post: FeedPost) => void;
+  onRenovarFoto: (path: string) => Promise<string | null>;
 }
 
 export function MeuEspacoScreen({
@@ -74,6 +75,7 @@ export function MeuEspacoScreen({
   onComment,
   onShare,
   onOpenMenu,
+  onRenovarFoto,
 }: Props) {
   return (
     <div className="pb-4">
@@ -245,6 +247,7 @@ export function MeuEspacoScreen({
                     onShare={onShare}
                     onOpenMenu={onOpenMenu}
                     onOpenAutor={() => {}}
+                    onRenovarFoto={onRenovarFoto}
                   />
                 ))}
               </div>

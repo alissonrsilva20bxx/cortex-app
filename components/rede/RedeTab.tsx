@@ -69,6 +69,7 @@ import {
   listarComentarios,
   criarComentario,
   alternarCurtida,
+  renovarUrlFoto,
   FEED_PAGE_SIZE,
   type FeedPost,
   type FeedComment,
@@ -764,6 +765,26 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
+  // URL assinada expira em 1h (lib/rede/feed.ts) -- chamado pelo PostCard
+  // quando a <img> falha ao carregar, pra tentar renovar sem re-buscar o
+  // feed inteiro. Atualiza a MESMA foto (por path) em qualquer post que a
+  // contenha -- meusPosts/o perfil público derivam de `posts` por filter,
+  // então já refletem sozinhos.
+  async function renovarFotoUrl(path: string): Promise<string | null> {
+    const novaUrl = await renovarUrlFoto(supabase, path);
+    if (novaUrl) {
+      setPosts((prev) =>
+        prev.map((p) => ({
+          ...p,
+          fotos: p.fotos.map((f) =>
+            f.path === path ? { ...f, url: novaUrl } : f
+          ),
+        }))
+      );
+    }
+    return novaUrl;
+  }
+
   async function submitReport(motivo: DenunciaMotivo) {
     if (!reportTarget) return;
     try {
@@ -1423,6 +1444,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     onComment: (p: FeedPost) => setCommentsPostId(p.id),
     onShare: (p: FeedPost) => setSharePost(p),
     onOpenMenu: (p: FeedPost) => setMenuPost(p),
+    onRenovarFoto: renovarFotoUrl,
   };
 
   return (
