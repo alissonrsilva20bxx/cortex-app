@@ -113,6 +113,31 @@ export function PostCard({
         {post.texto}
       </p>
 
+      {/* Fotos (0-2, migration 0028) -- abrir = nova aba com a imagem em
+          tamanho real, mesmo padrão do "abrir arquivo" do Cofre
+          (CofreTab.tsx openFile), não um lightbox novo só pra isso. */}
+      {post.fotos.length > 0 && (
+        <div
+          className={`grid gap-1.5 mt-3 rounded-xl overflow-hidden ${
+            post.fotos.length === 1 ? "grid-cols-1" : "grid-cols-2"
+          }`}
+        >
+          {post.fotos.map((foto) => (
+            // eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage, não um asset local
+            <img
+              key={foto.ordem}
+              src={foto.url}
+              alt={`Foto ${foto.ordem} da publicação de ${post.autorNome}`}
+              onClick={() => window.open(foto.url, "_blank")}
+              className="w-full object-cover cursor-pointer active:opacity-80 transition-opacity"
+              style={{
+                aspectRatio: post.fotos.length === 1 ? "16/10" : "1/1",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Ações */}
       <div
         className="flex items-center justify-between mt-3 pt-3"
