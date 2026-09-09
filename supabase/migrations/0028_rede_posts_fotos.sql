@@ -218,6 +218,21 @@ create trigger rede_posts_retention
   for each row
   execute function private.rede_enforce_post_retention();
 
+-- Nasce DESATIVADO de propósito: é uma operação destrutiva (apaga posts
+-- de verdade) e não pode ligar sozinha só porque esta migration rodou --
+-- ativação é um passo manual, explícito, separado, só depois do código
+-- que avisa a usuária (aviso de exclusão automática no composer, PR #105)
+-- já estar no ar. Ver "Runbook de ativação" no PR #105 / docs/rede.
+--
+-- CREATE + DISABLE na MESMA transação desta migration (cada arquivo de
+-- migration roda como uma transação só) -- nenhuma sessão concorrente
+-- jamais observa o trigger habilitado, nem por uma fração de segundo,
+-- mesmo em rede_posts já recebendo INSERTs reais (não é tabela nova).
+-- Ambientes que já tinham rodado esta migration ANTES desta linha existir
+-- (ex.: homologação) precisam da migration 0031, que traz o mesmo efeito
+-- de forma idempotente.
+alter table public.rede_posts disable trigger rede_posts_retention;
+
 -- ---------------------------------------------------------------
 -- 4. Fila de exclusão de mídia + dreno (service_role only)
 -- ---------------------------------------------------------------

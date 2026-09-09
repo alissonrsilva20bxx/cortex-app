@@ -55,9 +55,31 @@ describe("Retenção: no máximo 300 posts (migration 0028)", () => {
     if (cleanupError) {
       throw new Error(`Failed to reset rede_posts: ${cleanupError.message}`);
     }
+
+    // Migration 0028/0031: o trigger nasce DESATIVADO por padrão (ver
+    // rationale nos próprios arquivos) -- este teste existe justamente
+    // pra provar o comportamento do trigger, então liga ele deliberada e
+    // explicitamente só pro escopo deste describe.
+    const { error: enableError } = await admin.rpc(
+      "rede_posts_retencao_definir_habilitada",
+      { habilitada: true }
+    );
+    if (enableError) {
+      throw new Error(
+        `Failed to enable rede_posts_retention trigger: ${enableError.message}`
+      );
+    }
   }, 30_000);
 
   afterAll(async () => {
+    const admin = redeClient(adminClient());
+    // Restaura o padrão desativado -- não deixar o trigger ligado pra
+    // outros arquivos de teste que rodem depois contra o mesmo Supabase
+    // local.
+    await admin.rpc("rede_posts_retencao_definir_habilitada", {
+      habilitada: false,
+    });
+
     const failures: unknown[] = [];
     for (const user of testUsers) {
       try {
