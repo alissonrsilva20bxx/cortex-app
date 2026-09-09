@@ -25,12 +25,18 @@ export const CATEGORIA_META: Record<Categoria, { label: string; rgb: string }> =
   };
 
 /** Bucket privado (0028) -- leitura respeita bloqueio mútuo via RLS
- * (private.rede_midia_pode_ler), então a URL assinada só funciona pra quem
- * já tinha permissão de ver o post no primeiro lugar. TTL de 1h: o feed
- * pode ficar aberto na tela por um tempo, mas não precisa ser "pra sempre"
- * como o público (0026 avatares). */
+ * (private.rede_midia_pode_ler) só na HORA DE ASSINAR: uma URL assinada,
+ * uma vez emitida, é um bearer token -- continua funcionando até expirar
+ * mesmo que um bloqueio aconteça depois (confirmado empiricamente na
+ * revisão do PR #105: fetch direto na mesma URL, sem passar pelo cliente,
+ * continuava 200 após o bloqueio; só ASSINAR uma URL nova é que passa a
+ * ser negado). TTL curto (5min, não 1h) é a mitigação prática -- não
+ * elimina a janela, mas limita o "acesso residual pós-bloqueio" a minutos
+ * em vez de até uma hora. Bem mais curto que os 60min originais, mas mais
+ * longo que os 120s do Cofre (que é single-file, não uma lista de feed
+ * inteira -- reassinar tudo a cada 120s ficaria caro demais aqui). */
 const REDE_MIDIA_BUCKET = "rede-midia";
-const FOTO_URL_TTL_SEGUNDOS = 60 * 60;
+const FOTO_URL_TTL_SEGUNDOS = 5 * 60;
 
 /** No máx. 2 fotos por post -- também reforçado no schema
  * (`rede_post_fotos.ordem in (1,2)` + `unique(post_id, ordem)`, migration
@@ -328,7 +334,7 @@ export async function criarPost(
 }
 
 /**
- * URL assinada expira em 1h (`FOTO_URL_TTL_SEGUNDOS`) -- se uma aba ficar
+ * URL assinada expira em `FOTO_URL_TTL_SEGUNDOS` -- se uma aba ficar
  * aberta além disso sem recarregar o feed, a foto para de carregar. Chamado
  * do `onError` da `<img>` no PostCard: pede uma URL nova pro MESMO path já
  * conhecido, sem precisar re-buscar o post inteiro. RLS/bloqueio continuam

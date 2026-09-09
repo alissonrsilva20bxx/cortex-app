@@ -54,12 +54,20 @@ export async function GET(request: NextRequest) {
     .remove(paths);
 
   if (removeError) {
-    await supabaseAdmin.rpc("rede_midia_reenfileirar_pendentes", { paths });
+    // Achado na revisão do PR #105: o resultado desta chamada nunca era
+    // checado -- se ELA TAMBÉM falhasse (rede caiu duas vezes seguidas),
+    // os paths já tinham sumido da fila (drenados acima) e não voltavam,
+    // perdidos de vez sem nenhum sinal além do 500 genérico abaixo.
+    const { error: reenqueueError } = await supabaseAdmin.rpc(
+      "rede_midia_reenfileirar_pendentes",
+      { paths }
+    );
     return NextResponse.json(
       {
         removidos: 0,
-        reenfileirados: paths.length,
+        reenfileirados: reenqueueError ? 0 : paths.length,
         error: removeError.message,
+        reenqueueError: reenqueueError?.message,
       },
       { status: 500 }
     );
