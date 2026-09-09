@@ -223,6 +223,14 @@ export function PostComposer({
             </div>
           </div>
         )}
+
+        {!editingPost && (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            A Rede mantém só as 300 publicações mais recentes da comunidade —
+            passado esse número, as mais antigas (texto e fotos) são removidas
+            automaticamente.
+          </p>
+        )}
       </div>
     </BottomSheet>
   );
