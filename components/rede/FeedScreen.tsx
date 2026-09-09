@@ -44,6 +44,11 @@ interface Props {
   loading: boolean;
   /** listarFeed falhou — estado persistente, distinto do empty-state de "sem posts". */
   error: boolean;
+  /** Ainda há posts mais antigos pra buscar (última página veio cheia). */
+  hasMore: boolean;
+  /** Buscando a próxima página agora — distinto do `loading` inicial. */
+  loadingMore: boolean;
+  onLoadMore: () => void;
   onOpenSearch: () => void;
   onOpenNotifs: () => void;
   onOpenChat: () => void;
@@ -56,6 +61,7 @@ interface Props {
   onShare: (post: FeedPost) => void;
   onOpenMenu: (post: FeedPost) => void;
   onOpenAutor: (autorId: string) => void;
+  onRenovarFoto: (path: string) => Promise<string | null>;
 }
 
 export function FeedScreen({
@@ -69,6 +75,9 @@ export function FeedScreen({
   unreadNotifs,
   loading,
   error,
+  hasMore,
+  loadingMore,
+  onLoadMore,
   onOpenSearch,
   onOpenNotifs,
   onOpenChat,
@@ -81,6 +90,7 @@ export function FeedScreen({
   onShare,
   onOpenMenu,
   onOpenAutor,
+  onRenovarFoto,
 }: Props) {
   const [segmento, setSegmento] = useState<Segmento>("paraVoce");
 
@@ -221,6 +231,7 @@ export function FeedScreen({
                 onShare={onShare}
                 onOpenMenu={onOpenMenu}
                 onOpenAutor={onOpenAutor}
+                onRenovarFoto={onRenovarFoto}
               />
             ) : (
               <div key={item.block.key}>
@@ -244,6 +255,21 @@ export function FeedScreen({
           )
         )}
       </div>
+
+      {!loading && !error && items.length > 0 && hasMore && (
+        <button
+          onClick={onLoadMore}
+          disabled={loadingMore}
+          className="w-full mt-4 py-3 rounded-2xl text-sm font-semibold transition-opacity active:opacity-70 disabled:opacity-50"
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border-color)",
+            color: "var(--text-2)",
+          }}
+        >
+          {loadingMore ? "Carregando…" : "Carregar mais publicações"}
+        </button>
+      )}
     </div>
   );
 }

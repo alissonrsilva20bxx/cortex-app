@@ -692,6 +692,41 @@ export type Database = {
         };
         Relationships: [];
       };
+      rede_post_fotos: {
+        Row: {
+          autor_id: string;
+          criado_em: string;
+          id: string;
+          ordem: number;
+          path: string;
+          post_id: string;
+        };
+        Insert: {
+          autor_id: string;
+          criado_em?: string;
+          id?: string;
+          ordem: number;
+          path: string;
+          post_id: string;
+        };
+        Update: {
+          autor_id?: string;
+          criado_em?: string;
+          id?: string;
+          ordem?: number;
+          path?: string;
+          post_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rede_post_fotos_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "rede_posts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       rede_posts: {
         Row: {
           atualizado_em: string;
@@ -825,6 +860,14 @@ export type Database = {
           ultima_mensagem: string;
           ultima_mensagem_em: string;
         }[];
+      };
+      rede_midia_drenar_pendentes: {
+        Args: { lote?: number };
+        Returns: { path: string }[];
+      };
+      rede_midia_reenfileirar_pendentes: {
+        Args: { paths: string[] };
+        Returns: undefined;
       };
       rede_ocultar_conversa: {
         Args: { alvo_conversa_id: string };

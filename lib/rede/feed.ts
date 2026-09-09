@@ -24,9 +24,36 @@ export const CATEGORIA_META: Record<Categoria, { label: string; rgb: string }> =
     desabafo: { label: "Desabafo", rgb: "167 139 250" },
   };
 
+/** Bucket privado (0028) -- leitura respeita bloqueio mútuo via RLS
+ * (private.rede_midia_pode_ler) só na HORA DE ASSINAR: uma URL assinada,
+ * uma vez emitida, é um bearer token -- continua funcionando até expirar
+ * mesmo que um bloqueio aconteça depois (confirmado empiricamente na
+ * revisão do PR #105: fetch direto na mesma URL, sem passar pelo cliente,
+ * continuava 200 após o bloqueio; só ASSINAR uma URL nova é que passa a
+ * ser negado). TTL curto (5min, não 1h) é a mitigação prática -- não
+ * elimina a janela, mas limita o "acesso residual pós-bloqueio" a minutos
+ * em vez de até uma hora. Bem mais curto que os 60min originais, mas mais
+ * longo que os 120s do Cofre (que é single-file, não uma lista de feed
+ * inteira -- reassinar tudo a cada 120s ficaria caro demais aqui). */
+const REDE_MIDIA_BUCKET = "rede-midia";
+const FOTO_URL_TTL_SEGUNDOS = 5 * 60;
+
+/** No máx. 2 fotos por post -- também reforçado no schema
+ * (`rede_post_fotos.ordem in (1,2)` + `unique(post_id, ordem)`, migration
+ * 0028), então um bug aqui nunca vira uma 3ª linha de verdade no banco. */
+export const MAX_FOTOS_POR_POST = 2;
+
+/** `path` viaja junto (não só a URL já assinada) pra permitir renovar o
+ * acesso quando a URL expirar sem precisar re-buscar o post inteiro -- ver
+ * `renovarUrlFoto`. */
+export type FotoPost = { url: string; ordem: number; path: string };
+
 export type CriarPostInput = {
   categoria: Categoria;
   texto: string;
+  /** 0-2 arquivos de imagem -- enviados ao Storage só depois do post
+   * existir (o path exige {post_id}, ver migration 0028 §2). */
+  fotos?: File[];
 };
 
 export type AtualizarPostInput = {
@@ -66,6 +93,9 @@ export type FeedPost = {
   curtidas: number;
   curtidoPorMim: boolean;
   comentariosCount: number;
+  /** Em ordem (1, depois 2 se houver) -- já com URL assinada pronta pra
+   * <img src>, não o path bruto do Storage. */
+  fotos: FotoPost[];
 };
 
 export type FeedComment = {
@@ -95,13 +125,35 @@ async function obterUsuarioId(client: RedeClient): Promise<string> {
   return user.id;
 }
 
-export async function listarFeed(client: RedeClient): Promise<FeedPost[]> {
+/** Tamanho de página padrão de `listarFeed` -- mesmo padrão de
+ * `MENSAGENS_PAGE_SIZE` (lib/rede/mensagens.ts, issue #54). */
+export const FEED_PAGE_SIZE = 20;
+
+export type ListarFeedOptions = {
+  /** Máximo de posts retornados. */
+  limit?: number;
+  /** Cursor de paginação -- busca só posts estritamente mais antigos que
+   * este `criado_em` (ISO). Omitido = página mais recente. */
+  antesDe?: string;
+};
+
+export async function listarFeed(
+  client: RedeClient,
+  options: ListarFeedOptions = {}
+): Promise<FeedPost[]> {
   const userId = await obterUsuarioId(client);
 
-  const { data: posts, error: postsError } = await client
+  let query = client
     .from("rede_posts")
     .select("*")
-    .order("criado_em", { ascending: false });
+    .order("criado_em", { ascending: false })
+    .limit(options.limit ?? FEED_PAGE_SIZE);
+
+  if (options.antesDe) {
+    query = query.lt("criado_em", options.antesDe);
+  }
+
+  const { data: posts, error: postsError } = await query;
 
   if (postsError) {
     throw postsError;
@@ -118,6 +170,7 @@ export async function listarFeed(client: RedeClient): Promise<FeedPost[]> {
     { data: curtidas, error: curtidasError },
     { data: comentarios, error: comentariosError },
     { data: perfis, error: perfisError },
+    { data: fotosRows, error: fotosError },
   ] = await Promise.all([
     client
       .from("rede_curtidas")
@@ -128,6 +181,11 @@ export async function listarFeed(client: RedeClient): Promise<FeedPost[]> {
       .from("rede_perfis")
       .select("user_id,nome_exibicao,cor_avatar,avatar_url")
       .in("user_id", autorIds),
+    client
+      .from("rede_post_fotos")
+      .select("post_id,path,ordem")
+      .in("post_id", postIds)
+      .order("ordem", { ascending: true }),
   ]);
 
   if (curtidasError) {
@@ -138,6 +196,33 @@ export async function listarFeed(client: RedeClient): Promise<FeedPost[]> {
   }
   if (perfisError) {
     throw perfisError;
+  }
+  if (fotosError) {
+    throw fotosError;
+  }
+
+  // Assina todas as fotos da página numa chamada só (não uma por foto) --
+  // `createSignedUrls` aceita um array de paths e devolve na mesma ordem.
+  const urlPorPath = new Map<string, string>();
+  const paths = (fotosRows ?? []).map((f) => f.path);
+  if (paths.length > 0) {
+    const { data: signed } = await client.storage
+      .from(REDE_MIDIA_BUCKET)
+      .createSignedUrls(paths, FOTO_URL_TTL_SEGUNDOS);
+    for (const s of signed ?? []) {
+      if (s.signedUrl && s.path) {
+        urlPorPath.set(s.path, s.signedUrl);
+      }
+    }
+  }
+
+  const fotosPorPost = new Map<string, FotoPost[]>();
+  for (const f of fotosRows ?? []) {
+    const url = urlPorPath.get(f.path);
+    if (!url) continue; // assinatura falhou pra esse arquivo -- não quebra o post inteiro
+    const arr = fotosPorPost.get(f.post_id) ?? [];
+    arr.push({ url, ordem: f.ordem, path: f.path });
+    fotosPorPost.set(f.post_id, arr);
   }
 
   const curtidasPorPost = new Map<string, number>();
@@ -176,16 +261,33 @@ export async function listarFeed(client: RedeClient): Promise<FeedPost[]> {
       curtidas: curtidasPorPost.get(p.id) ?? 0,
       curtidoPorMim: curtidoPorMim.has(p.id),
       comentariosCount: comentariosPorPost.get(p.id) ?? 0,
+      fotos: fotosPorPost.get(p.id) ?? [],
     };
   });
 }
 
+export type CriarPostResult = { post: Post; fotos: FotoPost[] };
+
+/**
+ * O path de Storage exige `{post_id}` (convenção `{user_id}/posts/{post_id}
+ * /{arquivo}`, migration 0028), então a ordem é sempre: cria a linha de
+ * `rede_posts` primeiro, só depois envia cada foto e insere sua linha em
+ * `rede_post_fotos`. Fotos são enviadas em sequência (não paralelo) -- no
+ * máximo 2, então o custo é desprezível, e sequencial deixa `ordem` (1, 2)
+ * determinística sem precisar coordenar respostas concorrentes.
+ *
+ * Sem transação client-side possível aqui (Storage não participa da
+ * transação Postgres) -- se a 2ª foto falhar, o post e a 1ª foto já
+ * existem; deixamos assim (post publicado com 1 foto) em vez de tentar um
+ * rollback manual, mesma filosofia pragmática do resto do app (ex.:
+ * UploadSheet do Cofre também não reverte nada em erro parcial).
+ */
 export async function criarPost(
   client: RedeClient,
   input: CriarPostInput
-): Promise<Post> {
+): Promise<CriarPostResult> {
   const autorId = await obterUsuarioId(client);
-  const { data, error } = await client
+  const { data: post, error } = await client
     .from("rede_posts")
     .insert({
       autor_id: autorId,
@@ -199,7 +301,59 @@ export async function criarPost(
     throw error;
   }
 
-  return data;
+  const fotos: FotoPost[] = [];
+  const arquivos = (input.fotos ?? []).slice(0, MAX_FOTOS_POR_POST);
+
+  for (let i = 0; i < arquivos.length; i++) {
+    const file = arquivos[i];
+    const ordem = i + 1;
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${autorId}/posts/${post.id}/${ordem}-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await client.storage
+      .from(REDE_MIDIA_BUCKET)
+      .upload(path, file, { contentType: file.type });
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { error: fotoError } = await client
+      .from("rede_post_fotos")
+      .insert({ post_id: post.id, autor_id: autorId, path, ordem });
+    if (fotoError) {
+      throw fotoError;
+    }
+
+    const { data: signed } = await client.storage
+      .from(REDE_MIDIA_BUCKET)
+      .createSignedUrl(path, FOTO_URL_TTL_SEGUNDOS);
+    fotos.push({ url: signed?.signedUrl ?? "", ordem, path });
+  }
+
+  return { post, fotos };
+}
+
+/**
+ * URL assinada expira em `FOTO_URL_TTL_SEGUNDOS` -- se uma aba ficar
+ * aberta além disso sem recarregar o feed, a foto para de carregar. Chamado
+ * do `onError` da `<img>` no PostCard: pede uma URL nova pro MESMO path já
+ * conhecido, sem precisar re-buscar o post inteiro. RLS/bloqueio continuam
+ * valendo aqui (a policy de leitura do bucket é reavaliada a cada
+ * assinatura nova, não só na primeira).
+ */
+export async function renovarUrlFoto(
+  client: RedeClient,
+  path: string
+): Promise<string | null> {
+  const { data, error } = await client.storage
+    .from(REDE_MIDIA_BUCKET)
+    .createSignedUrl(path, FOTO_URL_TTL_SEGUNDOS);
+
+  if (error || !data?.signedUrl) {
+    return null;
+  }
+
+  return data.signedUrl;
 }
 
 export async function atualizarPost(
@@ -222,11 +376,28 @@ export async function atualizarPost(
   return data;
 }
 
+/**
+ * Busca os paths das fotos ANTES de excluir o post -- depois do DELETE,
+ * `rede_post_fotos` já foi apagada em cascata (FK on delete cascade) e não
+ * há mais como descobrir quais arquivos eram dela. A limpeza do Storage
+ * acontece na hora (não espera o cron): a fila de exclusão pendente
+ * (migration 0028 §4, trigger em `rede_post_fotos`) ainda captura esses
+ * mesmos paths como rede de segurança, então uma falha aqui (rede caiu no
+ * meio, etc.) não perde o arquivo pra sempre -- só atrasa pro próximo
+ * dreno do cron.
+ */
 export async function excluirPost(
   client: RedeClient,
   input: ExcluirPostInput
 ): Promise<void> {
   const autorId = await obterUsuarioId(client);
+
+  const { data: fotos } = await client
+    .from("rede_post_fotos")
+    .select("path")
+    .eq("post_id", input.postId)
+    .eq("autor_id", autorId);
+
   const { error } = await client
     .from("rede_posts")
     .delete()
@@ -235,6 +406,15 @@ export async function excluirPost(
 
   if (error) {
     throw error;
+  }
+
+  if (fotos && fotos.length > 0) {
+    const { error: removeError } = await client.storage
+      .from(REDE_MIDIA_BUCKET)
+      .remove(fotos.map((f) => f.path));
+    if (removeError) {
+      console.error("[feed] limpeza de fotos pós-exclusão falhou", removeError);
+    }
   }
 }
 

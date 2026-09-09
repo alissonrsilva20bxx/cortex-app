@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ImagePlus, X } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { FilterChips } from "@/components/ui/FilterChips";
 import { Avatar } from "./Avatar";
-import { CATEGORIA_META, type Categoria } from "@/lib/rede/feed";
+import {
+  CATEGORIA_META,
+  MAX_FOTOS_POR_POST,
+  type Categoria,
+} from "@/lib/rede/feed";
 
 interface EditingPost {
   id: string;
@@ -19,7 +24,11 @@ interface Props {
   /** Presente = editando essa publicação em vez de criar uma nova. */
   editingPost?: EditingPost | null;
   onClose: () => void;
-  onPublish: (data: { texto: string; categoria: Categoria }) => void;
+  onPublish: (data: {
+    texto: string;
+    categoria: Categoria;
+    fotos?: File[];
+  }) => void;
   onSaveEdit: (
     postId: string,
     data: { texto: string; categoria: Categoria }
@@ -43,6 +52,12 @@ export function PostComposer({
   // "geral" é a opção neutra (migration 0025) -- quem não quer classificar
   // a publicação numa das outras 4 categorias simplesmente não mexe aqui.
   const [categoria, setCategoria] = useState<Categoria>("geral");
+  // Fotos só na criação (migration 0028 escopa fotos por post_id, que só
+  // existe depois do post criado) -- editar uma publicação existente
+  // continua texto/categoria apenas, mesmo comportamento de antes.
+  const [fotos, setFotos] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -52,9 +67,39 @@ export function PostComposer({
     }
   }, [open, editingPost]);
 
+  // object URLs de preview só existem no cliente e precisam ser liberadas
+  // explicitamente -- sem isso, cada foto trocada vaza memória até a aba
+  // fechar.
+  useEffect(() => {
+    return () => {
+      previews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previews]);
+
   function reset() {
     setTexto("");
     setCategoria("geral");
+    previews.forEach((url) => URL.revokeObjectURL(url));
+    setFotos([]);
+    setPreviews([]);
+  }
+
+  function addFotos(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const espacoLivre = MAX_FOTOS_POR_POST - fotos.length;
+    if (espacoLivre <= 0) return;
+    const novos = Array.from(files).slice(0, espacoLivre);
+    setFotos((prev) => [...prev, ...novos]);
+    setPreviews((prev) => [
+      ...prev,
+      ...novos.map((f) => URL.createObjectURL(f)),
+    ]);
+  }
+
+  function removeFoto(index: number) {
+    URL.revokeObjectURL(previews[index]);
+    setFotos((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
   function handlePublish() {
@@ -62,7 +107,11 @@ export function PostComposer({
     if (editingPost) {
       onSaveEdit(editingPost.id, { texto: texto.trim(), categoria });
     } else {
-      onPublish({ texto: texto.trim(), categoria });
+      onPublish({
+        texto: texto.trim(),
+        categoria,
+        fotos: fotos.length > 0 ? fotos : undefined,
+      });
     }
     reset();
     onClose();
@@ -115,6 +164,73 @@ export function PostComposer({
             minTouchTarget
           />
         </div>
+
+        {!editingPost && (
+          <div>
+            <p className="section-label mb-2">Fotos (opcional)</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                addFotos(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <div className="flex gap-2">
+              {previews.map((url, i) => (
+                <div
+                  key={url}
+                  className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0"
+                  style={{ border: "1px solid var(--border-color)" }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- preview de blob local, next/image não aceita object URL */}
+                  <img
+                    src={url}
+                    alt={`Foto ${i + 1} selecionada`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={() => removeFoto(i)}
+                    aria-label={`Remover foto ${i + 1}`}
+                    className="absolute top-1 right-1 flex items-center justify-center rounded-full"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      background: "rgba(0,0,0,0.6)",
+                      color: "white",
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+              {fotos.length < MAX_FOTOS_POR_POST && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label="Adicionar foto"
+                  className="w-20 h-20 rounded-xl flex items-center justify-center shrink-0 transition-opacity active:opacity-70"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px dashed var(--border-color)",
+                  }}
+                >
+                  <ImagePlus size={20} style={{ color: "var(--text-muted)" }} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!editingPost && (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            A Rede mantém só as 300 publicações mais recentes da comunidade —
+            passado esse número, as mais antigas (texto e fotos) são removidas
+            automaticamente.
+          </p>
+        )}
       </div>
     </BottomSheet>
   );

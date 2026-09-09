@@ -37,7 +37,8 @@ describe("serviço de feed", () => {
     const client = clienteComUsuario("user-1");
     client.from.mockImplementation((table: string) => {
       if (table === "rede_posts") {
-        const order = vi.fn().mockResolvedValue({ data: posts, error: null });
+        const limit = vi.fn().mockResolvedValue({ data: posts, error: null });
+        const order = vi.fn().mockReturnValue({ limit });
         return { select: vi.fn().mockReturnValue({ order }) };
       }
       if (table === "rede_curtidas") {
@@ -67,6 +68,11 @@ describe("serviço de feed", () => {
         });
         return { select: vi.fn().mockReturnValue({ in: inFn }) };
       }
+      if (table === "rede_post_fotos") {
+        const order = vi.fn().mockResolvedValue({ data: [], error: null });
+        const inFn = vi.fn().mockReturnValue({ order });
+        return { select: vi.fn().mockReturnValue({ in: inFn }) };
+      }
       throw new Error(`tabela inesperada: ${table}`);
     });
 
@@ -76,6 +82,7 @@ describe("serviço de feed", () => {
         autorId: "autora-1",
         autorNome: "Autora",
         autorCor: "#fff",
+        autorFotoUrl: null,
         categoria: "dica",
         texto: "Olá",
         criadoEm: "2026-01-01T00:00:00.000Z",
@@ -83,13 +90,15 @@ describe("serviço de feed", () => {
         curtidas: 1,
         curtidoPorMim: true,
         comentariosCount: 2,
+        fotos: [],
       },
     ]);
   });
 
-  it("devolve lista vazia sem consultar curtidas/comentários/perfis quando não há posts", async () => {
+  it("devolve lista vazia sem consultar curtidas/comentários/perfis/fotos quando não há posts", async () => {
     const client = clienteComUsuario("user-1");
-    const order = vi.fn().mockResolvedValue({ data: [], error: null });
+    const limit = vi.fn().mockResolvedValue({ data: [], error: null });
+    const order = vi.fn().mockReturnValue({ limit });
     client.from.mockReturnValue({ select: vi.fn().mockReturnValue({ order }) });
 
     await expect(listarFeed(client as never)).resolves.toEqual([]);
@@ -111,7 +120,7 @@ describe("serviço de feed", () => {
 
     await expect(
       criarPost(client as never, { categoria: "dica", texto: "Uma dica" })
-    ).resolves.toEqual(post);
+    ).resolves.toEqual({ post, fotos: [] });
     expect(insert).toHaveBeenCalledWith({
       autor_id: "user-1",
       categoria: "dica",
@@ -216,18 +225,35 @@ describe("serviço de feed", () => {
     expect(eqAutor).toHaveBeenCalledWith("autor_id", "user-1");
   });
 
-  it("exclui um post só do próprio autor, restringindo por autor_id", async () => {
+  it("exclui um post só do próprio autor, restringindo por autor_id, e limpa as fotos do Storage", async () => {
     const eqAutor = vi.fn().mockResolvedValue({ error: null });
     const eqPost = vi.fn().mockReturnValue({ eq: eqAutor });
     const remove = vi.fn().mockReturnValue({ eq: eqPost });
+    const fotosEqAutor = vi
+      .fn()
+      .mockResolvedValue({
+        data: [{ path: "user-1/posts/post-1/1-x.png" }],
+        error: null,
+      });
+    const fotosEqPost = vi.fn().mockReturnValue({ eq: fotosEqAutor });
+    const fotosSelect = vi.fn().mockReturnValue({ eq: fotosEqPost });
+    const storageRemove = vi.fn().mockResolvedValue({ error: null });
     const client = clienteComUsuario();
-    client.from.mockReturnValue({ delete: remove });
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_post_fotos") return { select: fotosSelect };
+      if (table === "rede_posts") return { delete: remove };
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+    (client as { storage?: unknown }).storage = {
+      from: vi.fn().mockReturnValue({ remove: storageRemove }),
+    };
 
     await expect(
       excluirPost(client as never, { postId: "post-1" })
     ).resolves.toBeUndefined();
     expect(eqPost).toHaveBeenCalledWith("id", "post-1");
     expect(eqAutor).toHaveBeenCalledWith("autor_id", "user-1");
+    expect(storageRemove).toHaveBeenCalledWith(["user-1/posts/post-1/1-x.png"]);
   });
 
   it("lista comentários em ordem cronológica com o perfil de cada autor", async () => {
@@ -272,6 +298,7 @@ describe("serviço de feed", () => {
           autorId: "autora-1",
           autorNome: "Autora",
           autorCor: "#fff",
+          autorFotoUrl: null,
           texto: "Oi",
           criadoEm: "2026-01-01T00:00:00.000Z",
         },

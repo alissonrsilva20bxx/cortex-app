@@ -286,6 +286,38 @@ class MockStorageBucket {
     });
   }
 
+  /** Usado por lib/rede/feed.ts (listarFeed) pra assinar todas as fotos da
+   * página numa chamada só -- sem isso, o feed real quebra rodando contra
+   * o mock assim que um post tem foto. */
+  createSignedUrls(paths: string[], _expiresIn: number) {
+    return delay({
+      data: paths.map((path) => {
+        const file = this.files.find((f) => f.path === path);
+        return {
+          path,
+          signedUrl: file
+            ? (file.blobUrl ?? placeholderDocDataUri(file.name))
+            : "",
+          error: file ? null : "Object not found",
+        };
+      }),
+      error: null,
+    });
+  }
+
+  /** Usado por excluirPost (lib/rede/feed.ts) -- limpeza imediata das
+   * fotos de um post excluído. */
+  remove(paths: string[]) {
+    const removed = paths.filter((path) =>
+      this.files.some((f) => f.path === path)
+    );
+    this.files = this.files.filter((f) => !paths.includes(f.path));
+    return delay({
+      data: removed.map((path) => ({ path })),
+      error: null,
+    });
+  }
+
   upload(path: string, file: File, opts?: { contentType?: string }) {
     const parts = path.split("/");
     const categoria = parts[1] ?? "documentos";

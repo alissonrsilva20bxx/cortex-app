@@ -69,8 +69,11 @@ import {
   listarComentarios,
   criarComentario,
   alternarCurtida,
+  renovarUrlFoto,
+  FEED_PAGE_SIZE,
   type FeedPost,
   type FeedComment,
+  type FotoPost,
   type Categoria,
 } from "@/lib/rede/feed";
 import { criarDenuncia, type CriarDenunciaInput } from "@/lib/rede/denuncias";
@@ -222,10 +225,13 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const pop = () =>
     setStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
 
-  // ── Feed real ──
+  // ── Feed real (paginado, issue do escopo de fotos -- listarFeed nunca
+  // buscava mais que 1 página do feed inteiro) ──
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
   const [feedError, setFeedError] = useState(false);
+  const [feedHasMore, setFeedHasMore] = useState(true);
+  const [feedLoadingMore, setFeedLoadingMore] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -235,6 +241,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         setPosts(data);
         setFeedError(false);
         setFeedLoading(false);
+        setFeedHasMore(data.length >= FEED_PAGE_SIZE);
       })
       .catch((e) => {
         console.error("[RedeTab feed]", e);
@@ -248,6 +255,22 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadMorePosts() {
+    if (feedLoadingMore || !feedHasMore || posts.length === 0) return;
+    setFeedLoadingMore(true);
+    try {
+      const cursor = posts[posts.length - 1].criadoEm;
+      const proximaPagina = await listarFeed(supabase, { antesDe: cursor });
+      setPosts((prev) => [...prev, ...proximaPagina]);
+      setFeedHasMore(proximaPagina.length >= FEED_PAGE_SIZE);
+    } catch (e) {
+      console.error("[RedeTab feed carregar mais]", e);
+      toast.error("Não foi possível carregar mais publicações.");
+    } finally {
+      setFeedLoadingMore(false);
+    }
+  }
 
   // ── Amigas real -- buscado sob demanda ao entrar na tela (não no mount,
   // não é o destino padrão como o Feed) ──
@@ -659,16 +682,20 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
-  // `criarPost` devolve a linha crua de `rede_posts` -- monta o FeedPost
-  // localmente com o que já se sabe do próprio perfil, sem round-trip extra.
-  function feedPostFromCreated(created: {
-    id: string;
-    autor_id: string;
-    categoria: Categoria;
-    texto: string;
-    criado_em: string;
-    atualizado_em: string;
-  }): FeedPost {
+  // `criarPost` devolve a linha crua de `rede_posts` + as fotos já com URL
+  // assinada -- monta o FeedPost localmente com o que já se sabe do
+  // próprio perfil, sem round-trip extra.
+  function feedPostFromCreated(
+    created: {
+      id: string;
+      autor_id: string;
+      categoria: Categoria;
+      texto: string;
+      criado_em: string;
+      atualizado_em: string;
+    },
+    fotos: FotoPost[] = []
+  ): FeedPost {
     return {
       id: created.id,
       autorId: created.autor_id,
@@ -682,13 +709,18 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       curtidas: 0,
       curtidoPorMim: false,
       comentariosCount: 0,
+      fotos,
     };
   }
 
-  async function handlePublish(data: { texto: string; categoria: Categoria }) {
+  async function handlePublish(data: {
+    texto: string;
+    categoria: Categoria;
+    fotos?: File[];
+  }) {
     try {
-      const created = await criarPost(supabase, data);
-      setPosts((prev) => [feedPostFromCreated(created), ...prev]);
+      const { post, fotos } = await criarPost(supabase, data);
+      setPosts((prev) => [feedPostFromCreated(post, fotos), ...prev]);
       toast.success("Publicação enviada!");
     } catch (e) {
       console.error("[RedeTab publicar]", e);
@@ -731,6 +763,26 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       console.error("[RedeTab excluir post]", e);
       toast.error("Não foi possível excluir a publicação.");
     }
+  }
+
+  // URL assinada expira em 1h (lib/rede/feed.ts) -- chamado pelo PostCard
+  // quando a <img> falha ao carregar, pra tentar renovar sem re-buscar o
+  // feed inteiro. Atualiza a MESMA foto (por path) em qualquer post que a
+  // contenha -- meusPosts/o perfil público derivam de `posts` por filter,
+  // então já refletem sozinhos.
+  async function renovarFotoUrl(path: string): Promise<string | null> {
+    const novaUrl = await renovarUrlFoto(supabase, path);
+    if (novaUrl) {
+      setPosts((prev) =>
+        prev.map((p) => ({
+          ...p,
+          fotos: p.fotos.map((f) =>
+            f.path === path ? { ...f, url: novaUrl } : f
+          ),
+        }))
+      );
+    }
+    return novaUrl;
   }
 
   async function submitReport(motivo: DenunciaMotivo) {
@@ -1275,11 +1327,11 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   async function shareWishlistToFeed(item: WishlistItem) {
     const progresso = Math.round((item.valorAtual / item.valorAlvo) * 100);
     try {
-      const created = await criarPost(supabase, {
+      const { post } = await criarPost(supabase, {
         categoria: "conquista",
         texto: `Compartilhando meu progresso com "${item.nome}" — ${progresso}% da meta!`,
       });
-      setPosts((prev) => [feedPostFromCreated(created), ...prev]);
+      setPosts((prev) => [feedPostFromCreated(post), ...prev]);
       setWishlistFormOpen(false);
       setEditingWishlist(null);
       toast.success("Desejo compartilhado no Feed!");
@@ -1392,6 +1444,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     onComment: (p: FeedPost) => setCommentsPostId(p.id),
     onShare: (p: FeedPost) => setSharePost(p),
     onOpenMenu: (p: FeedPost) => setMenuPost(p),
+    onRenovarFoto: renovarFotoUrl,
   };
 
   return (
@@ -1408,6 +1461,9 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           unreadNotifs={unreadNotifs}
           loading={feedLoading}
           error={feedError}
+          hasMore={feedHasMore}
+          loadingMore={feedLoadingMore}
+          onLoadMore={loadMorePosts}
           onOpenSearch={() => push({ type: "busca" })}
           onOpenNotifs={() => setNotifSheetOpen(true)}
           onOpenChat={() => push({ type: "chatList" })}

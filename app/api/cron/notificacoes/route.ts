@@ -40,7 +40,13 @@ function mapJob(row: {
 
 export async function GET(request: NextRequest) {
   const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET;
+  // `!cronSecret ||` é essencial: sem ela, um ambiente sem CRON_SECRET
+  // configurado aceitaria o header literal "Authorization: Bearer
+  // undefined" (o template literal interpola `undefined` como texto) --
+  // achado ao revisar o mesmo bug na rota nova de limpeza de mídia
+  // (rede-midia-limpeza), mesmo padrão do exemplo oficial da Vercel.
+  if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

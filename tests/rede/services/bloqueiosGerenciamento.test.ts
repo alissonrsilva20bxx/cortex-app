@@ -11,7 +11,7 @@ describe("listarBloqueadosComNome", () => {
     const client = { rpc };
 
     await expect(listarBloqueadosComNome(client as never)).resolves.toEqual([
-      { id: "u1", nome: "Fulana", cor: "#FF0000", bio: "" },
+      { id: "u1", nome: "Fulana", cor: "#FF0000", bio: "", fotoUrl: null },
     ]);
     expect(rpc).toHaveBeenCalledWith("rede_listar_bloqueados");
   });

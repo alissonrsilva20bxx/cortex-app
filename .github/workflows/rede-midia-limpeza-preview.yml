@@ -1,0 +1,53 @@
+name: Limpeza de mídia da Rede (Preview)
+
+# Vercel Cron só dispara contra o deployment de PRODUCTION -- nunca contra
+# Preview (confirmado na doc oficial: "makes an HTTP GET request to your
+# project's production deployment URL"). Os amigos usam a Preview de
+# `mockuptesterede`, então incorporar este PR sozinho NÃO ativa a limpeza
+# automática lá -- só quando isto chegar em Production de verdade. Este
+# workflow é a ponte: roda no GitHub Actions (grátis, já em uso neste
+# repo), chamando a MESMA rota autenticada por CRON_SECRET, contra a URL
+# estável de Preview da branch mockuptesterede.
+#
+# NÃO ativado sozinho: precisa de um secret configurado no repo antes de
+# rodar de verdade (ver "Como ativar" abaixo) -- proposto aqui pra
+# revisão, não como automação já ligada.
+#
+# Como ativar (passo manual, uma vez):
+#   1. Settings > Secrets and variables > Actions > New repository secret
+#   2. Nome: CRON_SECRET_MOCKUPTESTEREDE
+#      Valor: o mesmo CRON_SECRET já configurado no ambiente de Preview
+#      geral da Vercel (Settings > Environment Variables do projeto
+#      `jobapp` -- é o valor compartilhado entre Preview e Production
+#      hoje, não um novo secret a inventar).
+#   3. Confirmar a URL estável abaixo bate com a de verdade
+#      (`vercel inspect` numa deploy recente de mockuptesterede mostra o
+#      alias `https://jobapp-git-mockuptesterede-<org>.vercel.app`).
+#
+# Sem o secret configurado, a chamada abaixo recebe 401 (o próprio handler
+# já rejeita corretamente -- ver PR #105) e o job falha visivelmente no
+# GitHub Actions, não silenciosamente.
+
+on:
+  schedule:
+    # Diário, 30min depois do horário já usado pro cron de Production
+    # (11:00 UTC) -- não precisa ser mais frequente que isso pra uma
+    # comunidade beta pequena.
+    - cron: "30 11 * * *"
+  workflow_dispatch: {} # permite rodar manualmente pra testar
+
+jobs:
+  limpeza:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chama a rota de limpeza na Preview de mockuptesterede
+        run: |
+          STATUS=$(curl -s -o /tmp/resp.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET_MOCKUPTESTEREDE }}" \
+            "https://jobapp-git-mockuptesterede-bxx-project.vercel.app/api/cron/rede-midia-limpeza")
+          echo "HTTP $STATUS"
+          cat /tmp/resp.json
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::limpeza falhou (HTTP $STATUS) -- ver resposta acima"
+            exit 1
+          fi
