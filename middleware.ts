@@ -69,6 +69,16 @@ export async function middleware(request: NextRequest) {
     path === "/login" ||
     path.startsWith("/auth") ||
     path.startsWith("/dev-preview") ||
+    // Rotas de cron (Vercel Cron chamando o servidor, sem sessão de
+    // usuário nenhuma) -- cada uma já se autentica sozinha via
+    // `Authorization: Bearer ${CRON_SECRET}` (ver app/api/cron/*/route.ts).
+    // Sem isto, toda chamada de cron caía aqui primeiro e virava um 307
+    // pro /login antes mesmo do route handler rodar -- bug real, achado ao
+    // testar app/api/cron/rede-midia-limpeza contra o build de produção
+    // local (mesmo problema já afetava silenciosamente
+    // /api/cron/notificacoes). Precisa valer em produção (é onde o cron
+    // roda de verdade), diferente dos bypasses de dev-preview acima.
+    path.startsWith("/api/cron") ||
     (isDevPreviewEnvironment() && isDevPreviewSessionBootstrapPath(path));
 
   if (!user && !isPublic) {
