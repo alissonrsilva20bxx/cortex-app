@@ -1,0 +1,85 @@
+name: Limpeza de mídia da Rede (Preview)
+
+# Vercel Cron só dispara contra o deployment de PRODUCTION -- nunca contra
+# Preview (confirmado na doc oficial: "makes an HTTP GET request to your
+# project's production deployment URL"). Os amigos usam a Preview de
+# `mockuptesterede`, então incorporar o PR #105 sozinho NÃO ativa a limpeza
+# automática lá -- só quando isto chegar em Production de verdade. Este
+# workflow é a ponte: roda no GitHub Actions, chamando a MESMA rota
+# autenticada por CRON_SECRET, contra a URL estável de Preview da branch
+# `mockuptesterede`.
+#
+# Por que este arquivo está isolado num PR próprio pra `master`, em vez de
+# vir junto do PR #105: o GitHub só lê e dispara gatilhos `schedule:` a
+# partir da versão do workflow que existe no branch padrão do repositório
+# -- hoje `master`, não `mockuptesterede`. Sem estar em `master`, o
+# agendamento nunca ativaria, não importa o que aconteça em outra branch.
+#
+# Efeito colateral de ABRIR este PR: nenhum -- Vercel só builda Preview do
+# branch de origem do PR, não mexe em `master`.
+# Efeito colateral de dar MERGE: o projeto Vercel `jobapp` está
+# configurado com `master` como Production Branch (confirmado via
+# `vercel ls jobapp --prod`), então merge aqui dispara um deploy real de
+# PRODUCTION (https://cortex-app-bice.vercel.app) -- mesmo este PR não
+# tocando em nenhum código do app. Não fazer merge sem confirmar essa
+# janela com quem pediu.
+#
+# DUAS trancas independentes protegem contra ativação acidental, mesmo
+# depois do merge:
+#
+#   1) REDE_LIMPEZA_MOCKUPTESTEREDE_HABILITADA -- interruptor explícito.
+#      Sem esse secret (ou com valor diferente de "true"), o job roda mas
+#      pula a chamada de verdade -- fica visivelmente "skip" no Actions.
+#      Só criar depois de confirmar branch alvo, secret de auth e URL.
+#   2) CRON_SECRET_MOCKUPTESTEREDE -- autentica a chamada à rota. Sem ele
+#      (ou errado), o handler responde 401 e o job falha visível.
+#
+# Como ativar de vez (passos manuais, um humano, fora deste repo):
+#   1. Settings > Secrets and variables > Actions > New repository secret
+#   2. Nome: CRON_SECRET_MOCKUPTESTEREDE
+#      Valor: o CRON_SECRET do ambiente de PREVIEW GERAL do projeto Vercel
+#      `jobapp` (Settings > Environment Variables desse projeto).
+#      *** NÃO usar nenhum valor do ambiente de homologação
+#      (`feature/rede-fotos-homolog` / projeto Supabase
+#      `jobapp-homologacao`) -- é um ambiente isolado e separado, com
+#      variáveis próprias; pegar o secret errado ali faz esta rotina
+#      chamar/autenticar contra o alvo errado. ***
+#   3. Nome: REDE_LIMPEZA_MOCKUPTESTEREDE_HABILITADA
+#      Valor: "true" -- só depois de validar 1 rodada manual via
+#      workflow_dispatch e confirmar que a URL abaixo bate com a real
+#      (`vercel inspect` numa deploy recente de `mockuptesterede`).
+#
+# Sem os dois secrets configurados, a chamada real nunca acontece -- nem
+# por acaso, nem só por o arquivo já estar em `master`.
+
+on:
+  schedule:
+    # Diário, 30min depois do horário já usado pro cron de Production
+    # (11:00 UTC) -- não precisa ser mais frequente que isso pra uma
+    # comunidade beta pequena.
+    - cron: "30 11 * * *"
+  workflow_dispatch: {} # permite rodar manualmente pra testar (ainda respeita a tranca 1 abaixo)
+
+jobs:
+  limpeza:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verifica interruptor de habilitação
+        run: |
+          if [ "${{ secrets.REDE_LIMPEZA_MOCKUPTESTEREDE_HABILITADA }}" != "true" ]; then
+            echo "::notice::Limpeza desativada (secret REDE_LIMPEZA_MOCKUPTESTEREDE_HABILITADA ausente ou != 'true'). Nenhuma chamada foi feita."
+            echo "SKIP=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Chama a rota de limpeza na Preview de mockuptesterede
+        if: env.SKIP != 'true'
+        run: |
+          STATUS=$(curl -s -o /tmp/resp.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET_MOCKUPTESTEREDE }}" \
+            "https://jobapp-git-mockuptesterede-bxx-project.vercel.app/api/cron/rede-midia-limpeza")
+          echo "HTTP $STATUS"
+          cat /tmp/resp.json
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::limpeza falhou (HTTP $STATUS) -- ver resposta acima"
+            exit 1
+          fi
