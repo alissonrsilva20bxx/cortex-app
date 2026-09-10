@@ -75,8 +75,40 @@ describe("FeedFotos — direção iOS + Instagram", () => {
     expect(f).toMatch(/feed-foto-scroller/);
   });
 
-  it("a principal carrega sob demanda (loading=lazy), não antecipada", () => {
+  it("a principal só é montada quando o card entra na viewport (IntersectionObserver)", () => {
+    expect(f).toMatch(/new IntersectionObserver/);
+    expect(f).toMatch(/rootMargin:\s*"200px 0px"/);
+    expect(f).toMatch(/setNaViewport\(true\)/);
+    expect(f).toMatch(/io\.disconnect\(\)/); // uma vez perto, fica montada
+    // a <img> da principal só renderiza quando renderPrincipal é true
+    expect(f).toMatch(/renderPrincipal\s*&&\s*!principalFalhou\s*&&\s*url/);
+    // foto única: gate pela viewport
+    expect(f).toMatch(/renderPrincipal=\{naViewport\}/);
+    // loading=lazy fica como reforço
     expect(f).toMatch(/loading="lazy"/);
+  });
+
+  it("carrossel: a principal do slide só monta quando ele foi ativado (deslizado até)", () => {
+    expect(f).toMatch(/renderPrincipal=\{naViewport && ativados\.has\(i\)\}/);
+    expect(f).toMatch(/setAtivados/);
+    expect(f).toMatch(/new Set\(\[0\]\)/); // só o 1º slide começa ativo
+  });
+
+  it("tap ≠ swipe cobre pointercancel e arrasto que volta ao início", () => {
+    // limiar checado a CADA move (arrasto que retorna ainda 'andou')
+    expect(f).toMatch(/onPointerMove/);
+    expect(f).toMatch(/d\.andou\s*=\s*true/);
+    expect(f).toMatch(/if \(d && !d\.andou\) onAbrir\(\)/);
+    // pointercancel (o navegador assumiu o gesto) descarta o toque
+    expect(f).toMatch(/onPointerCancel/);
+  });
+
+  it("usa a memória de proporções das fotos legadas (localStorage)", () => {
+    expect(f).toMatch(
+      /import\s*{[\s\S]*?proporcaoLembrada[\s\S]*?}\s*from\s*"@\/lib\/rede\/fotoRatioMemoria"/
+    );
+    expect(f).toMatch(/proporcaoLembrada\(foto0\.thumbPath\)/);
+    expect(f).toMatch(/lembrarProporcao\(foto0\.thumbPath/);
   });
 
   it("setas só via classe .feed-foto-seta (escondidas no touch por CSS)", () => {
@@ -101,7 +133,7 @@ describe("FeedFotos — direção iOS + Instagram", () => {
   });
 
   it("swipe não abre o visualizador (limiar de toque em px)", () => {
-    expect(f).toMatch(/Math\.hypot\([\s\S]*?\)\s*<=\s*10/);
+    expect(f).toMatch(/Math\.hypot\([\s\S]*?\)\s*>\s*10/);
   });
 
   it("scroll programático respeita prefers-reduced-motion", () => {

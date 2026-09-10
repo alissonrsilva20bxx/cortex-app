@@ -276,12 +276,20 @@ class MockStorageBucket {
     });
   }
 
+  /** `token` novo a cada chamada -- imita uma URL assinada real (sempre
+   * única), pra dev-preview poder exercitar a renovação de URL expirada. */
+  private assinar(file: StorageFileMeta): string {
+    const base = file.blobUrl ?? placeholderDocDataUri(file.name);
+    const nonce = `mocktok=${Date.now().toString(36)}${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+    return base.includes("?") ? `${base}&${nonce}` : `${base}?${nonce}`;
+  }
+
   createSignedUrl(path: string, _expiresIn: number) {
     const file = this.files.find((f) => f.path === path);
     return delay({
-      data: file
-        ? { signedUrl: file.blobUrl ?? placeholderDocDataUri(file.name) }
-        : null,
+      data: file ? { signedUrl: this.assinar(file) } : null,
       error: file ? null : { message: "Object not found" },
     });
   }
@@ -295,9 +303,7 @@ class MockStorageBucket {
         const file = this.files.find((f) => f.path === path);
         return {
           path,
-          signedUrl: file
-            ? (file.blobUrl ?? placeholderDocDataUri(file.name))
-            : "",
+          signedUrl: file ? this.assinar(file) : "",
           error: file ? null : "Object not found",
         };
       }),

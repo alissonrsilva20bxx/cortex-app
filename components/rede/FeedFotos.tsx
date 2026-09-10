@@ -10,6 +10,10 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { FotoPost } from "@/lib/rede/feed";
+import {
+  lembrarProporcao,
+  proporcaoLembrada,
+} from "@/lib/rede/fotoRatioMemoria";
 
 /**
  * Fotos no feed da Rede -- foto grande no próprio card (não só miniatura),
@@ -18,11 +22,18 @@ import type { FotoPost } from "@/lib/rede/feed";
  * - A foto sangra a largura do card (a padding do `PostCard`), SEM borda,
  *   sombra ou arredondamento próprio -- não é "uma galeria numa caixa".
  * - Miniatura entra imediata como placeholder; a principal carrega sob
- *   demanda (`loading="lazy"`) com crossfade curto. O espaço é reservado
+ *   demanda com crossfade curto. A `<img>` da principal só é MONTADA
+ *   quando o card entra na viewport (IntersectionObserver, margem de
+ *   200px) E -- no carrossel -- o slide foi ativado. Sem `<img>` não há
+ *   requisição de rede: o feed nunca baixa a principal de posts longe da
+ *   viewport nem de slides que a pessoa não deslizou até. (`loading="lazy"`
+ *   fica como reforço, mas o limiar dele é fuzzy demais pra confiar num
+ *   feed curto.) O espaço é reservado
  *   antes: proporção pelas dimensões que vêm no nome da miniatura
- *   (`foto.largura/altura`) ou, em foto legada, medindo a miniatura ao
- *   carregar -- aí a altura assenta DE UMA VEZ (sem animação, pra não
- *   empurrar o feed).
+ *   (`foto.largura/altura`); em foto legada, pela proporção lembrada de
+ *   uma visão anterior (`lib/rede/fotoRatioMemoria`) e, se não houver,
+ *   medindo a miniatura ao carregar -- aí a altura assenta DE UMA VEZ
+ *   (sem animação, pra não empurrar o feed).
  * - 2 fotos: carrossel com scroll-snap NATIVO (o dedo arrasta a foto, a
  *   física é a do iOS, encaixe preciso entre slides). A rolagem vertical
  *   passa direto -- quem arbitra o eixo do gesto é o navegador. Altura fixa
@@ -99,11 +110,23 @@ export function FeedFotos({
 // ─── hook de altura: proporção conhecida, ou reservada + medida uma vez ───
 
 function useAltura(foto0: FotoPost) {
-  const conhecido = ratioDe(foto0);
-  const [ratio, setRatio] = useState<number>(conhecido ?? RATIO_RESERVA);
-  const medido = useRef(conhecido != null);
+  // 1) dimensão no nome da miniatura (foto nova) → proporção exata, 0 salto.
+  // 2) foto legada: proporção lembrada de uma visão anterior (0 salto na
+  //    2ª vez em diante). 3) senão: reserva 1:1 e mede a miniatura (1 salto).
+  const inicial = () => {
+    const doNome = ratioDe(foto0);
+    if (doNome != null) return { ratio: doNome, medido: true };
+    const lembrada = proporcaoLembrada(foto0.thumbPath);
+    if (lembrada != null) return { ratio: clampRatio(lembrada), medido: true };
+    return { ratio: RATIO_RESERVA, medido: false };
+  };
+  const [seed] = useState(inicial);
+  const [ratio, setRatio] = useState<number>(seed.ratio);
+  const medido = useRef(seed.medido);
   const boxRef = useRef<HTMLDivElement>(null);
   const [largura, setLargura] = useState(0);
+  // a principal só é montada quando o card se aproxima da viewport
+  const [naViewport, setNaViewport] = useState(false);
 
   useLayoutEffect(() => {
     const el = boxRef.current;
@@ -113,18 +136,43 @@ function useAltura(foto0: FotoPost) {
     );
     ro.observe(el);
     setLargura(el.getBoundingClientRect().width);
+
+    if (typeof IntersectionObserver === "undefined") {
+      setNaViewport(true); // sem IO (jsdom/SSR) não adia
+    } else {
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            setNaViewport(true);
+            io.disconnect(); // uma vez perto, fica -- não descarrega ao rolar
+          }
+        },
+        { rootMargin: "200px 0px" }
+      );
+      io.observe(el);
+      return () => {
+        ro.disconnect();
+        io.disconnect();
+      };
+    }
     return () => ro.disconnect();
   }, []);
 
-  const medirDaMiniatura = useCallback((w: number, h: number) => {
-    if (medido.current || !w || !h) return;
-    medido.current = true;
-    setRatio(clampRatio(w / h));
-  }, []);
+  const medirDaMiniatura = useCallback(
+    (w: number, h: number) => {
+      if (medido.current || !w || !h) return;
+      medido.current = true;
+      const r = clampRatio(w / h);
+      setRatio(r);
+      lembrarProporcao(foto0.thumbPath, r);
+    },
+    [foto0.thumbPath]
+  );
 
   return {
     boxRef,
     ratio,
+    naViewport,
     altura: largura > 0 ? Math.round(largura / ratio) : 0,
     medirDaMiniatura,
   };
@@ -150,18 +198,24 @@ function PhotoStage({
   onRenovarFoto,
   onAbrir,
   onMedirMiniatura,
+  /** monta a `<img>` da principal? Falso p/ slide de carrossel ainda não
+   * ativado -- sem `<img>` não há requisição de rede pra essa foto. */
+  renderPrincipal = true,
 }: {
   foto: FotoPost;
   alt: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
   onAbrir: () => void;
   onMedirMiniatura?: (w: number, h: number) => void;
+  renderPrincipal?: boolean;
 }) {
   const [thumbUrl, setThumbUrl] = useState(foto.thumbUrl);
   const [url, setUrl] = useState(foto.url);
   const [principalOk, setPrincipalOk] = useState(false);
   const [principalFalhou, setPrincipalFalhou] = useState(false);
-  const down = useRef<{ x: number; y: number } | null>(null);
+  // ponto do pointerdown + se o ponteiro passou do limiar EM QUALQUER
+  // momento (um arrasto que volta ao ponto de partida ainda "andou").
+  const down = useRef<{ x: number; y: number; andou: boolean } | null>(null);
 
   // se a URL mudar (renovação vinda do pai), re-tenta
   useEffect(() => setThumbUrl(foto.thumbUrl), [foto.thumbUrl]);
@@ -191,14 +245,25 @@ function PhotoStage({
       tabIndex={0}
       aria-label={`Abrir ${alt}`}
       onPointerDown={(e) => {
-        down.current = { x: e.clientX, y: e.clientY };
+        down.current = { x: e.clientX, y: e.clientY, andou: false };
       }}
-      onPointerUp={(e) => {
+      onPointerMove={(e) => {
+        const d = down.current;
+        if (!d) return;
+        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10) d.andou = true;
+      }}
+      onPointerUp={() => {
         const d = down.current;
         down.current = null;
-        if (!d) return;
-        // só é "toque" se o dedo/mouse não andou -- swipe do carrossel não abre
-        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) <= 10) onAbrir();
+        // abre só se foi um toque parado: sem arrasto em nenhum momento
+        // (swipe do carrossel, arrasto que volta ao início, e rolagem
+        // vertical iniciada sobre a foto -- todos passam do limiar).
+        if (d && !d.andou) onAbrir();
+      }}
+      onPointerCancel={() => {
+        // o navegador assumiu o gesto (virou rolagem/scroll do carrossel)
+        // -- descarta o toque pendente.
+        down.current = null;
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -238,8 +303,9 @@ function PhotoStage({
         }}
       />
 
-      {/* principal -- carrega sob demanda (lazy); nunca antecipada de todos */}
-      {!principalFalhou && url && (
+      {/* principal -- só monta quando o slide está ativo (carrossel) e o
+          card entra na viewport (`loading="lazy"`). Sem `<img>` = 0 rede. */}
+      {renderPrincipal && !principalFalhou && url && (
         // eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage
         <img
           src={url}
@@ -303,7 +369,8 @@ function UmaFoto({
   onRenovarFoto: (path: string) => Promise<string | null>;
   onAbrir: () => void;
 }) {
-  const { boxRef, ratio, altura, medirDaMiniatura } = useAltura(foto);
+  const { boxRef, ratio, altura, naViewport, medirDaMiniatura } =
+    useAltura(foto);
   return (
     <div ref={boxRef} style={bleed(altura, ratio)}>
       <PhotoStage
@@ -312,6 +379,7 @@ function UmaFoto({
         onRenovarFoto={onRenovarFoto}
         onAbrir={onAbrir}
         onMedirMiniatura={medirDaMiniatura}
+        renderPrincipal={naViewport}
       />
     </div>
   );
@@ -330,9 +398,16 @@ function Carrossel({
   onRenovarFoto: (path: string) => Promise<string | null>;
   onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
 }) {
-  const { boxRef, ratio, altura, medirDaMiniatura } = useAltura(fotos[0]);
+  const { boxRef, ratio, altura, naViewport, medirDaMiniatura } = useAltura(
+    fotos[0]
+  );
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [indice, setIndice] = useState(0);
+  // slides cuja principal já pode ser MONTADA -- a 1ª desde o início, as
+  // outras só quando a pessoa desliza até elas. Sem `<img>` = nenhum GET.
+  const [ativados, setAtivados] = useState<ReadonlySet<number>>(
+    () => new Set([0])
+  );
 
   // índice = slide encaixado (posição de scroll ÷ largura). rAF debounce.
   useEffect(() => {
@@ -343,9 +418,12 @@ function Carrossel({
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const w = el.clientWidth || 1;
-        setIndice(
-          Math.max(0, Math.min(fotos.length - 1, Math.round(el.scrollLeft / w)))
+        const i = Math.max(
+          0,
+          Math.min(fotos.length - 1, Math.round(el.scrollLeft / w))
         );
+        setIndice(i);
+        setAtivados((prev) => (prev.has(i) ? prev : new Set([...prev, i])));
       });
     };
     el.addEventListener("scroll", aoRolar, { passive: true });
@@ -405,6 +483,7 @@ function Carrossel({
                 onRenovarFoto={onRenovarFoto}
                 onAbrir={() => onAbrirViewer(fotos, i)}
                 onMedirMiniatura={i === 0 ? medirDaMiniatura : undefined}
+                renderPrincipal={naViewport && ativados.has(i)}
               />
             </div>
           ))}

@@ -15,15 +15,13 @@ import type { TabId } from "@/lib/types";
  * localStorage pelo resto do app (Ajustes), como qualquer outra tela.
  */
 
-/** SVG colorido nas dimensões pedidas -- serve de "foto" no mock (o
- * `createSignedUrls` do mock devolve o `blobUrl` que setarmos aqui). */
+/** URL da rota-fixture `/dev-preview/foto` -- imagem REAL via rede (não
+ * `data:` URI), pra o painel Network mostrar o que o feed baixa de fato e
+ * quando (`loading="lazy"` só adia recursos buscáveis, não `data:`). O
+ * mock de Storage devolve este `blobUrl` em `createSignedUrls`. */
 function fotoMock(w: number, h: number, rotulo: string, c: string): string {
-  const svg =
-    `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'>` +
-    `<rect width='100%' height='100%' fill='${c}'/>` +
-    `<text x='50%' y='50%' fill='#fff' font-family='sans-serif' font-size='${Math.round(Math.min(w, h) / 6)}' font-weight='700' text-anchor='middle' dominant-baseline='central'>${rotulo}</text>` +
-    `</svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  const cor = c.replace("#", "");
+  return `/dev-preview/foto?w=${w}&h=${h}&c=${cor}&t=${encodeURIComponent(rotulo)}`;
 }
 
 /** Uma "foto" seedada: linha de rede_post_fotos + 2 arquivos no mock de
@@ -79,6 +77,9 @@ const FOTOS_SEED = (autorId: string) => {
     seedFoto(autorId, "post-foto-2", 2, 1280, 720, "16:9", "#0ea5e9"),
     // post-foto-3: foto legada (sem dimensão no nome → mede a miniatura)
     seedFoto(autorId, "post-foto-3", 1, 900, 1200, "legada", "#f59e0b", false),
+    // post-foto-4: bem no fim do feed — pra provar que a principal NÃO é
+    // baixada antes de a pessoa rolar até lá (loading="lazy").
+    seedFoto(autorId, "post-foto-4", 1, 1080, 1440, "fim-3:4", "#10b981"),
   ];
   return {
     rows: fotos.map((f) => f.row),
@@ -255,6 +256,17 @@ export default function DevPreviewRede() {
                 criado_em: new Date(Date.now() - 3_600_000 * 8).toISOString(),
                 atualizado_em: new Date(
                   Date.now() - 3_600_000 * 8
+                ).toISOString(),
+              },
+              {
+                id: "post-foto-4",
+                autor_id: outraAutoraId,
+                categoria: "geral",
+                texto:
+                  "Foto no fim do feed — a principal só baixa ao rolar até aqui.",
+                criado_em: new Date(Date.now() - 3_600_000 * 9).toISOString(),
+                atualizado_em: new Date(
+                  Date.now() - 3_600_000 * 9
                 ).toISOString(),
               },
             ],
