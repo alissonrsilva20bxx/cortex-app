@@ -11,8 +11,9 @@ function redeClient(client: TestClient): SupabaseClient {
   return client as unknown as SupabaseClient;
 }
 
-const ONE_PIXEL_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+// JPEG 1x1 -- o bucket rede-midia só aceita image/jpeg (migration 0033).
+const ONE_PIXEL_JPEG = Buffer.from(
+  "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
   "base64"
 );
 
@@ -115,10 +116,10 @@ describe("Retenção: no máximo 300 posts (migration 0028)", () => {
     expect(inserted.data).toHaveLength(300);
 
     const oldestPostId = inserted.data![0].id;
-    const oldestPath = `${autor.id}/posts/${oldestPostId}/1.png`;
+    const oldestPath = `${autor.id}/posts/${oldestPostId}/1.jpg`;
     const upload = await admin.storage
       .from("rede-midia")
-      .upload(oldestPath, ONE_PIXEL_PNG, { contentType: "image/png" });
+      .upload(oldestPath, ONE_PIXEL_JPEG, { contentType: "image/jpeg" });
     expect(upload.error).toBeNull();
     const foto = await admin.from("rede_post_fotos").insert({
       post_id: oldestPostId,

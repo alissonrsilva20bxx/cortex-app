@@ -10,7 +10,7 @@ import { PostCard } from "./PostCard";
 import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
 import { DISCOVER_PEOPLE, findUser } from "@/lib/mockRede";
-import type { FeedPost } from "@/lib/rede/feed";
+import type { FeedPost, FotoPost } from "@/lib/rede/feed";
 import type { WishlistItem } from "@/lib/rede/wishlist";
 import type { Usuario } from "@/lib/types";
 
@@ -62,6 +62,7 @@ interface Props {
   onOpenMenu: (post: FeedPost) => void;
   onOpenAutor: (autorId: string) => void;
   onRenovarFoto: (path: string) => Promise<string | null>;
+  onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
 }
 
 export function FeedScreen({
@@ -91,6 +92,7 @@ export function FeedScreen({
   onOpenMenu,
   onOpenAutor,
   onRenovarFoto,
+  onAbrirViewer,
 }: Props) {
   const [segmento, setSegmento] = useState<Segmento>("paraVoce");
 
@@ -232,6 +234,7 @@ export function FeedScreen({
                 onOpenMenu={onOpenMenu}
                 onOpenAutor={onOpenAutor}
                 onRenovarFoto={onRenovarFoto}
+                onAbrirViewer={onAbrirViewer}
               />
             ) : (
               <div key={item.block.key}>

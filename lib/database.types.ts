@@ -700,6 +700,7 @@ export type Database = {
           ordem: number;
           path: string;
           post_id: string;
+          thumb_path: string | null;
         };
         Insert: {
           autor_id: string;
@@ -708,6 +709,7 @@ export type Database = {
           ordem: number;
           path: string;
           post_id: string;
+          thumb_path?: string | null;
         };
         Update: {
           autor_id?: string;
@@ -716,6 +718,7 @@ export type Database = {
           ordem?: number;
           path?: string;
           post_id?: string;
+          thumb_path?: string | null;
         };
         Relationships: [
           {

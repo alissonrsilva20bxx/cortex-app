@@ -9,7 +9,12 @@ import {
   CATEGORIA_META,
   MAX_FOTOS_POR_POST,
   type Categoria,
+  type FotoParaUpload,
 } from "@/lib/rede/feed";
+import {
+  processarFotoParaPost,
+  FotoInvalidaError,
+} from "@/lib/rede/imagemComposer";
 
 interface EditingPost {
   id: string;
@@ -27,7 +32,7 @@ interface Props {
   onPublish: (data: {
     texto: string;
     categoria: Categoria;
-    fotos?: File[];
+    fotos?: FotoParaUpload[];
   }) => void;
   onSaveEdit: (
     postId: string,
@@ -52,11 +57,15 @@ export function PostComposer({
   // "geral" é a opção neutra (migration 0025) -- quem não quer classificar
   // a publicação numa das outras 4 categorias simplesmente não mexe aqui.
   const [categoria, setCategoria] = useState<Categoria>("geral");
-  // Fotos só na criação (migration 0028 escopa fotos por post_id, que só
-  // existe depois do post criado) -- editar uma publicação existente
-  // continua texto/categoria apenas, mesmo comportamento de antes.
-  const [fotos, setFotos] = useState<File[]>([]);
+  // Fotos só na criação (o path de Storage exige post_id, que só existe
+  // depois do post criado) -- editar uma publicação existente continua
+  // texto/categoria apenas, mesmo comportamento de antes.
+  // As fotos já viajam PROCESSADAS (principal + miniatura JPEG, sem EXIF)
+  // -- ver `processarFotoParaPost`. O preview mostra a principal final.
+  const [fotos, setFotos] = useState<FotoParaUpload[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [processandoFoto, setProcessandoFoto] = useState(false);
+  const [erroFoto, setErroFoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,24 +91,46 @@ export function PostComposer({
     previews.forEach((url) => URL.revokeObjectURL(url));
     setFotos([]);
     setPreviews([]);
+    setErroFoto(null);
+    setProcessandoFoto(false);
   }
 
-  function addFotos(files: FileList | null) {
+  async function addFotos(files: FileList | null) {
     if (!files || files.length === 0) return;
     const espacoLivre = MAX_FOTOS_POR_POST - fotos.length;
     if (espacoLivre <= 0) return;
-    const novos = Array.from(files).slice(0, espacoLivre);
-    setFotos((prev) => [...prev, ...novos]);
-    setPreviews((prev) => [
-      ...prev,
-      ...novos.map((f) => URL.createObjectURL(f)),
-    ]);
+    const escolhidos = Array.from(files).slice(0, espacoLivre);
+    setErroFoto(null);
+    setProcessandoFoto(true);
+    try {
+      for (const file of escolhidos) {
+        // processa uma por vez: resize <=1280px, JPEG <=150KB, miniatura
+        // <=400px/<=30KB, sem EXIF/GPS. Se não couber, REJEITA (não
+        // publica o original).
+        const proc = await processarFotoParaPost(file);
+        const preview = URL.createObjectURL(proc.principal);
+        setFotos((prev) => [
+          ...prev,
+          { principal: proc.principal, miniatura: proc.miniatura },
+        ]);
+        setPreviews((prev) => [...prev, preview]);
+      }
+    } catch (e) {
+      setErroFoto(
+        e instanceof FotoInvalidaError
+          ? `Não foi possível usar essa imagem: ${e.message}`
+          : "Não foi possível processar essa imagem. Tente outra."
+      );
+    } finally {
+      setProcessandoFoto(false);
+    }
   }
 
   function removeFoto(index: number) {
     URL.revokeObjectURL(previews[index]);
     setFotos((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => prev.filter((_, i) => i !== index));
+    setErroFoto(null);
   }
 
   function handlePublish() {
@@ -129,11 +160,15 @@ export function PostComposer({
       footer={
         <button
           onClick={handlePublish}
-          disabled={!texto.trim()}
+          disabled={!texto.trim() || processandoFoto}
           className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-50"
           style={{ background: "var(--accent)", color: "white" }}
         >
-          {editingPost ? "Salvar alterações" : "Publicar"}
+          {editingPost
+            ? "Salvar alterações"
+            : processandoFoto
+              ? "Preparando foto…"
+              : "Publicar"}
         </button>
       }
     >
@@ -210,8 +245,9 @@ export function PostComposer({
               {fotos.length < MAX_FOTOS_POR_POST && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={processandoFoto}
                   aria-label="Adicionar foto"
-                  className="w-20 h-20 rounded-xl flex items-center justify-center shrink-0 transition-opacity active:opacity-70"
+                  className="w-20 h-20 rounded-xl flex items-center justify-center shrink-0 transition-opacity active:opacity-70 disabled:opacity-50"
                   style={{
                     background: "var(--surface)",
                     border: "1px dashed var(--border-color)",
@@ -221,6 +257,19 @@ export function PostComposer({
                 </button>
               )}
             </div>
+            {processandoFoto && (
+              <p
+                className="text-xs mt-2"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Otimizando a imagem…
+              </p>
+            )}
+            {erroFoto && (
+              <p className="text-xs mt-2" style={{ color: "var(--danger)" }}>
+                {erroFoto}
+              </p>
+            )}
           </div>
         )}
 

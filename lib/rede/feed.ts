@@ -43,17 +43,36 @@ const FOTO_URL_TTL_SEGUNDOS = 5 * 60;
  * 0028), então um bug aqui nunca vira uma 3ª linha de verdade no banco. */
 export const MAX_FOTOS_POR_POST = 2;
 
-/** `path` viaja junto (não só a URL já assinada) pra permitir renovar o
- * acesso quando a URL expirar sem precisar re-buscar o post inteiro -- ver
- * `renovarUrlFoto`. */
-export type FotoPost = { url: string; ordem: number; path: string };
+/**
+ * O feed carrega SÓ a miniatura (`thumbUrl` / `thumbPath`). A imagem
+ * principal (`path`) não é baixada no feed -- só é assinada e aberta sob
+ * demanda quando a pessoa toca na foto (ver `assinarUrlFoto`).
+ *
+ * `thumbPath`/`path` viajam junto (não só a URL já assinada) pra permitir
+ * renovar o acesso quando a URL de 5min expirar sem re-buscar o post
+ * inteiro. Fotos legadas (antes da migration 0033) não têm miniatura:
+ * `thumbPath === path` e a `thumbUrl` aponta pra própria principal. */
+export type FotoPost = {
+  ordem: number;
+  /** URL assinada da MINIATURA, pronta pra `<img src>` no feed. */
+  thumbUrl: string;
+  /** Path da miniatura no bucket (= `path` em fotos legadas sem miniatura). */
+  thumbPath: string;
+  /** Path da imagem principal -- assinada só ao abrir, nunca no feed. */
+  path: string;
+};
+
+/** Duas imagens JPEG já processadas no cliente (ver `lib/rede/imagemComposer`),
+ * prontas pra rota `POST /api/rede/foto-upload`. */
+export type FotoParaUpload = { principal: Blob; miniatura: Blob };
 
 export type CriarPostInput = {
   categoria: Categoria;
   texto: string;
-  /** 0-2 arquivos de imagem -- enviados ao Storage só depois do post
-   * existir (o path exige {post_id}, ver migration 0028 §2). */
-  fotos?: File[];
+  /** 0-2 fotos JÁ processadas no cliente (principal + miniatura JPEG) --
+   * enviadas pela rota `POST /api/rede/foto-upload` só depois do post
+   * existir (o path exige {post_id}). Ver `lib/rede/imagemComposer`. */
+  fotos?: FotoParaUpload[];
 };
 
 export type AtualizarPostInput = {
@@ -125,9 +144,9 @@ async function obterUsuarioId(client: RedeClient): Promise<string> {
   return user.id;
 }
 
-/** Tamanho de página padrão de `listarFeed` -- mesmo padrão de
- * `MENSAGENS_PAGE_SIZE` (lib/rede/mensagens.ts, issue #54). */
-export const FEED_PAGE_SIZE = 20;
+/** Tamanho de página do feed -- 10 posts por página, conforme o escopo
+ * aprovado da feature de fotos (a entrega original vinha com 20). */
+export const FEED_PAGE_SIZE = 10;
 
 export type ListarFeedOptions = {
   /** Máximo de posts retornados. */
@@ -183,7 +202,7 @@ export async function listarFeed(
       .in("user_id", autorIds),
     client
       .from("rede_post_fotos")
-      .select("post_id,path,ordem")
+      .select("post_id,path,thumb_path,ordem")
       .in("post_id", postIds)
       .order("ordem", { ascending: true }),
   ]);
@@ -201,14 +220,19 @@ export async function listarFeed(
     throw fotosError;
   }
 
-  // Assina todas as fotos da página numa chamada só (não uma por foto) --
-  // `createSignedUrls` aceita um array de paths e devolve na mesma ordem.
+  // O feed assina SÓ as miniaturas -- a imagem principal não é baixada
+  // aqui. Foto legada (thumb_path NULL) cai pra própria principal como
+  // miniatura. Uma chamada só pra página inteira (`createSignedUrls`).
+  const thumbDe = (f: { path: string; thumb_path: string | null }) =>
+    f.thumb_path ?? f.path;
   const urlPorPath = new Map<string, string>();
-  const paths = (fotosRows ?? []).map((f) => f.path);
-  if (paths.length > 0) {
+  const thumbPaths = Array.from(
+    new Set((fotosRows ?? []).map((f) => thumbDe(f)))
+  );
+  if (thumbPaths.length > 0) {
     const { data: signed } = await client.storage
       .from(REDE_MIDIA_BUCKET)
-      .createSignedUrls(paths, FOTO_URL_TTL_SEGUNDOS);
+      .createSignedUrls(thumbPaths, FOTO_URL_TTL_SEGUNDOS);
     for (const s of signed ?? []) {
       if (s.signedUrl && s.path) {
         urlPorPath.set(s.path, s.signedUrl);
@@ -218,10 +242,11 @@ export async function listarFeed(
 
   const fotosPorPost = new Map<string, FotoPost[]>();
   for (const f of fotosRows ?? []) {
-    const url = urlPorPath.get(f.path);
-    if (!url) continue; // assinatura falhou pra esse arquivo -- não quebra o post inteiro
+    const thumbPath = thumbDe(f);
+    const thumbUrl = urlPorPath.get(thumbPath);
+    if (!thumbUrl) continue; // assinatura falhou -- não quebra o post inteiro
     const arr = fotosPorPost.get(f.post_id) ?? [];
-    arr.push({ url, ordem: f.ordem, path: f.path });
+    arr.push({ ordem: f.ordem, thumbUrl, thumbPath, path: f.path });
     fotosPorPost.set(f.post_id, arr);
   }
 
@@ -268,19 +293,89 @@ export async function listarFeed(
 
 export type CriarPostResult = { post: Post; fotos: FotoPost[] };
 
+type Mockish = { __mock?: true };
+
 /**
- * O path de Storage exige `{post_id}` (convenção `{user_id}/posts/{post_id}
- * /{arquivo}`, migration 0028), então a ordem é sempre: cria a linha de
- * `rede_posts` primeiro, só depois envia cada foto e insere sua linha em
- * `rede_post_fotos`. Fotos são enviadas em sequência (não paralelo) -- no
- * máximo 2, então o custo é desprezível, e sequencial deixa `ordem` (1, 2)
- * determinística sem precisar coordenar respostas concorrentes.
+ * Sobe uma foto (principal + miniatura) de um post que já existe.
  *
- * Sem transação client-side possível aqui (Storage não participa da
- * transação Postgres) -- se a 2ª foto falhar, o post e a 1ª foto já
- * existem; deixamos assim (post publicado com 1 foto) em vez de tentar um
- * rollback manual, mesma filosofia pragmática do resto do app (ex.:
- * UploadSheet do Cofre também não reverte nada em erro parcial).
+ * - Cliente REAL: `POST /api/rede/foto-upload` (multipart). Só a rota
+ *   grava no Storage/`rede_post_fotos` (migration 0033 tirou o INSERT
+ *   direto do cliente), e ela re-valida dimensão/tamanho/formato e remove
+ *   metadados no servidor. Falha parcial é tratada lá dentro (nada órfão).
+ * - Cliente MOCK (/dev-preview/app): grava direto no mock, que não tem
+ *   RLS nem rota -- mesmo shape de retorno.
+ */
+async function enviarFotoDoPost(
+  client: RedeClient,
+  args: { postId: string; autorId: string; ordem: number; foto: FotoParaUpload }
+): Promise<FotoPost> {
+  const { postId, autorId, ordem, foto } = args;
+
+  if ((client as unknown as Mockish).__mock) {
+    const stamp = Date.now();
+    const path = `${autorId}/posts/${postId}/${ordem}-${stamp}.jpg`;
+    const thumbPath = `${autorId}/posts/${postId}/${ordem}-${stamp}-thumb.jpg`;
+    await client.storage
+      .from(REDE_MIDIA_BUCKET)
+      .upload(path, foto.principal as unknown as File, {
+        contentType: "image/jpeg",
+      });
+    await client.storage
+      .from(REDE_MIDIA_BUCKET)
+      .upload(thumbPath, foto.miniatura as unknown as File, {
+        contentType: "image/jpeg",
+      });
+    await client
+      .from("rede_post_fotos")
+      .insert({
+        post_id: postId,
+        autor_id: autorId,
+        path,
+        thumb_path: thumbPath,
+        ordem,
+      });
+    const { data: signed } = await client.storage
+      .from(REDE_MIDIA_BUCKET)
+      .createSignedUrl(thumbPath, FOTO_URL_TTL_SEGUNDOS);
+    return { ordem, thumbUrl: signed?.signedUrl ?? "", thumbPath, path };
+  }
+
+  const form = new FormData();
+  form.set("postId", postId);
+  form.set("ordem", String(ordem));
+  form.set("principal", foto.principal, `${ordem}.jpg`);
+  form.set("miniatura", foto.miniatura, `${ordem}-thumb.jpg`);
+
+  const resp = await fetch("/api/rede/foto-upload", {
+    method: "POST",
+    body: form,
+  });
+  const json = (await resp.json().catch(() => ({}))) as {
+    path?: string;
+    thumbPath?: string;
+    thumbUrl?: string;
+    error?: string;
+  };
+  if (!resp.ok || !json.path || !json.thumbPath) {
+    throw new Error(
+      json.error || `Falha ao enviar a foto (HTTP ${resp.status})`
+    );
+  }
+  return {
+    ordem,
+    thumbUrl: json.thumbUrl ?? "",
+    thumbPath: json.thumbPath,
+    path: json.path,
+  };
+}
+
+/**
+ * Cria a linha de `rede_posts` primeiro (o path das fotos exige
+ * `{post_id}`), depois envia cada foto em sequência (ordem 1, 2).
+ *
+ * Falha parcial: se QUALQUER foto falhar, o post recém-criado é apagado
+ * (o que já subiu em Storage some pelo trigger de exclusão + `excluirPost`)
+ * e o erro sobe -- nada de post publicado "pela metade" nem arquivo órfão.
  */
 export async function criarPost(
   client: RedeClient,
@@ -301,45 +396,38 @@ export async function criarPost(
     throw error;
   }
 
+  const aEnviar = (input.fotos ?? []).slice(0, MAX_FOTOS_POR_POST);
   const fotos: FotoPost[] = [];
-  const arquivos = (input.fotos ?? []).slice(0, MAX_FOTOS_POR_POST);
 
-  for (let i = 0; i < arquivos.length; i++) {
-    const file = arquivos[i];
-    const ordem = i + 1;
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `${autorId}/posts/${post.id}/${ordem}-${Date.now()}.${ext}`;
-
-    const { error: uploadError } = await client.storage
-      .from(REDE_MIDIA_BUCKET)
-      .upload(path, file, { contentType: file.type });
-    if (uploadError) {
-      throw uploadError;
+  try {
+    for (let i = 0; i < aEnviar.length; i++) {
+      fotos.push(
+        await enviarFotoDoPost(client, {
+          postId: post.id,
+          autorId,
+          ordem: i + 1,
+          foto: aEnviar[i],
+        })
+      );
     }
-
-    const { error: fotoError } = await client
-      .from("rede_post_fotos")
-      .insert({ post_id: post.id, autor_id: autorId, path, ordem });
-    if (fotoError) {
-      throw fotoError;
-    }
-
-    const { data: signed } = await client.storage
-      .from(REDE_MIDIA_BUCKET)
-      .createSignedUrl(path, FOTO_URL_TTL_SEGUNDOS);
-    fotos.push({ url: signed?.signedUrl ?? "", ordem, path });
+  } catch (e) {
+    // rollback: apaga o post (cascade limpa rede_post_fotos; o trigger de
+    // exclusão + excluirPost cuidam dos blobs que já subiram)
+    await excluirPost(client, { postId: post.id }).catch(() => {});
+    throw e;
   }
 
   return { post, fotos };
 }
 
 /**
- * URL assinada expira em `FOTO_URL_TTL_SEGUNDOS` -- se uma aba ficar
- * aberta além disso sem recarregar o feed, a foto para de carregar. Chamado
- * do `onError` da `<img>` no PostCard: pede uma URL nova pro MESMO path já
- * conhecido, sem precisar re-buscar o post inteiro. RLS/bloqueio continuam
- * valendo aqui (a policy de leitura do bucket é reavaliada a cada
- * assinatura nova, não só na primeira).
+ * Assina (ou re-assina) uma URL de leitura pra um path do bucket, com TTL
+ * de `FOTO_URL_TTL_SEGUNDOS`. Dois usos:
+ *   - renovar a miniatura quando a URL de 5min expira com a aba aberta
+ *     (`onError` da `<img>` no PostCard);
+ *   - assinar a imagem PRINCIPAL sob demanda quando a pessoa toca na foto
+ *     (o feed nunca baixa a principal).
+ * RLS/bloqueio são reavaliados a cada assinatura nova, não só na primeira.
  */
 export async function renovarUrlFoto(
   client: RedeClient,
@@ -354,6 +442,28 @@ export async function renovarUrlFoto(
   }
 
   return data.signedUrl;
+}
+
+/**
+ * Assina em LOTE as URLs principais das fotos de UM post (no máximo 2) --
+ * uma chamada só, pro FotoViewer não pagar um round-trip por foto ao
+ * abrir/navegar. Mesmo TTL (`FOTO_URL_TTL_SEGUNDOS`), RLS/bloqueio
+ * reavaliados na assinatura. Devolve um mapa path -> URL; paths que
+ * falharem simplesmente não entram no mapa.
+ */
+export async function assinarUrlsFoto(
+  client: RedeClient,
+  paths: string[]
+): Promise<Map<string, string>> {
+  const mapa = new Map<string, string>();
+  if (paths.length === 0) return mapa;
+  const { data } = await client.storage
+    .from(REDE_MIDIA_BUCKET)
+    .createSignedUrls(paths, FOTO_URL_TTL_SEGUNDOS);
+  for (const s of data ?? []) {
+    if (s.signedUrl && s.path) mapa.set(s.path, s.signedUrl);
+  }
+  return mapa;
 }
 
 export async function atualizarPost(
@@ -394,7 +504,7 @@ export async function excluirPost(
 
   const { data: fotos } = await client
     .from("rede_post_fotos")
-    .select("path")
+    .select("path,thumb_path")
     .eq("post_id", input.postId)
     .eq("autor_id", autorId);
 
@@ -408,10 +518,16 @@ export async function excluirPost(
     throw error;
   }
 
-  if (fotos && fotos.length > 0) {
+  // Principal + miniatura das duas fotos. O trigger de exclusão
+  // (migration 0033) também enfileira os dois paths como rede de
+  // segurança, então uma falha aqui só adia pro próximo dreno do cron.
+  const paths = (fotos ?? [])
+    .flatMap((f) => [f.path, f.thumb_path])
+    .filter((p): p is string => Boolean(p));
+  if (paths.length > 0) {
     const { error: removeError } = await client.storage
       .from(REDE_MIDIA_BUCKET)
-      .remove(fotos.map((f) => f.path));
+      .remove(paths);
     if (removeError) {
       console.error("[feed] limpeza de fotos pós-exclusão falhou", removeError);
     }
