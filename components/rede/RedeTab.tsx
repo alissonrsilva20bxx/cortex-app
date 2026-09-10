@@ -204,7 +204,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   const sementeRef = useRef<{
     userId: string;
     feed: { posts: FeedPost[]; hasMore: boolean } | null;
-    feedStale: boolean;
     perfil: PerfilCache | null;
     amigas: AmigasCache | null;
     conversas: ConversaResumo[] | null;
@@ -214,7 +213,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   if (sementeRef.current === null || sementeRef.current.userId !== usuario.id) {
     redeCache.vincularUsuario(usuario.id);
     let feedMem = redeCache.lerFeed(usuario.id);
-    let feedStale = feedMem?.stale ?? true;
     if (!feedMem) {
       const persistido = redeCachePersist.carregar(usuario.id);
       if (persistido && persistido.feed.length > 0) {
@@ -222,7 +220,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
         // sobe pro cache em memória pra próximos remounts nesta sessão
         redeCache.escreverFeed(usuario.id, persistido.feed, hasMore);
         feedMem = { posts: persistido.feed, hasMore, stale: true };
-        feedStale = true;
         if (persistido.perfil) {
           redeCache.escrever<PerfilCache>(usuario.id, "perfil", {
             perfil: persistido.perfil,
@@ -236,7 +233,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     sementeRef.current = {
       userId: usuario.id,
       feed: feedMem ? { posts: feedMem.posts, hasMore: feedMem.hasMore } : null,
-      feedStale,
       perfil: redeCache.ler<PerfilCache>(usuario.id, "perfil")?.data ?? null,
       amigas: redeCache.ler<AmigasCache>(usuario.id, "amigas")?.data ?? null,
       conversas:
