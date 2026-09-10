@@ -14,6 +14,77 @@ import type { TabId } from "@/lib/types";
  * do app real. Sem chrome de dev: tema/modo seguem os já salvos em
  * localStorage pelo resto do app (Ajustes), como qualquer outra tela.
  */
+
+/** SVG colorido nas dimensões pedidas -- serve de "foto" no mock (o
+ * `createSignedUrls` do mock devolve o `blobUrl` que setarmos aqui). */
+function fotoMock(w: number, h: number, rotulo: string, c: string): string {
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'>` +
+    `<rect width='100%' height='100%' fill='${c}'/>` +
+    `<text x='50%' y='50%' fill='#fff' font-family='sans-serif' font-size='${Math.round(Math.min(w, h) / 6)}' font-weight='700' text-anchor='middle' dominant-baseline='central'>${rotulo}</text>` +
+    `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** Uma "foto" seedada: linha de rede_post_fotos + 2 arquivos no mock de
+ * Storage (principal + miniatura). Se `dims` for true, o nome da miniatura
+ * carrega LARGURA×ALTURA (fotos novas); senão simula foto legada. */
+function seedFoto(
+  autorId: string,
+  postId: string,
+  ordem: number,
+  w: number,
+  h: number,
+  rotulo: string,
+  cor: string,
+  dims = true
+) {
+  const base = `${autorId}/posts/${postId}/${ordem}-seed`;
+  const path = `${base}.jpg`;
+  const thumbPath = dims ? `${base}-thumb-${w}x${h}.jpg` : `${base}-thumb.jpg`;
+  const now = new Date().toISOString();
+  const arquivo = (p: string, url: string) => ({
+    path: p,
+    name: p.split("/").pop() ?? p,
+    categoria: "posts",
+    size: 1234,
+    mimeType: "image/jpeg",
+    createdAt: now,
+    blobUrl: url,
+  });
+  return {
+    row: {
+      post_id: postId,
+      autor_id: autorId,
+      path,
+      thumb_path: thumbPath,
+      ordem,
+    },
+    arquivos: [
+      arquivo(path, fotoMock(w, h, rotulo, cor)),
+      arquivo(
+        thumbPath,
+        fotoMock(Math.round(w / 3), Math.round(h / 3), rotulo, cor)
+      ),
+    ],
+  };
+}
+
+const FOTOS_SEED = (autorId: string) => {
+  const fotos = [
+    // post-foto-1: uma foto retrato 4:5 (dentro dos limites)
+    seedFoto(autorId, "post-foto-1", 1, 1080, 1350, "4:5", "#ec4899"),
+    // post-foto-2: carrossel — 1ª quadrada, 2ª paisagem 16:9 (fora → faixa)
+    seedFoto(autorId, "post-foto-2", 1, 1200, 1200, "1:1", "#8b5cf6"),
+    seedFoto(autorId, "post-foto-2", 2, 1280, 720, "16:9", "#0ea5e9"),
+    // post-foto-3: foto legada (sem dimensão no nome → mede a miniatura)
+    seedFoto(autorId, "post-foto-3", 1, 900, 1200, "legada", "#f59e0b", false),
+  ];
+  return {
+    rows: fotos.map((f) => f.row),
+    arquivos: fotos.flatMap((f) => f.arquivos),
+  };
+};
 export default function DevPreviewRede() {
   // Mesmo swap do /dev-preview/app: sem isso, chamadas reais de serviço
   // (ex.: lib/rede/perfis.ts) bateriam no Supabase real com um user_id
@@ -25,6 +96,7 @@ export default function DevPreviewRede() {
     const solicitanteId = "solicitante-1";
     const amigaId = "amiga-1";
     const sugestaoId = "sugestao-1";
+    const fotosSeed = FOTOS_SEED(outraAutoraId);
     __setMockSupabaseClient(
       createMockSupabaseClient(
         {
@@ -155,7 +227,38 @@ export default function DevPreviewRede() {
                   Date.now() - 3_600_000 * 5
                 ).toISOString(),
               },
+              {
+                id: "post-foto-1",
+                autor_id: outraAutoraId,
+                categoria: "geral",
+                texto: "Foto única no feed (retrato 4:5).",
+                criado_em: new Date(Date.now() - 3_600_000 * 6).toISOString(),
+                atualizado_em: new Date(
+                  Date.now() - 3_600_000 * 6
+                ).toISOString(),
+              },
+              {
+                id: "post-foto-2",
+                autor_id: outraAutoraId,
+                categoria: "geral",
+                texto: "Carrossel: quadrada e paisagem (altura fixa pela 1ª).",
+                criado_em: new Date(Date.now() - 3_600_000 * 7).toISOString(),
+                atualizado_em: new Date(
+                  Date.now() - 3_600_000 * 7
+                ).toISOString(),
+              },
+              {
+                id: "post-foto-3",
+                autor_id: outraAutoraId,
+                categoria: "geral",
+                texto: "Foto legada (sem dimensão no nome da miniatura).",
+                criado_em: new Date(Date.now() - 3_600_000 * 8).toISOString(),
+                atualizado_em: new Date(
+                  Date.now() - 3_600_000 * 8
+                ).toISOString(),
+              },
             ],
+            rede_post_fotos: fotosSeed.rows,
             rede_comentarios: [
               {
                 id: "com-1",
@@ -187,7 +290,7 @@ export default function DevPreviewRede() {
               },
             ],
           },
-          cofreFiles: [],
+          cofreFiles: fotosSeed.arquivos,
         },
         mockUsuario.id
       )

@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
       "getSupabaseAdmin() não deveria ser chamada antes de auth + membership + posse do post"
     );
   }),
+  // dimensões controladas -- `lib/rede/jpeg` real é coberto por jpeg.test.ts
+  lerDimensoesJpeg: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -26,6 +28,12 @@ vi.mock("../../../lib/devPreview/serverAuth", () => ({
 }));
 vi.mock("../../../lib/supabaseAdmin", () => ({
   getSupabaseAdmin: mocks.getSupabaseAdmin,
+}));
+vi.mock("../../../lib/rede/jpeg", () => ({
+  ehJpeg: () => true,
+  removerMetadados: (b: Uint8Array) => b,
+  contemMetadados: () => false,
+  lerDimensoesJpeg: mocks.lerDimensoesJpeg,
 }));
 
 import { POST } from "../../../app/api/rede/foto-upload/route";
@@ -96,6 +104,7 @@ function requestComImagens(
 describe("POST /api/rede/foto-upload — portas de autorização", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.lerDimensoesJpeg.mockReturnValue({ largura: 320, altura: 240 });
     mocks.getSupabaseAdmin.mockImplementation(() => {
       throw new Error(
         "getSupabaseAdmin() não deveria ser chamada antes de auth + membership + posse do post"
@@ -194,6 +203,7 @@ describe("POST /api/rede/foto-upload — portas de autorização", () => {
 describe("POST /api/rede/foto-upload — cliente service_role indisponível", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.lerDimensoesJpeg.mockReturnValue({ largura: 320, altura: 240 });
   });
 
   it("getSupabaseAdmin() lança (env sem SUPABASE_SERVICE_ROLE_KEY) -> 503 JSON, sem vazar detalhe interno", async () => {
@@ -248,5 +258,93 @@ describe("POST /api/rede/foto-upload — cliente service_role indisponível", ()
     );
 
     errSpy.mockRestore();
+  });
+});
+
+/**
+ * Caminho feliz: a rota grava principal + miniatura e devolve as URLs +
+ * dimensões. A CONVENÇÃO é que o nome da miniatura carrega LARGURA×ALTURA
+ * em px da imagem PRINCIPAL (o SOF medido no servidor), pro feed reservar
+ * a proporção do espaço antes de qualquer imagem carregar.
+ */
+describe("POST /api/rede/foto-upload — grava e devolve dimensões da principal", () => {
+  function fakeAdmin() {
+    const upload = vi.fn().mockResolvedValue({ error: null });
+    const createSignedUrls = vi.fn().mockImplementation((paths: string[]) => ({
+      data: paths.map((path) => ({
+        path,
+        signedUrl: `https://signed.test/${path}`,
+      })),
+      error: null,
+    }));
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const eqOrdem = vi.fn().mockReturnValue({ maybeSingle });
+    const eqPost = vi.fn().mockReturnValue({ eq: eqOrdem });
+    const select = vi.fn().mockReturnValue({ eq: eqPost });
+    const from = vi.fn().mockReturnValue({ select, insert });
+    const storageFrom = vi.fn().mockReturnValue({ upload, createSignedUrls });
+    return {
+      admin: { from, storage: { from: storageFrom } },
+      upload,
+      insert,
+      createSignedUrls,
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("nomeia a miniatura com LARGURA×ALTURA da PRINCIPAL e devolve url/thumbUrl/largura/altura", async () => {
+    const supabase = fakeSupabase({
+      member: true,
+      post: { id: "post-1", autor_id: AUTHOR_ID },
+    });
+    mocks.resolveGateAuth.mockResolvedValue(authenticated(supabase));
+
+    // 1ª chamada de validarJpeg = principal (1280×960); 2ª = miniatura (400×300)
+    mocks.lerDimensoesJpeg
+      .mockReturnValueOnce({ largura: 1280, altura: 960 })
+      .mockReturnValueOnce({ largura: 400, altura: 300 });
+
+    const { admin, upload, insert } = fakeAdmin();
+    mocks.getSupabaseAdmin.mockReturnValue(admin as never);
+
+    const response = await POST(requestComImagens() as never);
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+
+    // path da miniatura = dimensões da PRINCIPAL (1280x960), não da miniatura
+    const thumbUpload = upload.mock.calls.find(([p]) =>
+      String(p).includes("-thumb-")
+    );
+    expect(thumbUpload?.[0]).toMatch(
+      /^user-autor\/posts\/post-1\/1-\d+-thumb-1280x960\.jpg$/
+    );
+    // a principal continua sem dimensão no nome
+    const mainUpload = upload.mock.calls.find(
+      ([p]) => !String(p).includes("-thumb-")
+    );
+    expect(mainUpload?.[0]).toMatch(/^user-autor\/posts\/post-1\/1-\d+\.jpg$/);
+
+    // a linha gravada aponta thumb_path com a dimensão
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        post_id: "post-1",
+        ordem: 1,
+        thumb_path: expect.stringMatching(/-thumb-1280x960\.jpg$/),
+      })
+    );
+
+    expect(body).toMatchObject({
+      ordem: 1,
+      largura: 1280,
+      altura: 960,
+      url: expect.stringContaining("/1-"),
+      thumbUrl: expect.stringContaining("-thumb-1280x960.jpg"),
+      thumbPath: expect.stringMatching(/-thumb-1280x960\.jpg$/),
+    });
   });
 });

@@ -1,15 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Heart,
-  MessageCircle,
-  Share2,
-  MoreHorizontal,
-  RefreshCw,
-} from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Avatar } from "./Avatar";
+import { FeedFotos } from "./FeedFotos";
 import { formatRelativeTime } from "@/lib/mockRede";
 import { CATEGORIA_META, type FeedPost, type FotoPost } from "@/lib/rede/feed";
 
@@ -27,72 +21,6 @@ interface Props {
   /** Abre o visualizador em tela cheia (dentro do app) na foto `indice`
    * do post -- a imagem principal é assinada lá dentro, sob demanda. */
   onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
-}
-
-/** Uma foto por vez: mostra a MINIATURA (renovável). O toque abre o
- * visualizador em tela cheia. Estado independente das outras fotos. */
-function PostPhoto({
-  foto,
-  alt,
-  aspectRatio,
-  onRenovarFoto,
-  onAbrir,
-}: {
-  foto: { thumbUrl: string; thumbPath: string; path: string };
-  alt: string;
-  aspectRatio: string;
-  onRenovarFoto: (path: string) => Promise<string | null>;
-  onAbrir: () => void;
-}) {
-  const [url, setUrl] = useState(foto.thumbUrl);
-  const [estado, setEstado] = useState<"ok" | "renovando" | "falhou">("ok");
-
-  async function tentarRenovar() {
-    setEstado("renovando");
-    const nova = await onRenovarFoto(foto.thumbPath);
-    if (nova) {
-      setUrl(nova);
-      setEstado("ok");
-    } else {
-      setEstado("falhou");
-    }
-  }
-
-  if (estado === "falhou") {
-    return (
-      <button
-        onClick={tentarRenovar}
-        className="w-full flex flex-col items-center justify-center gap-1.5 transition-opacity active:opacity-70"
-        style={{
-          aspectRatio,
-          background: "var(--surface)",
-          color: "var(--text-muted)",
-        }}
-      >
-        <RefreshCw size={18} />
-        <span className="text-xs">
-          Não foi possível carregar — tentar de novo
-        </span>
-      </button>
-    );
-  }
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage, não um asset local
-    <img
-      src={url}
-      alt={alt}
-      onClick={onAbrir}
-      onError={() => {
-        // A 1a falha já dispara a renovação sozinha (o caso comum é só a
-        // URL de 5min ter expirado com o feed aberto) -- só vira "falhou"
-        // (e pede um toque manual) se a renovação em si não resolver.
-        if (estado === "ok") tentarRenovar();
-      }}
-      className="w-full object-cover cursor-pointer active:opacity-80 transition-opacity"
-      style={{ aspectRatio, opacity: estado === "renovando" ? 0.5 : 1 }}
-    />
-  );
 }
 
 function ActionButton({
@@ -195,26 +123,16 @@ export function PostCard({
         {post.texto}
       </p>
 
-      {/* Fotos (0-2) -- a grade mostra só a MINIATURA; o toque abre o
-          visualizador em tela cheia dentro do app (FotoViewer), onde a
-          imagem principal é assinada sob demanda. */}
+      {/* Fotos (0-2) -- foto grande no próprio card (sangra a padding), estilo
+          Instagram. 2 fotos = carrossel com swipe. Miniatura como placeholder,
+          principal sob demanda. Toque abre o FotoViewer. */}
       {post.fotos.length > 0 && (
-        <div
-          className={`grid gap-1.5 mt-3 rounded-xl overflow-hidden ${
-            post.fotos.length === 1 ? "grid-cols-1" : "grid-cols-2"
-          }`}
-        >
-          {post.fotos.map((foto, i) => (
-            <PostPhoto
-              key={foto.ordem}
-              foto={foto}
-              alt={`Foto ${foto.ordem} da publicação de ${post.autorNome}`}
-              aspectRatio={post.fotos.length === 1 ? "16/10" : "1/1"}
-              onRenovarFoto={onRenovarFoto}
-              onAbrir={() => onAbrirViewer(post.fotos, i)}
-            />
-          ))}
-        </div>
+        <FeedFotos
+          fotos={post.fotos}
+          autorNome={post.autorNome}
+          onRenovarFoto={onRenovarFoto}
+          onAbrirViewer={onAbrirViewer}
+        />
       )}
 
       {/* Ações */}

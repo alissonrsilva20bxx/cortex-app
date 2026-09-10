@@ -780,20 +780,23 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
-  // URL assinada da MINIATURA expira em 5min (lib/rede/feed.ts) -- chamado
-  // pelo PostCard quando a <img> falha ao carregar, pra renovar sem
-  // re-buscar o feed inteiro. Atualiza a mesma miniatura (por thumbPath)
-  // em qualquer post que a contenha -- meusPosts/perfil público derivam de
-  // `posts` por filter, então refletem sozinhos.
-  async function renovarFotoUrl(thumbPath: string): Promise<string | null> {
-    const novaUrl = await renovarUrlFoto(supabase, thumbPath);
+  // URLs assinadas (miniatura E principal) expiram em 5min (lib/rede/feed.ts)
+  // -- chamado pelo FeedFotos quando uma <img> falha ao carregar, pra renovar
+  // sem re-buscar o feed. `path` pode ser o da miniatura (`thumbPath`) ou o da
+  // principal (`path`): atualiza o campo certo em qualquer post que contenha
+  // essa foto -- meusPosts/perfil público derivam de `posts` por filter, então
+  // refletem sozinhos.
+  async function renovarFotoUrl(path: string): Promise<string | null> {
+    const novaUrl = await renovarUrlFoto(supabase, path);
     if (novaUrl) {
       setPosts((prev) =>
         prev.map((p) => ({
           ...p,
-          fotos: p.fotos.map((f) =>
-            f.thumbPath === thumbPath ? { ...f, thumbUrl: novaUrl } : f
-          ),
+          fotos: p.fotos.map((f) => {
+            if (f.thumbPath === path) return { ...f, thumbUrl: novaUrl };
+            if (f.path === path) return { ...f, url: novaUrl };
+            return f;
+          }),
         }))
       );
     }

@@ -581,3 +581,21 @@ textarea:focus-visible {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ── Fotos no feed da Rede (components/rede/FeedFotos.tsx) ──────────────
+   Carrossel com scroll-snap nativo: barra de rolagem escondida. As setas
+   de navegação só existem em ponteiro fino COM hover (mouse) -- no touch
+   o gesto é o swipe, sem setas permanentes. */
+.feed-foto-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-foto-seta {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feed-foto-seta {
+    display: flex;
+  }
+}
