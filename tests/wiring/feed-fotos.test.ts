@@ -18,12 +18,16 @@ import { join } from "node:path";
  *    (pointer:fine)`); indicador de página discreto;
  *  - SEM animação de altura (a foto legada assenta de uma vez);
  *  - limites de proporção do feed orgânico do Instagram (1.91:1 … 3:4);
- *  - swipe não abre o visualizador (limiar de toque);
+ *  - a foto do feed NÃO é interativa: tocar não abre modal/fullscreen/
+ *    página/visualizador (decisão 2026-09-10, PR #112 — o `FotoViewer` foi
+ *    retirado do feed; sem `role="button"`, foco por teclado ou cursor de
+ *    clique na foto);
  *  - `prefers-reduced-motion` respeitado no scroll programático.
  *
  * O projeto não tem RTL/JSX no vitest — ler o arquivo como texto pega o
  * mesmo tipo de regressão (import trocado, `object-cover` de volta,
- * transição de altura reintroduzida, seta vazando no touch).
+ * transição de altura reintroduzida, seta vazando no touch, semântica de
+ * botão/handler de abrir visualizador de volta na foto).
  */
 
 const ROOT = join(__dirname, "..", "..");
@@ -45,6 +49,12 @@ describe("PostCard usa o FeedFotos real", () => {
   it("não voltou a usar a grade de miniatura com object-cover (que cortava)", () => {
     expect(postCard).not.toMatch(/object-cover/);
     expect(postCard).not.toMatch(/grid-cols-2[\s\S]*PostPhoto/);
+  });
+
+  it("não passa mais handler de abrir visualizador pro FeedFotos", () => {
+    // decisão 2026-09-10: foto no feed não abre nada
+    expect(postCard).not.toMatch(/onAbrirViewer/);
+    expect(postCard).not.toMatch(/FotoViewer/);
   });
 });
 
@@ -94,13 +104,26 @@ describe("FeedFotos — direção iOS + Instagram", () => {
     expect(f).toMatch(/new Set\(\[0\]\)/); // só o 1º slide começa ativo
   });
 
-  it("tap ≠ swipe cobre pointercancel e arrasto que volta ao início", () => {
-    // limiar checado a CADA move (arrasto que retorna ainda 'andou')
-    expect(f).toMatch(/onPointerMove/);
-    expect(f).toMatch(/d\.andou\s*=\s*true/);
-    expect(f).toMatch(/if \(d && !d\.andou\) onAbrir\(\)/);
-    // pointercancel (o navegador assumiu o gesto) descarta o toque
-    expect(f).toMatch(/onPointerCancel/);
+  it("a foto do feed NÃO é interativa: não abre modal/fullscreen/página/visualizador", () => {
+    // decisão 2026-09-10: o visualizador interno saiu do feed (PR #112).
+    // ignora os comentários pra não casar com a nota que explica a remoção.
+    const semComentarios = f
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|\s)\/\/.*$/gm, "");
+    expect(semComentarios).not.toMatch(/onAbrir/);
+    expect(semComentarios).not.toMatch(/FotoViewer/);
+    // nenhuma semântica de botão / ação invisível por teclado no palco
+    expect(semComentarios).not.toMatch(/role="button"/);
+    expect(semComentarios).not.toMatch(/onKeyDown/);
+    expect(semComentarios).not.toMatch(/tabIndex/);
+    // sem detecção de "tap vs swipe" (existia só pra decidir se abria)
+    expect(semComentarios).not.toMatch(/Math\.hypot/);
+    expect(semComentarios).not.toMatch(/\bandou\b/);
+  });
+
+  it("carrossel continua com swipe horizontal nativo e pontinhos abaixo", () => {
+    expect(f).toMatch(/scrollSnapType:\s*"x mandatory"/);
+    expect(f).toMatch(/indicador de página/i);
   });
 
   it("usa a memória de proporções das fotos legadas (localStorage)", () => {
@@ -115,6 +138,11 @@ describe("FeedFotos — direção iOS + Instagram", () => {
     expect(f).toMatch(/className="feed-foto-seta"/);
     // nada de setas sempre visíveis / dependentes de estado de hover em JS
     expect(f).not.toMatch(/onMouseEnter|onMouseOver/);
+    // o style inline das setas (setaBase) NÃO pode setar `display`: um
+    // display inline vence a media query `.feed-foto-seta` por
+    // especificidade e as setas vazam pro touch (regressão real do iPhone).
+    const setaBase = f.match(/const setaBase[\s\S]*?\n};/)?.[0] ?? "";
+    expect(setaBase).not.toMatch(/display\s*:/);
   });
 
   it("indicador de página é discreto e fica ABAIXO da foto (fora da bleed box)", () => {
@@ -130,10 +158,6 @@ describe("FeedFotos — direção iOS + Instagram", () => {
   it("limites de proporção = feed orgânico do Instagram (1.91:1 … 3:4)", () => {
     expect(f).toMatch(/RATIO_MAX\s*=\s*1\.91/);
     expect(f).toMatch(/RATIO_MIN\s*=\s*3\s*\/\s*4/);
-  });
-
-  it("swipe não abre o visualizador (limiar de toque em px)", () => {
-    expect(f).toMatch(/Math\.hypot\([\s\S]*?\)\s*>\s*10/);
   });
 
   it("scroll programático respeita prefers-reduced-motion", () => {

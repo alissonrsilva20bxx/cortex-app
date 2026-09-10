@@ -41,10 +41,12 @@ import {
  *   pela 1ª foto; a 2ª aparece inteira (`object-contain`) com fundo neutro
  *   onde não preenche.
  * - Sem setas no touch: as setas só existem sob `@media (hover:hover) and
- *   (pointer:fine)` (ver `.feed-foto-seta` em globals.css). Indicador de
- *   página discreto, ABAIXO da foto.
- * - Tocar abre o `FotoViewer` (opcional) -- mas soltar o dedo depois de um
- *   swipe NÃO abre: só um toque sem arrasto (limiar de 10px).
+ *   (pointer:fine)` (ver `.feed-foto-seta` em globals.css) e navegam o
+ *   carrossel (não abrem nada). Indicador de página discreto, ABAIXO da foto.
+ * - A foto NÃO é interativa: tocar não abre modal/fullscreen/página/
+ *   visualizador. Fica no próprio feed. Sem `role="button"`, sem foco por
+ *   teclado, sem cursor de clique. (Decisão de 2026-09-10: o visualizador
+ *   interno no feed foi retirado -- ver PR #112.)
  * - Movimento curto; `prefers-reduced-motion` já é amortecido pela regra
  *   global do app + guarda no `scrollTo`.
  */
@@ -77,16 +79,9 @@ interface Props {
   /** Renova a URL assinada (5min) de um path -- miniatura ou principal.
    * Devolve URL nova ou `null` se a renovação falhar (ex.: bloqueio mudou). */
   onRenovarFoto: (path: string) => Promise<string | null>;
-  /** Abre o visualizador em tela cheia na foto `indice`. */
-  onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
 }
 
-export function FeedFotos({
-  fotos,
-  autorNome,
-  onRenovarFoto,
-  onAbrirViewer,
-}: Props) {
+export function FeedFotos({ fotos, autorNome, onRenovarFoto }: Props) {
   if (fotos.length === 0) return null;
   if (fotos.length === 1) {
     return (
@@ -94,7 +89,6 @@ export function FeedFotos({
         foto={fotos[0]}
         autorNome={autorNome}
         onRenovarFoto={onRenovarFoto}
-        onAbrir={() => onAbrirViewer(fotos, 0)}
       />
     );
   }
@@ -103,7 +97,6 @@ export function FeedFotos({
       fotos={fotos}
       autorNome={autorNome}
       onRenovarFoto={onRenovarFoto}
-      onAbrirViewer={onAbrirViewer}
     />
   );
 }
@@ -197,7 +190,6 @@ function PhotoStage({
   foto,
   alt,
   onRenovarFoto,
-  onAbrir,
   onMedirMiniatura,
   /** monta a `<img>` da principal? Falso p/ slide de carrossel ainda não
    * ativado -- sem `<img>` não há requisição de rede pra essa foto. */
@@ -206,7 +198,6 @@ function PhotoStage({
   foto: FotoPost;
   alt: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
-  onAbrir: () => void;
   onMedirMiniatura?: (w: number, h: number) => void;
   renderPrincipal?: boolean;
 }) {
@@ -214,9 +205,6 @@ function PhotoStage({
   const [url, setUrl] = useState(foto.url);
   const [principalOk, setPrincipalOk] = useState(false);
   const [principalFalhou, setPrincipalFalhou] = useState(false);
-  // ponto do pointerdown + se o ponteiro passou do limiar EM QUALQUER
-  // momento (um arrasto que volta ao ponto de partida ainda "andou").
-  const down = useRef<{ x: number; y: number; andou: boolean } | null>(null);
   // trava de renovação automática: o `onError` da <img> pede UMA re-assinatura
   // e só volta a pedir depois de um `onLoad` bem-sucedido ou de uma URL nova
   // vinda do pai. Sem isso, uma URL que assina mas não carrega (blob some,
@@ -264,44 +252,8 @@ function PhotoStage({
   }
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`Abrir ${alt}`}
-      onPointerDown={(e) => {
-        down.current = { x: e.clientX, y: e.clientY, andou: false };
-      }}
-      onPointerMove={(e) => {
-        const d = down.current;
-        if (!d) return;
-        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10) d.andou = true;
-      }}
-      onPointerUp={() => {
-        const d = down.current;
-        down.current = null;
-        // abre só se foi um toque parado: sem arrasto em nenhum momento
-        // (swipe do carrossel, arrasto que volta ao início, e rolagem
-        // vertical iniciada sobre a foto -- todos passam do limiar).
-        if (d && !d.andou) onAbrir();
-      }}
-      onPointerCancel={() => {
-        // o navegador assumiu o gesto (virou rolagem/scroll do carrossel)
-        // -- descarta o toque pendente.
-        down.current = null;
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onAbrir();
-        }
-      }}
-      style={{
-        position: "absolute",
-        inset: 0,
-        cursor: "pointer",
-        outline: "none",
-      }}
-    >
+    // Container NÃO interativo: a foto vive no feed, tocar não abre nada.
+    <div style={{ position: "absolute", inset: 0 }}>
       {/* miniatura -- placeholder, some no crossfade quando a principal carrega */}
       {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage */}
       <img
@@ -390,12 +342,10 @@ function UmaFoto({
   foto,
   autorNome,
   onRenovarFoto,
-  onAbrir,
 }: {
   foto: FotoPost;
   autorNome: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
-  onAbrir: () => void;
 }) {
   const { boxRef, ratio, altura, naViewport, medirDaMiniatura } =
     useAltura(foto);
@@ -405,7 +355,6 @@ function UmaFoto({
         foto={foto}
         alt={`Foto da publicação de ${autorNome}`}
         onRenovarFoto={onRenovarFoto}
-        onAbrir={onAbrir}
         onMedirMiniatura={medirDaMiniatura}
         renderPrincipal={naViewport}
       />
@@ -419,12 +368,10 @@ function Carrossel({
   fotos,
   autorNome,
   onRenovarFoto,
-  onAbrirViewer,
 }: {
   fotos: FotoPost[];
   autorNome: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
-  onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
 }) {
   const { boxRef, ratio, altura, naViewport, medirDaMiniatura } = useAltura(
     fotos[0]
@@ -509,7 +456,6 @@ function Carrossel({
                 foto={foto}
                 alt={`Foto ${foto.ordem} da publicação de ${autorNome}`}
                 onRenovarFoto={onRenovarFoto}
-                onAbrir={() => onAbrirViewer(fotos, i)}
                 onMedirMiniatura={i === 0 ? medirDaMiniatura : undefined}
                 renderPrincipal={naViewport && ativados.has(i)}
               />
@@ -569,6 +515,10 @@ function Carrossel({
   );
 }
 
+// Sem `display`/`alignItems`/`justifyContent` aqui de propósito: um `display`
+// inline venceria a media query `(hover:hover) and (pointer:fine)` de
+// `.feed-foto-seta` (globals.css) por especificidade e as setas apareceriam
+// no touch. Quem liga o `display: flex` (e centra o glifo) é aquela regra.
 const setaBase: React.CSSProperties = {
   position: "absolute",
   top: "50%",
@@ -578,9 +528,6 @@ const setaBase: React.CSSProperties = {
   height: 44,
   padding: 6,
   borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
   background: "rgba(0,0,0,0.4)",
   backgroundClip: "content-box",
   color: "#fff",

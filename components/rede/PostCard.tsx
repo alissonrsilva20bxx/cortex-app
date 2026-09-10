@@ -5,7 +5,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Avatar } from "./Avatar";
 import { FeedFotos } from "./FeedFotos";
 import { formatRelativeTime } from "@/lib/mockRede";
-import { CATEGORIA_META, type FeedPost, type FotoPost } from "@/lib/rede/feed";
+import { CATEGORIA_META, type FeedPost } from "@/lib/rede/feed";
 
 interface Props {
   post: FeedPost;
@@ -18,9 +18,6 @@ interface Props {
    * chamado ao detectar falha de carregamento; devolve uma URL nova pro
    * mesmo path, ou `null` se a renovação falhar (ex.: bloqueio mudou). */
   onRenovarFoto: (path: string) => Promise<string | null>;
-  /** Abre o visualizador em tela cheia (dentro do app) na foto `indice`
-   * do post -- a imagem principal é assinada lá dentro, sob demanda. */
-  onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
 }
 
 function ActionButton({
@@ -67,7 +64,6 @@ export function PostCard({
   onOpenMenu,
   onOpenAutor,
   onRenovarFoto,
-  onAbrirViewer,
 }: Props) {
   const cat = CATEGORIA_META[post.categoria];
 
@@ -125,13 +121,12 @@ export function PostCard({
 
       {/* Fotos (0-2) -- foto grande no próprio card (sangra a padding), estilo
           Instagram. 2 fotos = carrossel com swipe. Miniatura como placeholder,
-          principal sob demanda. Toque abre o FotoViewer. */}
+          principal sob demanda. A foto NÃO é interativa: fica no feed. */}
       {post.fotos.length > 0 && (
         <FeedFotos
           fotos={post.fotos}
           autorNome={post.autorNome}
           onRenovarFoto={onRenovarFoto}
-          onAbrirViewer={onAbrirViewer}
         />
       )}
 

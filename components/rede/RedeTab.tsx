@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { FeedScreen } from "./FeedScreen";
-import { FotoViewer } from "./FotoViewer";
 import { SearchScreen } from "./SearchScreen";
 import { AmigasScreen } from "./AmigasScreen";
 import { ChatListScreen } from "./ChatListScreen";
@@ -77,7 +76,6 @@ import {
   criarComentario,
   alternarCurtida,
   renovarUrlFoto,
-  assinarUrlsFoto,
   FEED_PAGE_SIZE,
   type FeedPost,
   type FeedComment,
@@ -803,20 +801,6 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     return novaUrl;
   }
 
-  // URLs PRINCIPAIS assinadas em LOTE (o feed só baixa a miniatura) --
-  // o FotoViewer chama uma vez ao abrir, com os paths do post inteiro
-  // (máx. 2), e pré-carrega as duas.
-  const assinarPrincipais = useCallback(
-    (paths: string[]) => assinarUrlsFoto(supabase, paths),
-    []
-  );
-
-  // Visualizador de foto em tela cheia (dentro do app, sem nova aba).
-  const [viewer, setViewer] = useState<{
-    fotos: FotoPost[];
-    indice: number;
-  } | null>(null);
-
   async function submitReport(motivo: DenunciaMotivo) {
     if (!reportTarget) return;
     try {
@@ -1477,8 +1461,6 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     onShare: (p: FeedPost) => setSharePost(p),
     onOpenMenu: (p: FeedPost) => setMenuPost(p),
     onRenovarFoto: renovarFotoUrl,
-    onAbrirViewer: (fotos: FotoPost[], indice: number) =>
-      setViewer({ fotos, indice }),
   };
 
   return (
@@ -2129,15 +2111,6 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           },
         ]}
       />
-
-      {viewer && (
-        <FotoViewer
-          fotos={viewer.fotos}
-          indiceInicial={viewer.indice}
-          assinarPrincipais={assinarPrincipais}
-          onFechar={() => setViewer(null)}
-        />
-      )}
     </div>
   );
 }

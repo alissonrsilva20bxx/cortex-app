@@ -517,28 +517,6 @@ export async function renovarUrlFoto(
   return data.signedUrl;
 }
 
-/**
- * Assina em LOTE as URLs principais das fotos de UM post (no máximo 2) --
- * uma chamada só, pro FotoViewer não pagar um round-trip por foto ao
- * abrir/navegar. Mesmo TTL (`FOTO_URL_TTL_SEGUNDOS`), RLS/bloqueio
- * reavaliados na assinatura. Devolve um mapa path -> URL; paths que
- * falharem simplesmente não entram no mapa.
- */
-export async function assinarUrlsFoto(
-  client: RedeClient,
-  paths: string[]
-): Promise<Map<string, string>> {
-  const mapa = new Map<string, string>();
-  if (paths.length === 0) return mapa;
-  const { data } = await client.storage
-    .from(REDE_MIDIA_BUCKET)
-    .createSignedUrls(paths, FOTO_URL_TTL_SEGUNDOS);
-  for (const s of data ?? []) {
-    if (s.signedUrl && s.path) mapa.set(s.path, s.signedUrl);
-  }
-  return mapa;
-}
-
 export async function atualizarPost(
   client: RedeClient,
   input: AtualizarPostInput

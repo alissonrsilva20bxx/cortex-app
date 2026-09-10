@@ -17,7 +17,7 @@ import { PostCard } from "./PostCard";
 import { OptionsSheet } from "./OptionsSheet";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
 import type { WishlistItem } from "@/lib/mockRede";
-import type { FeedPost, FotoPost } from "@/lib/rede/feed";
+import type { FeedPost } from "@/lib/rede/feed";
 
 interface Props {
   nome: string;
@@ -45,7 +45,6 @@ interface Props {
   onShare: (post: FeedPost) => void;
   onOpenMenu: (post: FeedPost) => void;
   onRenovarFoto: (path: string) => Promise<string | null>;
-  onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
 }
 
 export function PerfilPublicoScreen({
@@ -71,7 +70,6 @@ export function PerfilPublicoScreen({
   onShare,
   onOpenMenu,
   onRenovarFoto,
-  onAbrirViewer,
 }: Props) {
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
 
@@ -211,7 +209,6 @@ export function PerfilPublicoScreen({
                     onOpenMenu={onOpenMenu}
                     onOpenAutor={() => {}}
                     onRenovarFoto={onRenovarFoto}
-                    onAbrirViewer={onAbrirViewer}
                   />
                 ))}
               </div>
