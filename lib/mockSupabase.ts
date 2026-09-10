@@ -277,9 +277,12 @@ class MockStorageBucket {
   }
 
   /** `token` novo a cada chamada -- imita uma URL assinada real (sempre
-   * única), pra dev-preview poder exercitar a renovação de URL expirada. */
+   * única), pra dev-preview poder exercitar a renovação de URL expirada.
+   * Num `data:` URI não dá pra anexar query string (viraria parte do
+   * conteúdo/base64 e quebraria a imagem) -- esses voltam intactos. */
   private assinar(file: StorageFileMeta): string {
     const base = file.blobUrl ?? placeholderDocDataUri(file.name);
+    if (base.startsWith("data:")) return base;
     const nonce = `mocktok=${Date.now().toString(36)}${Math.random()
       .toString(36)
       .slice(2, 8)}`;

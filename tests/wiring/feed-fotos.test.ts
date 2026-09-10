@@ -139,7 +139,7 @@ describe("FeedFotos — direção iOS + Instagram", () => {
   it("scroll programático respeita prefers-reduced-motion", () => {
     expect(f).toMatch(/prefers-reduced-motion/);
     expect(f).toMatch(
-      /behavior:\s*prefereMovimentoReduzido\(\)\s*\?\s*"auto"\s*:\s*"smooth"/
+      /behavior:\s*resolveScrollBehavior\(prefereMovimentoReduzido\(\)\)/
     );
   });
 });

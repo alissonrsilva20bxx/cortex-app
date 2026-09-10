@@ -10,6 +10,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { FotoPost } from "@/lib/rede/feed";
+import { resolveScrollBehavior } from "@/lib/rede/chatUi";
 import {
   lembrarProporcao,
   proporcaoLembrada,
@@ -216,19 +217,35 @@ function PhotoStage({
   // ponto do pointerdown + se o ponteiro passou do limiar EM QUALQUER
   // momento (um arrasto que volta ao ponto de partida ainda "andou").
   const down = useRef<{ x: number; y: number; andou: boolean } | null>(null);
+  // trava de renovação automática: o `onError` da <img> pede UMA re-assinatura
+  // e só volta a pedir depois de um `onLoad` bem-sucedido ou de uma URL nova
+  // vinda do pai. Sem isso, uma URL que assina mas não carrega (blob some,
+  // relógio torto) faz `onError` -> re-assina -> `onError` em loop.
+  const renovandoThumb = useRef(false);
+  const renovandoPrincipal = useRef(false);
 
-  // se a URL mudar (renovação vinda do pai), re-tenta
-  useEffect(() => setThumbUrl(foto.thumbUrl), [foto.thumbUrl]);
+  // URL nova vinda do pai (ou 1ª montagem): destrava e re-tenta
   useEffect(() => {
+    renovandoThumb.current = false;
+    setThumbUrl(foto.thumbUrl);
+  }, [foto.thumbUrl]);
+  useEffect(() => {
+    renovandoPrincipal.current = false;
     setUrl(foto.url);
     setPrincipalFalhou(false);
   }, [foto.url]);
 
   async function renovarThumb() {
+    if (renovandoThumb.current) return;
+    renovandoThumb.current = true;
     const nova = await onRenovarFoto(foto.thumbPath);
     if (nova) setThumbUrl(nova);
+    // a trava só cai no `onLoad` da miniatura (ou numa URL nova do pai):
+    // se a re-assinada também falhar, não re-assina de novo.
   }
-  async function renovarPrincipal() {
+  async function renovarPrincipal({ manual = false } = {}) {
+    if (renovandoPrincipal.current && !manual) return;
+    renovandoPrincipal.current = true;
     setPrincipalFalhou(false);
     const nova = await onRenovarFoto(foto.path);
     if (nova) {
@@ -237,6 +254,13 @@ function PhotoStage({
     } else {
       setPrincipalFalhou(true);
     }
+  }
+  // toque no botão "Recarregar a foto": re-assina as duas, sempre (o manual
+  // ignora a trava automática).
+  function recarregarManual() {
+    renovandoThumb.current = false;
+    void renovarThumb();
+    void renovarPrincipal({ manual: true });
   }
 
   return (
@@ -285,12 +309,13 @@ function PhotoStage({
         alt=""
         aria-hidden
         draggable={false}
-        onLoad={(e) =>
+        onLoad={(e) => {
+          renovandoThumb.current = false;
           onMedirMiniatura?.(
             e.currentTarget.naturalWidth,
             e.currentTarget.naturalHeight
-          )
-        }
+          );
+        }}
         onError={() => void renovarThumb()}
         style={{
           position: "absolute",
@@ -313,7 +338,10 @@ function PhotoStage({
           loading="lazy"
           decoding="async"
           draggable={false}
-          onLoad={() => setPrincipalOk(true)}
+          onLoad={() => {
+            renovandoPrincipal.current = false;
+            setPrincipalOk(true);
+          }}
           onError={() => void renovarPrincipal()}
           style={{
             position: "absolute",
@@ -331,7 +359,7 @@ function PhotoStage({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            void renovarPrincipal();
+            recarregarManual();
           }}
           className="feed-foto-retry"
           style={{
@@ -439,7 +467,7 @@ function Carrossel({
     const w = el.clientWidth;
     el.scrollTo({
       left: (Math.round(el.scrollLeft / w) + dir) * w,
-      behavior: prefereMovimentoReduzido() ? "auto" : "smooth",
+      behavior: resolveScrollBehavior(prefereMovimentoReduzido()),
     });
   }, []);
 
