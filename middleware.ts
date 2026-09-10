@@ -79,6 +79,18 @@ export async function middleware(request: NextRequest) {
     // /api/cron/notificacoes). Precisa valer em produção (é onde o cron
     // roda de verdade), diferente dos bypasses de dev-preview acima.
     path.startsWith("/api/cron") ||
+    // app/api/rede/foto-upload faz o próprio gate de sessão
+    // (`resolveGateAuth` -> 401 JSON limpo) e ainda re-checa
+    // `rede_is_member` + posse do post antes de qualquer escrita com
+    // service_role. Sem esta linha, o primeiro POST /api/rede/foto-upload
+    // de uma sessão real caía no gate do middleware; quando o
+    // `getUser()` do middleware não devolvia usuário naquele request,
+    // virava 307 -> /login, o `fetch` do `criarPost` seguia o redirect,
+    // `resp.json()` estourava no HTML do /login e o rollback do
+    // `criarPost` apagava o post recém-criado. Mesma classe do 307 do
+    // cron acima. Precisa valer em produção -- é onde o smoke test dos
+    // amigos roda (Preview mockuptesterede -> Supabase de produção).
+    path === "/api/rede/foto-upload" ||
     (isDevPreviewEnvironment() && isDevPreviewSessionBootstrapPath(path));
 
   if (!user && !isPublic) {
