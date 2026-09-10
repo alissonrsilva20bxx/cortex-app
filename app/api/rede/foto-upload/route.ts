@@ -168,7 +168,23 @@ export async function POST(request: NextRequest) {
   }
 
   // --- a partir daqui há escrita com service_role ---
-  const admin = getSupabaseAdmin();
+  // `getSupabaseAdmin()` monta o client com `SUPABASE_SERVICE_ROLE_KEY`.
+  // Se a env var faltar no ambiente (aconteceu no Preview `mockuptesterede`),
+  // o `createClient` do supabase-js lança "supabaseKey is required" -- sem
+  // este guard vira um 500 de corpo vazio e o `criarPost` do cliente não
+  // tem erro nenhum pra mostrar. A mensagem do supabase-js NÃO contém a
+  // chave; ainda assim registramos só o nome do erro, nunca `e.message`
+  // nem o valor de nenhuma env var.
+  let admin: ReturnType<typeof getSupabaseAdmin>;
+  try {
+    admin = getSupabaseAdmin();
+  } catch (e) {
+    console.error(
+      "[foto-upload] cliente service_role indisponível:",
+      e instanceof Error ? e.name : "erro desconhecido"
+    );
+    return erro("Serviço de mídia indisponível", 503);
+  }
   const stamp = Date.now();
   const base = `${userId}/posts/${postId}/${ordem}-${stamp}`;
   const path = `${base}.jpg`;
