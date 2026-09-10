@@ -80,31 +80,29 @@ Isso significa que um upload direto (curl com a anon key, SDK no console)
 > bucket, que limita indiretamente o que cabe. Um edge function via
 > webhook foi **descartado** pelo usuário (apagaria arquivo já publicado).
 
-### 4. Feed carrega só a miniatura + visualizador interno — `lib/rede/feed.ts`, `FotoViewer.tsx`
+### 4. Feed de fotos — `lib/rede/feed.ts`, `components/rede/FeedFotos.tsx`
 
-- `listarFeed` assina **só** `thumb_path` (URL de 5 min). A imagem
-  principal **não é baixada no feed**.
-- `PostCard` mostra a miniatura na grade. Tocar nela abre o
-  **`FotoViewer`** — visualizador em tela cheia **dentro do app**
-  (`createPortal` pro body), estilo Instagram, identidade JobApp. **Sem
-  nova aba, sem `window.location`.**
-- **Abertura instantânea percebida**: mostra já a miniatura da foto tocada
-  (que o navegador acabou de exibir no feed → vem do cache) e, em
-  paralelo, `assinarUrlsFoto` assina **em lote** as principais **deste
-  post** (máx. 2, uma chamada) e pré-carrega as duas (`new Image()`).
-  Navegar entre as 2 fotos usa a principal já pré-carregada — sem novo
-  atraso de assinatura nem download. Nunca baixa principal de outro post.
-- Miniatura de placeholder (blur leve, 2px) com **crossfade curto** (160ms)
-  pra principal quando ela termina. Fundo **opaco** (`#0b0b0d`) pro feed
-  não competir visualmente.
-- Fecha por **X**, **Esc** e **Voltar do navegador/celular** — tudo via
-  `history.pushState` + `popstate` (um só caminho de fechamento). Fechar
-  devolve ao **mesmo ponto de rolagem** do feed (o feed nunca desmonta).
-- Post com 2 fotos: **swipe**, setas, `← →` e contador **"1/2"**.
-- Rolagem do fundo travada; foco preso no dialog (`role="dialog"`,
-  `aria-modal`); foco volta pro elemento anterior ao fechar.
-- Falha da principal (assinatura ou download): **miniatura continua
-  visível** + mensagem discreta + **"Tentar de novo"** (re-assina o lote).
+> **Atualização 2026-09-10 (PR #112):** a apresentação no feed passou de
+> "grade de miniatura + `FotoViewer` ao tocar" para **foto grande no
+> próprio card, estilo Instagram**. E, por decisão do usuário nesta PR, o
+> **visualizador interno foi retirado do feed**: `FotoViewer.tsx` foi
+> removido (não tinha outro consumidor) junto de `assinarUrlsFoto`. Tocar a
+> foto **não abre modal/fullscreen/página/visualizador** — ela vive no
+> feed. Sem `role="button"`, foco por teclado ou cursor de clique na foto.
+
+- `listarFeed` assina `thumb_path` **e** `path` (URLs de 5 min) numa
+  chamada. A miniatura entra como placeholder; a principal é montada **sob
+  demanda** (IntersectionObserver + slide ativado no carrossel) com
+  crossfade curto — `object-contain`, foto inteira, fundo `var(--bg)`.
+- Reserva de proporção antes de carregar: dimensão da principal no nome da
+  miniatura nova (`…-thumb-{L}x{A}.jpg`); foto legada → mede a miniatura,
+  altura assenta de uma vez.
+- Post com 2 fotos: **carrossel** com scroll-snap nativo (swipe
+  horizontal), pontinhos abaixo; setas só em ponteiro fino com hover
+  (`@media (hover:hover) and (pointer:fine)`, nunca no touch), e navegam o
+  carrossel — não abrem nada.
+- Falha da principal: miniatura continua + botão **"Recarregar a foto"**
+  (re-assina miniatura e principal).
 
 ### 5. Fotos legadas (antes da 0033)
 
@@ -151,11 +149,10 @@ Login `homolog-teste-a`, `localhost:3000` conectado só a `jobapp-homologacao`:
 - **Post legado** (foto `.png` 1×1 de antes da 0033) continua carregando —
   `thumb_path` null → feed assina o próprio `path`. Não foi tocado.
 - Recarregar a página: todas as fotos voltam a aparecer.
-- **FotoViewer**: abre com a miniatura instantânea; principal em crossfade;
-  navegar entre as 2 fotos é instantâneo (pré-carregadas); X / Esc /
-  Voltar fecham e devolvem à posição de rolagem; contador, setas e
-  pontinhos corretos; fundo travado. Falha da assinatura → miniatura
-  fica + "Tentar de novo" funciona.
+- **No feed** (pós-PR #112): foto grande no card; miniatura instantânea →
+  principal em crossfade; carrossel com swipe + pontinhos nas 2 fotos;
+  falha da principal → miniatura fica + "Recarregar a foto". Tocar a foto
+  não abre visualizador (removido nesta PR).
 
 ### Homologação — schema (0033)
 
@@ -185,7 +182,7 @@ produção.
    código antigo que lê `path` continua funcionando; só o **upload**
    direto quebra a partir daqui.
 4. **Imediatamente** mergear o PR → deploy de Preview do `mockuptesterede`
-   com o código novo (rota + composer + FotoViewer).
+   com o código novo (rota + composer + feed de fotos).
 5. Janela entre 3 e 4 (~2–3 min de build): quem tentar publicar **com
    foto** recebe "Não foi possível publicar". Publicar **sem foto**, ler o
    feed e abrir fotos continuam funcionando. Avisar o grupo de uma janela

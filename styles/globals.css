@@ -581,3 +581,27 @@ textarea:focus-visible {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ── Fotos no feed da Rede (components/rede/FeedFotos.tsx) ──────────────
+   Carrossel com scroll-snap nativo: barra de rolagem escondida. As setas
+   de navegação só existem em ponteiro fino COM hover (mouse) -- no touch
+   o gesto é o swipe, sem setas permanentes.
+
+   IMPORTANTE: a visibilidade (e o `display: flex` que centra o glifo) mora
+   AQUI, não no style inline do botão -- um `display` inline venceria esta
+   media query por especificidade e as setas vazariam pro touch (iPhone). */
+.feed-foto-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-foto-seta {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feed-foto-seta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

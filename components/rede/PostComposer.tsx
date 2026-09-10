@@ -111,7 +111,12 @@ export function PostComposer({
         const preview = URL.createObjectURL(proc.principal);
         setFotos((prev) => [
           ...prev,
-          { principal: proc.principal, miniatura: proc.miniatura },
+          {
+            principal: proc.principal,
+            miniatura: proc.miniatura,
+            largura: proc.largura,
+            altura: proc.altura,
+          },
         ]);
         setPreviews((prev) => [...prev, preview]);
       }

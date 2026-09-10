@@ -10,7 +10,7 @@ import { WishlistCard } from "./WishlistCard";
 import { PostCard } from "./PostCard";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
 import { type Privacidade, type WishlistItem } from "@/lib/mockRede";
-import type { FeedPost, FotoPost } from "@/lib/rede/feed";
+import type { FeedPost } from "@/lib/rede/feed";
 
 interface Props {
   nomeExibicao: string;
@@ -44,7 +44,6 @@ interface Props {
   onShare: (post: FeedPost) => void;
   onOpenMenu: (post: FeedPost) => void;
   onRenovarFoto: (path: string) => Promise<string | null>;
-  onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
 }
 
 export function MeuEspacoScreen({
@@ -77,7 +76,6 @@ export function MeuEspacoScreen({
   onShare,
   onOpenMenu,
   onRenovarFoto,
-  onAbrirViewer,
 }: Props) {
   return (
     <div className="pb-4">
@@ -250,7 +248,6 @@ export function MeuEspacoScreen({
                     onOpenMenu={onOpenMenu}
                     onOpenAutor={() => {}}
                     onRenovarFoto={onRenovarFoto}
-                    onAbrirViewer={onAbrirViewer}
                   />
                 ))}
               </div>

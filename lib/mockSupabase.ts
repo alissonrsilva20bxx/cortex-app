@@ -276,12 +276,23 @@ class MockStorageBucket {
     });
   }
 
+  /** `token` novo a cada chamada -- imita uma URL assinada real (sempre
+   * única), pra dev-preview poder exercitar a renovação de URL expirada.
+   * Num `data:` URI não dá pra anexar query string (viraria parte do
+   * conteúdo/base64 e quebraria a imagem) -- esses voltam intactos. */
+  private assinar(file: StorageFileMeta): string {
+    const base = file.blobUrl ?? placeholderDocDataUri(file.name);
+    if (base.startsWith("data:")) return base;
+    const nonce = `mocktok=${Date.now().toString(36)}${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+    return base.includes("?") ? `${base}&${nonce}` : `${base}?${nonce}`;
+  }
+
   createSignedUrl(path: string, _expiresIn: number) {
     const file = this.files.find((f) => f.path === path);
     return delay({
-      data: file
-        ? { signedUrl: file.blobUrl ?? placeholderDocDataUri(file.name) }
-        : null,
+      data: file ? { signedUrl: this.assinar(file) } : null,
       error: file ? null : { message: "Object not found" },
     });
   }
@@ -295,9 +306,7 @@ class MockStorageBucket {
         const file = this.files.find((f) => f.path === path);
         return {
           path,
-          signedUrl: file
-            ? (file.blobUrl ?? placeholderDocDataUri(file.name))
-            : "",
+          signedUrl: file ? this.assinar(file) : "",
           error: file ? null : "Object not found",
         };
       }),
@@ -425,6 +434,46 @@ export function createMockSupabaseClient(
           { conversa_id: novaConversaId, user_id: outroUserId }
         );
         return delay({ data: novaConversaId, error: null });
+      }
+      if (fn === "rede_listar_resumo_conversas" && authUserId) {
+        // Espelha migration 0024: uma linha por conversa minha, com a última
+        // mensagem, contagem de não lidas (do outro, ainda sem `lida_em`) e o
+        // filtro de "conversa oculta" (reaparece se houver mensagem nova
+        // depois de `oculta_desde`). Sem isto o RedeTab pega o erro genérico
+        // e cospe "Não foi possível carregar as conversas" (2x no StrictMode).
+        const participantes = store["rede_conversas_participantes"] ?? [];
+        const mensagens = store["rede_mensagens"] ?? [];
+        const linhas = participantes
+          .filter((p) => p.user_id === authUserId)
+          .map((p) => {
+            const conversaId = p.conversa_id as string;
+            const outro = participantes.find(
+              (o) => o.conversa_id === conversaId && o.user_id !== authUserId
+            );
+            const daConversa = [...mensagens]
+              .filter((m) => m.conversa_id === conversaId)
+              .sort((a, b) =>
+                String(b.criado_em).localeCompare(String(a.criado_em))
+              );
+            const ultima = daConversa[0];
+            const ocultaDesde = (p.oculta_desde as string | null) ?? null;
+            const ultimaEm = ultima ? (ultima.criado_em as string) : null;
+            return {
+              conversa_id: conversaId,
+              outro_user_id: (outro?.user_id as string | undefined) ?? null,
+              ultima_mensagem: ultima ? (ultima.texto as string) : null,
+              ultima_mensagem_em: ultimaEm,
+              nao_lidas: daConversa.filter(
+                (m) => m.autor_id !== authUserId && m.lida_em == null
+              ).length,
+              _visivel:
+                ocultaDesde == null ||
+                (ultimaEm != null && ultimaEm > ocultaDesde),
+            };
+          })
+          .filter((r) => r.outro_user_id && r._visivel)
+          .map(({ _visivel, ...r }) => r);
+        return delay({ data: linhas as unknown, error: null });
       }
       return delay({
         data: null,

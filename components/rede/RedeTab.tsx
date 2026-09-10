@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { FeedScreen } from "./FeedScreen";
-import { FotoViewer } from "./FotoViewer";
 import { SearchScreen } from "./SearchScreen";
 import { AmigasScreen } from "./AmigasScreen";
 import { ChatListScreen } from "./ChatListScreen";
@@ -77,7 +76,6 @@ import {
   criarComentario,
   alternarCurtida,
   renovarUrlFoto,
-  assinarUrlsFoto,
   FEED_PAGE_SIZE,
   type FeedPost,
   type FeedComment,
@@ -780,39 +778,28 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
-  // URL assinada da MINIATURA expira em 5min (lib/rede/feed.ts) -- chamado
-  // pelo PostCard quando a <img> falha ao carregar, pra renovar sem
-  // re-buscar o feed inteiro. Atualiza a mesma miniatura (por thumbPath)
-  // em qualquer post que a contenha -- meusPosts/perfil público derivam de
-  // `posts` por filter, então refletem sozinhos.
-  async function renovarFotoUrl(thumbPath: string): Promise<string | null> {
-    const novaUrl = await renovarUrlFoto(supabase, thumbPath);
+  // URLs assinadas (miniatura E principal) expiram em 5min (lib/rede/feed.ts)
+  // -- chamado pelo FeedFotos quando uma <img> falha ao carregar, pra renovar
+  // sem re-buscar o feed. `path` pode ser o da miniatura (`thumbPath`) ou o da
+  // principal (`path`): atualiza o campo certo em qualquer post que contenha
+  // essa foto -- meusPosts/perfil público derivam de `posts` por filter, então
+  // refletem sozinhos.
+  async function renovarFotoUrl(path: string): Promise<string | null> {
+    const novaUrl = await renovarUrlFoto(supabase, path);
     if (novaUrl) {
       setPosts((prev) =>
         prev.map((p) => ({
           ...p,
-          fotos: p.fotos.map((f) =>
-            f.thumbPath === thumbPath ? { ...f, thumbUrl: novaUrl } : f
-          ),
+          fotos: p.fotos.map((f) => {
+            if (f.thumbPath === path) return { ...f, thumbUrl: novaUrl };
+            if (f.path === path) return { ...f, url: novaUrl };
+            return f;
+          }),
         }))
       );
     }
     return novaUrl;
   }
-
-  // URLs PRINCIPAIS assinadas em LOTE (o feed só baixa a miniatura) --
-  // o FotoViewer chama uma vez ao abrir, com os paths do post inteiro
-  // (máx. 2), e pré-carrega as duas.
-  const assinarPrincipais = useCallback(
-    (paths: string[]) => assinarUrlsFoto(supabase, paths),
-    []
-  );
-
-  // Visualizador de foto em tela cheia (dentro do app, sem nova aba).
-  const [viewer, setViewer] = useState<{
-    fotos: FotoPost[];
-    indice: number;
-  } | null>(null);
 
   async function submitReport(motivo: DenunciaMotivo) {
     if (!reportTarget) return;
@@ -1474,8 +1461,6 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     onShare: (p: FeedPost) => setSharePost(p),
     onOpenMenu: (p: FeedPost) => setMenuPost(p),
     onRenovarFoto: renovarFotoUrl,
-    onAbrirViewer: (fotos: FotoPost[], indice: number) =>
-      setViewer({ fotos, indice }),
   };
 
   return (
@@ -2126,15 +2111,6 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           },
         ]}
       />
-
-      {viewer && (
-        <FotoViewer
-          fotos={viewer.fotos}
-          indiceInicial={viewer.indice}
-          assinarPrincipais={assinarPrincipais}
-          onFechar={() => setViewer(null)}
-        />
-      )}
     </div>
   );
 }

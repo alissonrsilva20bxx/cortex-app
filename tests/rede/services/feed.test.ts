@@ -5,6 +5,7 @@ import {
   atualizarPost,
   criarComentario,
   criarPost,
+  dimensoesDaMiniatura,
   excluirPost,
   listarComentarios,
   listarFeed,
@@ -229,12 +230,10 @@ describe("serviço de feed", () => {
     const eqAutor = vi.fn().mockResolvedValue({ error: null });
     const eqPost = vi.fn().mockReturnValue({ eq: eqAutor });
     const remove = vi.fn().mockReturnValue({ eq: eqPost });
-    const fotosEqAutor = vi
-      .fn()
-      .mockResolvedValue({
-        data: [{ path: "user-1/posts/post-1/1-x.png" }],
-        error: null,
-      });
+    const fotosEqAutor = vi.fn().mockResolvedValue({
+      data: [{ path: "user-1/posts/post-1/1-x.png" }],
+      error: null,
+    });
     const fotosEqPost = vi.fn().mockReturnValue({ eq: fotosEqAutor });
     const fotosSelect = vi.fn().mockReturnValue({ eq: fotosEqPost });
     const storageRemove = vi.fn().mockResolvedValue({ error: null });
@@ -306,6 +305,105 @@ describe("serviço de feed", () => {
     );
   });
 
+  it("assina miniatura E principal das fotos e extrai as dimensões do nome da miniatura", async () => {
+    const posts = [
+      {
+        id: "post-1",
+        autor_id: "autora-1",
+        categoria: "geral",
+        texto: "com foto",
+        criado_em: "2026-02-01T00:00:00.000Z",
+        atualizado_em: "2026-02-01T00:00:00.000Z",
+      },
+    ];
+    const fotosRows = [
+      {
+        post_id: "post-1",
+        path: "autora-1/posts/post-1/1-1700000000000.jpg",
+        thumb_path: "autora-1/posts/post-1/1-1700000000000-thumb-1080x1440.jpg",
+        ordem: 1,
+      },
+      {
+        // foto legada: miniatura sem dimensão no nome
+        post_id: "post-1",
+        path: "autora-1/posts/post-1/2-1700000000000.jpg",
+        thumb_path: "autora-1/posts/post-1/2-1700000000000-thumb.jpg",
+        ordem: 2,
+      },
+    ];
+    const client = clienteComUsuario("user-1");
+    const createSignedUrls = vi.fn().mockImplementation((paths: string[]) => ({
+      data: paths.map((path) => ({
+        path,
+        signedUrl: `https://signed.test/${path}?token=abc`,
+        error: null,
+      })),
+      error: null,
+    }));
+    (client as { storage?: unknown }).storage = {
+      from: vi.fn().mockReturnValue({ createSignedUrls }),
+    };
+    client.from.mockImplementation((table: string) => {
+      if (table === "rede_posts") {
+        const limit = vi.fn().mockResolvedValue({ data: posts, error: null });
+        return {
+          select: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({ limit }),
+          }),
+        };
+      }
+      if (table === "rede_post_fotos") {
+        const order = vi
+          .fn()
+          .mockResolvedValue({ data: fotosRows, error: null });
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockReturnValue({ order }),
+          }),
+        };
+      }
+      const inFn = vi.fn().mockResolvedValue({ data: [], error: null });
+      return { select: vi.fn().mockReturnValue({ in: inFn }) };
+    });
+
+    const feed = await listarFeed(client as never);
+
+    // uma única chamada de assinatura, com miniatura E principal das 2 fotos
+    expect(createSignedUrls).toHaveBeenCalledOnce();
+    const assinados = createSignedUrls.mock.calls[0][0] as string[];
+    expect(assinados).toEqual(
+      expect.arrayContaining([
+        "autora-1/posts/post-1/1-1700000000000.jpg",
+        "autora-1/posts/post-1/1-1700000000000-thumb-1080x1440.jpg",
+        "autora-1/posts/post-1/2-1700000000000.jpg",
+        "autora-1/posts/post-1/2-1700000000000-thumb.jpg",
+      ])
+    );
+
+    expect(feed[0].fotos).toEqual([
+      {
+        ordem: 1,
+        thumbUrl:
+          "https://signed.test/autora-1/posts/post-1/1-1700000000000-thumb-1080x1440.jpg?token=abc",
+        url: "https://signed.test/autora-1/posts/post-1/1-1700000000000.jpg?token=abc",
+        thumbPath: "autora-1/posts/post-1/1-1700000000000-thumb-1080x1440.jpg",
+        path: "autora-1/posts/post-1/1-1700000000000.jpg",
+        largura: 1080,
+        altura: 1440,
+      },
+      {
+        ordem: 2,
+        thumbUrl:
+          "https://signed.test/autora-1/posts/post-1/2-1700000000000-thumb.jpg?token=abc",
+        url: "https://signed.test/autora-1/posts/post-1/2-1700000000000.jpg?token=abc",
+        thumbPath: "autora-1/posts/post-1/2-1700000000000-thumb.jpg",
+        path: "autora-1/posts/post-1/2-1700000000000.jpg",
+        largura: null,
+        altura: null,
+      },
+    ]);
+  });
+
   it("recusa escrita quando não há usuário autenticado", async () => {
     const client = clienteComUsuario();
     client.auth.getUser.mockResolvedValue({
@@ -317,5 +415,32 @@ describe("serviço de feed", () => {
       criarPost(client as never, { categoria: "dica", texto: "Uma dica" })
     ).rejects.toThrow("Usuário não autenticado");
     expect(client.from).not.toHaveBeenCalled();
+  });
+});
+
+describe("dimensoesDaMiniatura", () => {
+  it("extrai largura×altura (da PRINCIPAL) do nome da miniatura nova", () => {
+    expect(
+      dimensoesDaMiniatura("u/posts/p/1-1700000000000-thumb-1080x1440.jpg")
+    ).toEqual({ largura: 1080, altura: 1440 });
+    expect(
+      dimensoesDaMiniatura("u/posts/p/2-1700000000000-thumb-1280x720.jpeg")
+    ).toEqual({ largura: 1280, altura: 720 });
+  });
+
+  it("devolve null para foto legada (miniatura sem dimensão, ou principal como miniatura)", () => {
+    expect(
+      dimensoesDaMiniatura("u/posts/p/1-1700000000000-thumb.jpg")
+    ).toBeNull();
+    expect(dimensoesDaMiniatura("u/posts/p/1-1700000000000.jpg")).toBeNull();
+  });
+
+  it("devolve null para entrada ausente ou mal-formada", () => {
+    expect(dimensoesDaMiniatura(null)).toBeNull();
+    expect(dimensoesDaMiniatura(undefined)).toBeNull();
+    expect(dimensoesDaMiniatura("")).toBeNull();
+    expect(dimensoesDaMiniatura("u/p/1-thumb-0x0.jpg")).toBeNull();
+    expect(dimensoesDaMiniatura("u/p/1-thumb-1080x.jpg")).toBeNull();
+    expect(dimensoesDaMiniatura("u/p/1-thumb-1080x1440.png")).toBeNull();
   });
 });

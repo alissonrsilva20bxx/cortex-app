@@ -44,27 +44,70 @@ const FOTO_URL_TTL_SEGUNDOS = 5 * 60;
 export const MAX_FOTOS_POR_POST = 2;
 
 /**
- * O feed carrega SÓ a miniatura (`thumbUrl` / `thumbPath`). A imagem
- * principal (`path`) não é baixada no feed -- só é assinada e aberta sob
- * demanda quando a pessoa toca na foto (ver `assinarUrlFoto`).
+ * O feed mostra a foto GRANDE, no próprio card (não só miniatura -- decisão
+ * revista): a `thumbUrl` entra imediata como placeholder e a `url` (imagem
+ * principal) carrega sob demanda (`loading="lazy"` na `<img>`), reservando
+ * a altura de antemão pra não empurrar o feed. As principais NÃO são
+ * baixadas antecipadamente de todos os posts -- só quando cada foto se
+ * aproxima da viewport.
  *
  * `thumbPath`/`path` viajam junto (não só a URL já assinada) pra permitir
  * renovar o acesso quando a URL de 5min expirar sem re-buscar o post
  * inteiro. Fotos legadas (antes da migration 0033) não têm miniatura:
- * `thumbPath === path` e a `thumbUrl` aponta pra própria principal. */
+ * `thumbPath === path` e a `thumbUrl` aponta pra própria principal.
+ *
+ * `largura`/`altura` vêm codificadas no NOME da miniatura das fotos novas
+ * (`...-thumb-{L}x{A}.jpg`, ver `dimensoesDaMiniatura`) -- são as dimensões
+ * em px da imagem PRINCIPAL, medidas no servidor. Servem pra reservar a
+ * proporção do espaço no feed antes de qualquer imagem carregar. Fotos
+ * legadas não têm: `null` -> o card mede a miniatura ao carregar (com um
+ * ajuste de altura de uma vez, sem animação). */
 export type FotoPost = {
   ordem: number;
-  /** URL assinada da MINIATURA, pronta pra `<img src>` no feed. */
+  /** URL assinada da MINIATURA, pronta pra `<img src>` no feed (placeholder). */
   thumbUrl: string;
+  /** URL assinada da imagem PRINCIPAL -- a `<img>` do feed usa com `loading="lazy"`. */
+  url: string;
   /** Path da miniatura no bucket (= `path` em fotos legadas sem miniatura). */
   thumbPath: string;
-  /** Path da imagem principal -- assinada só ao abrir, nunca no feed. */
+  /** Path da imagem principal. */
   path: string;
+  /** Largura da PRINCIPAL em px (nome da miniatura), ou `null` em foto legada. */
+  largura: number | null;
+  /** Altura da PRINCIPAL em px (nome da miniatura), ou `null` em foto legada. */
+  altura: number | null;
 };
 
 /** Duas imagens JPEG já processadas no cliente (ver `lib/rede/imagemComposer`),
- * prontas pra rota `POST /api/rede/foto-upload`. */
-export type FotoParaUpload = { principal: Blob; miniatura: Blob };
+ * prontas pra rota `POST /api/rede/foto-upload`. `largura`/`altura` são as da
+ * PRINCIPAL (o cliente já sabe; o servidor re-mede e é a fonte da verdade --
+ * o mock de dev-preview, que não tem servidor, usa estes valores). */
+export type FotoParaUpload = {
+  principal: Blob;
+  miniatura: Blob;
+  largura: number;
+  altura: number;
+};
+
+/**
+ * Extrai as dimensões da PRINCIPAL do nome da miniatura das fotos novas:
+ * `.../{ordem}-{stamp}-thumb-{LARGURA}x{ALTURA}.jpg` (gravado pela rota
+ * `foto-upload` a partir do SOF do JPEG já validado). Convenção: os dois
+ * números são largura×altura em px da imagem PRINCIPAL -- a miniatura tem
+ * a mesma proporção. Foto legada (`-thumb.jpg` sem dimensão, ou miniatura
+ * ausente) -> `null`.
+ */
+export function dimensoesDaMiniatura(
+  thumbPath: string | null | undefined
+): { largura: number; altura: number } | null {
+  if (!thumbPath) return null;
+  const m = thumbPath.match(/-thumb-(\d{1,5})x(\d{1,5})\.jpe?g$/i);
+  if (!m) return null;
+  const largura = Number(m[1]);
+  const altura = Number(m[2]);
+  if (!largura || !altura) return null;
+  return { largura, altura };
+}
 
 export type CriarPostInput = {
   categoria: Categoria;
@@ -220,19 +263,21 @@ export async function listarFeed(
     throw fotosError;
   }
 
-  // O feed assina SÓ as miniaturas -- a imagem principal não é baixada
-  // aqui. Foto legada (thumb_path NULL) cai pra própria principal como
-  // miniatura. Uma chamada só pra página inteira (`createSignedUrls`).
+  // O feed agora mostra a foto grande: assina a MINIATURA (placeholder) E a
+  // PRINCIPAL, numa chamada só pra página inteira. O download da principal
+  // fica sob demanda via `loading="lazy"` na `<img>` do card -- assinar a
+  // URL é barato; baixar os bytes é o que se adia. Foto legada (thumb_path
+  // NULL) cai pra própria principal como miniatura.
   const thumbDe = (f: { path: string; thumb_path: string | null }) =>
     f.thumb_path ?? f.path;
   const urlPorPath = new Map<string, string>();
-  const thumbPaths = Array.from(
-    new Set((fotosRows ?? []).map((f) => thumbDe(f)))
+  const paths = Array.from(
+    new Set((fotosRows ?? []).flatMap((f) => [f.path, thumbDe(f)]))
   );
-  if (thumbPaths.length > 0) {
+  if (paths.length > 0) {
     const { data: signed } = await client.storage
       .from(REDE_MIDIA_BUCKET)
-      .createSignedUrls(thumbPaths, FOTO_URL_TTL_SEGUNDOS);
+      .createSignedUrls(paths, FOTO_URL_TTL_SEGUNDOS);
     for (const s of signed ?? []) {
       if (s.signedUrl && s.path) {
         urlPorPath.set(s.path, s.signedUrl);
@@ -244,9 +289,19 @@ export async function listarFeed(
   for (const f of fotosRows ?? []) {
     const thumbPath = thumbDe(f);
     const thumbUrl = urlPorPath.get(thumbPath);
-    if (!thumbUrl) continue; // assinatura falhou -- não quebra o post inteiro
+    const url = urlPorPath.get(f.path);
+    if (!thumbUrl || !url) continue; // assinatura falhou -- não quebra o post
+    const dims = dimensoesDaMiniatura(f.thumb_path);
     const arr = fotosPorPost.get(f.post_id) ?? [];
-    arr.push({ ordem: f.ordem, thumbUrl, thumbPath, path: f.path });
+    arr.push({
+      ordem: f.ordem,
+      thumbUrl,
+      url,
+      thumbPath,
+      path: f.path,
+      largura: dims?.largura ?? null,
+      altura: dims?.altura ?? null,
+    });
     fotosPorPost.set(f.post_id, arr);
   }
 
@@ -313,8 +368,10 @@ async function enviarFotoDoPost(
 
   if ((client as unknown as Mockish).__mock) {
     const stamp = Date.now();
+    const { largura, altura } = foto;
     const path = `${autorId}/posts/${postId}/${ordem}-${stamp}.jpg`;
-    const thumbPath = `${autorId}/posts/${postId}/${ordem}-${stamp}-thumb.jpg`;
+    // mesma convenção da rota real: dimensões da PRINCIPAL no nome da miniatura
+    const thumbPath = `${autorId}/posts/${postId}/${ordem}-${stamp}-thumb-${largura}x${altura}.jpg`;
     await client.storage
       .from(REDE_MIDIA_BUCKET)
       .upload(path, foto.principal as unknown as File, {
@@ -325,19 +382,28 @@ async function enviarFotoDoPost(
       .upload(thumbPath, foto.miniatura as unknown as File, {
         contentType: "image/jpeg",
       });
-    await client
-      .from("rede_post_fotos")
-      .insert({
-        post_id: postId,
-        autor_id: autorId,
-        path,
-        thumb_path: thumbPath,
-        ordem,
-      });
+    await client.from("rede_post_fotos").insert({
+      post_id: postId,
+      autor_id: autorId,
+      path,
+      thumb_path: thumbPath,
+      ordem,
+    });
     const { data: signed } = await client.storage
       .from(REDE_MIDIA_BUCKET)
-      .createSignedUrl(thumbPath, FOTO_URL_TTL_SEGUNDOS);
-    return { ordem, thumbUrl: signed?.signedUrl ?? "", thumbPath, path };
+      .createSignedUrls([path, thumbPath], FOTO_URL_TTL_SEGUNDOS);
+    const urlPorPath = new Map(
+      (signed ?? []).map((s) => [s.path, s.signedUrl] as const)
+    );
+    return {
+      ordem,
+      thumbUrl: urlPorPath.get(thumbPath) ?? "",
+      url: urlPorPath.get(path) ?? "",
+      thumbPath,
+      path,
+      largura,
+      altura,
+    };
   }
 
   const form = new FormData();
@@ -354,6 +420,9 @@ async function enviarFotoDoPost(
     path?: string;
     thumbPath?: string;
     thumbUrl?: string;
+    url?: string;
+    largura?: number;
+    altura?: number;
     error?: string;
   };
   if (!resp.ok || !json.path || !json.thumbPath) {
@@ -361,11 +430,15 @@ async function enviarFotoDoPost(
       json.error || `Falha ao enviar a foto (HTTP ${resp.status})`
     );
   }
+  const dims = dimensoesDaMiniatura(json.thumbPath);
   return {
     ordem,
     thumbUrl: json.thumbUrl ?? "",
+    url: json.url ?? "",
     thumbPath: json.thumbPath,
     path: json.path,
+    largura: json.largura ?? dims?.largura ?? null,
+    altura: json.altura ?? dims?.altura ?? null,
   };
 }
 
@@ -442,28 +515,6 @@ export async function renovarUrlFoto(
   }
 
   return data.signedUrl;
-}
-
-/**
- * Assina em LOTE as URLs principais das fotos de UM post (no máximo 2) --
- * uma chamada só, pro FotoViewer não pagar um round-trip por foto ao
- * abrir/navegar. Mesmo TTL (`FOTO_URL_TTL_SEGUNDOS`), RLS/bloqueio
- * reavaliados na assinatura. Devolve um mapa path -> URL; paths que
- * falharem simplesmente não entram no mapa.
- */
-export async function assinarUrlsFoto(
-  client: RedeClient,
-  paths: string[]
-): Promise<Map<string, string>> {
-  const mapa = new Map<string, string>();
-  if (paths.length === 0) return mapa;
-  const { data } = await client.storage
-    .from(REDE_MIDIA_BUCKET)
-    .createSignedUrls(paths, FOTO_URL_TTL_SEGUNDOS);
-  for (const s of data ?? []) {
-    if (s.signedUrl && s.path) mapa.set(s.path, s.signedUrl);
-  }
-  return mapa;
 }
 
 export async function atualizarPost(

@@ -48,7 +48,7 @@ function erro(msg: string, status: number) {
 async function validarJpeg(
   blob: unknown,
   lim: { maxLado: number; maxBytes: number; campo: string }
-): Promise<Uint8Array> {
+): Promise<{ limpo: Uint8Array; largura: number; altura: number }> {
   if (!(blob instanceof Blob) || blob.size === 0) {
     throw new Error(`campo "${lim.campo}" ausente ou vazio`);
   }
@@ -85,7 +85,7 @@ async function validarJpeg(
       `${lim.campo}: ${(limpo.byteLength / 1024).toFixed(0)} KB acima do teto de ${lim.maxBytes / 1024} KB após limpeza`
     );
   }
-  return limpo;
+  return { limpo, largura: dim.largura, altura: dim.altura };
 }
 
 /** Best-effort remove + re-enfileira o que não sair, pra o cron tentar de
@@ -160,9 +160,15 @@ export async function POST(request: NextRequest) {
   // validação das imagens (ainda sem escrever nada)
   let principal: Uint8Array;
   let miniatura: Uint8Array;
+  let larguraPrincipal: number;
+  let alturaPrincipal: number;
   try {
-    principal = await validarJpeg(form.get("principal"), LIMITES.principal);
-    miniatura = await validarJpeg(form.get("miniatura"), LIMITES.miniatura);
+    const p = await validarJpeg(form.get("principal"), LIMITES.principal);
+    const m = await validarJpeg(form.get("miniatura"), LIMITES.miniatura);
+    principal = p.limpo;
+    miniatura = m.limpo;
+    larguraPrincipal = p.largura;
+    alturaPrincipal = p.altura;
   } catch (e) {
     return erro(e instanceof Error ? e.message : "Imagem inválida", 422);
   }
@@ -188,7 +194,12 @@ export async function POST(request: NextRequest) {
   const stamp = Date.now();
   const base = `${userId}/posts/${postId}/${ordem}-${stamp}`;
   const path = `${base}.jpg`;
-  const thumbPath = `${base}-thumb.jpg`;
+  // Convenção: os dois números no nome da miniatura são LARGURA×ALTURA em px
+  // da imagem PRINCIPAL, medidas aqui no servidor (SOF do JPEG já validado e
+  // sem metadados). O feed usa isso pra reservar a proporção do espaço antes
+  // de qualquer imagem carregar (ver `dimensoesDaMiniatura` em lib/rede/feed).
+  // A miniatura tem a mesma proporção da principal.
+  const thumbPath = `${base}-thumb-${larguraPrincipal}x${alturaPrincipal}.jpg`;
 
   const { data: jaTem } = await admin
     .from("rede_post_fotos")
@@ -237,12 +248,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: assinada } = await admin.storage
+  // Assina miniatura (placeholder) + principal -- o feed mostra a foto
+  // grande e baixa a principal sob demanda (`loading="lazy"`).
+  const { data: assinadas } = await admin.storage
     .from("rede-midia")
-    .createSignedUrl(thumbPath, 5 * 60);
+    .createSignedUrls([thumbPath, path], 5 * 60);
+  const urlPorPath = new Map(
+    (assinadas ?? []).map((s) => [s.path, s.signedUrl] as const)
+  );
 
   return NextResponse.json(
-    { path, thumbPath, ordem, thumbUrl: assinada?.signedUrl ?? "" },
+    {
+      path,
+      thumbPath,
+      ordem,
+      thumbUrl: urlPorPath.get(thumbPath) ?? "",
+      url: urlPorPath.get(path) ?? "",
+      largura: larguraPrincipal,
+      altura: alturaPrincipal,
+    },
     { status: 201 }
   );
 }
