@@ -10,5 +10,13 @@ Protótipo descartável das seis telas aprovadas. Ele responde apenas à pergunt
 
 Para executar no ambiente local, use o comando de desenvolvimento normal do projeto. A rota precisa apenas das variáveis públicas mínimas exigidas pelo middleware do repositório; não use credenciais de produção para avaliar este protótipo.
 
-As ações exibidas são demonstrativas. A única interação implementada é a navegação entre as cinco abas e a abertura/retorno de Ajustes pelo avatar.
+As ações exibidas são demonstrativas. Estão implementadas em memória:
 
+- navegação entre as cinco abas e abertura/retorno de Ajustes pelo avatar;
+- sheets de atendimento, objetivo, movimentação, upload/arquivo, publicação e perfil;
+- busca, notificações e conversas da Rede;
+- troca de dia, mês, subaba financeira, filtro do Cofre e filtro do feed;
+- feedback visual de confirmação, sem persistência;
+- seletor externo de estados preenchido, vazio, carregando e erro para inspeção visual.
+
+Nenhuma dessas interações grava dados ou reproduz regras de negócio. Elas existem somente para aprovar aparência, hierarquia e fluxo antes da implementação real.
