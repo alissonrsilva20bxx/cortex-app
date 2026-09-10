@@ -359,6 +359,10 @@ export function createMockSupabaseClient(
   const bucket = new MockStorageBucket(seed.cofreFiles);
 
   return {
+    /** Marca este client como o mock em memória -- `criarPost`
+     * (lib/rede/feed.ts) usa isto pra gravar foto direto no mock em vez de
+     * chamar a rota `/api/rede/foto-upload`, que não existe no harness. */
+    __mock: true as const,
     from(table: string) {
       return new QueryBuilder(store, table);
     },

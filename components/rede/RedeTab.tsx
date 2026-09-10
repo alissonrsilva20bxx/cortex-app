@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import {
   Link2,
   Flag,
@@ -13,6 +19,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { FeedScreen } from "./FeedScreen";
+import { FotoViewer } from "./FotoViewer";
 import { SearchScreen } from "./SearchScreen";
 import { AmigasScreen } from "./AmigasScreen";
 import { ChatListScreen } from "./ChatListScreen";
@@ -70,10 +77,12 @@ import {
   criarComentario,
   alternarCurtida,
   renovarUrlFoto,
+  assinarUrlsFoto,
   FEED_PAGE_SIZE,
   type FeedPost,
   type FeedComment,
   type FotoPost,
+  type FotoParaUpload,
   type Categoria,
 } from "@/lib/rede/feed";
 import { criarDenuncia, type CriarDenunciaInput } from "@/lib/rede/denuncias";
@@ -716,7 +725,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   async function handlePublish(data: {
     texto: string;
     categoria: Categoria;
-    fotos?: File[];
+    fotos?: FotoParaUpload[];
   }) {
     try {
       const { post, fotos } = await criarPost(supabase, data);
@@ -724,7 +733,13 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       toast.success("Publicação enviada!");
     } catch (e) {
       console.error("[RedeTab publicar]", e);
-      toast.error("Não foi possível publicar.");
+      const fotoFalhou =
+        e instanceof Error && /foto|imagem|JPEG|px|KB/i.test(e.message);
+      toast.error(
+        fotoFalhou
+          ? `Não foi possível publicar: ${(e as Error).message}`
+          : "Não foi possível publicar."
+      );
     }
   }
 
@@ -765,25 +780,39 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
-  // URL assinada expira em 1h (lib/rede/feed.ts) -- chamado pelo PostCard
-  // quando a <img> falha ao carregar, pra tentar renovar sem re-buscar o
-  // feed inteiro. Atualiza a MESMA foto (por path) em qualquer post que a
-  // contenha -- meusPosts/o perfil público derivam de `posts` por filter,
-  // então já refletem sozinhos.
-  async function renovarFotoUrl(path: string): Promise<string | null> {
-    const novaUrl = await renovarUrlFoto(supabase, path);
+  // URL assinada da MINIATURA expira em 5min (lib/rede/feed.ts) -- chamado
+  // pelo PostCard quando a <img> falha ao carregar, pra renovar sem
+  // re-buscar o feed inteiro. Atualiza a mesma miniatura (por thumbPath)
+  // em qualquer post que a contenha -- meusPosts/perfil público derivam de
+  // `posts` por filter, então refletem sozinhos.
+  async function renovarFotoUrl(thumbPath: string): Promise<string | null> {
+    const novaUrl = await renovarUrlFoto(supabase, thumbPath);
     if (novaUrl) {
       setPosts((prev) =>
         prev.map((p) => ({
           ...p,
           fotos: p.fotos.map((f) =>
-            f.path === path ? { ...f, url: novaUrl } : f
+            f.thumbPath === thumbPath ? { ...f, thumbUrl: novaUrl } : f
           ),
         }))
       );
     }
     return novaUrl;
   }
+
+  // URLs PRINCIPAIS assinadas em LOTE (o feed só baixa a miniatura) --
+  // o FotoViewer chama uma vez ao abrir, com os paths do post inteiro
+  // (máx. 2), e pré-carrega as duas.
+  const assinarPrincipais = useCallback(
+    (paths: string[]) => assinarUrlsFoto(supabase, paths),
+    []
+  );
+
+  // Visualizador de foto em tela cheia (dentro do app, sem nova aba).
+  const [viewer, setViewer] = useState<{
+    fotos: FotoPost[];
+    indice: number;
+  } | null>(null);
 
   async function submitReport(motivo: DenunciaMotivo) {
     if (!reportTarget) return;
@@ -1445,6 +1474,8 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     onShare: (p: FeedPost) => setSharePost(p),
     onOpenMenu: (p: FeedPost) => setMenuPost(p),
     onRenovarFoto: renovarFotoUrl,
+    onAbrirViewer: (fotos: FotoPost[], indice: number) =>
+      setViewer({ fotos, indice }),
   };
 
   return (
@@ -2095,6 +2126,15 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           },
         ]}
       />
+
+      {viewer && (
+        <FotoViewer
+          fotos={viewer.fotos}
+          indiceInicial={viewer.indice}
+          assinarPrincipais={assinarPrincipais}
+          onFechar={() => setViewer(null)}
+        />
+      )}
     </div>
   );
 }

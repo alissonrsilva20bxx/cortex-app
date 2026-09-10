@@ -11,7 +11,7 @@ import {
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Avatar } from "./Avatar";
 import { formatRelativeTime } from "@/lib/mockRede";
-import { CATEGORIA_META, type FeedPost } from "@/lib/rede/feed";
+import { CATEGORIA_META, type FeedPost, type FotoPost } from "@/lib/rede/feed";
 
 interface Props {
   post: FeedPost;
@@ -20,31 +20,36 @@ interface Props {
   onShare: (post: FeedPost) => void;
   onOpenMenu: (post: FeedPost) => void;
   onOpenAutor: (autorId: string) => void;
-  /** URL assinada (1h) pode expirar com a aba aberta -- chamado ao detectar
-   * falha de carregamento; devolve uma URL nova pro mesmo path, ou `null`
-   * se a renovação falhar (ex.: bloqueio mudou nesse meio tempo). */
+  /** URL assinada (5min) da MINIATURA pode expirar com a aba aberta --
+   * chamado ao detectar falha de carregamento; devolve uma URL nova pro
+   * mesmo path, ou `null` se a renovação falhar (ex.: bloqueio mudou). */
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** Abre o visualizador em tela cheia (dentro do app) na foto `indice`
+   * do post -- a imagem principal é assinada lá dentro, sob demanda. */
+  onAbrirViewer: (fotos: FotoPost[], indice: number) => void;
 }
 
-/** Uma foto por vez: própria URL (renovável) e estado de carregamento,
- * independente das outras fotos do mesmo post. */
+/** Uma foto por vez: mostra a MINIATURA (renovável). O toque abre o
+ * visualizador em tela cheia. Estado independente das outras fotos. */
 function PostPhoto({
   foto,
   alt,
   aspectRatio,
   onRenovarFoto,
+  onAbrir,
 }: {
-  foto: { url: string; path: string };
+  foto: { thumbUrl: string; thumbPath: string; path: string };
   alt: string;
   aspectRatio: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
+  onAbrir: () => void;
 }) {
-  const [url, setUrl] = useState(foto.url);
+  const [url, setUrl] = useState(foto.thumbUrl);
   const [estado, setEstado] = useState<"ok" | "renovando" | "falhou">("ok");
 
   async function tentarRenovar() {
     setEstado("renovando");
-    const nova = await onRenovarFoto(foto.path);
+    const nova = await onRenovarFoto(foto.thumbPath);
     if (nova) {
       setUrl(nova);
       setEstado("ok");
@@ -77,11 +82,11 @@ function PostPhoto({
     <img
       src={url}
       alt={alt}
-      onClick={() => window.open(url, "_blank")}
+      onClick={onAbrir}
       onError={() => {
         // A 1a falha já dispara a renovação sozinha (o caso comum é só a
-        // URL de 1h ter expirado com a aba aberta) -- só vira "falhou" (e
-        // pede um toque manual) se a renovação em si não resolver.
+        // URL de 5min ter expirado com o feed aberto) -- só vira "falhou"
+        // (e pede um toque manual) se a renovação em si não resolver.
         if (estado === "ok") tentarRenovar();
       }}
       className="w-full object-cover cursor-pointer active:opacity-80 transition-opacity"
@@ -134,6 +139,7 @@ export function PostCard({
   onOpenMenu,
   onOpenAutor,
   onRenovarFoto,
+  onAbrirViewer,
 }: Props) {
   const cat = CATEGORIA_META[post.categoria];
 
@@ -189,22 +195,23 @@ export function PostCard({
         {post.texto}
       </p>
 
-      {/* Fotos (0-2, migration 0028) -- abrir = nova aba com a imagem em
-          tamanho real, mesmo padrão do "abrir arquivo" do Cofre
-          (CofreTab.tsx openFile), não um lightbox novo só pra isso. */}
+      {/* Fotos (0-2) -- a grade mostra só a MINIATURA; o toque abre o
+          visualizador em tela cheia dentro do app (FotoViewer), onde a
+          imagem principal é assinada sob demanda. */}
       {post.fotos.length > 0 && (
         <div
           className={`grid gap-1.5 mt-3 rounded-xl overflow-hidden ${
             post.fotos.length === 1 ? "grid-cols-1" : "grid-cols-2"
           }`}
         >
-          {post.fotos.map((foto) => (
+          {post.fotos.map((foto, i) => (
             <PostPhoto
               key={foto.ordem}
               foto={foto}
               alt={`Foto ${foto.ordem} da publicação de ${post.autorNome}`}
               aspectRatio={post.fotos.length === 1 ? "16/10" : "1/1"}
               onRenovarFoto={onRenovarFoto}
+              onAbrir={() => onAbrirViewer(post.fotos, i)}
             />
           ))}
         </div>
