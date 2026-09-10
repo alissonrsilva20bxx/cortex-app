@@ -82,6 +82,17 @@ Nenhuma mudança deve ser portada para o app real antes dessa aprovação.
 
 Somente depois de T8:
 
+### Tickets publicados
+
+1. [#115 — Congelar base e portar shell visual com navegação aprovada](https://github.com/alissonrsilva20bxx/cortex-app/issues/115)
+2. [#116 — Portar Início e Agenda sem regressão funcional](https://github.com/alissonrsilva20bxx/cortex-app/issues/116)
+3. [#117 — Portar Financeiro e Cofre preservando dados e proteção](https://github.com/alissonrsilva20bxx/cortex-app/issues/117)
+4. [#118 — Portar Rede e Ajustes mantendo feed, fotos e preferências](https://github.com/alissonrsilva20bxx/cortex-app/issues/118)
+5. [#119 — Harmonizar login, onboarding e PIN com o visual aprovado](https://github.com/alissonrsilva20bxx/cortex-app/issues/119)
+6. [#120 — Executar regressão completa e aprovação visual final](https://github.com/alissonrsilva20bxx/cortex-app/issues/120)
+
+Os tickets formam uma cadeia explícita. O #115 continua bloqueado até o trabalho de bugs do Claude terminar e a base limpa ser registrada; concluir um ticket libera o seguinte.
+
 - T9: introduzir tokens e primitives aprovados, com decisão explícita sobre temas.
 - T10: portar shell, barra inferior e entrada de Ajustes.
 - T11: portar Início, Agenda, Financeiro e Cofre em fatias testáveis.
