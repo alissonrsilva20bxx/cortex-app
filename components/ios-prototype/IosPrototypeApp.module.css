@@ -197,23 +197,23 @@
 .bottomNav {
   position:absolute;
   z-index:30;
-  left:20px;
-  right:20px;
-  bottom:calc(12px + env(safe-area-inset-bottom, 0px));
-  height:72px;
+  left:18px;
+  right:18px;
+  bottom:calc(18px + env(safe-area-inset-bottom, 0px));
   display:flex;
   align-items:center;
-  justify-content:space-around;
-  padding:7px 10px;
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:36px;
-  background:rgba(16,1,7,.82);
-  box-shadow:0 16px 44px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.035);
-  backdrop-filter:blur(28px) saturate(1.25);
+  justify-content:space-between;
+  padding:8px;
+  border:1px solid rgba(255,45,120,.14);
+  border-radius:999px;
+  background:rgba(16,1,7,.72);
+  box-shadow:0 16px 40px rgba(0,0,0,.45);
+  backdrop-filter:blur(20px);
+  transition:left 220ms cubic-bezier(.2,.8,.2,1),right 220ms cubic-bezier(.2,.8,.2,1),padding 220ms cubic-bezier(.2,.8,.2,1),background-color 220ms cubic-bezier(.2,.8,.2,1),box-shadow 220ms cubic-bezier(.2,.8,.2,1),transform 220ms cubic-bezier(.2,.8,.2,1);
 }
-.navButton,.navActive { width:44px; height:44px; display:grid; place-items:center; border-radius:50%; color:#c6b7bd; transition:transform 140ms ease,background 180ms ease,color 180ms ease; }.navActive { width:56px; height:56px; color:white; background:linear-gradient(145deg,#ff2d78,#ee2367); box-shadow:0 8px 22px rgba(255,45,120,.42); }.navButton:active,.navActive:active { transform:scale(.94); }
-.bottomNavCompact { left:44px; right:44px; height:60px; padding:4px 8px; }
-.bottomNavCompact .navActive { width:44px; height:44px; }
+.navButton,.navActive { width:44px; height:44px; display:grid; place-items:center; border-radius:999px; color:#c6b7bd; transition:width 200ms ease,transform 140ms ease,background 180ms ease,color 180ms ease; }.navActive { width:56px; color:white; background:#ff2d78; box-shadow:0 0 18px rgba(255,45,120,.4); }.navButton:active,.navActive:active { transform:scale(.94); }
+.bottomNavCompact { left:44px; right:44px; padding:3px; transform:translateY(8px); background:rgba(16,1,7,.9); box-shadow:0 6px 20px rgba(0,0,0,.3); }
+.bottomNavCompact .navActive { width:44px; }
 .homeIndicator { position:absolute; z-index:31; left:50%; bottom:max(4px, env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); width:118px; height:4px; border-radius:999px; background:rgba(255,255,255,.9); pointer-events:none; }
 
 @media (max-width: 389px) {

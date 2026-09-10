@@ -44,12 +44,13 @@ import styles from "./IosPrototypeApp.module.css";
 type Screen = "home" | "agenda" | "financeiro" | "cofre" | "rede" | "ajustes";
 type Icon = LucideIcon;
 
-const navItems: Array<{ id: Exclude<Screen, "ajustes">; label: string; icon: Icon }> = [
+const navItems: Array<{ id: Screen; label: string; icon: Icon }> = [
   { id: "home", label: "Início", icon: Home },
   { id: "agenda", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: WalletCards },
   { id: "cofre", label: "Cofre", icon: Shield },
   { id: "rede", label: "Rede", icon: Users },
+  { id: "ajustes", label: "Ajustes", icon: Settings },
 ];
 
 function AvatarButton({ onClick, label = "Abrir Ajustes" }: { onClick: () => void; label?: string }) {
@@ -75,11 +76,10 @@ function BottomNav({ active, compact, onChange }: { active: Screen; compact: boo
     <nav className={`${styles.bottomNav} ${compact ? styles.bottomNavCompact : ""}`} aria-label="Navegação principal">
       {navItems.map(({ id, label, icon: NavIcon }) => {
         const isActive = active === id;
-        const isContextualHome = active === "ajustes" && id === "home";
         return (
           <button
             key={id}
-            className={isActive || isContextualHome ? styles.navActive : styles.navButton}
+            className={isActive ? styles.navActive : styles.navButton}
             onClick={() => onChange(id)}
             aria-label={label}
             aria-current={isActive ? "page" : undefined}
