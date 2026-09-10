@@ -29,28 +29,27 @@ import {
   Plane,
   Plus,
   Search,
-  Settings,
   Share2,
   Shield,
+  ShieldCheck,
   Target,
   Upload,
   UserRound,
-  Users,
+  UsersRound,
   Video,
-  WalletCards,
+  Wallet,
 } from "lucide-react";
 import styles from "./IosPrototypeApp.module.css";
 
 type Screen = "home" | "agenda" | "financeiro" | "cofre" | "rede" | "ajustes";
 type Icon = LucideIcon;
 
-const navItems: Array<{ id: Screen; label: string; icon: Icon }> = [
+const navItems: Array<{ id: Exclude<Screen, "ajustes">; label: string; icon: Icon }> = [
   { id: "home", label: "Início", icon: Home },
   { id: "agenda", label: "Agenda", icon: CalendarDays },
-  { id: "financeiro", label: "Financeiro", icon: WalletCards },
-  { id: "cofre", label: "Cofre", icon: Shield },
-  { id: "rede", label: "Rede", icon: Users },
-  { id: "ajustes", label: "Ajustes", icon: Settings },
+  { id: "financeiro", label: "Financeiro", icon: Wallet },
+  { id: "cofre", label: "Cofre", icon: ShieldCheck },
+  { id: "rede", label: "Rede", icon: UsersRound },
 ];
 
 function AvatarButton({ onClick, label = "Abrir Ajustes" }: { onClick: () => void; label?: string }) {
@@ -84,7 +83,7 @@ function BottomNav({ active, compact, onChange }: { active: Screen; compact: boo
             aria-label={label}
             aria-current={isActive ? "page" : undefined}
           >
-            <NavIcon size={25} strokeWidth={isActive ? 2.5 : 2} />
+            <NavIcon size={20} strokeWidth={isActive ? 2.3 : 1.8} />
           </button>
         );
       })}
@@ -329,7 +328,7 @@ export function IosPrototypeApp() {
           {active === "rede" && <RedeScreen openSettings={openSettings}/>} 
           {active === "ajustes" && <AjustesScreen goBack={() => changeScreen(previous)} backLabel={navItems.find((item) => item.id === previous)?.label ?? "Início"}/>} 
         </main>
-        <BottomNav active={active} compact={navCompact} onChange={changeScreen}/>
+        <BottomNav active={active === "ajustes" ? previous : active} compact={navCompact} onChange={changeScreen}/>
         <div className={styles.homeIndicator} aria-hidden="true" />
       </div>
     </div>
