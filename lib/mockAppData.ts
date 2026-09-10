@@ -12,6 +12,9 @@ export const MOCK_APP_USUARIO: Usuario = {
 const daysFromNow = (d: number) =>
   new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
 
+const hoursAgoIso = (h: number) =>
+  new Date(Date.now() - h * 3_600_000).toISOString();
+
 /** Semente completa do "banco" mockado — chamada uma vez ao ativar o shell,
  * assim cada sessão de preview começa do mesmo estado "vivido". */
 export function buildMockAppSeed(): MockSupabaseSeed {
@@ -275,6 +278,84 @@ export function buildMockAppSeed(): MockSupabaseSeed {
     },
   ];
 
+  // ── Rede: semente mínima pra a aba abrir no Feed (não no gate) em
+  // /dev-preview/app -- convite já resgatado + perfil + alguns posts. Sem
+  // isso o RedeGatedTab cai sempre na vitrine e o Feed fica intestável no
+  // shell mockado. Fotos ficam de fora (exigiriam blobs no bucket).
+  const FRIEND_ID = "mock-friend-marina";
+  const rede_convites = [
+    {
+      id: "convite-mock-1",
+      codigo_hash: "mock-hash",
+      criado_em: daysFromNow(-20),
+      expira_em: daysFromNow(60),
+      solicitacao_id: null,
+      usado_em: daysFromNow(-18),
+      usado_por: uid,
+    },
+  ];
+  const rede_perfis = [
+    {
+      user_id: uid,
+      nome_exibicao: "Miguel",
+      cor_avatar: "#8b5cf6",
+      bio: "Nail designer • Studio Zona Sul",
+      avatar_url: null,
+      area_atuacao: "Unhas",
+      criado_em: daysFromNow(-18),
+      atualizado_em: daysFromNow(-2),
+    },
+    {
+      user_id: FRIEND_ID,
+      nome_exibicao: "Marina Alves",
+      cor_avatar: "#ec4899",
+      bio: "Extensão de cílios",
+      avatar_url: null,
+      area_atuacao: "Cílios",
+      criado_em: daysFromNow(-30),
+      atualizado_em: daysFromNow(-5),
+    },
+  ];
+  const rede_posts = [
+    {
+      id: "rede-post-1",
+      autor_id: uid,
+      categoria: "conquista",
+      texto: "Fechei a agenda da semana inteira! 🎉",
+      criado_em: hoursAgoIso(3),
+      atualizado_em: hoursAgoIso(3),
+    },
+    {
+      id: "rede-post-2",
+      autor_id: FRIEND_ID,
+      categoria: "dica",
+      texto: "Dica: cliente que remarca demais, cobra sinal antecipado.",
+      criado_em: hoursAgoIso(26),
+      atualizado_em: hoursAgoIso(26),
+    },
+    {
+      id: "rede-post-3",
+      autor_id: uid,
+      categoria: "geral",
+      texto: "Alguém indica fornecedor de insumo bom na região?",
+      criado_em: hoursAgoIso(52),
+      atualizado_em: hoursAgoIso(52),
+    },
+  ];
+  const rede_curtidas = [
+    { post_id: "rede-post-2", user_id: uid, criado_em: hoursAgoIso(20) },
+    { post_id: "rede-post-1", user_id: FRIEND_ID, criado_em: hoursAgoIso(2) },
+  ];
+  const rede_comentarios = [
+    {
+      id: "rede-com-1",
+      post_id: "rede-post-1",
+      autor_id: FRIEND_ID,
+      texto: "Arrasou!",
+      criado_em: hoursAgoIso(2),
+    },
+  ];
+
   const configuracoes = [
     {
       id: "config-1",
@@ -339,6 +420,19 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       notas,
       configuracoes,
       push_subscriptions: [],
+      rede_convites,
+      rede_perfis,
+      rede_posts,
+      rede_curtidas,
+      rede_comentarios,
+      rede_post_fotos: [],
+      rede_livelinks: [],
+      rede_wishlist: [],
+      rede_clientes: [],
+      rede_amizades: [],
+      rede_conversas: [],
+      rede_conversas_participantes: [],
+      rede_mensagens: [],
     },
     cofreFiles,
   };

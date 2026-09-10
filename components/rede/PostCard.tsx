@@ -124,6 +124,7 @@ export function PostCard({
           principal sob demanda. A foto NÃO é interativa: fica no feed. */}
       {post.fotos.length > 0 && (
         <FeedFotos
+          postId={post.id}
           fotos={post.fotos}
           autorNome={post.autorNome}
           onRenovarFoto={onRenovarFoto}

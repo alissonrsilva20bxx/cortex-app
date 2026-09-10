@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { UserPlus, MessageCircle, Gift, Sparkles } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -42,6 +42,9 @@ interface Props {
   unreadNotifs: number;
   /** Carregamento inicial do feed real (listarFeed) — mostra skeleton, não o empty-state. */
   loading: boolean;
+  /** Filtro Para você / Amigas — mora no RedeTab pra sobreviver a remounts. */
+  segmento: Segmento;
+  onSegmentoChange: (s: Segmento) => void;
   /** listarFeed falhou — estado persistente, distinto do empty-state de "sem posts". */
   error: boolean;
   /** Ainda há posts mais antigos pra buscar (última página veio cheia). */
@@ -77,6 +80,8 @@ export function FeedScreen({
   error,
   hasMore,
   loadingMore,
+  segmento,
+  onSegmentoChange,
   onLoadMore,
   onOpenSearch,
   onOpenNotifs,
@@ -92,8 +97,6 @@ export function FeedScreen({
   onOpenAutor,
   onRenovarFoto,
 }: Props) {
-  const [segmento, setSegmento] = useState<Segmento>("paraVoce");
-
   const visiblePosts = useMemo(
     () =>
       segmento === "paraVoce"
@@ -101,7 +104,7 @@ export function FeedScreen({
         : posts.filter(
             (p) => p.autorId === usuario.id || friends.includes(p.autorId)
           ),
-    [posts, segmento, friends]
+    [posts, segmento, friends, usuario.id]
   );
 
   const wishlistPertoDaMeta = wishlistItems.find(
@@ -194,7 +197,7 @@ export function FeedScreen({
       <SegmentedControl<Segmento>
         className="mb-4"
         value={segmento}
-        onChange={setSegmento}
+        onChange={onSegmentoChange}
         options={[
           { id: "paraVoce", label: "Para você" },
           { id: "amigas", label: "Amigas" },
@@ -202,9 +205,13 @@ export function FeedScreen({
       />
 
       <div className="space-y-3">
-        {loading ? (
+        {/* Skeleton só em cache miss de verdade -- com posts cacheados em
+            tela, um refresh em 2º plano (`loading` ainda true) NÃO volta pro
+            skeleton, e uma falha de rede NÃO cobre o conteúdo com o erro
+            (req 2 e 4). */}
+        {loading && posts.length === 0 ? (
           <SkeletonList rows={3} />
-        ) : error ? (
+        ) : error && posts.length === 0 ? (
           <p
             className="text-sm text-center py-12"
             style={{ color: "var(--danger)" }}
@@ -256,7 +263,7 @@ export function FeedScreen({
         )}
       </div>
 
-      {!loading && !error && items.length > 0 && hasMore && (
+      {!error && items.length > 0 && hasMore && (
         <button
           onClick={onLoadMore}
           disabled={loadingMore}

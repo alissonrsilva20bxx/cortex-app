@@ -53,9 +53,11 @@ describe("verificarAcessoConvite", () => {
       error: new Error("falha de rede"),
     });
 
+    // `erro: true` distingue "a consulta falhou" de "respondeu sem convite"
+    // -- o RedeGatedTab NÃO descarta o cache num erro de rede (req 4).
     await expect(
       verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: false });
+    ).resolves.toEqual({ unlocked: false, erro: true });
 
     consoleSpy.mockRestore();
   });
@@ -66,7 +68,7 @@ describe("verificarAcessoConvite", () => {
 
     await expect(
       verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: false });
+    ).resolves.toEqual({ unlocked: false, erro: true });
 
     consoleSpy.mockRestore();
   });

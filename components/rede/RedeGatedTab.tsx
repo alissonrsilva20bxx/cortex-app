@@ -6,10 +6,16 @@ import { SerialKeySheet } from "./SerialKeySheet";
 import { RedeTab } from "./RedeTab";
 import { supabase } from "@/lib/supabase";
 import { verificarAcessoConvite } from "@/lib/rede/acesso";
+import * as redeCache from "@/lib/rede/redeCache";
+import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Usuario } from "@/lib/types";
 
 interface Props {
   usuario: Usuario;
+  /** Se a aba Rede é a selecionada agora (`activeTab === "rede"` no pai).
+   * Repassado até o `RedeTab` pra restaurar a rolagem só quando a Rede
+   * está de fato visível. */
+  active?: boolean;
   onChatFocusChange?: (focused: boolean) => void;
 }
 
@@ -22,9 +28,22 @@ interface Props {
  * BottomSheet renderiza no mesmo z-index de forma independente, então dois
  * booleanos separados (um em cada componente) já deixaram os três
  * empilharem visualmente ao mesmo tempo. */
-export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
-  const [unlocked, setUnlocked] = useState(false);
-  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
+export function RedeGatedTab({
+  usuario,
+  active = true,
+  onChatFocusChange,
+}: Props) {
+  // Resultado REAL mais recente de `verificarAcessoConvite` nesta sessão
+  // (sobrevive ao remount do PIN). `true` ⇒ renderiza o Feed na hora e
+  // revalida em segundo plano, em vez de mostrar o spinner de novo. NUNCA
+  // é autorização: cada query dentro do RedeTab ainda passa pela RLS do
+  // servidor; se o acesso foi revogado, a revalidação abaixo derruba o
+  // conteúdo e volta pro gate.
+  const acessoLembrado = redeCache.acessoLembrado(usuario.id);
+  const [unlocked, setUnlocked] = useState(acessoLembrado === true);
+  const [verificandoAcesso, setVerificandoAcesso] = useState(
+    acessoLembrado === undefined
+  );
   const [sheet, setSheet] = useState<GateSheet>(null);
 
   // Um convite já resgatado por esse usuário é a única fonte de verdade pra
@@ -38,6 +57,10 @@ export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
   // UI (ninguém digita isso sem saber que existe), então não conflita com a
   // decisão de "sem UI de admin" da ticket 03.
   useEffect(() => {
+    // Trocar de conta (ou 1ª vinculação) limpa o cache em memória da conta
+    // anterior antes de qualquer leitura do RedeTab.
+    redeCache.vincularUsuario(usuario.id);
+
     let ativo = true;
     const forcarVitrine =
       typeof window !== "undefined" &&
@@ -50,7 +73,24 @@ export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
 
     verificarAcessoConvite(supabase, usuario.id).then((resultado) => {
       if (!ativo) return;
-      if (resultado.unlocked) setUnlocked(true);
+
+      if (resultado.erro) {
+        // Falha de rede: não rebaixa nem limpa nada. Se já havia acesso
+        // lembrado, o Feed cacheado continua em tela (req 4).
+        setVerificandoAcesso(false);
+        return;
+      }
+
+      redeCache.lembrarAcesso(usuario.id, resultado.unlocked);
+      if (resultado.unlocked) {
+        setUnlocked(true);
+      } else {
+        // Resposta real de "sem convite resgatado": acesso revogado (ou
+        // nunca teve). Descarta todo o conteúdo cacheado (req 3).
+        setUnlocked(false);
+        redeCache.limparTudo();
+        redeCachePersist.limpar(usuario.id);
+      }
       setVerificandoAcesso(false);
     });
     return () => {
@@ -70,7 +110,13 @@ export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
   }
 
   if (unlocked) {
-    return <RedeTab usuario={usuario} onChatFocusChange={onChatFocusChange} />;
+    return (
+      <RedeTab
+        usuario={usuario}
+        active={active}
+        onChatFocusChange={onChatFocusChange}
+      />
+    );
   }
 
   return (
@@ -82,6 +128,7 @@ export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
         onConfirm={() => {
           setSheet(null);
           setUnlocked(true);
+          redeCache.lembrarAcesso(usuario.id, true);
         }}
       />
     </>

@@ -4,7 +4,13 @@ import type { Database } from "../database.types";
 
 type RedeClient = SupabaseClient<Database>;
 
-export type AcessoConvite = { unlocked: boolean };
+/** `erro: true` distingue "a consulta FALHOU (rede/servidor)" de "a
+ * consulta respondeu e NÃO há convite resgatado". Nos dois casos
+ * `unlocked` é `false` (fail-closed -- nunca destrava por engano), mas o
+ * `RedeGatedTab` reage diferente: num erro de rede mantém o conteúdo
+ * cacheado em tela (req 4); numa resposta real de "sem acesso" descarta o
+ * cache e volta pro gate (req 3). */
+export type AcessoConvite = { unlocked: boolean; erro?: boolean };
 
 /** Nunca rejeita -- uma falha de rede/consulta é tratada como "sem acesso
  * confirmado" (fail-closed) em vez de deixar o chamador preso esperando uma
@@ -22,12 +28,12 @@ export async function verificarAcessoConvite(
 
     if (error) {
       console.error("[verificarAcessoConvite]", error);
-      return { unlocked: false };
+      return { unlocked: false, erro: true };
     }
 
     return { unlocked: !!(data && data.length > 0) };
   } catch (e) {
     console.error("[verificarAcessoConvite]", e);
-    return { unlocked: false };
+    return { unlocked: false, erro: true };
   }
 }

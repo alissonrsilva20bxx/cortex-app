@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -115,10 +116,34 @@ import {
   marcarNotificacoesVistas,
   type Notificacao,
 } from "@/lib/rede/notificacoes";
+import * as redeCache from "@/lib/rede/redeCache";
+import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
 
+// useLayoutEffect avisa "does nothing on the server" no SSR de um
+// componente client — cai pra useEffect nesse lado (nunca roda no servidor
+// mesmo) e só usa a versão síncrona no cliente, onde o timing pré-paint da
+// restauração de rolagem importa (mesmo padrão de app/page.tsx).
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 type Perfil = Database["public"]["Tables"]["rede_perfis"]["Row"];
+
+/** Agregado do perfil cacheado como um recurso só (vêm do mesmo effect). */
+interface PerfilCache {
+  perfil: Perfil | null;
+  liveLinks: LiveLink[];
+  wishlistItems: WishlistItem[];
+  clientes: Cliente[];
+}
+
+interface AmigasCache {
+  friends: PessoaResumo[];
+  requests: SolicitacaoAmizade[];
+  sentRequests: string[];
+  sugestoes: PessoaResumo[];
+}
 type DenunciaMotivo = CriarDenunciaInput["motivo"];
 
 const CORES_AVATAR = [
@@ -162,16 +187,73 @@ type RedeScreen =
 
 interface Props {
   usuario: Usuario;
+  /** Se a aba Rede está visível agora. Só restaura a rolagem da Rede
+   * quando `true` — nunca mexe na rolagem de outra aba (req 2). */
+  active?: boolean;
   /** Simula o teclado abrindo — repassado até a página, que esconde a BottomNav. */
   onChatFocusChange?: (focused: boolean) => void;
 }
 
-export function RedeTab({ usuario, onChatFocusChange }: Props) {
+export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   const toast = useToast();
 
+  // ── Semente do cache (síncrona, 1x por conta) ──
+  // Lida no 1º render pra que os inicializadores de estado abaixo já
+  // nasçam preenchidos quando há hit — sem skeleton no remount do PIN nem
+  // no cold start (aí a semente vem do localStorage).
+  const sementeRef = useRef<{
+    userId: string;
+    feed: { posts: FeedPost[]; hasMore: boolean } | null;
+    feedStale: boolean;
+    perfil: PerfilCache | null;
+    amigas: AmigasCache | null;
+    conversas: ConversaResumo[] | null;
+    notificacoes: Notificacao[] | null;
+  } | null>(null);
+
+  if (sementeRef.current === null || sementeRef.current.userId !== usuario.id) {
+    redeCache.vincularUsuario(usuario.id);
+    let feedMem = redeCache.lerFeed(usuario.id);
+    let feedStale = feedMem?.stale ?? true;
+    if (!feedMem) {
+      const persistido = redeCachePersist.carregar(usuario.id);
+      if (persistido && persistido.feed.length > 0) {
+        const hasMore = persistido.feed.length >= FEED_PAGE_SIZE;
+        // sobe pro cache em memória pra próximos remounts nesta sessão
+        redeCache.escreverFeed(usuario.id, persistido.feed, hasMore);
+        feedMem = { posts: persistido.feed, hasMore, stale: true };
+        feedStale = true;
+        if (persistido.perfil) {
+          redeCache.escrever<PerfilCache>(usuario.id, "perfil", {
+            perfil: persistido.perfil,
+            liveLinks: [],
+            wishlistItems: [],
+            clientes: [],
+          });
+        }
+      }
+    }
+    sementeRef.current = {
+      userId: usuario.id,
+      feed: feedMem ? { posts: feedMem.posts, hasMore: feedMem.hasMore } : null,
+      feedStale,
+      perfil: redeCache.ler<PerfilCache>(usuario.id, "perfil")?.data ?? null,
+      amigas: redeCache.ler<AmigasCache>(usuario.id, "amigas")?.data ?? null,
+      conversas:
+        redeCache.ler<ConversaResumo[]>(usuario.id, "conversas")?.data ?? null,
+      notificacoes:
+        redeCache.ler<Notificacao[]>(usuario.id, "notificacoes")?.data ?? null,
+    };
+  }
+  const semente = sementeRef.current;
+
   // ── Perfil real + LiveLinks ──
-  const [perfil, setPerfil] = useState<Perfil | null>(null);
-  const [liveLinks, setLiveLinks] = useState<LiveLink[]>([]);
+  const [perfil, setPerfil] = useState<Perfil | null>(
+    () => semente.perfil?.perfil ?? null
+  );
+  const [liveLinks, setLiveLinks] = useState<LiveLink[]>(
+    () => semente.perfil?.liveLinks ?? []
+  );
   const [liveLinkFormOpen, setLiveLinkFormOpen] = useState(false);
   const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
@@ -195,6 +277,8 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   // ver o Feed.
   useEffect(() => {
     let ativo = true;
+    const ep = redeCache.epocaAtual();
+    const temSemente = semente.perfil != null;
     (async () => {
       let p = await buscarPerfil(supabase, usuario.id);
       if (!p) {
@@ -214,10 +298,28 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       setLiveLinks(links);
       setWishlistItems(wishlist);
       setClientes(clientesData);
+      redeCache.escrever<PerfilCache>(
+        usuario.id,
+        "perfil",
+        {
+          perfil: p,
+          liveLinks: links,
+          wishlistItems: wishlist,
+          clientes: clientesData,
+        },
+        ep
+      );
+      redeCachePersist.salvar(usuario.id, {
+        feed: feedRef.current,
+        perfil: p,
+      });
     })().catch((e) => {
       console.error("[RedeTab perfil]", e);
-      toast.error("Não foi possível carregar seu perfil da Rede.");
-      setPerfilError(true);
+      // Com perfil cacheado em tela, uma falha de rede não vira erro duro.
+      if (!temSemente) {
+        toast.error("Não foi possível carregar seu perfil da Rede.");
+        setPerfilError(true);
+      }
     });
     return () => {
       ativo = false;
@@ -234,26 +336,116 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
 
   // ── Feed real (paginado, issue do escopo de fotos -- listarFeed nunca
   // buscava mais que 1 página do feed inteiro) ──
-  const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [feedLoading, setFeedLoading] = useState(true);
+  const [posts, setPosts] = useState<FeedPost[]>(
+    () => semente.feed?.posts ?? []
+  );
+  // Só mostra skeleton em cache miss de verdade (req: com cache, sem
+  // skeleton). Com semente, a busca abaixo vira refresh em 2º plano.
+  const [feedLoading, setFeedLoading] = useState(() => semente.feed === null);
   const [feedError, setFeedError] = useState(false);
-  const [feedHasMore, setFeedHasMore] = useState(true);
+  const [feedHasMore, setFeedHasMore] = useState(
+    () => semente.feed?.hasMore ?? true
+  );
+  const feedHasMoreRef = useRef(feedHasMore);
+  feedHasMoreRef.current = feedHasMore;
   const [feedLoadingMore, setFeedLoadingMore] = useState(false);
+  // Filtro Para você / Amigas -- lembrado entre remounts (o remount do PIN
+  // não deve jogar a pessoa de volta pra "Para você").
+  const [segmento, setSegmento] = useState<"paraVoce" | "amigas">(() =>
+    redeCache.segmentoLembrado()
+  );
+  const trocarSegmento = useCallback((valor: "paraVoce" | "amigas") => {
+    setSegmento(valor);
+    redeCache.lembrarSegmento(valor);
+  }, []);
+
+  // Espelho de `posts` pra ler dentro de callbacks/effects sem recriá-los.
+  const postsRef = useRef(posts);
+  postsRef.current = posts;
+  const perfilRef = useRef(perfil);
+  perfilRef.current = perfil;
+  // 1ª página do feed, sempre "confirmada pelo servidor" — o que a camada
+  // persistida grava (nunca o estado puramente otimista).
+  const feedRef = useRef<FeedPost[]>(semente.feed?.posts ?? []);
+  // Curtidas otimistas ainda não confirmadas: um `listarFeed` que já estava
+  // em voo quando a pessoa curtiu não pode desfazer o like (req 6).
+  const likesPendentes = useRef<Set<string>>(new Set());
+
+  /** setPosts + espelho no cache em memória, numa tacada (write-through). */
+  const aplicarPosts = useCallback(
+    (updater: (p: FeedPost[]) => FeedPost[]) => {
+      setPosts(updater);
+      redeCache.mutarFeed(usuario.id, updater);
+    },
+    [usuario.id]
+  );
+
+  /** Perfil mudou (nome/bio/avatar): atualiza o cache do perfil E os posts
+   * do próprio autor no feed (que embutem nome/cor/foto), marcando o feed
+   * como stale pra revalidar depois (req 6). */
+  function sincronizarPerfilNoCache(novo: Perfil) {
+    setPerfil(novo);
+    redeCache.escrever<PerfilCache>(usuario.id, "perfil", {
+      perfil: novo,
+      liveLinks,
+      wishlistItems,
+      clientes,
+    });
+    const patch = (p: FeedPost): FeedPost =>
+      p.autorId === usuario.id
+        ? {
+            ...p,
+            autorNome: novo.nome_exibicao,
+            autorCor: novo.cor_avatar,
+            autorFotoUrl: novo.avatar_url,
+          }
+        : p;
+    aplicarPosts((prev) => prev.map(patch));
+    redeCache.invalidarFeed(usuario.id);
+    feedRef.current = feedRef.current.map(patch);
+    redeCachePersist.salvar(usuario.id, {
+      feed: feedRef.current,
+      perfil: novo,
+    });
+  }
 
   useEffect(() => {
     let ativo = true;
+    const ep = redeCache.epocaAtual();
+    const temSemente = semente.feed !== null;
     listarFeed(supabase)
       .then((data) => {
         if (!ativo) return;
-        setPosts(data);
+        // Um refresh só busca a página 1; se já tínhamos chegado ao fim
+        // antes, continua sem "carregar mais".
+        const hasMore = feedHasMoreRef.current && data.length >= FEED_PAGE_SIZE;
+        const conciliado = redeCache.reconciliarFeed(
+          postsRef.current,
+          data,
+          likesPendentes.current,
+          usuario.id
+        );
+        redeCache.escreverFeed(usuario.id, conciliado, hasMore, ep);
+        setPosts(conciliado);
+        setFeedHasMore(hasMore);
+        feedRef.current = data.filter((p) => !redeCache.estaExcluido(p.id));
         setFeedError(false);
         setFeedLoading(false);
-        setFeedHasMore(data.length >= FEED_PAGE_SIZE);
+        redeCachePersist.salvar(usuario.id, {
+          feed: feedRef.current,
+          perfil: perfilRef.current,
+        });
       })
       .catch((e) => {
         console.error("[RedeTab feed]", e);
-        toast.error("Não foi possível carregar o feed.");
         if (!ativo) return;
+        // Falha de rede com feed cacheado em tela: mantém o conteúdo
+        // navegável, não vira erro duro (req 4).
+        if (temSemente) {
+          setFeedLoading(false);
+          return;
+        }
+        toast.error("Não foi possível carregar o feed.");
         setFeedError(true);
         setFeedLoading(false);
       });
@@ -261,16 +453,27 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [usuario.id]);
 
   async function loadMorePosts() {
     if (feedLoadingMore || !feedHasMore || posts.length === 0) return;
     setFeedLoadingMore(true);
     try {
+      const ep = redeCache.epocaAtual();
       const cursor = posts[posts.length - 1].criadoEm;
       const proximaPagina = await listarFeed(supabase, { antesDe: cursor });
-      setPosts((prev) => [...prev, ...proximaPagina]);
-      setFeedHasMore(proximaPagina.length >= FEED_PAGE_SIZE);
+      const hasMore = proximaPagina.length >= FEED_PAGE_SIZE;
+      const juntos = [
+        ...postsRef.current,
+        ...proximaPagina.filter(
+          (p) =>
+            !postsRef.current.some((x) => x.id === p.id) &&
+            !redeCache.estaExcluido(p.id)
+        ),
+      ];
+      redeCache.escreverFeed(usuario.id, juntos, hasMore, ep);
+      setPosts(juntos);
+      setFeedHasMore(hasMore);
     } catch (e) {
       console.error("[RedeTab feed carregar mais]", e);
       toast.error("Não foi possível carregar mais publicações.");
@@ -279,19 +482,63 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     }
   }
 
+  // ── Rolagem da Rede: preservada entre remounts (PIN, cold start) ──
+  // O scroll de verdade é o do `window` (o <main> nunca overflow-a nesta
+  // casca -- ver memória do repo). Só grava enquanto a Rede está ATIVA e no
+  // Feed: nunca captura a rolagem de outra aba (req 2).
+  useEffect(() => {
+    if (!active || screen.type !== "feed") return;
+    let raf = 0;
+    const aoRolar = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() =>
+        redeCache.lembrarScroll(window.scrollY)
+      );
+    };
+    window.addEventListener("scroll", aoRolar, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", aoRolar);
+      cancelAnimationFrame(raf);
+    };
+  }, [active, screen.type]);
+
+  // Restaura a posição uma única vez por mount -- e SÓ quando a Rede está
+  // visível e o conteúdo do feed já está em tela (req 1 e 2). Se a Rede
+  // remontou fora de foco (o PIN destravou noutra aba), espera virar ativa.
+  const scrollRestaurado = useRef(false);
+  useIsomorphicLayoutEffect(() => {
+    if (scrollRestaurado.current) return;
+    if (!active || screen.type !== "feed") return;
+    if (posts.length === 0) return; // conteúdo ainda não pronto
+    const y = redeCache.scrollLembrado();
+    scrollRestaurado.current = true;
+    if (y != null) window.scrollTo(0, y);
+  }, [active, screen.type, posts.length]);
+
   // ── Amigas real -- buscado sob demanda ao entrar na tela (não no mount,
   // não é o destino padrão como o Feed) ──
-  const [friends, setFriends] = useState<PessoaResumo[]>([]);
-  const [requests, setRequests] = useState<SolicitacaoAmizade[]>([]);
-  const [sentRequests, setSentRequests] = useState<string[]>([]);
-  const [sugestoes, setSugestoes] = useState<PessoaResumo[]>([]);
-  const [amigasLoading, setAmigasLoading] = useState(true);
+  const [friends, setFriends] = useState<PessoaResumo[]>(
+    () => semente.amigas?.friends ?? []
+  );
+  const [requests, setRequests] = useState<SolicitacaoAmizade[]>(
+    () => semente.amigas?.requests ?? []
+  );
+  const [sentRequests, setSentRequests] = useState<string[]>(
+    () => semente.amigas?.sentRequests ?? []
+  );
+  const [sugestoes, setSugestoes] = useState<PessoaResumo[]>(
+    () => semente.amigas?.sugestoes ?? []
+  );
+  const [amigasLoading, setAmigasLoading] = useState(
+    () => semente.amigas == null
+  );
 
   // Eager, não sob demanda: FeedScreen já mostra "N solicitações de
   // amizade" na primeira tela (pendingRequestsCount), então precisa saber
   // isso antes da usuária sequer abrir a aba Amigas.
   useEffect(() => {
     let ativo = true;
+    const ep = redeCache.epocaAtual();
     Promise.all([
       listarAmigas(supabase),
       listarSolicitacoesPendentes(supabase),
@@ -305,21 +552,38 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         setSentRequests(enviadasData);
         setSugestoes(sugestoesData);
         setAmigasLoading(false);
+        redeCache.escrever<AmigasCache>(
+          usuario.id,
+          "amigas",
+          {
+            friends: amigasData,
+            requests: solicitacoesData,
+            sentRequests: enviadasData,
+            sugestoes: sugestoesData,
+          },
+          ep
+        );
       })
       .catch((e) => {
         console.error("[RedeTab amigas]", e);
-        toast.error("Não foi possível carregar Amigas.");
+        if (semente.amigas == null) {
+          toast.error("Não foi possível carregar Amigas.");
+        }
         setAmigasLoading(false);
       });
     return () => {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [usuario.id]);
 
   // ── Chat real ──
-  const [conversations, setConversations] = useState<ConversaResumo[]>([]);
-  const [conversationsLoading, setConversationsLoading] = useState(true);
+  const [conversations, setConversations] = useState<ConversaResumo[]>(
+    () => semente.conversas ?? []
+  );
+  const [conversationsLoading, setConversationsLoading] = useState(
+    () => semente.conversas == null
+  );
   // Falha persistente (distinta de "carregou e está vazio de verdade",
   // achado P1 #6 da auditoria de T9) + chave de recarga pro botão
   // "Tentar novamente" poder re-disparar o efeito abaixo sem duplicar a
@@ -361,24 +625,29 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
 
   useEffect(() => {
     let ativo = true;
+    const ep = redeCache.epocaAtual();
+    const temSemente = semente.conversas != null;
     setConversationsError(false);
     listarConversas(supabase)
       .then((data) => {
         if (!ativo) return;
         setConversations(data);
         setConversationsLoading(false);
+        redeCache.escrever<ConversaResumo[]>(usuario.id, "conversas", data, ep);
       })
       .catch((e) => {
         console.error("[RedeTab conversas]", e);
-        toast.error("Não foi possível carregar as conversas.");
-        setConversationsError(true);
+        if (!temSemente) {
+          toast.error("Não foi possível carregar as conversas.");
+          setConversationsError(true);
+        }
         setConversationsLoading(false);
       });
     return () => {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationsReloadKey]);
+  }, [usuario.id, conversationsReloadKey]);
 
   function retryLoadConversations() {
     setConversationsLoading(true);
@@ -521,31 +790,40 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
 
   // ── Notificações real -- eager, o sino no header mostra a contagem já
   // na primeira tela (mesmo motivo de Amigas ser eager, ver acima) ──
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
-  const [notificacoesLoading, setNotificacoesLoading] = useState(true);
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>(
+    () => semente.notificacoes ?? []
+  );
+  const [notificacoesLoading, setNotificacoesLoading] = useState(
+    () => semente.notificacoes == null
+  );
   const [notificacoesError, setNotificacoesError] = useState(false);
   const [notificacoesReloadKey, setNotificacoesReloadKey] = useState(0);
 
   useEffect(() => {
     let ativo = true;
+    const ep = redeCache.epocaAtual();
+    const temSemente = semente.notificacoes != null;
     setNotificacoesError(false);
     listarNotificacoes(supabase)
       .then((data) => {
         if (!ativo) return;
         setNotificacoes(data);
         setNotificacoesLoading(false);
+        redeCache.escrever<Notificacao[]>(usuario.id, "notificacoes", data, ep);
       })
       .catch((e) => {
         console.error("[RedeTab notificacoes]", e);
-        toast.error("Não foi possível carregar as notificações.");
-        setNotificacoesError(true);
+        if (!temSemente) {
+          toast.error("Não foi possível carregar as notificações.");
+          setNotificacoesError(true);
+        }
         setNotificacoesLoading(false);
       });
     return () => {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notificacoesReloadKey]);
+  }, [usuario.id, notificacoesReloadKey]);
 
   function retryLoadNotificacoes() {
     setNotificacoesLoading(true);
@@ -553,8 +831,12 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   }
 
   // ── Wishlist e Clientes reais (issue #64 -- antes eram mock local) ──
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>(
+    () => semente.perfil?.wishlistItems ?? []
+  );
+  const [clientes, setClientes] = useState<Cliente[]>(
+    () => semente.perfil?.clientes ?? []
+  );
   const [defaultPrivacidade, setDefaultPrivacidade] =
     useState<Privacidade>("amigas");
 
@@ -640,35 +922,32 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   const unreadNotifs = notificacoes.filter((n) => !n.lida).length;
 
   // ── Posts ──
-  async function toggleLike(id: string) {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              curtidoPorMim: !p.curtidoPorMim,
-              curtidas: p.curtidas + (p.curtidoPorMim ? -1 : 1),
-            }
-          : p
-      )
+  const alternarCurtidaLocal = (id: string) => (prev: FeedPost[]) =>
+    prev.map((p) =>
+      p.id === id
+        ? {
+            ...p,
+            curtidoPorMim: !p.curtidoPorMim,
+            curtidas: p.curtidas + (p.curtidoPorMim ? -1 : 1),
+          }
+        : p
     );
+
+  async function toggleLike(id: string) {
+    // Marca a curtida como pendente: um `listarFeed` que já estava em voo
+    // não pode desfazer esse like ao resolver depois (req 6). Ver
+    // `reconciliarFeed`.
+    likesPendentes.current.add(id);
+    aplicarPosts(alternarCurtidaLocal(id));
     try {
       await alternarCurtida(supabase, { postId: id });
     } catch (e) {
       console.error("[RedeTab curtida]", e);
       // Reverte a atualização otimista se a chamada real falhar.
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                curtidoPorMim: !p.curtidoPorMim,
-                curtidas: p.curtidas + (p.curtidoPorMim ? -1 : 1),
-              }
-            : p
-        )
-      );
+      aplicarPosts(alternarCurtidaLocal(id));
       toast.error("Não foi possível curtir a publicação.");
+    } finally {
+      likesPendentes.current.delete(id);
     }
   }
 
@@ -677,7 +956,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       await criarComentario(supabase, { postId, texto });
       const atualizados = await listarComentarios(supabase, postId);
       setComments(atualizados);
-      setPosts((prev) =>
+      aplicarPosts((prev) =>
         prev.map((p) =>
           p.id === postId ? { ...p, comentariosCount: atualizados.length } : p
         )
@@ -727,7 +1006,13 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   }) {
     try {
       const { post, fotos } = await criarPost(supabase, data);
-      setPosts((prev) => [feedPostFromCreated(post, fotos), ...prev]);
+      const novo = feedPostFromCreated(post, fotos);
+      aplicarPosts((prev) => [novo, ...prev]);
+      feedRef.current = [novo, ...feedRef.current];
+      redeCachePersist.salvar(usuario.id, {
+        feed: feedRef.current,
+        perfil: perfilRef.current,
+      });
       toast.success("Publicação enviada!");
     } catch (e) {
       console.error("[RedeTab publicar]", e);
@@ -747,7 +1032,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   ) {
     try {
       const updated = await atualizarPost(supabase, { postId, ...data });
-      setPosts((prev) =>
+      aplicarPosts((prev) =>
         prev.map((p) =>
           p.id === postId
             ? {
@@ -769,7 +1054,14 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   async function deletePost(postId: string) {
     try {
       await excluirPost(supabase, { postId });
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      // Tomba o id: um `listarFeed` em voo não ressuscita o post (req 6).
+      redeCache.marcarExcluido(postId);
+      aplicarPosts((prev) => prev.filter((p) => p.id !== postId));
+      feedRef.current = feedRef.current.filter((p) => p.id !== postId);
+      redeCachePersist.salvar(usuario.id, {
+        feed: feedRef.current,
+        perfil: perfilRef.current,
+      });
       setDeleteConfirmPost(null);
       toast.success("Publicação excluída");
     } catch (e) {
@@ -787,7 +1079,9 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
   async function renovarFotoUrl(path: string): Promise<string | null> {
     const novaUrl = await renovarUrlFoto(supabase, path);
     if (novaUrl) {
-      setPosts((prev) =>
+      // Espelha no cache em memória (a camada persistida nunca guarda essas
+      // URLs assinadas -- ver redeCachePersist).
+      aplicarPosts((prev) =>
         prev.map((p) => ({
           ...p,
           fotos: p.fotos.map((f) => {
@@ -1212,7 +1506,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         nomeExibicao: data.nomeExibicao,
         bio: data.bio,
       });
-      setPerfil(updated);
+      sincronizarPerfilNoCache(updated);
       setProfileEditOpen(false);
       toast.success("Perfil atualizado!");
     } catch {
@@ -1248,7 +1542,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
       const updated = await atualizarPerfil(supabase, {
         avatarUrl: publicUrl,
       });
-      setPerfil(updated);
+      sincronizarPerfilNoCache(updated);
       if (oldPath) {
         supabase.storage
           .from("avatares")
@@ -1269,7 +1563,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
     const oldPath = avatarPathFromUrl(perfil?.avatar_url);
     try {
       const updated = await atualizarPerfil(supabase, { avatarUrl: null });
-      setPerfil(updated);
+      sincronizarPerfilNoCache(updated);
       if (oldPath) {
         await supabase.storage.from("avatares").remove([oldPath]);
       }
@@ -1347,7 +1641,7 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
         categoria: "conquista",
         texto: `Compartilhando meu progresso com "${item.nome}" — ${progresso}% da meta!`,
       });
-      setPosts((prev) => [feedPostFromCreated(post), ...prev]);
+      aplicarPosts((prev) => [feedPostFromCreated(post), ...prev]);
       setWishlistFormOpen(false);
       setEditingWishlist(null);
       toast.success("Desejo compartilhado no Feed!");
@@ -1479,6 +1773,8 @@ export function RedeTab({ usuario, onChatFocusChange }: Props) {
           error={feedError}
           hasMore={feedHasMore}
           loadingMore={feedLoadingMore}
+          segmento={segmento}
+          onSegmentoChange={trocarSegmento}
           onLoadMore={loadMorePosts}
           onOpenSearch={() => push({ type: "busca" })}
           onOpenNotifs={() => setNotifSheetOpen(true)}
