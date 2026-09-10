@@ -49,12 +49,10 @@ function fakeSupabase(opts: {
   post?: { id: string; autor_id: string } | null;
   postErr?: unknown;
 }) {
-  const maybeSingle = vi
-    .fn()
-    .mockResolvedValue({
-      data: opts.post ?? null,
-      error: opts.postErr ?? null,
-    });
+  const maybeSingle = vi.fn().mockResolvedValue({
+    data: opts.post ?? null,
+    error: opts.postErr ?? null,
+  });
   const eq = vi.fn().mockReturnValue({ maybeSingle });
   const select = vi.fn().mockReturnValue({ eq });
   const from = vi.fn().mockReturnValue({ select });
@@ -66,6 +64,33 @@ function fakeSupabase(opts: {
 
 function authenticated(supabase: ReturnType<typeof fakeSupabase>) {
   return { kind: "authenticated" as const, supabase, userId: AUTHOR_ID };
+}
+
+/** JPEG 1x1 válido (só JFIF/APP0, sem EXIF) -- passa por `validarJpeg`. */
+const ONE_PIXEL_JPEG = Buffer.from(
+  "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+  "base64"
+);
+
+function requestComImagens(
+  fields: Record<string, string> = { postId: "post-1", ordem: "1" }
+) {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) form.set(key, value);
+  form.set(
+    "principal",
+    new Blob([ONE_PIXEL_JPEG], { type: "image/jpeg" }),
+    "1.jpg"
+  );
+  form.set(
+    "miniatura",
+    new Blob([ONE_PIXEL_JPEG], { type: "image/jpeg" }),
+    "1-thumb.jpg"
+  );
+  return new Request("http://localhost/api/rede/foto-upload", {
+    method: "POST",
+    body: form,
+  });
 }
 
 describe("POST /api/rede/foto-upload — portas de autorização", () => {
@@ -163,5 +188,65 @@ describe("POST /api/rede/foto-upload — portas de autorização", () => {
     expect(supabase.rpc).toHaveBeenCalledWith("rede_is_member");
     expect(supabase.from).toHaveBeenCalledWith("rede_posts");
     expect(mocks.getSupabaseAdmin).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/rede/foto-upload — cliente service_role indisponível", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("getSupabaseAdmin() lança (env sem SUPABASE_SERVICE_ROLE_KEY) -> 503 JSON, sem vazar detalhe interno", async () => {
+    const supabase = fakeSupabase({
+      member: true,
+      post: { id: "post-1", autor_id: AUTHOR_ID },
+    });
+    mocks.resolveGateAuth.mockResolvedValue(authenticated(supabase));
+    // é exatamente o que o @supabase/supabase-js lança quando a key falta
+    mocks.getSupabaseAdmin.mockImplementation(() => {
+      throw new Error("supabaseKey is required.");
+    });
+
+    const response = await POST(requestComImagens() as never);
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(body).toEqual({ error: "Serviço de mídia indisponível" });
+
+    // não expõe a mensagem do supabase-js, stack, nome de env var, etc.
+    const raw = JSON.stringify(body);
+    expect(raw).not.toMatch(
+      /supabaseKey|SUPABASE_SERVICE_ROLE_KEY|required|stack|at /i
+    );
+
+    // chegou até o service_role (passou pelas 3 portas + validação da imagem)
+    expect(supabase.rpc).toHaveBeenCalledWith("rede_is_member");
+    expect(supabase.from).toHaveBeenCalledWith("rede_posts");
+    expect(mocks.getSupabaseAdmin).toHaveBeenCalled();
+  });
+
+  it("registra o erro no servidor sem o texto do erro nem valores de env", async () => {
+    const supabase = fakeSupabase({
+      member: true,
+      post: { id: "post-1", autor_id: AUTHOR_ID },
+    });
+    mocks.resolveGateAuth.mockResolvedValue(authenticated(supabase));
+    mocks.getSupabaseAdmin.mockImplementation(() => {
+      throw new Error("supabaseKey is required.");
+    });
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await POST(requestComImagens() as never);
+
+    expect(errSpy).toHaveBeenCalled();
+    const logged = errSpy.mock.calls.flat().map(String).join(" ");
+    expect(logged).toContain("[foto-upload]");
+    // só o NOME do erro ("Error"), nunca a mensagem "supabaseKey is required."
+    expect(logged).not.toMatch(
+      /supabaseKey is required|SUPABASE_SERVICE_ROLE_KEY/
+    );
+
+    errSpy.mockRestore();
   });
 });
