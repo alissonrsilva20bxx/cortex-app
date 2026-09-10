@@ -44,6 +44,16 @@ Planeta, avião e países pertencem a essa narrativa, desde que apareçam como c
 | Rede | [mockups/rede.png](mockups/rede.png) |
 | Ajustes | [mockups/ajustes.png](mockups/ajustes.png) |
 
+## Protótipo navegável aprovado
+
+- Branch: `design/ios-quase-nativo-prototype`
+- PR: [#114](https://github.com/alissonrsilva20bxx/cortex-app/pull/114)
+- Commit visual aprovado: `c1898fe`
+- Aprovação do proprietário: **2026-09-10**
+- Escopo da aprovação: direção visual das seis telas, navegação entre abas e barra inferior no modelo original com cinco destinos; Ajustes permanece acessível pelo avatar.
+
+Essa aprovação congela a direção visual. Ela não substitui a matriz técnica de estados, acessibilidade e regressão prevista no `QA_CHECKLIST.md`, nem autoriza merge, deploy ou portabilidade para o app real.
+
 ## Documentos de execução
 
 - [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md): tokens, tipografia, espaçamento, superfícies, movimento e acessibilidade.
@@ -62,4 +72,3 @@ Antes de qualquer código visual:
 5. construir primeiro uma rota de protótipo isolada;
 6. obter aprovação humana das seis telas;
 7. só então portar o sistema aprovado para as telas reais.
-

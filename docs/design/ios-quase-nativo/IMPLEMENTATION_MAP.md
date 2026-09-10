@@ -76,6 +76,8 @@ Concluído por esta documentação. Antes de editar código, o escritor deve rel
 
 Nenhuma mudança deve ser portada para o app real antes dessa aprovação.
 
+**Estado em 2026-09-10:** direção visual e navegação principal aprovadas pelo proprietário no protótipo do PR #114, commit `c1898fe`. Permanecem pendentes as evidências da matriz completa de estados e viewports antes de considerar T8 tecnicamente concluída.
+
 ## T9–T12 — portabilidade para o app real
 
 Somente depois de T8:
@@ -116,4 +118,3 @@ Não editar durante T2–T8:
 - Remover Ajustes da barra sem preservar seu painel pode perder estado e rotas internas.
 - O FAB global representa ações diferentes por aba; removê-lo antes da migração de callbacks causa regressão silenciosa.
 - Os temas atuais e o novo visual fixo vinho/rosa entram em conflito se a decisão não for tomada antes da portabilidade real.
-
