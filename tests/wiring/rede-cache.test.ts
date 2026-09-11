@@ -107,40 +107,78 @@ describe("restauração de rolagem só quando a Rede está ativa (req 1 e 2)", (
   });
 });
 
-describe("acesso: cache é apresentação, nunca autorização (req 3)", () => {
+describe("acesso: cache é apresentação com validade curta, nunca autorização", () => {
   const src = read("components/rede/RedeGatedTab.tsx");
 
-  it("renderiza o Feed na hora com acesso lembrado, mas ainda revalida", () => {
-    expect(src).toMatch(/redeCache\.acessoLembrado\(usuario\.id\)/);
+  it("só monta o Feed na hora se o acesso confirmado ainda está dentro da validade (TTL)", () => {
+    expect(src).toMatch(/redeCache\.acessoConfirmadoValido\(usuario\.id\)/);
     expect(src).toContain("verificarAcessoConvite(supabase, usuario.id)");
   });
 
-  it("resultado indeterminado (offline/5xx/sessão) NÃO rebaixa nem limpa (req 4)", () => {
+  it("motivo 'indisponivel' só preserva enquanto o acesso confirmado seguir válido; vencido, sai da tela", () => {
     expect(src).toMatch(
-      /if \(resultado\.indeterminado\) \{[\s\S]*?setVerificandoAcesso\(false\);\s*return;/
+      /motivo === "indisponivel"[\s\S]*?acessoConfirmadoValido\(usuario\.id\)[\s\S]*?setUnlocked\(false\)/
     );
   });
 
-  it("resposta conclusiva de 'sem convite' descarta memória + localStorage (req 3)", () => {
+  it("'sem_convite' | 'sessao' | 'negado' derrubam: some da tela + zera memória e localStorage", () => {
     expect(src).toMatch(
-      /redeCache\.limparTudo\(\);\s*redeCachePersist\.limpar\(usuario\.id\)/
+      /const derrubar = \(\) => \{[\s\S]*?setUnlocked\(false\);[\s\S]*?redeCache\.limparTudo\(\);\s*redeCachePersist\.limpar\(usuario\.id\)/
     );
   });
 
-  it("revalida quando a aba volta a ficar visível (revogação com o PWA em 2º plano)", () => {
-    expect(src).toMatch(/addEventListener\("visibilitychange"/);
-    expect(src).toMatch(/document\.visibilityState !== "visible"/);
+  it("revalida ao voltar a ficar visível E ao reconectar (revogação com o PWA em 2º plano)", () => {
+    expect(src).toMatch(/addEventListener\("visibilitychange", revalidar\)/);
+    expect(src).toMatch(/addEventListener\("online", revalidar\)/);
   });
 
-  it("acesso.ts classifica pelo status: só 200+vazio é conclusivo, o resto é indeterminado", () => {
+  it("acesso.ts: 401 tenta refreshSession; 403/4xx é 'negado'; status 0/5xx é 'indisponivel'", () => {
     const ac = read("lib/rede/acesso.ts");
-    // offline real chega como status 0 numa promise RESOLVIDA, não rejeitada
-    expect(ac).toMatch(/status === 0.*return "transporte"/);
-    expect(ac).toMatch(/status >= 500.*return "servidor"/);
-    expect(ac).toMatch(/status === 401 \|\| status === 403.*return "sessao"/);
-    // o único ramo que devolve unlocked:false SEM indeterminado além do 4xx
-    // é o 200 + data vazio
-    expect(ac).toMatch(/return \{ unlocked: !!\(data && data\.length > 0\) \}/);
+    expect(ac).toMatch(
+      /status === 0 \|\| status >= 500\) return "indisponivel"/
+    );
+    expect(ac).toMatch(/status === 401\) return "sessao"/);
+    expect(ac).toMatch(/return "negado"/);
+    expect(ac).toMatch(/r\.error && r\.status === 401/);
+    expect(ac).toMatch(/client\.auth\s*\.refreshSession\(\)/);
+    // só 200 + linha libera
+    expect(ac).toMatch(
+      /r\.data && r\.data\.length > 0\s*\?\s*\{ unlocked: true \}/
+    );
+  });
+
+  it("redeCache: validade explícita do acesso confirmado + carimbo de tempo", () => {
+    const rc = read("lib/rede/redeCache.ts");
+    expect(rc).toMatch(/ACESSO_CONFIRMADO_TTL_MS = \d/);
+    expect(rc).toMatch(/confirmadoEm: Date\.now\(\)/);
+    expect(rc).toMatch(
+      /Date\.now\(\) - a\.confirmadoEm < ACESSO_CONFIRMADO_TTL_MS/
+    );
+  });
+});
+
+describe("RedeTab revalida em 2º plano ao reconectar (sem skeleton, sem duplicar)", () => {
+  const src = read("components/rede/RedeTab.tsx");
+
+  it("evento `online` faz bump numa chave que entra nas deps dos fetches", () => {
+    expect(src).toMatch(/setReconexaoKey\(\(k\) => k \+ 1\)/);
+    // feed, perfil, amigas
+    const deps = src.match(/\}, \[usuario\.id, reconexaoKey\]\);/g) ?? [];
+    expect(deps.length).toBeGreaterThanOrEqual(3);
+    // conversas + notificações reaproveitam a chave junto do reloadKey
+    expect(src).toMatch(
+      /\[usuario\.id, conversationsReloadKey, reconexaoKey\]/
+    );
+    expect(src).toMatch(/\[usuario\.id, notificacoesReloadKey, reconexaoKey\]/);
+  });
+
+  it("hasMore do refresh não ressuscita nem esconde o botão indevidamente", () => {
+    expect(src).toMatch(
+      /const temPaginasProfundas = conciliado\.length > data\.length/
+    );
+    expect(src).toMatch(
+      /temPaginasProfundas\s*\?\s*feedHasMoreRef\.current\s*:\s*data\.length >= FEED_PAGE_SIZE/
+    );
   });
 });
 

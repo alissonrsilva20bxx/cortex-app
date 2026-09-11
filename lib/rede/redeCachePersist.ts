@@ -1,9 +1,11 @@
 /**
  * Camada persistida do cache da Rede -- `localStorage`, uma chave por
- * usuário (`jobapp-rede-cache:<userId>`). Cobre o COLD START (reload de
- * verdade), quando o cache em memória (`redeCache.ts`) nasce vazio: a Rede
- * abre já com a 1ª página do feed + o perfil, sem skeleton, enquanto
- * revalida contra o Supabase.
+ * usuário (`jobapp-rede-cache:<userId>`). Cobre todo caso em que o
+ * documento foi descartado e o cache em memória (`redeCache.ts`) nasce
+ * vazio: reload de verdade (cold start) E o iOS matar a aba do PWA em 2º
+ * plano (ao reabrir, o documento recarrega). A Rede abre já com a 1ª
+ * página do feed + o perfil, sem skeleton, enquanto revalida contra o
+ * Supabase.
  *
  * O que NÃO é persistido, de propósito:
  *  - **URLs assinadas das fotos** (5min de validade -- não faz sentido

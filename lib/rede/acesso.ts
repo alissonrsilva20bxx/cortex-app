@@ -5,87 +5,109 @@ import type { Database } from "../database.types";
 type RedeClient = SupabaseClient<Database>;
 
 /**
- * Por que `indeterminado` e não "erro de transporte": com
+ * Por que classificar pelo `status` e não só tratar o `catch`: com
  * `@supabase/postgrest-js` >= 2.x uma leitura (`GET`) **quase nunca REJEITA
  * a promise** quando o `fetch` falha. O cliente tenta 3 vezes (backoff
  * 1s/2s/4s, ~7s no total) e então RESOLVE com uma resposta sintética
- * `{ data: null, error: { message: "TypeError: fetch failed", code: "" },
- * status: 0, statusText: "" }`. Confirmado em runtime (Node 24 + undici e
- * browser fetch). Ou seja: tratar só o `catch` como "offline" deixa passar
- * o caso real de rede caída direto pro ramo de "sem convite".
+ * `{ data: null, error: { message: "TypeError: fetch failed" }, status: 0 }`.
+ * Confirmado em runtime (Node 24 + undici e browser fetch).
  *
- * Então a classificação é pelo `status` da resposta RESOLVIDA:
+ * `verificarAcessoConvite` devolve `{ unlocked, motivo? }`:
  *
- *  | resultado                                   | AcessoConvite            | gate faz            |
- *  |---------------------------------------------|-------------------------|---------------------|
- *  | 200 + convite resgatado                     | { unlocked: true }      | mostra o Feed       |
- *  | 200 + zero convites (RLS filtrou)           | { unlocked: false }     | LIMPA cache + vitrine |
- *  | status 0  (fetch não chegou ao servidor)    | indeterminado:transporte| PRESERVA o cache    |
- *  | status >= 500 (PostgREST/Postgres fora)     | indeterminado:servidor  | PRESERVA o cache    |
- *  | status 401/403 (JWT expirado/ausente)       | indeterminado:sessao    | PRESERVA o cache    |
+ *  | resposta                              | retorno                        | o gate faz                          |
+ *  |--------------------------------------|--------------------------------|-------------------------------------|
+ *  | 200 + convite resgatado              | { unlocked: true }             | libera; carimba o acesso confirmado |
+ *  | 200 + zero convites                  | { unlocked: false, "sem_convite" } | DERRUBA: some da tela + zera cache |
+ *  | status 0 (fetch não chegou)          | { unlocked: false, "indisponivel" } | preserva SÓ enquanto o acesso confirmado estiver dentro da validade |
+ *  | status >= 500                        | { unlocked: false, "indisponivel" } | idem                              |
+ *  | status 401 (JWT) e NÃO recuperou     | { unlocked: false, "sessao" }  | DERRUBA: conteúdo privado sai da tela |
+ *  | status 403 / demais 4xx             | { unlocked: false, "negado" }  | DERRUBA -- não presume que é transitório |
  *
- * "Acesso revogado" chega como `200 + zero convites` (a policy de
- * `rede_convites` só FILTRA linhas por `usado_por = auth.uid()`, nunca
- * devolve permission denied pra um usuário logado) -- esse é o ÚNICO
- * resultado conclusivo de "sem acesso", e é o único que zera o cache.
+ * `401`: antes de desistir, tenta `auth.refreshSession()` uma vez. Se
+ * recuperar a sessão, refaz a consulta; só devolve `"sessao"` se a sessão
+ * continuar inválida.
+ *
+ * Nota sobre RLS: a policy de `rede_convites` hoje só FILTRA linhas por
+ * `usado_por = auth.uid()`, mas NÃO usamos isso como garantia de que todo
+ * erro de autorização é impossível -- `403`/`negado` derrubam o acesso do
+ * mesmo jeito. Perdeu a autorização, o conteúdo privado local sai da tela.
  *
  * `unlocked` nunca é `true` sem um `200` trazendo um convite resgatado.
  */
-export type MotivoIndeterminado = "transporte" | "servidor" | "sessao";
+export type AcessoMotivo = "sem_convite" | "indisponivel" | "sessao" | "negado";
 
-export type AcessoConvite = {
-  unlocked: boolean;
-  /** Presente quando a verificação NÃO chegou a um resultado conclusivo.
-   * O gate preserva o conteúdo cacheado e segue otimista -- nunca mostra a
-   * vitrine ("peça seu convite") por isto. Ver a tabela acima. */
-  indeterminado?: MotivoIndeterminado;
+export type AcessoConvite = { unlocked: boolean; motivo?: AcessoMotivo };
+
+type ConsultaConvite = {
+  data: { id: string }[] | null;
+  error: unknown;
+  status: number;
 };
 
-function classificar(status: number): MotivoIndeterminado | null {
-  if (status === 0) return "transporte";
-  if (status >= 500) return "servidor";
-  if (status === 401 || status === 403) return "sessao";
-  return null;
+function consultar(
+  client: RedeClient,
+  usuarioId: string
+): PromiseLike<ConsultaConvite> {
+  return client
+    .from("rede_convites")
+    .select("id")
+    .eq("usado_por", usuarioId)
+    .limit(1) as unknown as PromiseLike<ConsultaConvite>;
 }
 
-/** Nunca rejeita -- toda falha vira `{ unlocked: false, ... }` (fail-closed)
- * em vez de deixar o chamador preso numa promise que nunca resolve. */
+function classificarErro(status: number): AcessoMotivo {
+  if (status === 0 || status >= 500) return "indisponivel";
+  if (status === 401) return "sessao";
+  return "negado"; // 403 e demais 4xx: fail-closed, não presume transitório
+}
+
+function avaliar(r: ConsultaConvite): AcessoConvite {
+  if (r.error) {
+    return { unlocked: false, motivo: classificarErro(r.status) };
+  }
+  return r.data && r.data.length > 0
+    ? { unlocked: true }
+    : { unlocked: false, motivo: "sem_convite" };
+}
+
+/** Nunca rejeita -- toda falha vira `{ unlocked: false, motivo }`
+ * (fail-closed) em vez de deixar o chamador preso numa promise. */
 export async function verificarAcessoConvite(
   client: RedeClient,
   usuarioId: string
 ): Promise<AcessoConvite> {
+  let r: ConsultaConvite;
   try {
-    const { data, error, status } = await client
-      .from("rede_convites")
-      .select("id")
-      .eq("usado_por", usuarioId)
-      .limit(1);
-
-    if (error) {
-      const motivo = classificar(status);
-      if (motivo) {
-        // Rede caída / servidor fora / sessão expirada: NÃO conclui "sem
-        // convite". O gate mantém o Feed cacheado em tela (req 4).
-        console.warn(
-          `[verificarAcessoConvite] indeterminado (${motivo}, status ${status})`,
-          error
-        );
-        return { unlocked: false, indeterminado: motivo };
-      }
-      // 4xx que não é 401/403 -- não deveria acontecer nesta query (a RLS
-      // filtra, não nega). Fail-closed conclusivo: o gate limpa o cache.
-      console.error("[verificarAcessoConvite] erro conclusivo", {
-        status,
-        error,
-      });
-      return { unlocked: false };
-    }
-
-    return { unlocked: !!(data && data.length > 0) };
+    r = await consultar(client, usuarioId);
   } catch (e) {
-    // Salvaguarda: cliente que REJEITA de fato (mock, throw síncrono, um
-    // postgrest futuro). Trata como transporte -- preserva o cache.
+    // Salvaguarda: cliente que REJEITA de fato (mock, throw síncrono).
     console.warn("[verificarAcessoConvite] promise rejeitada", e);
-    return { unlocked: false, indeterminado: "transporte" };
+    return { unlocked: false, motivo: "indisponivel" };
   }
+
+  // 401: tenta recuperar a sessão UMA vez antes de desistir.
+  if (r.error && r.status === 401) {
+    const { data, error } = await client.auth
+      .refreshSession()
+      .catch(() => ({ data: { session: null }, error: new Error("refresh") }));
+    if (error || !data?.session) {
+      console.warn("[verificarAcessoConvite] sessão não recuperada (401)");
+      return { unlocked: false, motivo: "sessao" };
+    }
+    try {
+      r = await consultar(client, usuarioId);
+    } catch (e) {
+      console.warn("[verificarAcessoConvite] promise rejeitada pós-refresh", e);
+      return { unlocked: false, motivo: "indisponivel" };
+    }
+  }
+
+  const resultado = avaliar(r);
+  if (resultado.motivo && resultado.motivo !== "sem_convite") {
+    console.warn(
+      `[verificarAcessoConvite] ${resultado.motivo} (status ${r.status})`,
+      r.error
+    );
+  }
+  return resultado;
 }

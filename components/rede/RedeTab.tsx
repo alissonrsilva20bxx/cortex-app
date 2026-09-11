@@ -245,6 +245,37 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   }
   const semente = sementeRef.current;
 
+  // ── Offline / reconexão ──
+  // `online` (navigator.onLine): a lista já carregada segue navegável
+  // offline (só leitura); envio/escrita ficam desabilitados nos
+  // componentes que recebem a prop `offline` (Conversas/Chat/Notificações).
+  // `reconexaoKey` faz bump a cada evento `online` (só dispara na transição
+  // offline->online) e entra nas deps dos effects de busca abaixo: eles
+  // re-rodam como revalidação em 2º plano -- sem skeleton (só ligam
+  // `setLoading(false)`), reconciliando com o que já está em tela, então
+  // conteúdo/scroll/slide ficam intactos. Uma requisição por recurso por
+  // reconexão. Declarado aqui em cima porque os effects mais acima
+  // dependem dele.
+  const [online, setOnline] = useState(
+    typeof navigator === "undefined" ? true : navigator.onLine
+  );
+  const [reconexaoKey, setReconexaoKey] = useState(0);
+  useEffect(() => {
+    function goOnline() {
+      setOnline(true);
+      setReconexaoKey((k) => k + 1);
+    }
+    function goOffline() {
+      setOnline(false);
+    }
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
+
   // ── Perfil real + LiveLinks ──
   const [perfil, setPerfil] = useState<Perfil | null>(
     () => semente.perfil?.perfil ?? null
@@ -323,7 +354,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id]);
+  }, [usuario.id, reconexaoKey]);
 
   // ── Navegação: pilha local, sem 2ª barra de navegação (o Feed é a base) ──
   const [stack, setStack] = useState<RedeScreen[]>([{ type: "feed" }]);
@@ -344,6 +375,8 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   const [feedHasMore, setFeedHasMore] = useState(
     () => semente.feed?.hasMore ?? true
   );
+  const feedHasMoreRef = useRef(feedHasMore);
+  feedHasMoreRef.current = feedHasMore;
   const [feedLoadingMore, setFeedLoadingMore] = useState(false);
   // Filtro Para você / Amigas -- lembrado entre remounts (o remount do PIN
   // não deve jogar a pessoa de volta pra "Para você").
@@ -422,21 +455,27 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     listarFeed(supabase)
       .then((data) => {
         if (!ativo || !epocaValida(ep)) return;
-        // Página 1 cheia ⇒ há mais pra paginar. Antes isto era condicionado
-        // ao `hasMore` anterior ("se já chegou ao fim, continua sem carregar
-        // mais") -- mas na semente do cold start esse valor nasce de
-        // `feed.length >= PAGE_SIZE`, `false` sempre que o cache foi salvo
-        // com o feed ainda curto. Resultado: mesmo o servidor devolvendo uma
-        // página cheia, o botão "carregar mais" ficava escondido até o
-        // próximo reload. O custo de tirar a trava: 1 clique "carregar mais"
-        // que volta vazio quando o feed tem exatamente um múltiplo de 10.
-        const hasMore = data.length >= FEED_PAGE_SIZE;
         const conciliado = redeCache.reconciliarFeed(
           postsRef.current,
           data,
           likesPendentes.current,
           usuario.id
         );
+        // Um refresh só busca a página 1 -- não dá pra concluir sozinho se
+        // há mais páginas além do que já está carregado:
+        //  - se a reconciliação preservou páginas mais profundas
+        //    (`conciliado` maior que a página 1), mantém o `hasMore`
+        //    anterior (que é autoritativo -- veio do cache em memória ou
+        //    da última paginação), sem "ressuscitar" o botão depois de já
+        //    ter chegado ao fim;
+        //  - senão, só a página 1: deriva de `data.length` (>= PAGE_SIZE ⇒
+        //    provavelmente há mais). Isto conserta o caso do cold start em
+        //    que a semente do localStorage nascia com `hasMore=false` por
+        //    ter sido salva com o feed ainda curto.
+        const temPaginasProfundas = conciliado.length > data.length;
+        const hasMore = temPaginasProfundas
+          ? feedHasMoreRef.current
+          : data.length >= FEED_PAGE_SIZE;
         redeCache.escreverFeed(usuario.id, conciliado, hasMore, ep);
         setPosts(conciliado);
         setFeedHasMore(hasMore);
@@ -465,7 +504,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id]);
+  }, [usuario.id, reconexaoKey]);
 
   async function loadMorePosts() {
     if (feedLoadingMore || !feedHasMore || posts.length === 0) return;
@@ -588,7 +627,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id]);
+  }, [usuario.id, reconexaoKey]);
 
   // ── Chat real ──
   const [conversations, setConversations] = useState<ConversaResumo[]>(
@@ -612,29 +651,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     Record<string, boolean>
   >({});
   const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
-
-  // ── Offline (navigator.onLine) -- compartilhado por Conversas/Chat/
-  // Notificações, os 3 destinos deste ticket que fazem escrita de rede
-  // (enviar mensagem, marcar como lida/vista). Lista já carregada
-  // continua navegável offline (só leitura); envio/escrita ficam
-  // desabilitados nos componentes que recebem esta prop. ──
-  const [online, setOnline] = useState(
-    typeof navigator === "undefined" ? true : navigator.onLine
-  );
-  useEffect(() => {
-    function goOnline() {
-      setOnline(true);
-    }
-    function goOffline() {
-      setOnline(false);
-    }
-    window.addEventListener("online", goOnline);
-    window.addEventListener("offline", goOffline);
-    return () => {
-      window.removeEventListener("online", goOnline);
-      window.removeEventListener("offline", goOffline);
-    };
-  }, []);
 
   useEffect(() => {
     let ativo = true;
@@ -660,7 +676,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, conversationsReloadKey]);
+  }, [usuario.id, conversationsReloadKey, reconexaoKey]);
 
   function retryLoadConversations() {
     setConversationsLoading(true);
@@ -836,7 +852,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, notificacoesReloadKey]);
+  }, [usuario.id, notificacoesReloadKey, reconexaoKey]);
 
   function retryLoadNotificacoes() {
     setNotificacoesLoading(true);

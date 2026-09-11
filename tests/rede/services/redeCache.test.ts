@@ -205,12 +205,29 @@ describe("slide do carrossel / scroll / segmento", () => {
   });
 });
 
-describe("acesso lembrado -- apresentação só", () => {
-  it("undefined até a 1ª verificação; guarda o último resultado real", () => {
+describe("acesso lembrado -- apresentação só, com validade curta", () => {
+  it("undefined até a 1ª confirmação; guarda unlocked + carimbo de tempo", () => {
     redeCache.vincularUsuario("A");
     expect(redeCache.acessoLembrado("A")).toBeUndefined();
     redeCache.lembrarAcesso("A", true);
-    expect(redeCache.acessoLembrado("A")).toBe(true);
+    const lembrado = redeCache.acessoLembrado("A");
+    expect(lembrado?.unlocked).toBe(true);
+    expect(typeof lembrado?.confirmadoEm).toBe("number");
+  });
+
+  it("acessoConfirmadoValido: true logo após confirmar, false depois do TTL", () => {
+    vi.useFakeTimers({ now: 1_000_000 });
+    try {
+      redeCache.vincularUsuario("A");
+      expect(redeCache.acessoConfirmadoValido("A")).toBe(false);
+      redeCache.lembrarAcesso("A", true);
+      expect(redeCache.acessoConfirmadoValido("A")).toBe(true);
+
+      vi.advanceTimersByTime(redeCache._internos.ACESSO_CONFIRMADO_TTL_MS + 1);
+      expect(redeCache.acessoConfirmadoValido("A")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("limparTudo / troca de conta esquece o acesso", () => {

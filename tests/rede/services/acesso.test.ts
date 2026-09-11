@@ -2,26 +2,33 @@ import { describe, expect, it, vi } from "vitest";
 
 import { verificarAcessoConvite } from "../../../lib/rede/acesso";
 
-/** Um cliente cuja `.limit(1)` RESOLVE com a resposta dada (o caminho de
- * longe mais comum: postgrest-js resolve mesmo quando o `fetch` falha). */
-function clienteComResposta(resposta: {
+type Resposta = {
   data: unknown;
   error: unknown;
   status: number;
-  statusText?: string;
-}) {
+};
+
+/** Cliente cujo `.limit(1)` resolve com `respostas.shift()` a cada chamada
+ * (pra simular "1ª tenta 401, 2ª pós-refresh dá 200"). `refresh` controla o
+ * que `auth.refreshSession()` devolve. */
+function cliente(
+  respostas: Resposta[],
+  refresh: { session: unknown } = { session: null }
+) {
   return {
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue(resposta),
+          limit: vi.fn(() => Promise.resolve(respostas.shift())),
         }),
       }),
     }),
+    auth: {
+      refreshSession: vi.fn().mockResolvedValue({ data: refresh, error: null }),
+    },
   };
 }
 
-/** Um cliente cuja `.limit(1)` REJEITA (raro: mock, throw síncrono). */
 function clienteQueRejeita(erro: unknown) {
   return {
     from: vi.fn().mockReturnValue({
@@ -31,98 +38,106 @@ function clienteQueRejeita(erro: unknown) {
         }),
       }),
     }),
+    auth: { refreshSession: vi.fn() },
   };
 }
 
 describe("verificarAcessoConvite", () => {
-  it("libera acesso quando existe um convite resgatado (200 + linha)", async () => {
-    const client = clienteComResposta({
-      data: [{ id: "convite-1" }],
-      error: null,
-      status: 200,
+  it("200 + convite resgatado -> { unlocked: true }", async () => {
+    const c = cliente([{ data: [{ id: "cv-1" }], error: null, status: 200 }]);
+    await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+      unlocked: true,
     });
-
-    await expect(
-      verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: true });
   });
 
-  it("CONCLUSIVO 'sem convite': 200 + zero linhas (RLS filtrou) -> gate limpa o cache", async () => {
-    const client = clienteComResposta({ data: [], error: null, status: 200 });
-
-    await expect(
-      verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: false });
-  });
-
-  it("OFFLINE real: postgrest-js resolve com status 0 (não rejeita) -> indeterminado:transporte", async () => {
-    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    // Resposta sintética que o postgrest-js >=2.x devolve depois de 3
-    // retries quando o `fetch` falha (offline / DNS / TLS). Confirmado em
-    // runtime -- ver o cabeçalho de lib/rede/acesso.ts.
-    const client = clienteComResposta({
-      data: null,
-      error: { message: "TypeError: fetch failed", code: "" },
-      status: 0,
-      statusText: "",
+  it("200 + zero convites -> { unlocked: false, motivo: 'sem_convite' }", async () => {
+    const c = cliente([{ data: [], error: null, status: 200 }]);
+    await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+      unlocked: false,
+      motivo: "sem_convite",
     });
-
-    await expect(
-      verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: false, indeterminado: "transporte" });
-    consoleSpy.mockRestore();
   });
 
-  it("SERVIDOR fora (5xx) -> indeterminado:servidor, NÃO 'sem convite'", async () => {
-    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  it("OFFLINE: postgrest-js resolve com status 0 (não rejeita) -> motivo 'indisponivel'", async () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const c = cliente([
+      {
+        data: null,
+        error: { message: "TypeError: fetch failed", code: "" },
+        status: 0,
+      },
+    ]);
+    await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+      unlocked: false,
+      motivo: "indisponivel",
+    });
+    spy.mockRestore();
+  });
+
+  it("5xx -> motivo 'indisponivel' (não 'sem convite')", async () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     for (const status of [500, 502, 503]) {
-      const client = clienteComResposta({
-        data: null,
-        error: { message: "Internal Server Error", code: "" },
-        status,
+      const c = cliente([
+        { data: null, error: { message: "server error" }, status },
+      ]);
+      await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+        unlocked: false,
+        motivo: "indisponivel",
       });
-      await expect(
-        verificarAcessoConvite(client as never, "user-1")
-      ).resolves.toEqual({ unlocked: false, indeterminado: "servidor" });
     }
-    consoleSpy.mockRestore();
+    spy.mockRestore();
   });
 
-  it("SESSÃO expirada (401/403, JWT) -> indeterminado:sessao, cache preservado", async () => {
-    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    for (const status of [401, 403]) {
-      const client = clienteComResposta({
-        data: null,
-        error: { code: "PGRST301", message: "JWT expired" },
-        status,
-      });
-      await expect(
-        verificarAcessoConvite(client as never, "user-1")
-      ).resolves.toEqual({ unlocked: false, indeterminado: "sessao" });
-    }
-    consoleSpy.mockRestore();
-  });
-
-  it("4xx que não é sessão (ex.: 400) -> conclusivo fail-closed (sem indeterminado)", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const client = clienteComResposta({
-      data: null,
-      error: { code: "PGRST100", message: "bad request" },
-      status: 400,
+  it("403 -> motivo 'negado' (não preserva acesso)", async () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const c = cliente([
+      { data: null, error: { code: "42501", message: "denied" }, status: 403 },
+    ]);
+    await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+      unlocked: false,
+      motivo: "negado",
     });
-    await expect(
-      verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: false });
-    consoleSpy.mockRestore();
+    spy.mockRestore();
   });
 
-  it("promise REJEITADA (mock, throw síncrono) -> indeterminado:transporte (salvaguarda)", async () => {
-    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const client = clienteQueRejeita(new TypeError("Failed to fetch"));
+  it("401 -> tenta refreshSession; recuperou e o retry dá 200 -> { unlocked: true }", async () => {
+    const c = cliente(
+      [
+        {
+          data: null,
+          error: { code: "PGRST301", message: "JWT" },
+          status: 401,
+        },
+        { data: [{ id: "cv-1" }], error: null, status: 200 },
+      ],
+      { session: { access_token: "novo" } }
+    );
+    await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+      unlocked: true,
+    });
+    expect(c.auth.refreshSession).toHaveBeenCalledTimes(1);
+  });
 
-    await expect(
-      verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: false, indeterminado: "transporte" });
-    consoleSpy.mockRestore();
+  it("401 -> refreshSession NÃO recuperou a sessão -> motivo 'sessao'", async () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const c = cliente(
+      [{ data: null, error: { message: "JWT expired" }, status: 401 }],
+      { session: null }
+    );
+    await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+      unlocked: false,
+      motivo: "sessao",
+    });
+    spy.mockRestore();
+  });
+
+  it("promise REJEITADA (mock / throw síncrono) -> motivo 'indisponivel'", async () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const c = clienteQueRejeita(new TypeError("Failed to fetch"));
+    await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+      unlocked: false,
+      motivo: "indisponivel",
+    });
+    spy.mockRestore();
   });
 });

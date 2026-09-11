@@ -1,10 +1,15 @@
 /**
  * Cache SWR em memória da Rede -- vive no escopo do módulo, então
- * SOBREVIVE ao remount da árvore inteira que o destravamento do PIN causa
- * (`app/page.tsx`: `if (locked && pinHash) return <PinScreen>`), ao iOS
- * descartar a aba do PWA e a qualquer outro remount que não recarregue o
- * documento. Num reload de verdade (cold start) o módulo nasce limpo -- aí
- * quem cobre é a camada persistida (`redeCachePersist.ts`).
+ * SOBREVIVE enquanto o JavaScript da página estiver vivo: o remount da
+ * árvore inteira que o destravamento do PIN causa (`app/page.tsx`:
+ * `if (locked && pinHash) return <PinScreen>`), troca de aba interna,
+ * qualquer remount que NÃO recarregue o documento.
+ *
+ * NÃO sobrevive quando o documento é descartado: reload de verdade (cold
+ * start) OU o iOS matar a aba/documento do PWA em segundo plano pra
+ * liberar memória (ao reabrir, o documento recarrega do zero). Nesses
+ * casos o módulo nasce limpo e quem cobre é a camada persistida
+ * (`redeCachePersist.ts`, localStorage).
  *
  * Regras que este módulo garante (o resto é responsabilidade do
  * `RedeTab`/`RedeGatedTab` que o consomem):
@@ -34,6 +39,21 @@ export type RedeRecurso = "perfil" | "amigas" | "conversas" | "notificacoes";
  * dispara uma revalidação em segundo plano. */
 const STALE_MS = 60_000;
 
+/**
+ * Validade de um acesso CONFIRMADO (`verificarAcessoConvite` devolveu um
+ * `200` com convite). Dentro dessa janela o `RedeGatedTab` monta o Feed na
+ * hora ao destravar o PIN, sem esperar a revalidação. Vencida, ele volta a
+ * mostrar o spinner e revalida ANTES de exibir qualquer conteúdo privado.
+ *
+ * 90s é curto de propósito: cobre o caso comum (travou o PIN, digitou,
+ * destravou) e a troca rápida de app no celular, mas não deixa uma
+ * confirmação velha valer por horas quando o iOS mantém a aba viva em 2º
+ * plano. Além disso: enquanto a revalidação só devolver resultados
+ * INDETERMINADOS (offline/5xx), o acesso lembrado NÃO é estendido -- passou
+ * de 90s sem uma confirmação nova, o conteúdo privado sai da tela.
+ */
+const ACESSO_CONFIRMADO_TTL_MS = 90_000;
+
 const SLIDE_CAP = 120;
 const TOMBSTONE_CAP = 300;
 
@@ -51,7 +71,13 @@ interface FeedSnapshot {
 const mem = new Map<string, Snapshot>(); // `${userId}::${recurso}` -> snapshot
 const feedPorUsuario = new Map<string, FeedSnapshot>(); // userId -> feed
 const slideMemoria = new Map<string, number>(); // postId -> slide ativo do carrossel
-const acessoMemoria = new Map<string, boolean>(); // userId -> unlocked (apresentação)
+// userId -> acesso confirmado + quando (pra aplicar o TTL). Só entra aqui
+// resultado CONCLUSIVO de `verificarAcessoConvite` (200); indeterminado
+// nunca renova.
+const acessoMemoria = new Map<
+  string,
+  { unlocked: boolean; confirmadoEm: number }
+>();
 const tombstones = new Set<string>(); // ids de posts excluídos nesta sessão
 let segmento: "paraVoce" | "amigas" = "paraVoce";
 let scrollY = 0;
@@ -301,15 +327,30 @@ export function scrollLembrado(): number | null {
 
 // ─────────────────────────── acesso (apresentação) ──────────────────────
 
-/** Último resultado REAL (não erro de rede) de `verificarAcessoConvite`.
- * `undefined` = nunca verificado nesta sessão. Apresentação só -- ver o
- * cabeçalho do arquivo. */
-export function acessoLembrado(userId: string): boolean | undefined {
+/** Último resultado CONCLUSIVO (`200`) de `verificarAcessoConvite` +
+ * quando. `undefined` = nunca confirmado nesta sessão de JS. Apresentação
+ * só (nunca autorização) -- ver o cabeçalho do arquivo e o `RedeGatedTab`,
+ * que aplica o TTL antes de confiar nisto. */
+export function acessoLembrado(
+  userId: string
+): { unlocked: boolean; confirmadoEm: number } | undefined {
   return contaOk(userId) ? acessoMemoria.get(userId) : undefined;
 }
 
+/** `true` se há um acesso CONFIRMADO como liberado e ainda dentro da
+ * validade -- a única condição pra o `RedeGatedTab` montar o Feed sem
+ * revalidar antes. */
+export function acessoConfirmadoValido(userId: string): boolean {
+  const a = acessoLembrado(userId);
+  return (
+    !!a && a.unlocked && Date.now() - a.confirmadoEm < ACESSO_CONFIRMADO_TTL_MS
+  );
+}
+
 export function lembrarAcesso(userId: string, unlocked: boolean): void {
-  if (contaOk(userId)) acessoMemoria.set(userId, unlocked);
+  if (contaOk(userId)) {
+    acessoMemoria.set(userId, { unlocked, confirmadoEm: Date.now() });
+  }
 }
 
 /** Só pra teste -- reseta o módulo ao estado inicial. */
@@ -319,4 +360,9 @@ export function _resetParaTeste(): void {
   epoca = 0;
 }
 
-export const _internos = { STALE_MS, SLIDE_CAP, TOMBSTONE_CAP };
+export const _internos = {
+  STALE_MS,
+  SLIDE_CAP,
+  TOMBSTONE_CAP,
+  ACESSO_CONFIRMADO_TTL_MS,
+};

@@ -5,7 +5,7 @@ import { RedeTeaserGate, type GateSheet } from "./RedeTeaserGate";
 import { SerialKeySheet } from "./SerialKeySheet";
 import { RedeTab } from "./RedeTab";
 import { supabase } from "@/lib/supabase";
-import { verificarAcessoConvite } from "@/lib/rede/acesso";
+import { verificarAcessoConvite, type AcessoConvite } from "@/lib/rede/acesso";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Usuario } from "@/lib/types";
@@ -33,36 +33,35 @@ export function RedeGatedTab({
   active = true,
   onChatFocusChange,
 }: Props) {
-  // ── Política do acesso lembrado ──
-  // `redeCache.acessoLembrado(userId)` guarda o ÚLTIMO resultado CONCLUSIVO
-  // de `verificarAcessoConvite` (true/false; `undefined` = ainda não houve
-  // nenhum nesta sessão). Um resultado `indeterminado` (offline, 5xx,
-  // sessão) NUNCA o altera.
+  // ── Política do acesso lembrado (limite explícito) ──
+  // `verificarAcessoConvite` classifica cada resposta em `unlocked` +
+  // `motivo`. `redeCache` guarda só o resultado CONCLUSIVO (`200`) com um
+  // carimbo de tempo; `acessoConfirmadoValido` diz se esse carimbo ainda
+  // está dentro da janela `ACESSO_CONFIRMADO_TTL_MS` (90s).
   //
-  //  - Validade: escopo do MÓDULO -- sobrevive ao remount do PIN e ao iOS
-  //    descartar a aba do PWA; morre num cold start (reload) e some no
-  //    logout/troca de conta (`limparTudo`). NÃO é persistido em
-  //    localStorage de propósito: num cold start sempre revalidamos contra
-  //    o servidor (spinner) ANTES de exibir qualquer conteúdo da Rede.
-  //  - Uso: só decide se o `<RedeTab>` monta OTIMISTA (com o Feed cacheado)
-  //    enquanto a revalidação roda em 2º plano -- em vez de repetir o
-  //    spinner a cada destravamento de PIN. Nunca é autorização: cada query
-  //    dentro do RedeTab passa pela RLS do servidor.
-  //  - Revalidação: no mount (abaixo) e toda vez que a aba volta a ficar
-  //    visível (`visibilitychange`) -- cobre "convite revogado enquanto o
-  //    PWA esteve em segundo plano" mesmo sem PIN no meio. Um resultado
-  //    conclusivo de "sem convite" desmonta o RedeTab e zera memória +
-  //    localStorage na hora.
-  //  - Janela de exposição: entre o mount otimista e a revalidação
-  //    resolver, o conteúdo cacheado fica visível. Isso é uma ida ao
-  //    servidor -- instantânea no caso comum; até ~7s se a rede estiver
-  //    caída (3 retries do postgrest-js), mas aí o resultado é
-  //    `indeterminado` e nada é descartado. Só um `200` sem convite
-  //    descarta, e aí sim na mesma hora.
-  const acessoLembrado = redeCache.acessoLembrado(usuario.id);
-  const [unlocked, setUnlocked] = useState(acessoLembrado === true);
+  //  - **Dentro da validade:** ao destravar o PIN o `<RedeTab>` monta na
+  //    hora com o Feed cacheado, e a revalidação roda em 2º plano. Nunca é
+  //    autorização -- cada query do RedeTab passa pela RLS do servidor.
+  //  - **Vencida (ou nunca confirmado nesta sessão de JS):** spinner, e a
+  //    revalidação roda ANTES de exibir qualquer conteúdo privado. Cold
+  //    start cai sempre aqui (o carimbo é memória, não é persistido).
+  //  - **`indisponivel`** (offline / 5xx): não conclui nada. Preserva o
+  //    conteúdo em tela SÓ enquanto o acesso confirmado seguir válido;
+  //    passou de 90s sem uma confirmação nova, o conteúdo privado SAI da
+  //    tela (não fica lembrado indefinidamente em cima de indeterminados).
+  //  - **`sessao`** (401 e o refresh da sessão falhou), **`negado`** (403 /
+  //    4xx), **`sem_convite`** (200 sem convite): DERRUBAM -- desmontam o
+  //    RedeTab e zeram memória + localStorage na hora. Perda de
+  //    autorização tira o conteúdo privado da tela; não usamos "a RLS
+  //    filtraria" como desculpa pra continuar exibindo dado local.
+  //  - **Revalidação extra:** ao a aba voltar a ficar visível
+  //    (`visibilitychange`) e ao reconectar (`online`) -- cobre revogação
+  //    com o PWA em 2º plano, sem depender de um remount do PIN.
+  const [unlocked, setUnlocked] = useState(() =>
+    redeCache.acessoConfirmadoValido(usuario.id)
+  );
   const [verificandoAcesso, setVerificandoAcesso] = useState(
-    acessoLembrado === undefined
+    () => !redeCache.acessoConfirmadoValido(usuario.id)
   );
   const [sheet, setSheet] = useState<GateSheet>(null);
 
@@ -91,48 +90,57 @@ export function RedeGatedTab({
       return;
     }
 
-    /** Aplica um resultado de `verificarAcessoConvite`. `indeterminado`
-     * (offline/5xx/sessão) não mexe em nada além de encerrar o spinner
-     * inicial -- o conteúdo cacheado, se houver, continua em tela. Só um
-     * resultado conclusivo troca `unlocked` e, se for "sem convite", zera
-     * TODO o cache. */
-    const aplicar = (resultado: {
-      unlocked: boolean;
-      indeterminado?: unknown;
-    }) => {
+    const derrubar = () => {
+      // Perdeu (ou nunca teve) autorização: conteúdo privado sai da tela +
+      // zera memória e localStorage.
+      setUnlocked(false);
+      redeCache.limparTudo();
+      redeCachePersist.limpar(usuario.id);
+      setVerificandoAcesso(false);
+    };
+
+    /** Aplica um resultado de `verificarAcessoConvite`. */
+    const aplicar = (resultado: AcessoConvite) => {
       if (!ativo) return;
-      if (resultado.indeterminado) {
+      if (resultado.unlocked) {
+        redeCache.lembrarAcesso(usuario.id, true);
+        setUnlocked(true);
         setVerificandoAcesso(false);
         return;
       }
-      redeCache.lembrarAcesso(usuario.id, resultado.unlocked);
-      if (resultado.unlocked) {
-        setUnlocked(true);
-      } else {
-        // Resposta que CHEGOU sem convite resgatado -- acesso revogado ou
-        // nunca concedido. Descarta TODO o conteúdo: desmonta o <RedeTab>
-        // (some da tela) + zera cache em memória e localStorage (req 1 e 3).
-        setUnlocked(false);
-        redeCache.limparTudo();
-        redeCachePersist.limpar(usuario.id);
+      if (resultado.motivo === "indisponivel") {
+        // Não conclui nada. Se ainda há um acesso confirmado dentro da
+        // validade, segue mostrando o conteúdo cacheado; senão, o conteúdo
+        // privado não pode ficar em tela sem confirmação -- vai pro gate
+        // (SEM zerar o cache: offline pode se recuperar).
+        if (redeCache.acessoConfirmadoValido(usuario.id)) {
+          setVerificandoAcesso(false);
+        } else {
+          setUnlocked(false);
+          setVerificandoAcesso(false);
+        }
+        return;
       }
-      setVerificandoAcesso(false);
+      // "sem_convite" | "sessao" | "negado" -> derruba.
+      derrubar();
     };
 
     verificarAcessoConvite(supabase, usuario.id).then(aplicar);
 
-    // Aba volta a ficar visível (PWA saiu do 2º plano, troca de app no
-    // celular): revalida. Cobre "convite revogado enquanto esteve fora"
-    // mesmo quando não houve remount do PIN pra disparar o check do mount.
-    const aoVoltar = () => {
+    // Revalida quando a aba volta a ficar visível (PWA saiu do 2º plano,
+    // troca de app no celular) e quando a conexão volta -- cobre "convite
+    // revogado enquanto esteve fora" sem depender de um remount do PIN.
+    const revalidar = () => {
       if (document.visibilityState !== "visible") return;
       verificarAcessoConvite(supabase, usuario.id).then(aplicar);
     };
-    document.addEventListener("visibilitychange", aoVoltar);
+    document.addEventListener("visibilitychange", revalidar);
+    window.addEventListener("online", revalidar);
 
     return () => {
       ativo = false;
-      document.removeEventListener("visibilitychange", aoVoltar);
+      document.removeEventListener("visibilitychange", revalidar);
+      window.removeEventListener("online", revalidar);
     };
   }, [usuario.id]);
 
