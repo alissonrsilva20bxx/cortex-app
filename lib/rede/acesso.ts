@@ -1,4 +1,7 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  AuthRetryableFetchError,
+  type SupabaseClient,
+} from "@supabase/supabase-js";
 
 import type { Database } from "../database.types";
 
@@ -26,6 +29,21 @@ type RedeClient = SupabaseClient<Database>;
  * `401`: antes de desistir, tenta `auth.refreshSession()` uma vez. Se
  * recuperar a sessão, refaz a consulta; só devolve `"sessao"` se a sessão
  * continuar inválida.
+ *
+ * O PRÓPRIO `refreshSession()` pode falhar por dois motivos bem diferentes,
+ * e `@supabase/auth-js` devolve os dois do MESMO jeito -- RESOLVE (não
+ * rejeita) com `{ data: { session: null }, error }`:
+ *  - sessão de fato inválida (refresh token expirado/revogado) -- perda de
+ *    autorização real;
+ *  - falha de REDE durante o próprio refresh (reconexão do iOS após 2º
+ *    plano, DNS/TLS ainda não prontos) -- o SDK já tentou de novo sozinho
+ *    (`_refreshAccessToken`, backoff próprio) e desistiu com um
+ *    `AuthRetryableFetchError`, que segue sendo uma `AuthError` e por isso
+ *    nunca chega a rejeitar a promise.
+ * Confundir os dois faz uma reconexão instável DERRUBAR o acesso lembrado
+ * (`RedeGatedTab.derrubar()`, zera memória + localStorage) como se a sessão
+ * tivesse sido perdida de verdade -- só o 2º caso é `"indisponivel"`; o 1º
+ * segue `"sessao"`.
  *
  * Nota sobre RLS: a policy de `rede_convites` hoje só FILTRA linhas por
  * `usado_por = auth.uid()`, mas NÃO usamos isso como garantia de que todo
@@ -87,10 +105,31 @@ export async function verificarAcessoConvite(
 
   // 401: tenta recuperar a sessão UMA vez antes de desistir.
   if (r.error && r.status === 401) {
-    const { data, error } = await client.auth
-      .refreshSession()
-      .catch(() => ({ data: { session: null }, error: new Error("refresh") }));
-    if (error || !data?.session) {
+    const { data, error } = await client.auth.refreshSession().catch((e) => ({
+      data: { session: null },
+      error: e instanceof Error ? e : new Error("refresh"),
+    }));
+    if (error) {
+      // Falha de REDE durante o refresh (não a sessão em si) -- não é
+      // perda de autorização confirmada. Só este tipo específico e
+      // verificável de erro ganha o tratamento mais brando; qualquer outro
+      // erro do refresh (incluindo um rejeitado desconhecido, capturado
+      // acima) continua fail-closed como "sessao" -- ver o cabeçalho do
+      // arquivo.
+      if (error instanceof AuthRetryableFetchError) {
+        console.warn(
+          "[verificarAcessoConvite] refreshSession falhou por rede (401)",
+          error
+        );
+        return { unlocked: false, motivo: "indisponivel" };
+      }
+      console.warn(
+        "[verificarAcessoConvite] sessão não recuperada (401)",
+        error
+      );
+      return { unlocked: false, motivo: "sessao" };
+    }
+    if (!data?.session) {
       console.warn("[verificarAcessoConvite] sessão não recuperada (401)");
       return { unlocked: false, motivo: "sessao" };
     }

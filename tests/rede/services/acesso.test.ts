@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { AuthRetryableFetchError } from "@supabase/supabase-js";
 
 import { verificarAcessoConvite } from "../../../lib/rede/acesso";
 
@@ -127,6 +128,48 @@ describe("verificarAcessoConvite", () => {
     await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
       unlocked: false,
       motivo: "sessao",
+    });
+    spy.mockRestore();
+  });
+
+  it("401 -> refreshSession falha por REDE (não por sessão inválida) -> motivo 'indisponivel', não 'sessao'", async () => {
+    // Reproduz o formato real que @supabase/auth-js devolve quando o
+    // refresh em si esbarra numa falha de rede (reconexão do iOS após 2º
+    // plano, DNS/TLS ainda não prontos): `_refreshAccessToken` RESOLVE (não
+    // rejeita) com `{ data: { session: null }, error: AuthRetryableFetchError }`
+    // depois de esgotar o próprio retry interno do SDK (confirmado lendo
+    // node_modules/@supabase/auth-js/dist/main/GoTrueClient.js:3896-3933 e
+    // lib/fetch.js:121-124 -- todo erro de fetch cru vira
+    // `AuthRetryableFetchError`, que É uma `AuthError`, então nunca rejeita
+    // aqui). O código atual não distingue isto de uma sessão de fato
+    // inválida (refresh_token expirado/revogado) -- ambos caem em
+    // `if (error || !data?.session)` e viram "sessao", que no
+    // `RedeGatedTab` DERRUBA (zera memória + localStorage). Uma falha de
+    // rede durante o refresh não pode ter o mesmo efeito que perder a
+    // autorização de verdade.
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const c = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue({
+              data: null,
+              error: { message: "JWT expired" },
+              status: 401,
+            }),
+          }),
+        }),
+      }),
+      auth: {
+        refreshSession: vi.fn().mockResolvedValue({
+          data: { session: null },
+          error: new AuthRetryableFetchError("TypeError: fetch failed", 0),
+        }),
+      },
+    };
+    await expect(verificarAcessoConvite(c as never, "u1")).resolves.toEqual({
+      unlocked: false,
+      motivo: "indisponivel",
     });
     spy.mockRestore();
   });
