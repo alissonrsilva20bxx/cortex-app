@@ -344,8 +344,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   const [feedHasMore, setFeedHasMore] = useState(
     () => semente.feed?.hasMore ?? true
   );
-  const feedHasMoreRef = useRef(feedHasMore);
-  feedHasMoreRef.current = feedHasMore;
   const [feedLoadingMore, setFeedLoadingMore] = useState(false);
   // Filtro Para você / Amigas -- lembrado entre remounts (o remount do PIN
   // não deve jogar a pessoa de volta pra "Para você").
@@ -424,9 +422,15 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     listarFeed(supabase)
       .then((data) => {
         if (!ativo || !epocaValida(ep)) return;
-        // Um refresh só busca a página 1; se já tínhamos chegado ao fim
-        // antes, continua sem "carregar mais".
-        const hasMore = feedHasMoreRef.current && data.length >= FEED_PAGE_SIZE;
+        // Página 1 cheia ⇒ há mais pra paginar. Antes isto era condicionado
+        // ao `hasMore` anterior ("se já chegou ao fim, continua sem carregar
+        // mais") -- mas na semente do cold start esse valor nasce de
+        // `feed.length >= PAGE_SIZE`, `false` sempre que o cache foi salvo
+        // com o feed ainda curto. Resultado: mesmo o servidor devolvendo uma
+        // página cheia, o botão "carregar mais" ficava escondido até o
+        // próximo reload. O custo de tirar a trava: 1 clique "carregar mais"
+        // que volta vazio quando o feed tem exatamente um múltiplo de 10.
+        const hasMore = data.length >= FEED_PAGE_SIZE;
         const conciliado = redeCache.reconciliarFeed(
           postsRef.current,
           data,

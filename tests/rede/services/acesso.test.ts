@@ -2,7 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import { verificarAcessoConvite } from "../../../lib/rede/acesso";
 
-function clienteComResposta(resposta: unknown) {
+/** Um cliente cuja `.limit(1)` RESOLVE com a resposta dada (o caminho de
+ * longe mais comum: postgrest-js resolve mesmo quando o `fetch` falha). */
+function clienteComResposta(resposta: {
+  data: unknown;
+  error: unknown;
+  status: number;
+  statusText?: string;
+}) {
   return {
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
@@ -14,6 +21,7 @@ function clienteComResposta(resposta: unknown) {
   };
 }
 
+/** Um cliente cuja `.limit(1)` REJEITA (raro: mock, throw síncrono). */
 function clienteQueRejeita(erro: unknown) {
   return {
     from: vi.fn().mockReturnValue({
@@ -27,10 +35,11 @@ function clienteQueRejeita(erro: unknown) {
 }
 
 describe("verificarAcessoConvite", () => {
-  it("libera acesso quando existe um convite resgatado pelo usuário", async () => {
+  it("libera acesso quando existe um convite resgatado (200 + linha)", async () => {
     const client = clienteComResposta({
       data: [{ id: "convite-1" }],
       error: null,
+      status: 200,
     });
 
     await expect(
@@ -38,39 +47,82 @@ describe("verificarAcessoConvite", () => {
     ).resolves.toEqual({ unlocked: true });
   });
 
-  it("não libera acesso quando não existe convite resgatado", async () => {
-    const client = clienteComResposta({ data: [], error: null });
+  it("CONCLUSIVO 'sem convite': 200 + zero linhas (RLS filtrou) -> gate limpa o cache", async () => {
+    const client = clienteComResposta({ data: [], error: null, status: 200 });
 
     await expect(
       verificarAcessoConvite(client as never, "user-1")
     ).resolves.toEqual({ unlocked: false });
   });
 
-  it("resposta que CHEGOU com erro (sessão inválida / RLS / 5xx): fail-closed SEM `erro` -- o gate limpa o cache", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    // 401/403/JWT expirado voltam como `error` numa resposta resolvida --
-    // NÃO é falha de rede, não pode preservar o cache (req 1).
-    for (const err of [
-      { code: "PGRST301", message: "JWT expired" },
-      { code: "42501", message: "permission denied for table rede_convites" },
-      { message: "Internal Server Error", code: "" },
-    ]) {
-      const client = clienteComResposta({ data: null, error: err });
+  it("OFFLINE real: postgrest-js resolve com status 0 (não rejeita) -> indeterminado:transporte", async () => {
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Resposta sintética que o postgrest-js >=2.x devolve depois de 3
+    // retries quando o `fetch` falha (offline / DNS / TLS). Confirmado em
+    // runtime -- ver o cabeçalho de lib/rede/acesso.ts.
+    const client = clienteComResposta({
+      data: null,
+      error: { message: "TypeError: fetch failed", code: "" },
+      status: 0,
+      statusText: "",
+    });
+
+    await expect(
+      verificarAcessoConvite(client as never, "user-1")
+    ).resolves.toEqual({ unlocked: false, indeterminado: "transporte" });
+    consoleSpy.mockRestore();
+  });
+
+  it("SERVIDOR fora (5xx) -> indeterminado:servidor, NÃO 'sem convite'", async () => {
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (const status of [500, 502, 503]) {
+      const client = clienteComResposta({
+        data: null,
+        error: { message: "Internal Server Error", code: "" },
+        status,
+      });
       await expect(
         verificarAcessoConvite(client as never, "user-1")
-      ).resolves.toEqual({ unlocked: false });
+      ).resolves.toEqual({ unlocked: false, indeterminado: "servidor" });
     }
     consoleSpy.mockRestore();
   });
 
-  it("o `fetch` REJEITOU (offline / DNS / conexão recusada): `erro: true`, cache preservado (req 4)", async () => {
+  it("SESSÃO expirada (401/403, JWT) -> indeterminado:sessao, cache preservado", async () => {
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (const status of [401, 403]) {
+      const client = clienteComResposta({
+        data: null,
+        error: { code: "PGRST301", message: "JWT expired" },
+        status,
+      });
+      await expect(
+        verificarAcessoConvite(client as never, "user-1")
+      ).resolves.toEqual({ unlocked: false, indeterminado: "sessao" });
+    }
+    consoleSpy.mockRestore();
+  });
+
+  it("4xx que não é sessão (ex.: 400) -> conclusivo fail-closed (sem indeterminado)", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const client = clienteComResposta({
+      data: null,
+      error: { code: "PGRST100", message: "bad request" },
+      status: 400,
+    });
+    await expect(
+      verificarAcessoConvite(client as never, "user-1")
+    ).resolves.toEqual({ unlocked: false });
+    consoleSpy.mockRestore();
+  });
+
+  it("promise REJEITADA (mock, throw síncrono) -> indeterminado:transporte (salvaguarda)", async () => {
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const client = clienteQueRejeita(new TypeError("Failed to fetch"));
 
     await expect(
       verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: false, erro: true });
-
+    ).resolves.toEqual({ unlocked: false, indeterminado: "transporte" });
     consoleSpy.mockRestore();
   });
 });

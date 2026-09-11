@@ -115,23 +115,32 @@ describe("acesso: cache é apresentação, nunca autorização (req 3)", () => {
     expect(src).toContain("verificarAcessoConvite(supabase, usuario.id)");
   });
 
-  it("erro de rede NÃO rebaixa nem limpa (req 4); resposta real de 'sem acesso' descarta o conteúdo (req 3)", () => {
+  it("resultado indeterminado (offline/5xx/sessão) NÃO rebaixa nem limpa (req 4)", () => {
     expect(src).toMatch(
-      /if \(resultado\.erro\) \{[\s\S]*?setVerificandoAcesso\(false\);\s*return;/
+      /if \(resultado\.indeterminado\) \{[\s\S]*?setVerificandoAcesso\(false\);\s*return;/
     );
+  });
+
+  it("resposta conclusiva de 'sem convite' descarta memória + localStorage (req 3)", () => {
     expect(src).toMatch(
       /redeCache\.limparTudo\(\);\s*redeCachePersist\.limpar\(usuario\.id\)/
     );
   });
 
-  it("acesso.ts: só o `catch` (fetch rejeitou) marca `erro` -- 401/403/RLS caem no `if (error)` sem `erro`", () => {
+  it("revalida quando a aba volta a ficar visível (revogação com o PWA em 2º plano)", () => {
+    expect(src).toMatch(/addEventListener\("visibilitychange"/);
+    expect(src).toMatch(/document\.visibilityState !== "visible"/);
+  });
+
+  it("acesso.ts classifica pelo status: só 200+vazio é conclusivo, o resto é indeterminado", () => {
     const ac = read("lib/rede/acesso.ts");
-    // o if(error) NÃO devolve erro:true
-    expect(ac).toMatch(/if \(error\) \{[\s\S]*?return \{ unlocked: false \};/);
-    // só o catch devolve erro:true
-    expect(ac).toMatch(
-      /catch \(e\) \{[\s\S]*?return \{ unlocked: false, erro: true \};/
-    );
+    // offline real chega como status 0 numa promise RESOLVIDA, não rejeitada
+    expect(ac).toMatch(/status === 0.*return "transporte"/);
+    expect(ac).toMatch(/status >= 500.*return "servidor"/);
+    expect(ac).toMatch(/status === 401 \|\| status === 403.*return "sessao"/);
+    // o único ramo que devolve unlocked:false SEM indeterminado além do 4xx
+    // é o 200 + data vazio
+    expect(ac).toMatch(/return \{ unlocked: !!\(data && data\.length > 0\) \}/);
   });
 });
 

@@ -316,48 +316,187 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       atualizado_em: daysFromNow(-5),
     },
   ];
-  const rede_posts = [
+  // 15 posts -- o suficiente pra exercitar a paginação do feed
+  // (FEED_PAGE_SIZE = 10: página 1 cheia + página 2 com resto, `hasMore`
+  // vira false só na 2ª). `criado_em` estritamente decrescente pra o cursor
+  // `.lt("criado_em", ...)` de `loadMorePosts` não pular nem repetir.
+  const P: Array<{
+    id: string;
+    autor: string;
+    categoria: string;
+    texto: string;
+    h: number;
+  }> = [
     {
       id: "rede-post-1",
-      autor_id: uid,
+      autor: uid,
       categoria: "conquista",
       texto: "Fechei a agenda da semana inteira! 🎉",
-      criado_em: hoursAgoIso(3),
-      atualizado_em: hoursAgoIso(3),
+      h: 3,
+    },
+    {
+      id: "rede-post-4",
+      autor: uid,
+      categoria: "conquista",
+      texto: "Antes e depois da cliente de hoje 💅 deslizem pro lado",
+      h: 6,
+    },
+    {
+      id: "rede-post-5",
+      autor: FRIEND_ID,
+      categoria: "dica",
+      texto:
+        "Quem trabalha sozinha: bloco de 15min entre clientes salva o dia.",
+      h: 12,
+    },
+    {
+      id: "rede-post-6",
+      autor: uid,
+      categoria: "duvida",
+      texto: "Vale a pena migrar pra cabine própria ou continuo alugando?",
+      h: 18,
     },
     {
       id: "rede-post-2",
-      autor_id: FRIEND_ID,
+      autor: FRIEND_ID,
       categoria: "dica",
       texto: "Dica: cliente que remarca demais, cobra sinal antecipado.",
-      criado_em: hoursAgoIso(26),
-      atualizado_em: hoursAgoIso(26),
+      h: 26,
+    },
+    {
+      id: "rede-post-7",
+      autor: FRIEND_ID,
+      categoria: "desabafo",
+      texto: "Semana puxada, três no-show seguidos. Amanhã é outro dia.",
+      h: 34,
+    },
+    {
+      id: "rede-post-8",
+      autor: uid,
+      categoria: "conquista",
+      texto: "Primeira cliente que veio por indicação da Rede! 🥹",
+      h: 42,
     },
     {
       id: "rede-post-3",
-      autor_id: uid,
+      autor: uid,
       categoria: "geral",
       texto: "Alguém indica fornecedor de insumo bom na região?",
-      criado_em: hoursAgoIso(52),
-      atualizado_em: hoursAgoIso(52),
+      h: 52,
     },
-  ];
-  // 1 foto no post 1 -- exercita a re-assinatura sob demanda no cold start
-  // (o cache persistido não guarda URL assinada). Dimensões no nome da
-  // miniatura (3:4 retrato). Os blobs caem no placeholder SVG do mock.
-  const fotoPath = `${uid}/posts/rede-post-1/1.jpg`;
-  const fotoThumbPath = `${uid}/posts/rede-post-1/1-thumb-1080x1350.jpg`;
-  const rede_post_fotos = [
     {
-      id: "rede-foto-1",
-      post_id: "rede-post-1",
-      autor_id: uid,
-      path: fotoPath,
-      thumb_path: fotoThumbPath,
-      ordem: 1,
-      criado_em: hoursAgoIso(3),
+      id: "rede-post-9",
+      autor: FRIEND_ID,
+      categoria: "dica",
+      texto: "Planilha de custo por serviço mudou meu preço. Recomendo fazer.",
+      h: 60,
+    },
+    {
+      id: "rede-post-10",
+      autor: uid,
+      categoria: "geral",
+      texto: "Playlist boa pro studio? Tô cansada da minha.",
+      h: 72,
+    },
+    {
+      id: "rede-post-11",
+      autor: FRIEND_ID,
+      categoria: "conquista",
+      texto: "Bati a meta do mês faltando uma semana!",
+      h: 90,
+    },
+    {
+      id: "rede-post-12",
+      autor: uid,
+      categoria: "duvida",
+      texto: "Como vocês lidam com cliente que pede desconto toda vez?",
+      h: 110,
+    },
+    {
+      id: "rede-post-13",
+      autor: FRIEND_ID,
+      categoria: "dica",
+      texto: "Foto de portfólio: luz da janela > ringlight, sempre.",
+      h: 130,
+    },
+    {
+      id: "rede-post-14",
+      autor: uid,
+      categoria: "desabafo",
+      texto:
+        "Dia difícil. Obrigada a quem responde aqui, ajuda mais do que parece.",
+      h: 160,
+    },
+    {
+      id: "rede-post-15",
+      autor: FRIEND_ID,
+      categoria: "geral",
+      texto: "Alguém mais de Zona Sul? Bora marcar um café.",
+      h: 190,
     },
   ];
+  const rede_posts = P.map((p) => ({
+    id: p.id,
+    autor_id: p.autor,
+    categoria: p.categoria,
+    texto: p.texto,
+    criado_em: hoursAgoIso(p.h),
+    atualizado_em: hoursAgoIso(p.h),
+  }));
+
+  // Fotos (blobs caem no placeholder SVG do mock -- o que importa é o path
+  // existir pra assinar). Dimensões vão no nome da miniatura
+  // (`-thumb-{L}x{A}.jpg`), como a rota real grava.
+  //  - post-1: 1 foto 3:4 -- exercita a re-assinatura sob demanda no cold
+  //    start (o cache persistido não guarda URL assinada).
+  //  - post-4: 2 fotos com proporções diferentes (3:4 e 4:3) -- exercita o
+  //    carrossel e a memória de slide (`redeCache.lembrarSlide`) entre
+  //    remounts.
+  const foto = (
+    postId: string,
+    autor: string,
+    ordem: number,
+    dims: string,
+    h: number
+  ) => {
+    const path = `${autor}/posts/${postId}/${ordem}.jpg`;
+    const thumb_path = `${autor}/posts/${postId}/${ordem}-thumb-${dims}.jpg`;
+    return {
+      row: {
+        id: `rede-foto-${postId}-${ordem}`,
+        post_id: postId,
+        autor_id: autor,
+        path,
+        thumb_path,
+        ordem,
+        criado_em: hoursAgoIso(h),
+      },
+      files: [
+        {
+          path,
+          name: `${ordem}.jpg`,
+          categoria: "rede",
+          size: 320_000,
+          mimeType: "image/jpeg",
+          createdAt: hoursAgoIso(h),
+        },
+        {
+          path: thumb_path,
+          name: `${ordem}-thumb-${dims}.jpg`,
+          categoria: "rede",
+          size: 24_000,
+          mimeType: "image/jpeg",
+          createdAt: hoursAgoIso(h),
+        },
+      ],
+    };
+  };
+  const fotosDef = [
+    foto("rede-post-1", uid, 1, "1080x1350", 3),
+    foto("rede-post-4", uid, 1, "1080x1350", 6),
+    foto("rede-post-4", uid, 2, "1080x810", 6),
+  ];
+  const rede_post_fotos = fotosDef.map((f) => f.row);
   const rede_curtidas = [
     { post_id: "rede-post-2", user_id: uid, criado_em: hoursAgoIso(20) },
     { post_id: "rede-post-1", user_id: FRIEND_ID, criado_em: hoursAgoIso(2) },
@@ -424,24 +563,9 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       mimeType: "image/jpeg",
       createdAt: daysFromNow(-12),
     },
-    // Foto do rede-post-1 (principal + miniatura) -- sem blobUrl, o mock
-    // serve o placeholder SVG; o que importa é o path existir pra assinar.
-    {
-      path: fotoPath,
-      name: "1.jpg",
-      categoria: "rede",
-      size: 320_000,
-      mimeType: "image/jpeg",
-      createdAt: hoursAgoIso(3),
-    },
-    {
-      path: fotoThumbPath,
-      name: "1-thumb-1080x1350.jpg",
-      categoria: "rede",
-      size: 24_000,
-      mimeType: "image/jpeg",
-      createdAt: hoursAgoIso(3),
-    },
+    // Fotos dos posts da Rede (principal + miniatura) -- sem blobUrl, o
+    // mock serve o placeholder SVG; o que importa é o path existir p/ assinar.
+    ...fotosDef.flatMap((f) => f.files),
   ];
 
   return {
