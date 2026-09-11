@@ -46,23 +46,24 @@ describe("verificarAcessoConvite", () => {
     ).resolves.toEqual({ unlocked: false });
   });
 
-  it("falha fechado (sem acesso) e não rejeita quando a consulta retorna erro", async () => {
+  it("resposta que CHEGOU com erro (sessão inválida / RLS / 5xx): fail-closed SEM `erro` -- o gate limpa o cache", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const client = clienteComResposta({
-      data: null,
-      error: new Error("falha de rede"),
-    });
-
-    // `erro: true` distingue "a consulta falhou" de "respondeu sem convite"
-    // -- o RedeGatedTab NÃO descarta o cache num erro de rede (req 4).
-    await expect(
-      verificarAcessoConvite(client as never, "user-1")
-    ).resolves.toEqual({ unlocked: false, erro: true });
-
+    // 401/403/JWT expirado voltam como `error` numa resposta resolvida --
+    // NÃO é falha de rede, não pode preservar o cache (req 1).
+    for (const err of [
+      { code: "PGRST301", message: "JWT expired" },
+      { code: "42501", message: "permission denied for table rede_convites" },
+      { message: "Internal Server Error", code: "" },
+    ]) {
+      const client = clienteComResposta({ data: null, error: err });
+      await expect(
+        verificarAcessoConvite(client as never, "user-1")
+      ).resolves.toEqual({ unlocked: false });
+    }
     consoleSpy.mockRestore();
   });
 
-  it("falha fechado (sem acesso) e não rejeita quando o client lança/rejeita (ex.: offline)", async () => {
+  it("o `fetch` REJEITOU (offline / DNS / conexão recusada): `erro: true`, cache preservado (req 4)", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const client = clienteQueRejeita(new TypeError("Failed to fetch"));
 

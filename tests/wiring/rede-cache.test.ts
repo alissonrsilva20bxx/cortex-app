@@ -123,6 +123,30 @@ describe("acesso: cache é apresentação, nunca autorização (req 3)", () => {
       /redeCache\.limparTudo\(\);\s*redeCachePersist\.limpar\(usuario\.id\)/
     );
   });
+
+  it("acesso.ts: só o `catch` (fetch rejeitou) marca `erro` -- 401/403/RLS caem no `if (error)` sem `erro`", () => {
+    const ac = read("lib/rede/acesso.ts");
+    // o if(error) NÃO devolve erro:true
+    expect(ac).toMatch(/if \(error\) \{[\s\S]*?return \{ unlocked: false \};/);
+    // só o catch devolve erro:true
+    expect(ac).toMatch(
+      /catch \(e\) \{[\s\S]*?return \{ unlocked: false, erro: true \};/
+    );
+  });
+});
+
+describe("proteção por época barra setState tardio da conta anterior (req 2)", () => {
+  const src = read("components/rede/RedeTab.tsx");
+
+  it("cada resposta em voo checa a época antes de tocar estado OU cache", () => {
+    expect(src).toMatch(
+      /const epocaValida = useCallback\(\s*\(ep: number\) => redeCache\.epocaAtual\(\) === ep/
+    );
+    // usado nos 5 fetches (feed .then/.catch, perfil x2, amigas, conversas,
+    // notificações) + loadMorePosts
+    const usos = src.match(/!epocaValida\(ep\)/g) ?? [];
+    expect(usos.length).toBeGreaterThanOrEqual(7);
+  });
 });
 
 describe("logout limpa o cache da Rede (req 4/6)", () => {

@@ -75,8 +75,10 @@ export function RedeGatedTab({
       if (!ativo) return;
 
       if (resultado.erro) {
-        // Falha de rede: não rebaixa nem limpa nada. Se já havia acesso
-        // lembrado, o Feed cacheado continua em tela (req 4).
+        // Falha de TRANSPORTE (o fetch rejeitou: offline/DNS). Não rebaixa
+        // nem limpa: se já havia acesso lembrado, o Feed cacheado continua
+        // em tela (req 4). 401/403/RLS NÃO caem aqui -- `acesso.ts` só
+        // marca `erro` quando o fetch rejeitou.
         setVerificandoAcesso(false);
         return;
       }
@@ -85,8 +87,10 @@ export function RedeGatedTab({
       if (resultado.unlocked) {
         setUnlocked(true);
       } else {
-        // Resposta real de "sem convite resgatado": acesso revogado (ou
-        // nunca teve). Descarta todo o conteúdo cacheado (req 3).
+        // Resposta que CHEGOU sem convite resgatado -- acesso revogado,
+        // sessão inválida, RLS, 5xx. Descarta TODO o conteúdo: desmonta o
+        // <RedeTab> (some da tela) + zera cache em memória e localStorage
+        // (req 1 e 3).
         setUnlocked(false);
         redeCache.limparTudo();
         redeCachePersist.limpar(usuario.id);

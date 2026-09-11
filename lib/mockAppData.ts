@@ -342,6 +342,22 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       atualizado_em: hoursAgoIso(52),
     },
   ];
+  // 1 foto no post 1 -- exercita a re-assinatura sob demanda no cold start
+  // (o cache persistido não guarda URL assinada). Dimensões no nome da
+  // miniatura (3:4 retrato). Os blobs caem no placeholder SVG do mock.
+  const fotoPath = `${uid}/posts/rede-post-1/1.jpg`;
+  const fotoThumbPath = `${uid}/posts/rede-post-1/1-thumb-1080x1350.jpg`;
+  const rede_post_fotos = [
+    {
+      id: "rede-foto-1",
+      post_id: "rede-post-1",
+      autor_id: uid,
+      path: fotoPath,
+      thumb_path: fotoThumbPath,
+      ordem: 1,
+      criado_em: hoursAgoIso(3),
+    },
+  ];
   const rede_curtidas = [
     { post_id: "rede-post-2", user_id: uid, criado_em: hoursAgoIso(20) },
     { post_id: "rede-post-1", user_id: FRIEND_ID, criado_em: hoursAgoIso(2) },
@@ -408,6 +424,24 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       mimeType: "image/jpeg",
       createdAt: daysFromNow(-12),
     },
+    // Foto do rede-post-1 (principal + miniatura) -- sem blobUrl, o mock
+    // serve o placeholder SVG; o que importa é o path existir pra assinar.
+    {
+      path: fotoPath,
+      name: "1.jpg",
+      categoria: "rede",
+      size: 320_000,
+      mimeType: "image/jpeg",
+      createdAt: hoursAgoIso(3),
+    },
+    {
+      path: fotoThumbPath,
+      name: "1-thumb-1080x1350.jpg",
+      categoria: "rede",
+      size: 24_000,
+      mimeType: "image/jpeg",
+      createdAt: hoursAgoIso(3),
+    },
   ];
 
   return {
@@ -425,7 +459,7 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       rede_posts,
       rede_curtidas,
       rede_comentarios,
-      rede_post_fotos: [],
+      rede_post_fotos,
       rede_livelinks: [],
       rede_wishlist: [],
       rede_clientes: [],

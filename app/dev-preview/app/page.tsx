@@ -123,6 +123,24 @@ export default function DevPreviewApp() {
   // preview isolado de /dev-preview/rede.
   const [chatComposerFocused, setChatComposerFocused] = useState(false);
 
+  // Gancho de teste (só no shell mockado): remonta a árvore de abas inteira
+  // como o destravamento do PIN faz na rota real, SEM tocar no timer de 30s
+  // nem na validação do PIN. `__previewLock()` troca a árvore pelo
+  // PinScreen; `__previewUnlock()` volta — a Rede remonta e deve restaurar
+  // do cache em memória (redeCache), sem skeleton.
+  useEffect(() => {
+    const w = window as unknown as Record<string, () => void>;
+    w.__previewLock = () => {
+      setPinHash((h) => h ?? "preview-lock-000000000000000000000000000000");
+      setLocked(true);
+    };
+    w.__previewUnlock = () => setLocked(false);
+    return () => {
+      delete w.__previewLock;
+      delete w.__previewUnlock;
+    };
+  }, []);
+
   useEffect(() => {
     if (locked) return;
     Promise.all([

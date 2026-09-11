@@ -215,12 +215,14 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     let feedMem = redeCache.lerFeed(usuario.id);
     if (!feedMem) {
       const persistido = redeCachePersist.carregar(usuario.id);
-      if (persistido && persistido.feed.length > 0) {
-        const hasMore = persistido.feed.length >= FEED_PAGE_SIZE;
-        // sobe pro cache em memória pra próximos remounts nesta sessão
-        redeCache.escreverFeed(usuario.id, persistido.feed, hasMore);
-        feedMem = { posts: persistido.feed, hasMore, stale: true };
-        if (persistido.perfil) {
+      if (persistido) {
+        if (persistido.feed.length > 0) {
+          const hasMore = persistido.feed.length >= FEED_PAGE_SIZE;
+          // sobe pro cache em memória pra próximos remounts nesta sessão
+          redeCache.escreverFeed(usuario.id, persistido.feed, hasMore);
+          feedMem = { posts: persistido.feed, hasMore, stale: true };
+        }
+        if (persistido.perfil && !redeCache.ler(usuario.id, "perfil")) {
           redeCache.escrever<PerfilCache>(usuario.id, "perfil", {
             perfil: persistido.perfil,
             liveLinks: [],
@@ -283,14 +285,14 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
           corAvatar: corAvatarAleatoria(),
         });
       }
-      if (!ativo) return;
+      if (!ativo || !epocaValida(ep)) return;
       setPerfil(p);
       const [links, wishlist, clientesData] = await Promise.all([
         listarLiveLinks(supabase, usuario.id),
         listarWishlistItems(supabase, usuario.id),
         listarClientes(supabase, usuario.id),
       ]);
-      if (!ativo) return;
+      if (!ativo || !epocaValida(ep)) return;
       setLiveLinks(links);
       setWishlistItems(wishlist);
       setClientes(clientesData);
@@ -367,6 +369,16 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   // em voo quando a pessoa curtiu não pode desfazer o like (req 6).
   const likesPendentes = useRef<Set<string>>(new Set());
 
+  // Guarda de época: uma resposta em voo capturada com `ep` no início do
+  // fetch só pode tocar estado OU cache se a época não mudou. Troca de
+  // conta, logout e `limparTudo` avançam a época -- então isto barra tanto
+  // o write no cache (`escrever*(..., ep)`) quanto o `setState` tardio da
+  // conta anterior (req 2).
+  const epocaValida = useCallback(
+    (ep: number) => redeCache.epocaAtual() === ep,
+    []
+  );
+
   /** setPosts + espelho no cache em memória, numa tacada (write-through). */
   const aplicarPosts = useCallback(
     (updater: (p: FeedPost[]) => FeedPost[]) => {
@@ -411,7 +423,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     const temSemente = semente.feed !== null;
     listarFeed(supabase)
       .then((data) => {
-        if (!ativo) return;
+        if (!ativo || !epocaValida(ep)) return;
         // Um refresh só busca a página 1; se já tínhamos chegado ao fim
         // antes, continua sem "carregar mais".
         const hasMore = feedHasMoreRef.current && data.length >= FEED_PAGE_SIZE;
@@ -434,7 +446,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       })
       .catch((e) => {
         console.error("[RedeTab feed]", e);
-        if (!ativo) return;
+        if (!ativo || !epocaValida(ep)) return;
         // Falha de rede com feed cacheado em tela: mantém o conteúdo
         // navegável, não vira erro duro (req 4).
         if (temSemente) {
@@ -467,6 +479,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
             !redeCache.estaExcluido(p.id)
         ),
       ];
+      if (!epocaValida(ep)) return;
       redeCache.escreverFeed(usuario.id, juntos, hasMore, ep);
       setPosts(juntos);
       setFeedHasMore(hasMore);
@@ -542,7 +555,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       listarSugestoes(supabase),
     ])
       .then(([amigasData, solicitacoesData, enviadasData, sugestoesData]) => {
-        if (!ativo) return;
+        if (!ativo || !epocaValida(ep)) return;
         setFriends(amigasData);
         setRequests(solicitacoesData);
         setSentRequests(enviadasData);
@@ -626,7 +639,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     setConversationsError(false);
     listarConversas(supabase)
       .then((data) => {
-        if (!ativo) return;
+        if (!ativo || !epocaValida(ep)) return;
         setConversations(data);
         setConversationsLoading(false);
         redeCache.escrever<ConversaResumo[]>(usuario.id, "conversas", data, ep);
@@ -802,7 +815,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     setNotificacoesError(false);
     listarNotificacoes(supabase)
       .then((data) => {
-        if (!ativo) return;
+        if (!ativo || !epocaValida(ep)) return;
         setNotificacoes(data);
         setNotificacoesLoading(false);
         redeCache.escrever<Notificacao[]>(usuario.id, "notificacoes", data, ep);
