@@ -9,7 +9,13 @@
  * start) OU o iOS matar a aba/documento do PWA em segundo plano pra
  * liberar memória (ao reabrir, o documento recarrega do zero). Nesses
  * casos o módulo nasce limpo e quem cobre é a camada persistida
- * (`redeCachePersist.ts`, localStorage).
+ * (`redeCachePersist.ts`, localStorage) -- inclusive o carimbo de "acesso
+ * confirmado" (`hidratarAcesso`, chamado pelo `RedeGatedTab` no mount): sem
+ * isso, um documento novo sempre tratava a conta como "nunca confirmado
+ * nesta sessão", mesmo com uma confirmação de segundos atrás, e a aba
+ * inteira esperava o round-trip de rede antes de mostrar qualquer coisa. A
+ * hidratação só REPÕE o carimbo na memória -- o TTL de 90s continua sendo
+ * decidido só por `acessoConfirmadoValido`, e não muda.
  *
  * Regras que este módulo garante (o resto é responsabilidade do
  * `RedeTab`/`RedeGatedTab` que o consomem):
@@ -356,10 +362,30 @@ export function acessoConfirmadoValido(userId: string): boolean {
   );
 }
 
-export function lembrarAcesso(userId: string, unlocked: boolean): void {
+export function lembrarAcesso(
+  userId: string,
+  unlocked: boolean,
+  confirmadoEm: number = Date.now()
+): void {
   if (contaOk(userId)) {
-    acessoMemoria.set(userId, { unlocked, confirmadoEm: Date.now() });
+    acessoMemoria.set(userId, { unlocked, confirmadoEm });
   }
+}
+
+/** Semeia a memória com um carimbo lido de `redeCachePersist` -- só no 1º
+ * momento em que esta conta é vista nesta sessão de JS (documento novo:
+ * reload de verdade, ou o iOS descartou a aba em 2º plano). Nunca sobrescreve
+ * um resultado já obtido NESTA sessão (`acessoMemoria.has`): um carimbo
+ * antigo do disco não pode pisar numa confirmação (ou derrubada) mais nova
+ * que já rodou. Não aplica o TTL -- quem decide validade continua sendo
+ * `acessoConfirmadoValido`, chamada depois desta função com o mesmo
+ * `confirmadoEm` agora em memória. */
+export function hidratarAcesso(
+  userId: string,
+  persistido: { unlocked: boolean; confirmadoEm: number } | null
+): void {
+  if (!persistido || !contaOk(userId) || acessoMemoria.has(userId)) return;
+  acessoMemoria.set(userId, persistido);
 }
 
 /** Só pra teste -- reseta o módulo ao estado inicial. */

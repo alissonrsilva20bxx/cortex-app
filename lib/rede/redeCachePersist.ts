@@ -22,6 +22,22 @@
  * desabilitado, cota estourada, JSON corrompido e mudança de versão do
  * schema -- qualquer um deles degrada pra "sem cache persistido" (a Rede
  * volta a mostrar skeleton no cold start), nunca lança.
+ *
+ * ── Carimbo de acesso confirmado (`salvarAcesso`/`carregarAcesso`) ──
+ * Chave separada (`jobapp-rede-acesso:<userId>`), guarda só
+ * `{ unlocked, confirmadoEm }`. Existe pra sobreviver ao MESMO descarte de
+ * documento que zera o cache em memória (`redeCache.ts`): sem isto, todo
+ * cold start pagava o round-trip inteiro de `verificarAcessoConvite` antes
+ * de mostrar qualquer coisa, mesmo com uma confirmação de poucos segundos
+ * atrás -- a aba inteira esperava, não só o feed.
+ *
+ * Este módulo NÃO decide validade -- só guarda o carimbo. Quem aplica a
+ * janela de 90s (`ACESSO_CONFIRMADO_TTL_MS`) é sempre
+ * `redeCache.acessoConfirmadoValido`, recalculada a partir do `confirmadoEm`
+ * aqui lido; persistir o carimbo não estende essa janela em um milissegundo
+ * -- só deixa ela sobreviver ao documento, igual ao cache do feed já
+ * sobrevive. `RedeGatedTab` é o único chamador (hidrata a memória no mount,
+ * grava só quando `verificarAcessoConvite` confirma `200`).
  */
 
 import type { Database } from "../database.types";
@@ -30,6 +46,7 @@ import { FEED_PAGE_SIZE, type FeedPost, type FotoPost } from "./feed";
 type RedePerfil = Database["public"]["Tables"]["rede_perfis"]["Row"];
 
 const PREFIXO = "jobapp-rede-cache:";
+const PREFIXO_ACESSO = "jobapp-rede-acesso:";
 const VERSAO = 1;
 const TTL_MS = 24 * 60 * 60 * 1000;
 /** No máximo a 1ª página -- páginas mais profundas só voltam do servidor. */
@@ -206,19 +223,99 @@ export function salvar(
   }
 }
 
-/** Limpa o cache persistido de um usuário, ou de TODOS (logout, quando
- * nem sempre se sabe o id -- varre as chaves com o prefixo). */
+function chaveAcesso(userId: string): string {
+  return PREFIXO_ACESSO + userId;
+}
+
+interface AcessoPayload {
+  v: number;
+  userId: string;
+  unlocked: boolean;
+  confirmadoEm: number;
+}
+
+/** Grava o carimbo de acesso confirmado. Só chame com um resultado
+ * CONCLUSIVO (`200`) de `verificarAcessoConvite` -- ver o cabeçalho do
+ * arquivo. Silencioso em qualquer falha (cota, storage indisponível): sem
+ * carimbo persistido, o próximo cold start volta a esperar o round-trip. */
+export function salvarAcesso(
+  userId: string,
+  unlocked: boolean,
+  confirmadoEm: number
+): void {
+  if (!temStorage()) return;
+  try {
+    localStorage.setItem(
+      chaveAcesso(userId),
+      JSON.stringify({
+        v: VERSAO,
+        userId,
+        unlocked,
+        confirmadoEm,
+      } satisfies AcessoPayload)
+    );
+  } catch {
+    /* cota estourada / storage bloqueado -- sem cache persistido de acesso */
+  }
+}
+
+/** Lê o carimbo persistido. Devolve `null` (sem apagar -- ao contrário de
+ * `carregar`, um carimbo não hidratado não é erro) em versão diferente,
+ * userId diferente, JSON inválido ou storage indisponível. NÃO aplica o TTL
+ * de 90s -- isso é responsabilidade de `redeCache.acessoConfirmadoValido`,
+ * a única fonte de verdade sobre validade. */
+export function carregarAcesso(
+  userId: string
+): { unlocked: boolean; confirmadoEm: number } | null {
+  if (!temStorage()) return null;
+  let cru: string | null;
+  try {
+    cru = localStorage.getItem(chaveAcesso(userId));
+  } catch {
+    return null;
+  }
+  if (!cru) return null;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cru);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object") return null;
+  const p = parsed as Partial<AcessoPayload>;
+  if (
+    p.v !== VERSAO ||
+    p.userId !== userId ||
+    typeof p.unlocked !== "boolean" ||
+    typeof p.confirmadoEm !== "number"
+  ) {
+    return null;
+  }
+  return { unlocked: p.unlocked, confirmadoEm: p.confirmadoEm };
+}
+
+/** Limpa o cache persistido (feed + carimbo de acesso) de um usuário, ou de
+ * TODOS (logout, quando nem sempre se sabe o id -- varre as chaves com os
+ * dois prefixos). */
 export function limpar(userId?: string): void {
   if (!temStorage()) return;
   if (userId) {
     remover(userId);
+    try {
+      localStorage.removeItem(chaveAcesso(userId));
+    } catch {
+      /* nada a fazer */
+    }
     return;
   }
   try {
     const aRemover: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(PREFIXO)) aRemover.push(k);
+      if (k && (k.startsWith(PREFIXO) || k.startsWith(PREFIXO_ACESSO))) {
+        aRemover.push(k);
+      }
     }
     for (const k of aRemover) localStorage.removeItem(k);
   } catch {
@@ -226,4 +323,11 @@ export function limpar(userId?: string): void {
   }
 }
 
-export const _internos = { PREFIXO, VERSAO, TTL_MS, MAX_POSTS, MAX_BYTES };
+export const _internos = {
+  PREFIXO,
+  PREFIXO_ACESSO,
+  VERSAO,
+  TTL_MS,
+  MAX_POSTS,
+  MAX_BYTES,
+};

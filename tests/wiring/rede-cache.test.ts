@@ -150,9 +150,31 @@ describe("acesso: cache é apresentação com validade curta, nunca autorizaçã
   it("redeCache: validade explícita do acesso confirmado + carimbo de tempo", () => {
     const rc = read("lib/rede/redeCache.ts");
     expect(rc).toMatch(/ACESSO_CONFIRMADO_TTL_MS = \d/);
-    expect(rc).toMatch(/confirmadoEm: Date\.now\(\)/);
+    expect(rc).toMatch(/confirmadoEm: number = Date\.now\(\)/);
     expect(rc).toMatch(
       /Date\.now\(\) - a\.confirmadoEm < ACESSO_CONFIRMADO_TTL_MS/
+    );
+  });
+
+  it("acesso confirmado sobrevive a um documento novo: hidrata da camada persistida no mount", () => {
+    const rc = read("lib/rede/redeCache.ts");
+    // hidratarAcesso nunca sobrescreve um resultado já obtido nesta sessão
+    expect(rc).toMatch(
+      /function hidratarAcesso[\s\S]*?acessoMemoria\.has\(userId\)\) return/
+    );
+
+    const gated = read("components/rede/RedeGatedTab.tsx");
+    // hidrata ANTES de decidir o estado inicial (useState lazy init)
+    expect(gated).toMatch(
+      /useState\(\(\) => \{[\s\S]*?redeCachePersist\.carregarAcesso\(usuario\.id\)[\s\S]*?redeCache\.hidratarAcesso\(usuario\.id, persistido\)[\s\S]*?return redeCache\.acessoConfirmadoValido\(usuario\.id\);\s*\}\);/
+    );
+    // grava nos dois lugares com o MESMO carimbo, não dois Date.now() soltos
+    expect(gated).toMatch(
+      /const lembrarAcessoConfirmado = useCallback\(\(\): void => \{\s*const confirmadoEm = Date\.now\(\);\s*redeCache\.lembrarAcesso\(usuario\.id, true, confirmadoEm\);\s*redeCachePersist\.salvarAcesso\(usuario\.id, true, confirmadoEm\);/
+    );
+    // ?vitrine=1 continua forçando a vitrine mesmo com um carimbo hidratado
+    expect(gated).toMatch(
+      /if \(forcarVitrine\) \{[\s\S]*?setUnlocked\(false\);[\s\S]*?setVerificandoAcesso\(false\);/
     );
   });
 });

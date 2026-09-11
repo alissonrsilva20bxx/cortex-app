@@ -236,4 +236,50 @@ describe("acesso lembrado -- apresentação só, com validade curta", () => {
     redeCache.vincularUsuario("B");
     expect(redeCache.acessoLembrado("A")).toBeUndefined();
   });
+
+  it("lembrarAcesso aceita um confirmadoEm explícito (pra concordar com o carimbo persistido)", () => {
+    redeCache.vincularUsuario("A");
+    redeCache.lembrarAcesso("A", true, 555);
+    expect(redeCache.acessoLembrado("A")?.confirmadoEm).toBe(555);
+  });
+});
+
+describe("hidratarAcesso -- repõe o carimbo persistido num documento novo", () => {
+  it("semeia a memória vazia com o carimbo persistido", () => {
+    redeCache.vincularUsuario("A");
+    expect(redeCache.acessoLembrado("A")).toBeUndefined();
+    redeCache.hidratarAcesso("A", { unlocked: true, confirmadoEm: 999 });
+    expect(redeCache.acessoLembrado("A")).toEqual({
+      unlocked: true,
+      confirmadoEm: 999,
+    });
+  });
+
+  it("nulo (nada persistido) é no-op", () => {
+    redeCache.vincularUsuario("A");
+    redeCache.hidratarAcesso("A", null);
+    expect(redeCache.acessoLembrado("A")).toBeUndefined();
+  });
+
+  it("NÃO sobrescreve um resultado já obtido nesta sessão de JS", () => {
+    redeCache.vincularUsuario("A");
+    redeCache.lembrarAcesso("A", true, 1000);
+    redeCache.hidratarAcesso("A", { unlocked: false, confirmadoEm: 2000 });
+    expect(redeCache.acessoLembrado("A")?.confirmadoEm).toBe(1000);
+  });
+
+  it("não estende o TTL -- um carimbo hidratado velho ainda é inválido", () => {
+    vi.useFakeTimers({ now: 1_000_000 });
+    try {
+      redeCache.vincularUsuario("A");
+      redeCache.hidratarAcesso("A", {
+        unlocked: true,
+        confirmadoEm:
+          1_000_000 - redeCache._internos.ACESSO_CONFIRMADO_TTL_MS - 1,
+      });
+      expect(redeCache.acessoConfirmadoValido("A")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

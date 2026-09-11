@@ -202,6 +202,82 @@ describe("isolamento e invalidação", () => {
   });
 });
 
+describe("carimbo de acesso confirmado (salvarAcesso/carregarAcesso)", () => {
+  it("persiste e relê unlocked + confirmadoEm pela chave por usuário", () => {
+    const ls = fakeLocalStorage();
+    injeta(ls);
+    persist.salvarAcesso("u1", true, 12345);
+    expect(ls._mapa.has(`${persist._internos.PREFIXO_ACESSO}u1`)).toBe(true);
+    expect(persist.carregarAcesso("u1")).toEqual({
+      unlocked: true,
+      confirmadoEm: 12345,
+    });
+  });
+
+  it("não aplica TTL nenhum -- devolve o carimbo mesmo muito velho (quem decide validade é redeCache)", () => {
+    const ls = fakeLocalStorage();
+    injeta(ls);
+    persist.salvarAcesso("u1", true, 0);
+    expect(persist.carregarAcesso("u1")).toEqual({
+      unlocked: true,
+      confirmadoEm: 0,
+    });
+  });
+
+  it("userId diferente do gravado devolve null", () => {
+    const ls = fakeLocalStorage();
+    injeta(ls);
+    persist.salvarAcesso("u1", true, Date.now());
+    expect(persist.carregarAcesso("outro")).toBeNull();
+  });
+
+  it("sem carimbo gravado devolve null (não confundir com bloqueado)", () => {
+    const ls = fakeLocalStorage();
+    injeta(ls);
+    expect(persist.carregarAcesso("u1")).toBeNull();
+  });
+
+  it("JSON corrompido devolve null sem lançar", () => {
+    const ls = fakeLocalStorage();
+    injeta(ls);
+    ls._mapa.set(`${persist._internos.PREFIXO_ACESSO}u1`, "{ não é json ]");
+    expect(persist.carregarAcesso("u1")).toBeNull();
+  });
+
+  it("limpar(userId) remove o carimbo de acesso junto do feed", () => {
+    const ls = fakeLocalStorage();
+    injeta(ls);
+    persist.salvar("u1", { feed: [post("1")], perfil });
+    persist.salvarAcesso("u1", true, Date.now());
+    persist.limpar("u1");
+    expect(persist.carregarAcesso("u1")).toBeNull();
+    expect(persist.carregar("u1")).toBeNull();
+  });
+
+  it("limpar() sem argumento varre também as chaves de acesso (logout)", () => {
+    const ls = fakeLocalStorage();
+    injeta(ls);
+    persist.salvarAcesso("u1", true, Date.now());
+    persist.salvarAcesso("u2", true, Date.now());
+    ls._mapa.set("jobapp-outra-coisa", "preservar");
+    persist.limpar();
+    expect(persist.carregarAcesso("u1")).toBeNull();
+    expect(persist.carregarAcesso("u2")).toBeNull();
+    expect(ls._mapa.get("jobapp-outra-coisa")).toBe("preservar");
+  });
+
+  it("setItem que lança (cota): não propaga", () => {
+    const ls = fakeLocalStorage("lancaSet");
+    injeta(ls);
+    expect(() => persist.salvarAcesso("u1", true, Date.now())).not.toThrow();
+  });
+
+  it("sem localStorage (SSR): carregarAcesso=null, salvarAcesso=no-op", () => {
+    expect(() => persist.salvarAcesso("u1", true, Date.now())).not.toThrow();
+    expect(persist.carregarAcesso("u1")).toBeNull();
+  });
+});
+
 describe("limites e degradação", () => {
   it("guarda no máximo a 1ª página (MAX_POSTS)", () => {
     const ls = fakeLocalStorage();

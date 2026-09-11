@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RedeTeaserGate, type GateSheet } from "./RedeTeaserGate";
 import { SerialKeySheet } from "./SerialKeySheet";
 import { RedeTab } from "./RedeTab";
@@ -41,10 +41,14 @@ export function RedeGatedTab({
   //
   //  - **Dentro da validade:** ao destravar o PIN o `<RedeTab>` monta na
   //    hora com o Feed cacheado, e a revalidação roda em 2º plano. Nunca é
-  //    autorização -- cada query do RedeTab passa pela RLS do servidor.
-  //  - **Vencida (ou nunca confirmado nesta sessão de JS):** spinner, e a
-  //    revalidação roda ANTES de exibir qualquer conteúdo privado. Cold
-  //    start cai sempre aqui (o carimbo é memória, não é persistido).
+  //    autorização -- cada query do RedeTab passa pela RLS do servidor. O
+  //    carimbo é hidratado de `redeCachePersist` no mount (ver useState
+  //    abaixo), então isso vale tanto na mesma sessão de JS quanto num
+  //    documento novo (reload, iOS descartou a aba em 2º plano) -- a
+  //    janela de 90s não muda, só sobrevive ao documento como o resto do
+  //    cache da Rede já sobrevive.
+  //  - **Vencida (nesta sessão OU no carimbo persistido):** spinner, e a
+  //    revalidação roda ANTES de exibir qualquer conteúdo privado.
   //  - **`indisponivel`** (offline / 5xx): não conclui nada. Preserva o
   //    conteúdo em tela SÓ enquanto o acesso confirmado seguir válido;
   //    passou de 90s sem uma confirmação nova, o conteúdo privado SAI da
@@ -57,9 +61,22 @@ export function RedeGatedTab({
   //  - **Revalidação extra:** ao a aba voltar a ficar visível
   //    (`visibilitychange`) e ao reconectar (`online`) -- cobre revogação
   //    com o PWA em 2º plano, sem depender de um remount do PIN.
-  const [unlocked, setUnlocked] = useState(() =>
-    redeCache.acessoConfirmadoValido(usuario.id)
-  );
+  const [unlocked, setUnlocked] = useState(() => {
+    // Hidrata a memória com o carimbo persistido ANTES de checar validade --
+    // só tem efeito no 1º render desta conta nesta sessão de JS (documento
+    // novo); se já há algo em memória (mesma sessão), hidratarAcesso é nulo.
+    const antes = redeCache.acessoLembrado(usuario.id);
+    const persistido = redeCachePersist.carregarAcesso(usuario.id);
+    redeCache.hidratarAcesso(usuario.id, persistido);
+    // TEMP-TIMING
+    console.info(
+      `[rede-timing] hidratação ao montar · sessãoJs=${redeCache.idSessaoJs}` +
+        ` memóriaJáTinha=${antes !== undefined}` +
+        ` persistido=${persistido ? `${persistido.unlocked ? "unlocked" : "bloqueado"} há ${Math.round(Date.now() - persistido.confirmadoEm)}ms` : "nenhum"}` +
+        ` acessoConfirmadoValido=${redeCache.acessoConfirmadoValido(usuario.id)}`
+    );
+    return redeCache.acessoConfirmadoValido(usuario.id);
+  });
   const [verificandoAcesso, setVerificandoAcesso] = useState(
     () => !redeCache.acessoConfirmadoValido(usuario.id)
   );
@@ -75,6 +92,15 @@ export function RedeGatedTab({
   // repetidamente sem precisar revogar o convite no banco toda hora. Não é
   // UI (ninguém digita isso sem saber que existe), então não conflita com a
   // decisão de "sem UI de admin" da ticket 03.
+  // Carimba `unlocked=true` em memória E em localStorage com o MESMO
+  // instante -- as duas cópias precisam concordar sobre "há quanto tempo"
+  // pra um documento novo (hidratarAcesso) recalcular o TTL certo depois.
+  const lembrarAcessoConfirmado = useCallback((): void => {
+    const confirmadoEm = Date.now();
+    redeCache.lembrarAcesso(usuario.id, true, confirmadoEm);
+    redeCachePersist.salvarAcesso(usuario.id, true, confirmadoEm);
+  }, [usuario.id]);
+
   useEffect(() => {
     // TEMP-TIMING
     console.info(
@@ -91,6 +117,11 @@ export function RedeGatedTab({
       new URLSearchParams(window.location.search).get("vitrine") === "1";
 
     if (forcarVitrine) {
+      // Força a vitrine mesmo com um carimbo hidratado de `redeCachePersist`
+      // (conta já desbloqueada, mas dentro da validade de 90s) -- sem isto,
+      // `unlocked` já nasceria `true` no useState acima e a vitrine nunca
+      // apareceria num reload com esta flag.
+      setUnlocked(false);
       setVerificandoAcesso(false);
       return;
     }
@@ -119,7 +150,7 @@ export function RedeGatedTab({
       );
       if (!ativo) return;
       if (resultado.unlocked) {
-        redeCache.lembrarAcesso(usuario.id, true);
+        lembrarAcessoConfirmado();
         setUnlocked(true);
         setVerificandoAcesso(false);
         return;
@@ -166,7 +197,7 @@ export function RedeGatedTab({
       document.removeEventListener("visibilitychange", revalidar);
       window.removeEventListener("online", revalidar);
     };
-  }, [usuario.id]);
+  }, [usuario.id, lembrarAcessoConfirmado]);
 
   if (verificandoAcesso) {
     return (
@@ -198,7 +229,7 @@ export function RedeGatedTab({
         onConfirm={() => {
           setSheet(null);
           setUnlocked(true);
-          redeCache.lembrarAcesso(usuario.id, true);
+          lembrarAcessoConfirmado();
         }}
       />
     </>
