@@ -15,6 +15,7 @@ import {
   lembrarProporcao,
   proporcaoLembrada,
 } from "@/lib/rede/fotoRatioMemoria";
+import { lembrarSlide, slideLembrado } from "@/lib/rede/redeCache";
 
 /**
  * Fotos no feed da Rede -- foto grande no próprio card (não só miniatura),
@@ -74,6 +75,9 @@ function prefereMovimentoReduzido() {
 }
 
 interface Props {
+  /** Id do post -- chave da memória de slide do carrossel (o slide ativo
+   * sobrevive ao remount do PIN). */
+  postId: string;
   fotos: FotoPost[];
   autorNome: string;
   /** Renova a URL assinada (5min) de um path -- miniatura ou principal.
@@ -81,7 +85,7 @@ interface Props {
   onRenovarFoto: (path: string) => Promise<string | null>;
 }
 
-export function FeedFotos({ fotos, autorNome, onRenovarFoto }: Props) {
+export function FeedFotos({ postId, fotos, autorNome, onRenovarFoto }: Props) {
   if (fotos.length === 0) return null;
   if (fotos.length === 1) {
     return (
@@ -94,6 +98,7 @@ export function FeedFotos({ fotos, autorNome, onRenovarFoto }: Props) {
   }
   return (
     <Carrossel
+      postId={postId}
       fotos={fotos}
       autorNome={autorNome}
       onRenovarFoto={onRenovarFoto}
@@ -223,6 +228,27 @@ function PhotoStage({
     setPrincipalFalhou(false);
   }, [foto.url]);
 
+  // Cache hidratado do localStorage vem SEM URL assinada (`thumbUrl`/`url`
+  // vazios -- as de 5min não são persistidas, req 5). Aqui a assinatura sob
+  // demanda é EXPLÍCITA -- não depende do `onError` de uma <img> sem `src`
+  // (que nem dispara de forma confiável). Dispara quando a miniatura falta,
+  // e quando a principal falta E o slot já deve montá-la.
+  useEffect(() => {
+    if (!thumbUrl && !renovandoThumb.current) void renovarThumb();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thumbUrl]);
+  useEffect(() => {
+    if (
+      renderPrincipal &&
+      !url &&
+      !principalFalhou &&
+      !renovandoPrincipal.current
+    ) {
+      void renovarPrincipal();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renderPrincipal, url, principalFalhou]);
+
   async function renovarThumb() {
     if (renovandoThumb.current) return;
     renovandoThumb.current = true;
@@ -254,31 +280,36 @@ function PhotoStage({
   return (
     // Container NÃO interativo: a foto vive no feed, tocar não abre nada.
     <div style={{ position: "absolute", inset: 0 }}>
-      {/* miniatura -- placeholder, some no crossfade quando a principal carrega */}
-      {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage */}
-      <img
-        src={thumbUrl}
-        alt=""
-        aria-hidden
-        draggable={false}
-        onLoad={(e) => {
-          renovandoThumb.current = false;
-          onMedirMiniatura?.(
-            e.currentTarget.naturalWidth,
-            e.currentTarget.naturalHeight
-          );
-        }}
-        onError={() => void renovarThumb()}
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          opacity: principalOk ? 0 : 1,
-          transition: "opacity 160ms ease-out",
-        }}
-      />
+      {/* miniatura -- placeholder, some no crossfade quando a principal
+          carrega. Só monta com `src` de verdade: uma <img src=""> (cache
+          hidratado, antes da re-assinatura) buscaria a própria página. O
+          fundo neutro do `bleed` cobre enquanto a URL não chega. */}
+      {thumbUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage
+        <img
+          src={thumbUrl}
+          alt=""
+          aria-hidden
+          draggable={false}
+          onLoad={(e) => {
+            renovandoThumb.current = false;
+            onMedirMiniatura?.(
+              e.currentTarget.naturalWidth,
+              e.currentTarget.naturalHeight
+            );
+          }}
+          onError={() => void renovarThumb()}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            opacity: principalOk ? 0 : 1,
+            transition: "opacity 160ms ease-out",
+          }}
+        />
+      )}
 
       {/* principal -- só monta quando o slide está ativo (carrossel) e o
           card entra na viewport (`loading="lazy"`). Sem `<img>` = 0 rede. */}
@@ -365,10 +396,12 @@ function UmaFoto({
 // ─────────────────────────────── carrossel ──────────────────────────────
 
 function Carrossel({
+  postId,
   fotos,
   autorNome,
   onRenovarFoto,
 }: {
+  postId: string;
   fotos: FotoPost[];
   autorNome: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
@@ -377,12 +410,26 @@ function Carrossel({
     fotos[0]
   );
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [indice, setIndice] = useState(0);
-  // slides cuja principal já pode ser MONTADA -- a 1ª desde o início, as
-  // outras só quando a pessoa desliza até elas. Sem `<img>` = nenhum GET.
-  const [ativados, setAtivados] = useState<ReadonlySet<number>>(
-    () => new Set([0])
-  );
+  // Slide ativo lembrado do último mount (remount do PIN não zera o
+  // carrossel). Clampa se o post perdeu fotos desde então.
+  const slideInicial = Math.min(slideLembrado(postId), fotos.length - 1);
+  const [indice, setIndice] = useState(slideInicial);
+  // slides cuja principal já pode ser MONTADA -- a 1ª (e as até o slide
+  // lembrado) desde o início, as outras só quando a pessoa desliza até
+  // elas. Sem `<img>` = nenhum GET.
+  const [ativados, setAtivados] = useState<ReadonlySet<number>>(() => {
+    const s = new Set<number>();
+    for (let i = 0; i <= slideInicial; i++) s.add(i);
+    return s;
+  });
+
+  // Reposiciona o scroller no slide lembrado antes do 1º paint.
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || slideInicial === 0) return;
+    el.scrollLeft = slideInicial * (el.clientWidth || 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // índice = slide encaixado (posição de scroll ÷ largura). rAF debounce.
   useEffect(() => {
@@ -398,6 +445,7 @@ function Carrossel({
           Math.min(fotos.length - 1, Math.round(el.scrollLeft / w))
         );
         setIndice(i);
+        lembrarSlide(postId, i);
         setAtivados((prev) => (prev.has(i) ? prev : new Set([...prev, i])));
       });
     };
@@ -406,7 +454,7 @@ function Carrossel({
       el.removeEventListener("scroll", aoRolar);
       cancelAnimationFrame(raf);
     };
-  }, [fotos.length]);
+  }, [fotos.length, postId]);
 
   const irPara = useCallback((dir: number) => {
     const el = scrollerRef.current;

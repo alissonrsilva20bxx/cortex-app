@@ -12,6 +12,9 @@ export const MOCK_APP_USUARIO: Usuario = {
 const daysFromNow = (d: number) =>
   new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
 
+const hoursAgoIso = (h: number) =>
+  new Date(Date.now() - h * 3_600_000).toISOString();
+
 /** Semente completa do "banco" mockado — chamada uma vez ao ativar o shell,
  * assim cada sessão de preview começa do mesmo estado "vivido". */
 export function buildMockAppSeed(): MockSupabaseSeed {
@@ -275,6 +278,239 @@ export function buildMockAppSeed(): MockSupabaseSeed {
     },
   ];
 
+  // ── Rede: semente mínima pra a aba abrir no Feed (não no gate) em
+  // /dev-preview/app -- convite já resgatado + perfil + alguns posts. Sem
+  // isso o RedeGatedTab cai sempre na vitrine e o Feed fica intestável no
+  // shell mockado. Fotos ficam de fora (exigiriam blobs no bucket).
+  const FRIEND_ID = "mock-friend-marina";
+  const rede_convites = [
+    {
+      id: "convite-mock-1",
+      codigo_hash: "mock-hash",
+      criado_em: daysFromNow(-20),
+      expira_em: daysFromNow(60),
+      solicitacao_id: null,
+      usado_em: daysFromNow(-18),
+      usado_por: uid,
+    },
+  ];
+  const rede_perfis = [
+    {
+      user_id: uid,
+      nome_exibicao: "Miguel",
+      cor_avatar: "#8b5cf6",
+      bio: "Nail designer • Studio Zona Sul",
+      avatar_url: null,
+      area_atuacao: "Unhas",
+      criado_em: daysFromNow(-18),
+      atualizado_em: daysFromNow(-2),
+    },
+    {
+      user_id: FRIEND_ID,
+      nome_exibicao: "Marina Alves",
+      cor_avatar: "#ec4899",
+      bio: "Extensão de cílios",
+      avatar_url: null,
+      area_atuacao: "Cílios",
+      criado_em: daysFromNow(-30),
+      atualizado_em: daysFromNow(-5),
+    },
+  ];
+  // 15 posts -- o suficiente pra exercitar a paginação do feed
+  // (FEED_PAGE_SIZE = 10: página 1 cheia + página 2 com resto, `hasMore`
+  // vira false só na 2ª). `criado_em` estritamente decrescente pra o cursor
+  // `.lt("criado_em", ...)` de `loadMorePosts` não pular nem repetir.
+  const P: Array<{
+    id: string;
+    autor: string;
+    categoria: string;
+    texto: string;
+    h: number;
+  }> = [
+    {
+      id: "rede-post-1",
+      autor: uid,
+      categoria: "conquista",
+      texto: "Fechei a agenda da semana inteira! 🎉",
+      h: 3,
+    },
+    {
+      id: "rede-post-4",
+      autor: uid,
+      categoria: "conquista",
+      texto: "Antes e depois da cliente de hoje 💅 deslizem pro lado",
+      h: 6,
+    },
+    {
+      id: "rede-post-5",
+      autor: FRIEND_ID,
+      categoria: "dica",
+      texto:
+        "Quem trabalha sozinha: bloco de 15min entre clientes salva o dia.",
+      h: 12,
+    },
+    {
+      id: "rede-post-6",
+      autor: uid,
+      categoria: "duvida",
+      texto: "Vale a pena migrar pra cabine própria ou continuo alugando?",
+      h: 18,
+    },
+    {
+      id: "rede-post-2",
+      autor: FRIEND_ID,
+      categoria: "dica",
+      texto: "Dica: cliente que remarca demais, cobra sinal antecipado.",
+      h: 26,
+    },
+    {
+      id: "rede-post-7",
+      autor: FRIEND_ID,
+      categoria: "desabafo",
+      texto: "Semana puxada, três no-show seguidos. Amanhã é outro dia.",
+      h: 34,
+    },
+    {
+      id: "rede-post-8",
+      autor: uid,
+      categoria: "conquista",
+      texto: "Primeira cliente que veio por indicação da Rede! 🥹",
+      h: 42,
+    },
+    {
+      id: "rede-post-3",
+      autor: uid,
+      categoria: "geral",
+      texto: "Alguém indica fornecedor de insumo bom na região?",
+      h: 52,
+    },
+    {
+      id: "rede-post-9",
+      autor: FRIEND_ID,
+      categoria: "dica",
+      texto: "Planilha de custo por serviço mudou meu preço. Recomendo fazer.",
+      h: 60,
+    },
+    {
+      id: "rede-post-10",
+      autor: uid,
+      categoria: "geral",
+      texto: "Playlist boa pro studio? Tô cansada da minha.",
+      h: 72,
+    },
+    {
+      id: "rede-post-11",
+      autor: FRIEND_ID,
+      categoria: "conquista",
+      texto: "Bati a meta do mês faltando uma semana!",
+      h: 90,
+    },
+    {
+      id: "rede-post-12",
+      autor: uid,
+      categoria: "duvida",
+      texto: "Como vocês lidam com cliente que pede desconto toda vez?",
+      h: 110,
+    },
+    {
+      id: "rede-post-13",
+      autor: FRIEND_ID,
+      categoria: "dica",
+      texto: "Foto de portfólio: luz da janela > ringlight, sempre.",
+      h: 130,
+    },
+    {
+      id: "rede-post-14",
+      autor: uid,
+      categoria: "desabafo",
+      texto:
+        "Dia difícil. Obrigada a quem responde aqui, ajuda mais do que parece.",
+      h: 160,
+    },
+    {
+      id: "rede-post-15",
+      autor: FRIEND_ID,
+      categoria: "geral",
+      texto: "Alguém mais de Zona Sul? Bora marcar um café.",
+      h: 190,
+    },
+  ];
+  const rede_posts = P.map((p) => ({
+    id: p.id,
+    autor_id: p.autor,
+    categoria: p.categoria,
+    texto: p.texto,
+    criado_em: hoursAgoIso(p.h),
+    atualizado_em: hoursAgoIso(p.h),
+  }));
+
+  // Fotos (blobs caem no placeholder SVG do mock -- o que importa é o path
+  // existir pra assinar). Dimensões vão no nome da miniatura
+  // (`-thumb-{L}x{A}.jpg`), como a rota real grava.
+  //  - post-1: 1 foto 3:4 -- exercita a re-assinatura sob demanda no cold
+  //    start (o cache persistido não guarda URL assinada).
+  //  - post-4: 2 fotos com proporções diferentes (3:4 e 4:3) -- exercita o
+  //    carrossel e a memória de slide (`redeCache.lembrarSlide`) entre
+  //    remounts.
+  const foto = (
+    postId: string,
+    autor: string,
+    ordem: number,
+    dims: string,
+    h: number
+  ) => {
+    const path = `${autor}/posts/${postId}/${ordem}.jpg`;
+    const thumb_path = `${autor}/posts/${postId}/${ordem}-thumb-${dims}.jpg`;
+    return {
+      row: {
+        id: `rede-foto-${postId}-${ordem}`,
+        post_id: postId,
+        autor_id: autor,
+        path,
+        thumb_path,
+        ordem,
+        criado_em: hoursAgoIso(h),
+      },
+      files: [
+        {
+          path,
+          name: `${ordem}.jpg`,
+          categoria: "rede",
+          size: 320_000,
+          mimeType: "image/jpeg",
+          createdAt: hoursAgoIso(h),
+        },
+        {
+          path: thumb_path,
+          name: `${ordem}-thumb-${dims}.jpg`,
+          categoria: "rede",
+          size: 24_000,
+          mimeType: "image/jpeg",
+          createdAt: hoursAgoIso(h),
+        },
+      ],
+    };
+  };
+  const fotosDef = [
+    foto("rede-post-1", uid, 1, "1080x1350", 3),
+    foto("rede-post-4", uid, 1, "1080x1350", 6),
+    foto("rede-post-4", uid, 2, "1080x810", 6),
+  ];
+  const rede_post_fotos = fotosDef.map((f) => f.row);
+  const rede_curtidas = [
+    { post_id: "rede-post-2", user_id: uid, criado_em: hoursAgoIso(20) },
+    { post_id: "rede-post-1", user_id: FRIEND_ID, criado_em: hoursAgoIso(2) },
+  ];
+  const rede_comentarios = [
+    {
+      id: "rede-com-1",
+      post_id: "rede-post-1",
+      autor_id: FRIEND_ID,
+      texto: "Arrasou!",
+      criado_em: hoursAgoIso(2),
+    },
+  ];
+
   const configuracoes = [
     {
       id: "config-1",
@@ -327,6 +563,9 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       mimeType: "image/jpeg",
       createdAt: daysFromNow(-12),
     },
+    // Fotos dos posts da Rede (principal + miniatura) -- sem blobUrl, o
+    // mock serve o placeholder SVG; o que importa é o path existir p/ assinar.
+    ...fotosDef.flatMap((f) => f.files),
   ];
 
   return {
@@ -339,6 +578,19 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       notas,
       configuracoes,
       push_subscriptions: [],
+      rede_convites,
+      rede_perfis,
+      rede_posts,
+      rede_curtidas,
+      rede_comentarios,
+      rede_post_fotos,
+      rede_livelinks: [],
+      rede_wishlist: [],
+      rede_clientes: [],
+      rede_amizades: [],
+      rede_conversas: [],
+      rede_conversas_participantes: [],
+      rede_mensagens: [],
     },
     cofreFiles,
   };

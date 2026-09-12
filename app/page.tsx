@@ -35,6 +35,8 @@ import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase";
+import * as redeCache from "@/lib/rede/redeCache";
+import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import { isFreshAccount } from "@/lib/onboarding";
 import type {
   TabId,
@@ -299,6 +301,12 @@ export default function Page() {
   }, [usuario, locked, objetivosRefreshKey]);
 
   async function handleSignOut() {
+    // Zera o cache da Rede ANTES de sair -- em memória (a próxima conta
+    // nesta aba não herda nada) e no localStorage (req 4/6).
+    try {
+      redeCache.limparTudo();
+      redeCachePersist.limpar();
+    } catch (_) {}
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
@@ -438,6 +446,7 @@ export default function Page() {
             <TabPanel tab="rede" activeTab={activeTab}>
               <RedeGatedTab
                 usuario={usuario}
+                active={activeTab === "rede"}
                 onChatFocusChange={setChatComposerFocused}
               />
             </TabPanel>
