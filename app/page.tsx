@@ -24,7 +24,6 @@ import { ReceitaForm } from "@/components/financeiro/ReceitaForm";
 import { CofreTab } from "@/components/cofre/CofreTab";
 import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
-import { RedeTimingOverlay } from "@/components/rede/RedeTimingOverlay";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import {
@@ -343,12 +342,7 @@ export default function Page() {
   }
 
   if (locked && pinHash) {
-    return (
-      <>
-        <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />
-        <RedeTimingOverlay />
-      </>
-    );
+    return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
   }
 
   // 1º uso: decidido uma única vez (isNewUserSession, ver efeito acima) a
@@ -541,7 +535,6 @@ export default function Page() {
           />
         </>
       )}
-      <RedeTimingOverlay />
     </div>
   );
 }

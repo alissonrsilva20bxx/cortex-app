@@ -92,15 +92,6 @@ let scrollValido = false;
 let usuarioVinculado: string | null = null;
 let epoca = 0;
 
-// TEMP-TIMING (remover junto com as demais marcas "TEMP-TIMING" após o
-// reteste do bug "SkeletonList ao voltar do 2º plano" -- ver handoff).
-// Gerado 1x quando este módulo é avaliado -- que só acontece de novo se o
-// DOCUMENTO for recarregado (reload de verdade ou iOS descartando a aba em
-// 2º plano). Comparar este valor entre duas leituras do console distingue
-// "mesma sessão de JS" (mesmo id) de "documento novo" (id diferente) sem
-// depender de inferência.
-export const idSessaoJs = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
 // ─────────────────────────── conta / época ──────────────────────────────
 
 function chave(userId: string, recurso: RedeRecurso): string {

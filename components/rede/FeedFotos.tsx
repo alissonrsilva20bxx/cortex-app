@@ -216,12 +216,6 @@ function PhotoStage({
   // relógio torto) faz `onError` -> re-assina -> `onError` em loop.
   const renovandoThumb = useRef(false);
   const renovandoPrincipal = useRef(false);
-  // TEMP-TIMING (remover junto com as demais marcas "TEMP-TIMING" após o
-  // reteste do bug "SkeletonList ao voltar do 2º plano" -- ver handoff).
-  // Marca quando a <img> ganha um `src` de verdade, pra medir só o download
-  // (a rede da imagem em si), separado da assinatura que devolveu a URL.
-  const tThumbSrcSetEm = useRef<number | null>(null);
-  const tUrlSrcSetEm = useRef<number | null>(null);
 
   // URL nova vinda do pai (ou 1ª montagem): destrava e re-tenta
   useEffect(() => {
@@ -233,12 +227,6 @@ function PhotoStage({
     setUrl(foto.url);
     setPrincipalFalhou(false);
   }, [foto.url]);
-  useEffect(() => {
-    if (thumbUrl) tThumbSrcSetEm.current = performance.now();
-  }, [thumbUrl]);
-  useEffect(() => {
-    if (url) tUrlSrcSetEm.current = performance.now();
-  }, [url]);
 
   // Cache hidratado do localStorage vem SEM URL assinada (`thumbUrl`/`url`
   // vazios -- as de 5min não são persistidas, req 5). Aqui a assinatura sob
@@ -264,13 +252,7 @@ function PhotoStage({
   async function renovarThumb() {
     if (renovandoThumb.current) return;
     renovandoThumb.current = true;
-    // TEMP-TIMING (remover junto com as demais marcas "TEMP-TIMING" após o
-    // reteste do bug "SkeletonList ao voltar do 2º plano" -- ver handoff).
-    const t0 = performance.now();
     const nova = await onRenovarFoto(foto.thumbPath);
-    console.info(
-      `[rede-timing] assinatura sob demanda (miniatura): ${Math.round(performance.now() - t0)}ms ok=${!!nova}`
-    );
     if (nova) setThumbUrl(nova);
     // a trava só cai no `onLoad` da miniatura (ou numa URL nova do pai):
     // se a re-assinada também falhar, não re-assina de novo.
@@ -279,12 +261,7 @@ function PhotoStage({
     if (renovandoPrincipal.current && !manual) return;
     renovandoPrincipal.current = true;
     setPrincipalFalhou(false);
-    // TEMP-TIMING
-    const t0 = performance.now();
     const nova = await onRenovarFoto(foto.path);
-    console.info(
-      `[rede-timing] assinatura sob demanda (principal): ${Math.round(performance.now() - t0)}ms ok=${!!nova}`
-    );
     if (nova) {
       setUrl(nova);
       setPrincipalOk(false);
@@ -315,12 +292,6 @@ function PhotoStage({
           aria-hidden
           draggable={false}
           onLoad={(e) => {
-            // TEMP-TIMING
-            if (tThumbSrcSetEm.current != null) {
-              console.info(
-                `[rede-timing] download imagem (miniatura): ${Math.round(performance.now() - tThumbSrcSetEm.current)}ms`
-              );
-            }
             renovandoThumb.current = false;
             onMedirMiniatura?.(
               e.currentTarget.naturalWidth,
@@ -351,12 +322,6 @@ function PhotoStage({
           decoding="async"
           draggable={false}
           onLoad={() => {
-            // TEMP-TIMING
-            if (tUrlSrcSetEm.current != null) {
-              console.info(
-                `[rede-timing] download imagem (principal): ${Math.round(performance.now() - tUrlSrcSetEm.current)}ms`
-              );
-            }
             renovandoPrincipal.current = false;
             setPrincipalOk(true);
           }}

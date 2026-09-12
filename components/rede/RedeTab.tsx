@@ -245,16 +245,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   }
   const semente = sementeRef.current;
 
-  // TEMP-TIMING (remover junto com as demais marcas "TEMP-TIMING" após o
-  // reteste do bug "SkeletonList ao voltar do 2º plano" -- ver handoff).
-  useEffect(() => {
-    console.info(
-      `[rede-timing] RedeTab mount · sessãoJs=${redeCache.idSessaoJs}` +
-        ` semente.feed=${semente.feed ? `${semente.feed.posts.length} posts` : "vazia"}`
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // ── Offline / reconexão ──
   // `online` (navigator.onLine): a lista já carregada segue navegável
   // offline (só leitura); envio/escrita ficam desabilitados nos
@@ -462,16 +452,8 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     let ativo = true;
     const ep = redeCache.epocaAtual();
     const temSemente = semente.feed !== null;
-    // TEMP-TIMING -- cobre dados+assinatura juntos: `listarFeed` já assina
-    // as fotos da página 1 dentro da mesma chamada (lib/rede/feed.ts,
-    // `createSignedUrls`), não são round-trips separados.
-    const tFeed0 = performance.now();
     listarFeed(supabase)
       .then((data) => {
-        console.info(
-          `[rede-timing] feed (dados+assinatura): ${Math.round(performance.now() - tFeed0)}ms` +
-            ` posts=${data.length}`
-        );
         if (!ativo || !epocaValida(ep)) return;
         const conciliado = redeCache.reconciliarFeed(
           postsRef.current,
@@ -506,10 +488,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
         });
       })
       .catch((e) => {
-        // TEMP-TIMING
-        console.info(
-          `[rede-timing] feed (dados+assinatura) FALHOU: ${Math.round(performance.now() - tFeed0)}ms`
-        );
         console.error("[RedeTab feed]", e);
         if (!ativo || !epocaValida(ep)) return;
         // Falha de rede com feed cacheado em tela: mantém o conteúdo

@@ -65,16 +65,8 @@ export function RedeGatedTab({
     // Hidrata a memória com o carimbo persistido ANTES de checar validade --
     // só tem efeito no 1º render desta conta nesta sessão de JS (documento
     // novo); se já há algo em memória (mesma sessão), hidratarAcesso é nulo.
-    const antes = redeCache.acessoLembrado(usuario.id);
     const persistido = redeCachePersist.carregarAcesso(usuario.id);
     redeCache.hidratarAcesso(usuario.id, persistido);
-    // TEMP-TIMING
-    console.info(
-      `[rede-timing] hidratação ao montar · sessãoJs=${redeCache.idSessaoJs}` +
-        ` memóriaJáTinha=${antes !== undefined}` +
-        ` persistido=${persistido ? `${persistido.unlocked ? "unlocked" : "bloqueado"} há ${Math.round(Date.now() - persistido.confirmadoEm)}ms` : "nenhum"}` +
-        ` acessoConfirmadoValido=${redeCache.acessoConfirmadoValido(usuario.id)}`
-    );
     return redeCache.acessoConfirmadoValido(usuario.id);
   });
   const [verificandoAcesso, setVerificandoAcesso] = useState(
@@ -102,11 +94,6 @@ export function RedeGatedTab({
   }, [usuario.id]);
 
   useEffect(() => {
-    // TEMP-TIMING
-    console.info(
-      `[rede-timing] RedeGatedTab mount · sessãoJs=${redeCache.idSessaoJs}` +
-        ` acessoConfirmadoValido=${redeCache.acessoConfirmadoValido(usuario.id)}`
-    );
     // Trocar de conta (ou 1ª vinculação) limpa o cache em memória da conta
     // anterior antes de qualquer leitura do RedeTab.
     redeCache.vincularUsuario(usuario.id);
@@ -127,10 +114,6 @@ export function RedeGatedTab({
     }
 
     const derrubar = () => {
-      // TEMP-TIMING
-      console.info(
-        `[rede-timing] derrubar() · sessãoJs=${redeCache.idSessaoJs}`
-      );
       // Perdeu (ou nunca teve) autorização: conteúdo privado sai da tela +
       // zera memória e localStorage.
       setUnlocked(false);
@@ -140,14 +123,7 @@ export function RedeGatedTab({
     };
 
     /** Aplica um resultado de `verificarAcessoConvite`. */
-    const aplicar = (resultado: AcessoConvite, iniciadoEm: number) => {
-      // TEMP-TIMING (remover junto com as demais marcas "TEMP-TIMING" após
-      // o reteste do bug "SkeletonList ao voltar do 2º plano" -- ver
-      // handoff). Sem IDs/paths/tokens, só duração + motivo.
-      console.info(
-        `[rede-timing] autorização: ${Math.round(performance.now() - iniciadoEm)}ms` +
-          ` unlocked=${resultado.unlocked} motivo=${resultado.motivo ?? "-"}`
-      );
+    const aplicar = (resultado: AcessoConvite) => {
       if (!ativo) return;
       if (resultado.unlocked) {
         lembrarAcessoConfirmado();
@@ -172,22 +148,14 @@ export function RedeGatedTab({
       derrubar();
     };
 
-    {
-      const t0 = performance.now();
-      verificarAcessoConvite(supabase, usuario.id).then((r) => aplicar(r, t0));
-    }
+    verificarAcessoConvite(supabase, usuario.id).then(aplicar);
 
     // Revalida quando a aba volta a ficar visível (PWA saiu do 2º plano,
     // troca de app no celular) e quando a conexão volta -- cobre "convite
     // revogado enquanto esteve fora" sem depender de um remount do PIN.
     const revalidar = () => {
       if (document.visibilityState !== "visible") return;
-      // TEMP-TIMING
-      console.info(
-        "[rede-timing] revalidar() disparado (visibilitychange/online)"
-      );
-      const t0 = performance.now();
-      verificarAcessoConvite(supabase, usuario.id).then((r) => aplicar(r, t0));
+      verificarAcessoConvite(supabase, usuario.id).then(aplicar);
     };
     document.addEventListener("visibilitychange", revalidar);
     window.addEventListener("online", revalidar);

@@ -35,7 +35,7 @@ describe("§1-P0-1 — guard de autenticação é o elemento mais externo", () =
 describe("§1-P0-2 — PinScreen + re-trava automática após 30s em background", () => {
   it("retorna PinScreen como guard mais externo (antes do JSX principal) quando `locked`", () => {
     expect(page).toMatch(
-      /if \(locked && pinHash\) \{\s*\r?\n\s*return \(\s*\r?\n\s*<>\s*\r?\n\s*<PinScreen/
+      /if \(locked && pinHash\) \{\s*\r?\n\s*return <PinScreen/
     );
   });
 
