@@ -10,6 +10,173 @@ import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Usuario } from "@/lib/types";
 
+// ── TEMP-TIMING [rede-timing-v2] ──────────────────────────────────────────
+// Diagnóstico temporário pro reteste do flash PIN→Rede no iPhone. Remover
+// (junto com `DiagPanel`, `DiagInfo`, `DIAG_TAG` e os pontos marcados
+// abaixo) assim que o usuário tiver copiado o resultado do aparelho real --
+// não é pra sobreviver ao merge. Sem segredos: só timestamps relativos,
+// durações e o hash curto do commit servido (já público no histórico).
+const DIAG_TAG = "rede-timing-v2-2026-09-18";
+
+interface DiagInfo {
+  origem: "memoria" | "persistencia" | "ausente";
+  idadeCarimboMs: number | null;
+  carimboUnlocked: boolean | null;
+  motivoVerificando: string;
+  duracaoRevalidacaoMs: number | null;
+  versao: string;
+}
+
+function motivoVerificandoAcesso(
+  carimbo: { unlocked: boolean; confirmadoEm: number } | null,
+  valido: boolean
+): string {
+  if (valido) return "n/a — acesso já válido, não entrou no spinner";
+  if (!carimbo) return "sem-carimbo (nunca confirmado nesta conta)";
+  if (!carimbo.unlocked)
+    return "carimbo-negativo (última checagem não liberou)";
+  return "carimbo-expirado (mais de 90s desde confirmadoEm)";
+}
+
+function formatarDiag(d: DiagInfo): string {
+  return [
+    `[${DIAG_TAG}] ${new Date().toISOString()}`,
+    `origem do carimbo: ${d.origem}`,
+    `idade do carimbo no desbloqueio: ${d.idadeCarimboMs === null ? "sem carimbo" : `${d.idadeCarimboMs} ms (${(d.idadeCarimboMs / 1000).toFixed(1)}s)`}`,
+    `carimbo unlocked: ${d.carimboUnlocked === null ? "n/a" : d.carimboUnlocked}`,
+    `motivo verificandoAcesso=true: ${d.motivoVerificando}`,
+    `duração da revalidação: ${d.duracaoRevalidacaoMs === null ? "ainda não resolveu / não disparou" : `${d.duracaoRevalidacaoMs} ms`}`,
+    `versão servida: ${d.versao}`,
+  ].join("\n");
+}
+
+/** Painel fixo, sempre renderizado (nas 3 ramificações do gate) pra não
+ * sumir no meio da transição que estamos medindo. Cópia com fallback pra
+ * seleção manual -- clipboard API pode ser restrita dentro do PWA
+ * standalone do iOS. */
+function DiagPanel({ diag }: { diag: DiagInfo }) {
+  const [aberto, setAberto] = useState(true);
+  const [status, setStatus] = useState<string | null>(null);
+  const texto = formatarDiag(diag);
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setStatus("Copiado!");
+    } catch {
+      setStatus(
+        "Não copiou sozinho — selecione o texto abaixo e copie manualmente."
+      );
+    }
+  }
+
+  if (!aberto) {
+    return (
+      <button
+        onClick={() => setAberto(true)}
+        style={{
+          position: "fixed",
+          top: 8,
+          right: 8,
+          zIndex: 99999,
+          fontSize: 20,
+          background: "rgba(0,0,0,0.7)",
+          border: "1px solid #666",
+          borderRadius: 999,
+          width: 36,
+          height: 36,
+          color: "#fff",
+        }}
+      >
+        🐞
+      </button>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 8,
+        left: 8,
+        right: 8,
+        zIndex: 99999,
+        background: "rgba(0,0,0,0.9)",
+        color: "#0f0",
+        fontFamily: "monospace",
+        fontSize: 11,
+        lineHeight: 1.4,
+        padding: 10,
+        borderRadius: 10,
+        border: "1px solid #444",
+        maxHeight: "45vh",
+        overflowY: "auto",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 6,
+        }}
+      >
+        <strong style={{ color: "#fff" }}>
+          diagnóstico temporário (rede-timing)
+        </strong>
+        <button
+          onClick={() => setAberto(false)}
+          style={{
+            color: "#fff",
+            background: "none",
+            border: "none",
+            fontSize: 14,
+          }}
+        >
+          ×
+        </button>
+      </div>
+      <pre style={{ whiteSpace: "pre-wrap", margin: 0, color: "#0f0" }}>
+        {texto}
+      </pre>
+      <div
+        style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}
+      >
+        <button
+          onClick={copiar}
+          style={{
+            background: "#0f0",
+            color: "#000",
+            border: "none",
+            borderRadius: 6,
+            padding: "6px 10px",
+            fontWeight: "bold",
+          }}
+        >
+          Copiar diagnóstico
+        </button>
+        {status && <span style={{ color: "#fff" }}>{status}</span>}
+      </div>
+      <textarea
+        readOnly
+        value={texto}
+        onClick={(e) => e.currentTarget.select()}
+        style={{
+          width: "100%",
+          marginTop: 8,
+          background: "#111",
+          color: "#0f0",
+          fontFamily: "monospace",
+          fontSize: 10,
+          border: "1px solid #444",
+          borderRadius: 6,
+        }}
+        rows={8}
+      />
+    </div>
+  );
+}
+// ── fim TEMP-TIMING [rede-timing-v2] ───────────────────────────────────────
+
 interface Props {
   usuario: Usuario;
   /** Se a aba Rede é a selecionada agora (`activeTab === "rede"` no pai).
@@ -33,6 +200,14 @@ export function RedeGatedTab({
   active = true,
   onChatFocusChange,
 }: Props) {
+  // TEMP-TIMING [rede-timing-v2] -- captura ANTES de qualquer hidratação
+  // mexer na memória (corpo do componente roda antes dos useState abaixo no
+  // mount). `diagAntes` só reflete o mount de verdade -- ver comentário no
+  // topo do arquivo sobre por que isso é seguro mesmo recalculando a cada
+  // render.
+  const diagAntes = redeCache.acessoLembrado(usuario.id);
+  const diagPersistido = redeCachePersist.carregarAcesso(usuario.id);
+
   // ── Política do acesso lembrado (limite explícito) ──
   // `verificarAcessoConvite` classifica cada resposta em `unlocked` +
   // `motivo`. `redeCache` guarda só o resultado CONCLUSIVO (`200`) com um
@@ -73,6 +248,25 @@ export function RedeGatedTab({
     () => !redeCache.acessoConfirmadoValido(usuario.id)
   );
   const [sheet, setSheet] = useState<GateSheet>(null);
+
+  // TEMP-TIMING [rede-timing-v2] -- snapshot fixado no mount (mesma lógica
+  // de "só a 1ª chamada importa" que unlocked/verificandoAcesso já usam).
+  const [diag, setDiag] = useState<DiagInfo>(() => {
+    const carimbo = diagAntes ?? diagPersistido ?? null;
+    const valido = redeCache.acessoConfirmadoValido(usuario.id);
+    return {
+      origem: diagAntes
+        ? "memoria"
+        : diagPersistido
+          ? "persistencia"
+          : "ausente",
+      idadeCarimboMs: carimbo ? Date.now() - carimbo.confirmadoEm : null,
+      carimboUnlocked: carimbo ? carimbo.unlocked : null,
+      motivoVerificando: motivoVerificandoAcesso(carimbo, valido),
+      duracaoRevalidacaoMs: null,
+      versao: `${DIAG_TAG} · commit ${process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "n/d"}`,
+    };
+  });
 
   // Um convite já resgatado por esse usuário é a única fonte de verdade pra
   // acesso liberado — sem isso, quem já desbloqueou via SerialKeySheet numa
@@ -148,7 +342,17 @@ export function RedeGatedTab({
       derrubar();
     };
 
-    verificarAcessoConvite(supabase, usuario.id).then(aplicar);
+    // TEMP-TIMING [rede-timing-v2] -- só a chamada inicial (a que decide o
+    // 1º frame pós-PIN) é cronometrada; revalidações por visibilitychange/
+    // online não sobrescrevem esse número.
+    const inicioRevalidacaoInicial = performance.now();
+    verificarAcessoConvite(supabase, usuario.id).then((resultado) => {
+      const duracaoMs = Math.round(
+        performance.now() - inicioRevalidacaoInicial
+      );
+      setDiag((d) => ({ ...d, duracaoRevalidacaoMs: duracaoMs }));
+      aplicar(resultado);
+    });
 
     // Revalida quando a aba volta a ficar visível (PWA saiu do 2º plano,
     // troca de app no celular) e quando a conexão volta -- cobre "convite
@@ -169,27 +373,34 @@ export function RedeGatedTab({
 
   if (verificandoAcesso) {
     return (
-      <div className="flex justify-center pt-12">
-        <div
-          className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: "var(--accent)" }}
-        />
-      </div>
+      <>
+        <DiagPanel diag={diag} />
+        <div className="flex justify-center pt-12">
+          <div
+            className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: "var(--accent)" }}
+          />
+        </div>
+      </>
     );
   }
 
   if (unlocked) {
     return (
-      <RedeTab
-        usuario={usuario}
-        active={active}
-        onChatFocusChange={onChatFocusChange}
-      />
+      <>
+        <DiagPanel diag={diag} />
+        <RedeTab
+          usuario={usuario}
+          active={active}
+          onChatFocusChange={onChatFocusChange}
+        />
+      </>
     );
   }
 
   return (
     <>
+      <DiagPanel diag={diag} />
       <RedeTeaserGate sheet={sheet} onSheetChange={setSheet} />
       <SerialKeySheet
         open={sheet === "chave"}
