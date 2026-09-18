@@ -53,6 +53,19 @@ interface Props {
   objetivos: Objetivo[];
   onObjetivoAdded: () => void;
   onToggleObjetivo: (id: string, done: boolean) => Promise<void>;
+  /**
+   * Pulso de navegação (não estado controlado): a Início precisa abrir
+   * diretamente na sub-aba Metas ao vir de "Ver todos"/"objetivos"
+   * (contrato de paridade, seção Início — "acesso à aba Metas"), não só
+   * no Financeiro em si. Como `FinanceiroTab` fica sempre montada
+   * (TabPanel usa display:none, não desmonta — ver TabPanel.tsx), um
+   * valor inicial de useState só valeria na 1ª visita; um pulso que o
+   * componente-pai zera logo depois (via `onFocusTabHandled`) funciona
+   * em qualquer visita seguinte sem brigar com clique manual da usuária
+   * na SegmentedControl depois.
+   */
+  focusTab?: InnerTab | null;
+  onFocusTabHandled?: () => void;
 }
 
 export function FinanceiroTab({
@@ -65,6 +78,8 @@ export function FinanceiroTab({
   objetivos,
   onObjetivoAdded,
   onToggleObjetivo,
+  focusTab,
+  onFocusTabHandled,
 }: Props) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>(DEFAULT_METAS);
@@ -78,6 +93,13 @@ export function FinanceiroTab({
     setTab(t);
     onInnerTabChange?.(t);
   }
+
+  useEffect(() => {
+    if (!focusTab) return;
+    changeTab(focusTab);
+    onFocusTabHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusTab]);
 
   useEffect(() => {
     setLoading(true);

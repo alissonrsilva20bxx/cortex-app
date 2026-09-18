@@ -111,6 +111,11 @@ export default function DevPreviewApp() {
   const [objetivosRefreshKey, setObjetivosRefreshKey] = useState(0);
 
   const [finInnerTab, setFinInnerTab] = useState("visao");
+  // Pulso de navegação pro Financeiro abrir direto na sub-aba Metas — ver
+  // comentário de `focusTab` em FinanceiroTab.tsx (redesign iOS #122/#125).
+  const [financeiroFocusTab, setFinanceiroFocusTab] = useState<"metas" | null>(
+    null
+  );
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
@@ -255,7 +260,10 @@ export default function DevPreviewApp() {
               <ObjetivosCard
                 objetivos={objetivos}
                 onToggle={handleToggleObjetivo}
-                onGoToMetas={() => handleTabChange("financeiro")}
+                onGoToMetas={() => {
+                  handleTabChange("financeiro");
+                  setFinanceiroFocusTab("metas");
+                }}
               />
             )}
             <InstallBanner />
@@ -285,6 +293,8 @@ export default function DevPreviewApp() {
             objetivos={objetivos}
             onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
             onToggleObjetivo={handleToggleObjetivo}
+            focusTab={financeiroFocusTab}
+            onFocusTabHandled={() => setFinanceiroFocusTab(null)}
           />
         </TabPanel>
 
