@@ -1,17 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RedeTeaserGate, type GateSheet } from "./RedeTeaserGate";
 import { SerialKeySheet } from "./SerialKeySheet";
 import { RedeTab } from "./RedeTab";
 import { supabase } from "@/lib/supabase";
-import { verificarAcessoConvite } from "@/lib/rede/acesso";
+import { verificarAcessoConvite, type AcessoConvite } from "@/lib/rede/acesso";
+import * as redeCache from "@/lib/rede/redeCache";
+import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Usuario } from "@/lib/types";
 
 interface Props {
   usuario: Usuario;
+  /** Se a aba Rede é a selecionada agora (`activeTab === "rede"` no pai).
+   * Repassado até o `RedeTab` pra restaurar a rolagem só quando a Rede
+   * está de fato visível. */
+  active?: boolean;
   onChatFocusChange?: (focused: boolean) => void;
 }
+
+/** Enquanto `estado === "semRede"`, tenta de novo nesse intervalo mesmo sem
+ * nenhum `visibilitychange`/`online` disparar -- não há "prazo exato" pra
+ * esperar aqui (já está falhando), então é só uma cadência de retry. */
+const INTERVALO_RETRY_SEM_REDE_MS = 30_000;
+
+type EstadoGate =
+  | "verificando" // nunca confirmado nesta conta (ou carimbo sem corroboração
+  //   nenhuma há mais de 24h) -- aguardando a 1ª resposta decisiva.
+  | "liberado" // conteúdo confiado: confirmação positiva dentro do teto.
+  | "semRede" // tentativa(s) resultaram "indisponivel" e não há carimbo
+  //   válido pra confiar -- continua tentando, NUNCA mostra o gate de
+  //   convite (falha de rede não é "sem convite").
+  | "semAcesso"; // resposta decisiva negativa (ou vitrine forçada/logout
+//   simulado): vitrine + campo de código.
 
 /** Vitrine → código de acesso → Feed completo. Usado tanto na rota real (/)
  * quanto no shell mockado de /dev-preview/app.
@@ -22,55 +43,257 @@ interface Props {
  * BottomSheet renderiza no mesmo z-index de forma independente, então dois
  * booleanos separados (um em cada componente) já deixaram os três
  * empilharem visualmente ao mesmo tempo. */
-export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
-  const [unlocked, setUnlocked] = useState(false);
-  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
+export function RedeGatedTab({
+  usuario,
+  active = true,
+  onChatFocusChange,
+}: Props) {
+  // ── Política do acesso lembrado (teto de confiança, não "validade curta") ──
+  // `verificarAcessoConvite` classifica cada resposta em `unlocked` +
+  // `motivo`. `redeCache` guarda só o resultado CONCLUSIVO (`200`) com um
+  // carimbo de tempo; `acessoConfirmadoValido` diz se esse carimbo ainda
+  // está dentro do teto `ACESSO_CONFIRMADO_TTL_MS` (24h -- ver o porquê no
+  // cabeçalho de `redeCache.ts`).
+  //
+  // Três coisas que ANTES estavam todas amarradas nesse teto, e que este
+  // componente agora trata como decisões independentes (retest do usuário,
+  // T121, 11–18/09): validade dos DADOS em cache (não é problema deste
+  // componente -- é `STALE_MS`/SWR no `RedeTab`, nunca bloqueia nada);
+  // MOMENTO de revalidar o acesso (sempre, incondicional -- não depende do
+  // teto); e quando OCULTAR o conteúdo privado (só em resposta decisiva, não
+  // em "o carimbo está velho").
+  //
+  //  - **`liberado`:** há uma confirmação positiva dentro do teto de 24h
+  //    (memória ou persistida -- `hidratarAcesso` no mount cobre documento
+  //    novo). O `<RedeTab>` monta na hora com o Feed cacheado, revalidando
+  //    em 2º plano. Nunca é autorização -- cada query do RedeTab passa pela
+  //    RLS do servidor.
+  //  - **`verificando`:** nunca houve confirmação nesta conta, OU o teto de
+  //    24h foi cruzado sem NENHUMA corroboração nova -- aguarda a 1ª
+  //    resposta antes de mostrar qualquer conteúdo privado. Sem isto, uma
+  //    conta que nunca mais conseguisse confirmar acesso (sempre offline, ou
+  //    o app nunca mais reaberto em 1º plano) ficaria autorizada localmente
+  //    pra sempre -- é uma rede de segurança de última instância, não o
+  //    gatilho comum do dia a dia (esse é o TTL curto que causava o flash;
+  //    não existe mais).
+  //  - **`semRede`:** tentativa(s) de revalidar voltaram `indisponivel`
+  //    (offline/5xx) e não há carimbo válido pra confiar. Continua tentando
+  //    (mount, volta de 2º plano, reconexão, timer de 60s) -- NUNCA mostra o
+  //    gate de "peça seu convite" nesse estado: falha de rede não é "sem
+  //    convite", e dado já existente no localStorage não isenta a interface
+  //    de proteger o que mostra enquanto não há confirmação nenhuma.
+  //  - **`semAcesso`:** resposta DECISIVA -- `sessao` (401 sem refresh
+  //    possível), `negado` (403/4xx) ou `sem_convite` (200 sem convite) --
+  //    ou vitrine forçada (`?vitrine=1`). Zera memória + localStorage na
+  //    hora; perda de autorização tira o conteúdo privado da tela.
+  //  - **Revalidação extra:** ao a aba voltar a ficar visível
+  //    (`visibilitychange`, que já confere o teto na hora antes de disparar
+  //    a consulta), ao reconectar (`online`), num timer exato agendado pro
+  //    instante em que o teto de 24h vence (não polling -- `setTimeout` pro
+  //    prazo restante, recalculado a cada nova confirmação) e, em
+  //    `semRede`, retry periódico -- nenhuma dessas depende de um remount
+  //    do PIN.
+  //
+  // Janela de revogação (online): limitada pela duração da PRÓPRIA consulta
+  // — não é instantânea, numa rede lenta pode passar de 1s (medido: 860ms
+  // num caso real). O pior caso não é "24h", é "até a próxima consulta
+  // TERMINAR", e essa consulta já dispara a cada mount/foreground/reconexão.
+  // Offline: sem tentativa possível, o conteúdo cacheado permanece em tela
+  // até reconectar -- isto NÃO é uma exposição nova: os mesmos posts já
+  // ficam em `localStorage` por até 24h (cache de dados, independente desta
+  // política) para o SWR funcionar; quem tem acesso físico ao aparelho
+  // offline já os veria de um jeito ou de outro. O que esta política decide
+  // é só se a INTERFACE oculta ou não enquanto não há confirmação -- dado
+  // já existir em disco não torna essa proteção irrelevante.
+  const [estado, setEstado] = useState<EstadoGate>(() => {
+    // Hidrata a memória com o carimbo persistido ANTES de checar o teto --
+    // só tem efeito no 1º render desta conta nesta sessão de JS (documento
+    // novo); se já há algo em memória (mesma sessão), hidratarAcesso é nulo.
+    const persistido = redeCachePersist.carregarAcesso(usuario.id);
+    redeCache.hidratarAcesso(usuario.id, persistido);
+    return redeCache.acessoConfirmadoValido(usuario.id)
+      ? "liberado"
+      : "verificando";
+  });
   const [sheet, setSheet] = useState<GateSheet>(null);
+  // Bump manual (botão "Tentar novamente" no estado `semRede`) força o
+  // efeito abaixo a rodar de novo e disparar uma tentativa na hora -- mesmo
+  // padrão de `conversationsReloadKey` no `RedeTab`.
+  const [tentativaManual, setTentativaManual] = useState(0);
+  // Ponte pros efeitos de baixo (timer do teto, retry de semRede)
+  // chamarem a MESMA `revalidarAgora` do efeito de mount atual, sem precisar
+  // depender de `estado` nas deps desse efeito (que reconstruiria os
+  // listeners de visibilitychange/online toda hora à toa).
+  const revalidarAgoraRef = useRef<() => void>(() => {});
 
   // Um convite já resgatado por esse usuário é a única fonte de verdade pra
   // acesso liberado — sem isso, quem já desbloqueou via SerialKeySheet numa
   // sessão anterior cai na tela de gate de novo a cada recarregamento, já
-  // que `unlocked` acima é só estado local.
+  // que `estado` acima é só estado local.
   //
   // ?vitrine=1 na URL força a vitrine a aparecer mesmo numa conta já
   // desbloqueada -- só pra quem está testando/mexendo no fluxo do gate
   // repetidamente sem precisar revogar o convite no banco toda hora. Não é
   // UI (ninguém digita isso sem saber que existe), então não conflita com a
   // decisão de "sem UI de admin" da ticket 03.
+  // Carimba `unlocked=true` em memória E em localStorage com o MESMO
+  // instante -- as duas cópias precisam concordar sobre "há quanto tempo"
+  // pra um documento novo (hidratarAcesso) recalcular o teto certo depois.
+  // Chamado SÓ em resposta positiva de verdade -- nunca em leitura de
+  // cache, abertura do app ou erro/indisponibilidade (senão o teto de 24h
+  // se estenderia sem nenhuma corroboração real).
+  const lembrarAcessoConfirmado = useCallback((): void => {
+    const confirmadoEm = Date.now();
+    redeCache.lembrarAcesso(usuario.id, true, confirmadoEm);
+    redeCachePersist.salvarAcesso(usuario.id, true, confirmadoEm);
+  }, [usuario.id]);
+
   useEffect(() => {
+    // Trocar de conta (ou 1ª vinculação) limpa o cache em memória da conta
+    // anterior antes de qualquer leitura do RedeTab.
+    redeCache.vincularUsuario(usuario.id);
+
     let ativo = true;
     const forcarVitrine =
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("vitrine") === "1";
 
     if (forcarVitrine) {
-      setVerificandoAcesso(false);
+      // Força a vitrine mesmo com um carimbo hidratado de `redeCachePersist`
+      // (conta já desbloqueada, mas dentro do teto de 24h) -- sem isto,
+      // `estado` já nasceria `liberado` no useState acima e a vitrine nunca
+      // apareceria num reload com esta flag.
+      setEstado("semAcesso");
       return;
     }
 
-    verificarAcessoConvite(supabase, usuario.id).then((resultado) => {
+    const derrubar = () => {
+      // Perdeu (ou nunca teve) autorização: conteúdo privado sai da tela +
+      // zera memória e localStorage.
+      setEstado("semAcesso");
+      redeCache.limparTudo();
+      redeCachePersist.limpar(usuario.id);
+    };
+
+    /** Aplica um resultado de `verificarAcessoConvite`. */
+    const aplicar = (resultado: AcessoConvite) => {
       if (!ativo) return;
-      if (resultado.unlocked) setUnlocked(true);
-      setVerificandoAcesso(false);
-    });
+      if (resultado.unlocked) {
+        lembrarAcessoConfirmado();
+        setEstado("liberado");
+        return;
+      }
+      if (resultado.motivo === "indisponivel") {
+        // Não conclui nada -- nunca é "sem convite". Se ainda há um acesso
+        // confirmado dentro do teto de 24h, segue mostrando o conteúdo
+        // cacheado; senão, fica tentando de novo (`semRede`), SEM cair no
+        // gate de convite -- falha de rede não é motivo pra pedir convite
+        // de novo pra quem já tem um.
+        setEstado(
+          redeCache.acessoConfirmadoValido(usuario.id) ? "liberado" : "semRede"
+        );
+        return;
+      }
+      // "sem_convite" | "sessao" | "negado" -> derruba.
+      derrubar();
+    };
+
+    const revalidarAgora = () => {
+      verificarAcessoConvite(supabase, usuario.id).then(aplicar);
+    };
+    revalidarAgoraRef.current = revalidarAgora;
+
+    revalidarAgora();
+
+    // Revalida quando a aba volta a ficar visível (PWA saiu do 2º plano,
+    // troca de app no celular) e quando a conexão volta -- cobre "convite
+    // revogado enquanto esteve fora" sem depender de um remount do PIN.
+    // Confere o teto ANTES de disparar a consulta: se já cruzou (o timer
+    // abaixo não dispara enquanto a aba está em 2º plano -- `setTimeout` de
+    // página oculta é jogado pra trás pelo navegador), reflete isso na hora
+    // em vez de deixar `liberado` em tela até a consulta terminar.
+    const aoFicarVisivel = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!redeCache.acessoConfirmadoValido(usuario.id)) {
+        setEstado((atual) => (atual === "liberado" ? "verificando" : atual));
+      }
+      revalidarAgora();
+    };
+    document.addEventListener("visibilitychange", aoFicarVisivel);
+    window.addEventListener("online", revalidarAgora);
+
     return () => {
       ativo = false;
+      document.removeEventListener("visibilitychange", aoFicarVisivel);
+      window.removeEventListener("online", revalidarAgora);
     };
-  }, [usuario.id]);
+  }, [usuario.id, lembrarAcessoConfirmado, tentativaManual]);
 
-  if (verificandoAcesso) {
+  // Timer exato pro instante em que o teto de 24h vence -- reagendado toda
+  // vez que `estado` volta a `liberado` (ou seja, toda vez que há um
+  // `confirmadoEm` novo). Substitui polling: dispara uma única vez, na hora
+  // certa, em vez de conferir a cada X segundos até 24h se completarem.
+  useEffect(() => {
+    if (estado !== "liberado") return;
+    const restante = redeCache.tempoRestanteAteTeto(usuario.id);
+    if (restante === null) return; // defensivo -- não deveria acontecer liberado sem carimbo
+    const t = setTimeout(
+      () => {
+        if (!redeCache.acessoConfirmadoValido(usuario.id)) {
+          setEstado("verificando");
+          revalidarAgoraRef.current();
+        }
+      },
+      Math.max(0, restante)
+    );
+    return () => clearTimeout(t);
+  }, [estado, usuario.id]);
+
+  // Enquanto `semRede`, tenta de novo periodicamente -- não há um "instante
+  // exato" pra esperar aqui (diferente do timer do teto acima), só cadência
+  // de retry até a rede voltar ou `visibilitychange`/`online` resolverem
+  // antes.
+  useEffect(() => {
+    if (estado !== "semRede") return;
+    const t = setInterval(() => {
+      revalidarAgoraRef.current();
+    }, INTERVALO_RETRY_SEM_REDE_MS);
+    return () => clearInterval(t);
+  }, [estado]);
+
+  if (estado === "verificando" || estado === "semRede") {
     return (
-      <div className="flex justify-center pt-12">
+      <div className="flex flex-col items-center gap-3 pt-12 px-6 text-center">
         <div
           className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
           style={{ borderColor: "var(--accent)" }}
         />
+        {estado === "semRede" && (
+          <>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              Sem conexão no momento. Tentando de novo…
+            </p>
+            <button
+              onClick={() => setTentativaManual((k) => k + 1)}
+              className="text-xs font-semibold active:opacity-70"
+              style={{ color: "var(--accent)", minHeight: "44px" }}
+            >
+              Tentar novamente
+            </button>
+          </>
+        )}
       </div>
     );
   }
 
-  if (unlocked) {
-    return <RedeTab usuario={usuario} onChatFocusChange={onChatFocusChange} />;
+  if (estado === "liberado") {
+    return (
+      <RedeTab
+        usuario={usuario}
+        active={active}
+        onChatFocusChange={onChatFocusChange}
+      />
+    );
   }
 
   return (
@@ -81,7 +304,8 @@ export function RedeGatedTab({ usuario, onChatFocusChange }: Props) {
         onClose={() => setSheet(null)}
         onConfirm={() => {
           setSheet(null);
-          setUnlocked(true);
+          setEstado("liberado");
+          lembrarAcessoConfirmado();
         }}
       />
     </>

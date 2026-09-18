@@ -101,7 +101,33 @@ describe("FeedFotos — direção iOS + Instagram", () => {
   it("carrossel: a principal do slide só monta quando ele foi ativado (deslizado até)", () => {
     expect(f).toMatch(/renderPrincipal=\{naViewport && ativados\.has\(i\)\}/);
     expect(f).toMatch(/setAtivados/);
-    expect(f).toMatch(/new Set\(\[0\]\)/); // só o 1º slide começa ativo
+    // slides ativos começam em 0..slideInicial (o slide lembrado do último
+    // mount); num post sem memória, slideInicial === 0, só o 1º.
+    expect(f).toMatch(
+      /for \(let i = 0; i <= slideInicial; i\+\+\) s\.add\(i\)/
+    );
+  });
+
+  it("carrossel: slide ativo é lembrado por post (sobrevive ao remount do PIN)", () => {
+    expect(f).toMatch(
+      /import\s*{\s*lembrarSlide,\s*slideLembrado\s*}\s*from\s*"@\/lib\/rede\/redeCache"/
+    );
+    expect(f).toMatch(/slideLembrado\(postId\)/);
+    expect(f).toMatch(/lembrarSlide\(postId, i\)/);
+    // reposiciona o scroller no slide lembrado antes do 1º paint
+    expect(f).toMatch(/el\.scrollLeft = slideInicial \* \(el\.clientWidth/);
+  });
+
+  it('PhotoStage assina thumb/principal sob demanda quando o cache hidratado vem sem URL (não depende de <img src="">)', () => {
+    // cache persistido não guarda URL assinada de 5min (req 5)
+    expect(f).toMatch(
+      /if \(!thumbUrl && !renovandoThumb\.current\) void renovarThumb\(\)/
+    );
+    expect(f).toMatch(
+      /!url &&\s*!principalFalhou &&\s*!renovandoPrincipal\.current/
+    );
+    // a <img> da miniatura só monta com src de verdade
+    expect(f).toMatch(/\{thumbUrl && \(/);
   });
 
   it("a foto do feed NÃO é interativa: não abre modal/fullscreen/página/visualizador", () => {

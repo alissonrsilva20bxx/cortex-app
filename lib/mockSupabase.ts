@@ -36,6 +36,7 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
   private op: "select" | "insert" | "update" | "delete" | "upsert" = "select";
   private filters: [string, unknown][] = [];
   private inFilters: [string, unknown[]][] = [];
+  private ltFilters: [string, unknown][] = [];
   private ilikeFilters: [string, string][] = [];
   private orders: [string, boolean][] = [];
   private limitN: number | null = null;
@@ -54,6 +55,9 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
     return (
       matchesFilters(row, this.filters) &&
       this.inFilters.every(([col, vals]) => vals.includes(row[col])) &&
+      this.ltFilters.every(
+        ([col, val]) => (row[col] as string | number) < (val as string | number)
+      ) &&
       this.ilikeFilters.every(([col, pattern]) => {
         const re = new RegExp(
           `^${pattern
@@ -82,6 +86,10 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
   }
   in(col: string, vals: unknown[]) {
     this.inFilters.push([col, vals]);
+    return this;
+  }
+  lt(col: string, val: unknown) {
+    this.ltFilters.push([col, val]);
     return this;
   }
   ilike(col: string, pattern: string) {

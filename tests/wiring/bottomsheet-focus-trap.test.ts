@@ -119,7 +119,7 @@ describe("The real gate keeps using the real services — nothing swapped for th
   it("RedeGatedTab still uses verificarAcessoConvite (the real DB-backed source of truth), not a client-only flag", () => {
     const src = read("components/rede/RedeGatedTab.tsx");
     expect(src).toMatch(
-      /import\s*{\s*verificarAcessoConvite\s*}\s*from\s*"@\/lib\/rede\/acesso"/
+      /import\s*{[^}]*\bverificarAcessoConvite\b[^}]*}\s*from\s*"@\/lib\/rede\/acesso"/
     );
     expect(src).toContain("verificarAcessoConvite(supabase, usuario.id)");
   });
