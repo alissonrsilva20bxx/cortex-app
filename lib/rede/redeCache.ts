@@ -14,8 +14,8 @@
  * isso, um documento novo sempre tratava a conta como "nunca confirmado
  * nesta sessão", mesmo com uma confirmação de segundos atrás, e a aba
  * inteira esperava o round-trip de rede antes de mostrar qualquer coisa. A
- * hidratação só REPÕE o carimbo na memória -- o TTL de 90s continua sendo
- * decidido só por `acessoConfirmadoValido`, e não muda.
+ * hidratação só REPÕE o carimbo na memória -- o teto de `acessoConfirmadoValido`
+ * continua sendo decidido só por essa função, e não muda.
  *
  * Regras que este módulo garante (o resto é responsabilidade do
  * `RedeTab`/`RedeGatedTab` que o consomem):
@@ -46,19 +46,39 @@ export type RedeRecurso = "perfil" | "amigas" | "conversas" | "notificacoes";
 const STALE_MS = 60_000;
 
 /**
- * Validade de um acesso CONFIRMADO (`verificarAcessoConvite` devolveu um
- * `200` com convite). Dentro dessa janela o `RedeGatedTab` monta o Feed na
- * hora ao destravar o PIN, sem esperar a revalidação. Vencida, ele volta a
- * mostrar o spinner e revalida ANTES de exibir qualquer conteúdo privado.
+ * Teto de confiança de um acesso CONFIRMADO (`verificarAcessoConvite`
+ * devolveu um `200` com convite). Dentro dele o `RedeGatedTab` mostra o Feed
+ * cacheado na hora ao destravar o PIN, revalidando em 2º plano -- NUNCA é
+ * autorização (RLS decide cada query de verdade), só decide se a interface
+ * confia no que já mostrou antes de saber a resposta de novo.
  *
- * 90s é curto de propósito: cobre o caso comum (travou o PIN, digitou,
- * destravou) e a troca rápida de app no celular, mas não deixa uma
- * confirmação velha valer por horas quando o iOS mantém a aba viva em 2º
- * plano. Além disso: enquanto a revalidação só devolver resultados
- * INDETERMINADOS (offline/5xx), o acesso lembrado NÃO é estendido -- passou
- * de 90s sem uma confirmação nova, o conteúdo privado sai da tela.
+ * Isto NÃO é (mais) o intervalo aceitável entre "travou o PIN" e "destravou
+ * de novo" -- essa era a confusão original (T121, retest de 11/09-18/09):
+ * tratar tempo decorrido como sinônimo de "perdeu o acesso" fazia qualquer
+ * destrava depois de ~90s pagar um round-trip síncrono antes de mostrar
+ * qualquer coisa, mesmo com a memória perfeitamente intacta. Ver
+ * `RedeGatedTab` pro modelo atual, que separa três coisas que estavam
+ * conflacionadas numa constante só:
+ *  - validade dos DADOS em cache (feed/perfil) -- é `STALE_MS` acima, SWR de
+ *    verdade, nunca bloqueia nada, não muda aqui;
+ *  - MOMENTO de revalidar o acesso -- sempre, incondicional, todo mount +
+ *    volta de 2º plano + reconexão (não depende deste teto);
+ *  - quando OCULTAR o conteúdo privado -- só em resposta negativa decisiva
+ *    (`sem_convite`/`sessao`/`negado`), logout ou troca de conta. Este teto
+ *    de 24h é só uma rede de segurança de última instância pro caso
+ *    degenerado de nunca mais conseguir uma confirmação positiva (sempre
+ *    offline, ou o app nunca mais reaberto em primeiro plano) -- não é o
+ *    gatilho normal de ocultar, e não deve ser tratado como se fosse.
+ *
+ * Por isso o valor é generoso (bate com o TTL do cache de dados em
+ * `redeCachePersist.ts`) em vez de curto: ele só existe pra não deixar uma
+ * confirmação sem NENHUMA corroboração valer pra sempre, não pra apertar o
+ * ciclo comum de destravar o PIN. Enquanto a revalidação só devolver
+ * resultados INDETERMINADOS (offline/5xx), o acesso lembrado NÃO é
+ * estendido -- só uma resposta POSITIVA (`unlocked: true`) recarimba
+ * `confirmadoEm`.
  */
-const ACESSO_CONFIRMADO_TTL_MS = 90_000;
+const ACESSO_CONFIRMADO_TTL_MS = 24 * 60 * 60 * 1000;
 
 const SLIDE_CAP = 120;
 const TOMBSTONE_CAP = 300;
@@ -343,9 +363,11 @@ export function acessoLembrado(
   return contaOk(userId) ? acessoMemoria.get(userId) : undefined;
 }
 
-/** `true` se há um acesso CONFIRMADO como liberado e ainda dentro da
- * validade -- a única condição pra o `RedeGatedTab` montar o Feed sem
- * revalidar antes. */
+/** `true` se há um acesso CONFIRMADO como liberado e ainda dentro do teto de
+ * confiança -- a condição pra o `RedeGatedTab` mostrar o Feed cacheado na
+ * hora, SEM esperar a revalidação terminar (que roda de qualquer jeito, em
+ * 2º plano, incondicional -- isto só decide se a interface confia no que já
+ * tem enquanto isso). */
 export function acessoConfirmadoValido(userId: string): boolean {
   const a = acessoLembrado(userId);
   return (

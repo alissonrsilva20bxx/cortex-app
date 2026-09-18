@@ -31,13 +31,15 @@
  * de mostrar qualquer coisa, mesmo com uma confirmação de poucos segundos
  * atrás -- a aba inteira esperava, não só o feed.
  *
- * Este módulo NÃO decide validade -- só guarda o carimbo. Quem aplica a
- * janela de 90s (`ACESSO_CONFIRMADO_TTL_MS`) é sempre
+ * Este módulo NÃO decide validade -- só guarda o carimbo. Quem aplica o teto
+ * de confiança (`ACESSO_CONFIRMADO_TTL_MS`, 24h -- ver o cabeçalho de
+ * `redeCache.ts` pro porquê desse valor e do que ele NÃO é) é sempre
  * `redeCache.acessoConfirmadoValido`, recalculada a partir do `confirmadoEm`
- * aqui lido; persistir o carimbo não estende essa janela em um milissegundo
- * -- só deixa ela sobreviver ao documento, igual ao cache do feed já
- * sobrevive. `RedeGatedTab` é o único chamador (hidrata a memória no mount,
- * grava só quando `verificarAcessoConvite` confirma `200`).
+ * aqui lido; persistir o carimbo não estende esse teto em um milissegundo --
+ * só deixa ele sobreviver ao documento, igual ao cache do feed já sobrevive.
+ * `RedeGatedTab` é o único chamador (hidrata a memória no mount, grava só
+ * quando `verificarAcessoConvite` confirma `200` -- nunca em resposta a
+ * leitura de cache, abertura do app ou erro/indisponibilidade).
  */
 
 import type { Database } from "../database.types";

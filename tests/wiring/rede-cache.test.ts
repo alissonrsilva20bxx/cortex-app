@@ -107,29 +107,70 @@ describe("restauração de rolagem só quando a Rede está ativa (req 1 e 2)", (
   });
 });
 
-describe("acesso: cache é apresentação com validade curta, nunca autorização", () => {
+describe("acesso: teto de confiança de 24h, oculta só em resposta decisiva (T121)", () => {
   const src = read("components/rede/RedeGatedTab.tsx");
 
-  it("só monta o Feed na hora se o acesso confirmado ainda está dentro da validade (TTL)", () => {
+  it("só monta o Feed na hora se o acesso confirmado ainda está dentro do teto de 24h", () => {
     expect(src).toMatch(/redeCache\.acessoConfirmadoValido\(usuario\.id\)/);
     expect(src).toContain("verificarAcessoConvite(supabase, usuario.id)");
   });
 
-  it("motivo 'indisponivel' só preserva enquanto o acesso confirmado seguir válido; vencido, sai da tela", () => {
-    expect(src).toMatch(
-      /motivo === "indisponivel"[\s\S]*?acessoConfirmadoValido\(usuario\.id\)[\s\S]*?setUnlocked\(false\)/
+  it("'indisponivel' NUNCA deriva pro gate de convite -- alterna só entre liberado e semRede", () => {
+    const bloco = src.match(
+      /if \(resultado\.motivo === "indisponivel"\) \{[\s\S]*?\n {6}\}/
+    )?.[0];
+    expect(bloco).toBeTruthy();
+    expect(bloco).toMatch(/acessoConfirmadoValido\(usuario\.id\)/);
+    expect(bloco).toMatch(/"liberado"/);
+    expect(bloco).toMatch(/"semRede"/);
+    // falha de rede não pode virar "sem convite": nenhuma menção a
+    // semAcesso/derrubar dentro deste bloco.
+    expect(bloco).not.toMatch(/semAcesso|derrubar\(\)/);
+  });
+
+  it("estado 'semRede' nunca renderiza o RedeTeaserGate (peça-seu-convite)", () => {
+    // só duas ramificações retornam RedeTeaserGate/SerialKeySheet: nenhuma
+    // delas pode ser alcançável a partir de estado === "semRede".
+    const ramoGate = src.match(
+      /return \(\s*<>\s*<RedeTeaserGate[\s\S]*?<\/>\s*\);/
+    )?.[0];
+    expect(ramoGate).toBeTruthy();
+    const antes = src.slice(0, src.indexOf(ramoGate!));
+    // a única guarda que precede esse retorno já tratou verificando/semRede
+    // e liberado antes -- ou seja, o gate só sobra pro "semAcesso" (else).
+    expect(antes).toMatch(
+      /if \(estado === "verificando" \|\| estado === "semRede"\)/
     );
+    expect(antes).toMatch(/if \(estado === "liberado"\)/);
   });
 
   it("'sem_convite' | 'sessao' | 'negado' derrubam: some da tela + zera memória e localStorage", () => {
     expect(src).toMatch(
-      /const derrubar = \(\) => \{[\s\S]*?setUnlocked\(false\);[\s\S]*?redeCache\.limparTudo\(\);\s*redeCachePersist\.limpar\(usuario\.id\)/
+      /const derrubar = \(\) => \{[\s\S]*?setEstado\("semAcesso"\);[\s\S]*?redeCache\.limparTudo\(\);\s*redeCachePersist\.limpar\(usuario\.id\)/
     );
   });
 
   it("revalida ao voltar a ficar visível E ao reconectar (revogação com o PWA em 2º plano)", () => {
-    expect(src).toMatch(/addEventListener\("visibilitychange", revalidar\)/);
-    expect(src).toMatch(/addEventListener\("online", revalidar\)/);
+    expect(src).toMatch(
+      /addEventListener\("visibilitychange", aoFicarVisivel\)/
+    );
+    expect(src).toMatch(/addEventListener\("online", revalidarAgora\)/);
+  });
+
+  it("checagem periódica cobre o teto de 24h vencendo com a tela sempre aberta/em foco", () => {
+    expect(src).toMatch(/setInterval\(\(\) => \{/);
+    expect(src).toMatch(/INTERVALO_CHECAGEM_TETO_MS/);
+    expect(src).toMatch(/estadoRef\.current === "liberado"/);
+    expect(src).toMatch(/clearInterval\(checagemTeto\)/);
+  });
+
+  it("lembrarAcessoConfirmado (única fonte do carimbo) só é chamado em resposta positiva -- nunca em 'indisponivel'", () => {
+    const chamadas = src.match(/lembrarAcessoConfirmado\(\)/g) ?? [];
+    // useEffect (resultado.unlocked) + SerialKeySheet.onConfirm
+    expect(chamadas.length).toBe(2);
+    expect(src).toMatch(
+      /if \(resultado\.unlocked\) \{\s*lembrarAcessoConfirmado\(\);/
+    );
   });
 
   it("acesso.ts: 401 tenta refreshSession; 403/4xx é 'negado'; status 0/5xx é 'indisponivel'", () => {
@@ -147,9 +188,9 @@ describe("acesso: cache é apresentação com validade curta, nunca autorizaçã
     );
   });
 
-  it("redeCache: validade explícita do acesso confirmado + carimbo de tempo", () => {
+  it("redeCache: teto de 24h explícito (não 90s) + carimbo de tempo", () => {
     const rc = read("lib/rede/redeCache.ts");
-    expect(rc).toMatch(/ACESSO_CONFIRMADO_TTL_MS = \d/);
+    expect(rc).toMatch(/ACESSO_CONFIRMADO_TTL_MS = 24 \* 60 \* 60 \* 1000/);
     expect(rc).toMatch(/confirmadoEm: number = Date\.now\(\)/);
     expect(rc).toMatch(
       /Date\.now\(\) - a\.confirmadoEm < ACESSO_CONFIRMADO_TTL_MS/
@@ -166,7 +207,7 @@ describe("acesso: cache é apresentação com validade curta, nunca autorizaçã
     const gated = read("components/rede/RedeGatedTab.tsx");
     // hidrata ANTES de decidir o estado inicial (useState lazy init)
     expect(gated).toMatch(
-      /useState\(\(\) => \{[\s\S]*?redeCachePersist\.carregarAcesso\(usuario\.id\)[\s\S]*?redeCache\.hidratarAcesso\(usuario\.id, persistido\)[\s\S]*?return redeCache\.acessoConfirmadoValido\(usuario\.id\);\s*\}\);/
+      /useState<EstadoGate>\(\(\) => \{[\s\S]*?redeCachePersist\.carregarAcesso\(usuario\.id\)[\s\S]*?redeCache\.hidratarAcesso\(usuario\.id, persistido\)[\s\S]*?redeCache\.acessoConfirmadoValido\(usuario\.id\)[\s\S]*?\}\);/
     );
     // grava nos dois lugares com o MESMO carimbo, não dois Date.now() soltos
     expect(gated).toMatch(
@@ -174,7 +215,13 @@ describe("acesso: cache é apresentação com validade curta, nunca autorizaçã
     );
     // ?vitrine=1 continua forçando a vitrine mesmo com um carimbo hidratado
     expect(gated).toMatch(
-      /if \(forcarVitrine\) \{[\s\S]*?setUnlocked\(false\);[\s\S]*?setVerificandoAcesso\(false\);/
+      /if \(forcarVitrine\) \{[\s\S]*?setEstado\("semAcesso"\);/
+    );
+  });
+
+  it("troca de conta: vincularUsuario acontece antes de qualquer leitura de acesso/feed", () => {
+    expect(src).toMatch(
+      /useEffect\(\(\) => \{\s*\/\/[\s\S]*?redeCache\.vincularUsuario\(usuario\.id\);/
     );
   });
 });

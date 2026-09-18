@@ -215,7 +215,7 @@ describe("acesso lembrado -- apresentação só, com validade curta", () => {
     expect(typeof lembrado?.confirmadoEm).toBe("number");
   });
 
-  it("acessoConfirmadoValido: true logo após confirmar, false depois do TTL", () => {
+  it("acessoConfirmadoValido: true logo após confirmar, false depois do teto", () => {
     vi.useFakeTimers({ now: 1_000_000 });
     try {
       redeCache.vincularUsuario("A");
@@ -230,11 +230,78 @@ describe("acesso lembrado -- apresentação só, com validade curta", () => {
     }
   });
 
-  it("limparTudo / troca de conta esquece o acesso", () => {
+  // Regressão literal do bug relatado (T121, reteste real no iPhone):
+  // confirmação 91992ms antes do desbloqueio (~92s) derrubava o conteúdo
+  // com o TTL antigo de 90s. O teto agora é 24h -- 92s precisa continuar
+  // válido por uma folga enorme, não só passar raspando.
+  it("92s desde a confirmação continua válido (regressão do TTL de 90s)", () => {
+    vi.useFakeTimers({ now: 1_000_000 });
+    try {
+      redeCache.vincularUsuario("A");
+      redeCache.lembrarAcesso("A", true);
+      vi.advanceTimersByTime(92_000);
+      expect(redeCache.acessoConfirmadoValido("A")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("teto é exatamente 24h: válido a 1ms de completar, inválido a 1ms de passar", () => {
+    const VINTE_QUATRO_HORAS_MS = 24 * 60 * 60 * 1000;
+    expect(redeCache._internos.ACESSO_CONFIRMADO_TTL_MS).toBe(
+      VINTE_QUATRO_HORAS_MS
+    );
+    vi.useFakeTimers({ now: 1_000_000 });
+    try {
+      redeCache.vincularUsuario("A");
+      redeCache.lembrarAcesso("A", true);
+
+      vi.advanceTimersByTime(VINTE_QUATRO_HORAS_MS - 1);
+      expect(redeCache.acessoConfirmadoValido("A")).toBe(true);
+
+      vi.advanceTimersByTime(2); // agora VINTE_QUATRO_HORAS_MS + 1 desde a confirmação
+      expect(redeCache.acessoConfirmadoValido("A")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("offline (nenhuma chamada a lembrarAcesso) nunca estende o prazo -- só resposta positiva grava carimbo", () => {
+    vi.useFakeTimers({ now: 1_000_000 });
+    try {
+      redeCache.vincularUsuario("A");
+      redeCache.lembrarAcesso("A", true);
+      const carimboOriginal = redeCache.acessoLembrado("A")?.confirmadoEm;
+
+      // Simula o tempo passando com só leituras (sem nenhuma nova
+      // confirmação positiva) -- ler não é o mesmo que confirmar.
+      vi.advanceTimersByTime(1000);
+      redeCache.acessoConfirmadoValido("A");
+      redeCache.acessoLembrado("A");
+      vi.advanceTimersByTime(1000);
+      redeCache.acessoConfirmadoValido("A");
+
+      expect(redeCache.acessoLembrado("A")?.confirmadoEm).toBe(carimboOriginal);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("limparTudo / troca de conta esquece o acesso (revogação e troca de conta)", () => {
     redeCache.vincularUsuario("A");
+    redeCache.lembrarAcesso("A", true);
+    expect(redeCache.acessoConfirmadoValido("A")).toBe(true);
+
+    // Revogação (logout/negado): limparTudo zera a conta atual.
+    redeCache.limparTudo();
+    expect(redeCache.acessoLembrado("A")).toBeUndefined();
+    expect(redeCache.acessoConfirmadoValido("A")).toBe(false);
+
+    // Reconfirma e troca de conta: a nova conta não herda nada da anterior.
     redeCache.lembrarAcesso("A", true);
     redeCache.vincularUsuario("B");
     expect(redeCache.acessoLembrado("A")).toBeUndefined();
+    expect(redeCache.acessoConfirmadoValido("B")).toBe(false);
   });
 
   it("lembrarAcesso aceita um confirmadoEm explícito (pra concordar com o carimbo persistido)", () => {
