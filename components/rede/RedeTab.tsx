@@ -1894,6 +1894,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
           liveLinks={liveLinks}
           wishlistItems={wishlistItems}
           clientesCount={clientes.length}
+          friendsCount={friends.length}
           defaultPrivacidade={defaultPrivacidade}
           loading={perfil === null && !perfilError}
           error={perfilError}

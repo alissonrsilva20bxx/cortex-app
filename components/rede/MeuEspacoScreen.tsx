@@ -21,6 +21,9 @@ interface Props {
   liveLinks: LiveLink[];
   wishlistItems: WishlistItem[];
   clientesCount: number;
+  /** Amigas reais (RedeTab já carrega `friends` pra Amigas/gate de bloqueio)
+   * — só a contagem, nenhum dado novo. */
+  friendsCount: number;
   defaultPrivacidade: Privacidade;
   /** Carregamento real do próprio perfil (RedeTab) -- não um timeout fixo. */
   loading: boolean;
@@ -55,6 +58,7 @@ export function MeuEspacoScreen({
   liveLinks,
   wishlistItems,
   clientesCount,
+  friendsCount,
   defaultPrivacidade,
   loading,
   error,
@@ -109,6 +113,60 @@ export function MeuEspacoScreen({
               onClick={onEditAvatar}
               editable
             />
+
+            {/* Estatísticas — passo 1 da hierarquia "avatar e números
+                derivados de dados existentes" do contrato de paridade
+                (seção Meu perfil), como no protótipo aprovado
+                ("18 publicações · 246 amigas · 31 clientes"). Ausente até
+                este ticket (T20/#127) — os 3 números já existiam em
+                variáveis reais (meusPosts/friendsCount/clientesCount, essa
+                última já usada mais abaixo no card de Clientes), só
+                faltava esta linha juntando os três. Nenhum dado novo. */}
+            <div className="flex items-center gap-6 mt-4">
+              <div className="text-center">
+                <p
+                  className="font-bold tabular-nums"
+                  style={{ fontSize: "16px", color: "var(--text)" }}
+                >
+                  {meusPosts.length}
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  publicações
+                </p>
+              </div>
+              <div className="text-center">
+                <p
+                  className="font-bold tabular-nums"
+                  style={{ fontSize: "16px", color: "var(--text)" }}
+                >
+                  {friendsCount}
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  amigas
+                </p>
+              </div>
+              <div className="text-center">
+                <p
+                  className="font-bold tabular-nums"
+                  style={{ fontSize: "16px", color: "var(--text)" }}
+                >
+                  {clientesCount}
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  clientes
+                </p>
+              </div>
+            </div>
+
             <div className="flex items-center gap-1.5 mt-3">
               <p
                 className="font-bold"
