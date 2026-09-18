@@ -6,7 +6,6 @@ import {
   Wallet,
   ShieldCheck,
   UsersRound,
-  Settings,
 } from "lucide-react";
 import type { TabId } from "@/lib/types";
 import { useScrollCompact } from "@/lib/useScrollCompact";
@@ -15,13 +14,17 @@ import {
   getBottomNavCompactStyle,
 } from "@/lib/bottomNavCompactStyle";
 
+// Redesign iOS quase nativo (wayfinder #122, ticket #124): exatamente 5
+// destinos — Ajustes saiu da barra e passou a abrir pelo avatar da Início
+// (GreetingHeader) / voltar pelo próprio Ajustes. "ajustes" continua um
+// TabId válido (lib/types.ts) e a TabPanel continua funcionando igual —
+// só parou de ganhar um botão próprio aqui.
 const TABS: { id: TabId; label: string; Icon: typeof Home }[] = [
   { id: "home", label: "Início", Icon: Home },
   { id: "jobs", label: "Agenda", Icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", Icon: Wallet },
   { id: "cofre", label: "Cofre", Icon: ShieldCheck },
   { id: "rede", label: "Rede", Icon: UsersRound },
-  { id: "ajustes", label: "Ajustes", Icon: Settings },
 ];
 
 interface Props {

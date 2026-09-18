@@ -240,7 +240,10 @@ export default function DevPreviewApp() {
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
         <TabPanel tab="home" activeTab={activeTab}>
-          <GreetingHeader usuario={usuario} />
+          <GreetingHeader
+            usuario={usuario}
+            onOpenAjustes={() => handleTabChange("ajustes")}
+          />
           <div className="mt-6 space-y-4">
             <HeroCard
               jobs={jobs}
@@ -328,6 +331,7 @@ export default function DevPreviewApp() {
             onHomeCardsChange={() => {}}
             onCardStylesChange={() => {}}
             onChartPrefsChange={setChartPrefs}
+            onClose={() => handleTabChange("home")}
           />
         </TabPanel>
       </main>

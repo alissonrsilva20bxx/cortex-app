@@ -381,7 +381,10 @@ export default function Page() {
         {!isNewUser && usuario && (
           <>
             <TabPanel tab="home" activeTab={activeTab}>
-              <GreetingHeader usuario={usuario} />
+              <GreetingHeader
+                usuario={usuario}
+                onOpenAjustes={() => handleTabChange("ajustes")}
+              />
               <div className="mt-6 space-y-4">
                 {/* Card-herói: a projeção viva das metas (o coração) */}
                 <HeroCard
@@ -460,6 +463,7 @@ export default function Page() {
                 onHomeCardsChange={setHomeCards}
                 onCardStylesChange={setCardStyles}
                 onChartPrefsChange={setChartPrefs}
+                onClose={() => handleTabChange("home")}
               />
             </TabPanel>
           </>
