@@ -19,13 +19,10 @@ interface Props {
   onChatFocusChange?: (focused: boolean) => void;
 }
 
-/** A cada 60s (enquanto `estado === "liberado"` ou `"semRede"`) confere se o
- * teto de confiança do carimbo (24h, `ACESSO_CONFIRMADO_TTL_MS`) foi
- * cruzado, e tenta revalidar de novo mesmo sem nenhum `visibilitychange`/
- * `online` disparar -- cobre a tela ficando aberta e em foco pela janela
- * toda sem nunca sair de primeiro plano. 60s é granularidade suficiente pra
- * um teto de 24h; não precisa ser exato ao segundo. */
-const INTERVALO_CHECAGEM_TETO_MS = 60_000;
+/** Enquanto `estado === "semRede"`, tenta de novo nesse intervalo mesmo sem
+ * nenhum `visibilitychange`/`online` disparar -- não há "prazo exato" pra
+ * esperar aqui (já está falhando), então é só uma cadência de retry. */
+const INTERVALO_RETRY_SEM_REDE_MS = 30_000;
 
 type EstadoGate =
   | "verificando" // nunca confirmado nesta conta (ou carimbo sem corroboração
@@ -90,9 +87,12 @@ export function RedeGatedTab({
   //    ou vitrine forçada (`?vitrine=1`). Zera memória + localStorage na
   //    hora; perda de autorização tira o conteúdo privado da tela.
   //  - **Revalidação extra:** ao a aba voltar a ficar visível
-  //    (`visibilitychange`), ao reconectar (`online`) e a cada 60s enquanto
-  //    liberado/semRede (cobre a tela nunca sair de 1º plano) -- nenhuma
-  //    dessas depende de um remount do PIN.
+  //    (`visibilitychange`, que já confere o teto na hora antes de disparar
+  //    a consulta), ao reconectar (`online`), num timer exato agendado pro
+  //    instante em que o teto de 24h vence (não polling -- `setTimeout` pro
+  //    prazo restante, recalculado a cada nova confirmação) e, em
+  //    `semRede`, retry periódico -- nenhuma dessas depende de um remount
+  //    do PIN.
   //
   // Janela de revogação (online): limitada pela duração da PRÓPRIA consulta
   // — não é instantânea, numa rede lenta pode passar de 1s (medido: 860ms
@@ -116,14 +116,15 @@ export function RedeGatedTab({
       : "verificando";
   });
   const [sheet, setSheet] = useState<GateSheet>(null);
-  // Lido de dentro do intervalo de 60s (closure de longa duração) sem
-  // precisar recriar o efeito a cada mudança de estado.
-  const estadoRef = useRef(estado);
-  estadoRef.current = estado;
   // Bump manual (botão "Tentar novamente" no estado `semRede`) força o
   // efeito abaixo a rodar de novo e disparar uma tentativa na hora -- mesmo
   // padrão de `conversationsReloadKey` no `RedeTab`.
   const [tentativaManual, setTentativaManual] = useState(0);
+  // Ponte pros efeitos de baixo (timer do teto, retry de semRede)
+  // chamarem a MESMA `revalidarAgora` do efeito de mount atual, sem precisar
+  // depender de `estado` nas deps desse efeito (que reconstruiria os
+  // listeners de visibilitychange/online toda hora à toa).
+  const revalidarAgoraRef = useRef<() => void>(() => {});
 
   // Um convite já resgatado por esse usuário é a única fonte de verdade pra
   // acesso liberado — sem isso, quem já desbloqueou via SerialKeySheet numa
@@ -200,43 +201,65 @@ export function RedeGatedTab({
     const revalidarAgora = () => {
       verificarAcessoConvite(supabase, usuario.id).then(aplicar);
     };
+    revalidarAgoraRef.current = revalidarAgora;
 
     revalidarAgora();
 
     // Revalida quando a aba volta a ficar visível (PWA saiu do 2º plano,
     // troca de app no celular) e quando a conexão volta -- cobre "convite
     // revogado enquanto esteve fora" sem depender de um remount do PIN.
+    // Confere o teto ANTES de disparar a consulta: se já cruzou (o timer
+    // abaixo não dispara enquanto a aba está em 2º plano -- `setTimeout` de
+    // página oculta é jogado pra trás pelo navegador), reflete isso na hora
+    // em vez de deixar `liberado` em tela até a consulta terminar.
     const aoFicarVisivel = () => {
       if (document.visibilityState !== "visible") return;
+      if (!redeCache.acessoConfirmadoValido(usuario.id)) {
+        setEstado((atual) => (atual === "liberado" ? "verificando" : atual));
+      }
       revalidarAgora();
     };
     document.addEventListener("visibilitychange", aoFicarVisivel);
     window.addEventListener("online", revalidarAgora);
 
-    // Cobre a tela ficando aberta e em foco pela janela toda: sem isto, uma
-    // conta sem NENHUMA corroboração nova por 24h só sairia do estado
-    // `liberado` no próximo remount/visibilitychange/reconexão -- que pode
-    // nunca vir se ninguém tocar no aparelho.
-    const checagemTeto = setInterval(() => {
-      if (!ativo) return;
-      if (
-        estadoRef.current === "liberado" &&
-        !redeCache.acessoConfirmadoValido(usuario.id)
-      ) {
-        setEstado("verificando");
-        revalidarAgora();
-      } else if (estadoRef.current === "semRede") {
-        revalidarAgora();
-      }
-    }, INTERVALO_CHECAGEM_TETO_MS);
-
     return () => {
       ativo = false;
       document.removeEventListener("visibilitychange", aoFicarVisivel);
       window.removeEventListener("online", revalidarAgora);
-      clearInterval(checagemTeto);
     };
   }, [usuario.id, lembrarAcessoConfirmado, tentativaManual]);
+
+  // Timer exato pro instante em que o teto de 24h vence -- reagendado toda
+  // vez que `estado` volta a `liberado` (ou seja, toda vez que há um
+  // `confirmadoEm` novo). Substitui polling: dispara uma única vez, na hora
+  // certa, em vez de conferir a cada X segundos até 24h se completarem.
+  useEffect(() => {
+    if (estado !== "liberado") return;
+    const restante = redeCache.tempoRestanteAteTeto(usuario.id);
+    if (restante === null) return; // defensivo -- não deveria acontecer liberado sem carimbo
+    const t = setTimeout(
+      () => {
+        if (!redeCache.acessoConfirmadoValido(usuario.id)) {
+          setEstado("verificando");
+          revalidarAgoraRef.current();
+        }
+      },
+      Math.max(0, restante)
+    );
+    return () => clearTimeout(t);
+  }, [estado, usuario.id]);
+
+  // Enquanto `semRede`, tenta de novo periodicamente -- não há um "instante
+  // exato" pra esperar aqui (diferente do timer do teto acima), só cadência
+  // de retry até a rede voltar ou `visibilitychange`/`online` resolverem
+  // antes.
+  useEffect(() => {
+    if (estado !== "semRede") return;
+    const t = setInterval(() => {
+      revalidarAgoraRef.current();
+    }, INTERVALO_RETRY_SEM_REDE_MS);
+    return () => clearInterval(t);
+  }, [estado]);
 
   if (estado === "verificando" || estado === "semRede") {
     return (

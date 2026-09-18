@@ -375,6 +375,17 @@ export function acessoConfirmadoValido(userId: string): boolean {
   );
 }
 
+/** Ms restantes até o carimbo atual cruzar o teto de confiança -- `null` se
+ * não há carimbo pra esta conta (nunca confirmado, ou conta errada). Pode
+ * devolver <= 0 se o teto já foi cruzado -- quem decide "ainda vale" é
+ * sempre `acessoConfirmadoValido`, este só serve pra agendar um timer
+ * exato em vez de o `RedeGatedTab` fazer polling. */
+export function tempoRestanteAteTeto(userId: string): number | null {
+  const a = acessoLembrado(userId);
+  if (!a) return null;
+  return ACESSO_CONFIRMADO_TTL_MS - (Date.now() - a.confirmadoEm);
+}
+
 export function lembrarAcesso(
   userId: string,
   unlocked: boolean,

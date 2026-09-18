@@ -157,11 +157,26 @@ describe("acesso: teto de confiança de 24h, oculta só em resposta decisiva (T1
     expect(src).toMatch(/addEventListener\("online", revalidarAgora\)/);
   });
 
-  it("checagem periódica cobre o teto de 24h vencendo com a tela sempre aberta/em foco", () => {
-    expect(src).toMatch(/setInterval\(\(\) => \{/);
-    expect(src).toMatch(/INTERVALO_CHECAGEM_TETO_MS/);
-    expect(src).toMatch(/estadoRef\.current === "liberado"/);
-    expect(src).toMatch(/clearInterval\(checagemTeto\)/);
+  it("volta do 2º plano confere o teto ANTES de revalidar -- não deixa 'liberado' em tela até a consulta terminar", () => {
+    expect(src).toMatch(
+      /const aoFicarVisivel = \(\) => \{\s*if \(document\.visibilityState !== "visible"\) return;\s*if \(!redeCache\.acessoConfirmadoValido\(usuario\.id\)\) \{\s*setEstado\(\(atual\) => \(atual === "liberado" \? "verificando" : atual\)\);\s*\}\s*revalidarAgora\(\);/
+    );
+  });
+
+  it("timer exato pro instante em que o teto de 24h vence -- não é polling", () => {
+    expect(src).toMatch(/redeCache\.tempoRestanteAteTeto\(usuario\.id\)/);
+    expect(src).toMatch(
+      /useEffect\(\(\) => \{\s*if \(estado !== "liberado"\) return;[\s\S]*?setTimeout\(/
+    );
+    // reagendado toda vez que volta a liberado (confirmadoEm novo)
+    expect(src).toMatch(/\}, \[estado, usuario\.id\]\);/);
+  });
+
+  it("semRede tenta de novo com cadência de retry (sem prazo exato pra esperar)", () => {
+    expect(src).toMatch(/INTERVALO_RETRY_SEM_REDE_MS/);
+    expect(src).toMatch(
+      /useEffect\(\(\) => \{\s*if \(estado !== "semRede"\) return;[\s\S]*?setInterval\(/
+    );
   });
 
   it("lembrarAcessoConfirmado (única fonte do carimbo) só é chamado em resposta positiva -- nunca em 'indisponivel'", () => {

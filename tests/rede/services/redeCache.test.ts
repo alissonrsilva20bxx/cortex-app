@@ -266,6 +266,29 @@ describe("acesso lembrado -- apresentação só, com validade curta", () => {
     }
   });
 
+  it("tempoRestanteAteTeto: null sem carimbo, decresce com o tempo, pode passar de 0", () => {
+    vi.useFakeTimers({ now: 1_000_000 });
+    try {
+      redeCache.vincularUsuario("A");
+      expect(redeCache.tempoRestanteAteTeto("A")).toBeNull();
+
+      redeCache.lembrarAcesso("A", true);
+      expect(redeCache.tempoRestanteAteTeto("A")).toBe(
+        redeCache._internos.ACESSO_CONFIRMADO_TTL_MS
+      );
+
+      vi.advanceTimersByTime(92_000);
+      expect(redeCache.tempoRestanteAteTeto("A")).toBe(
+        redeCache._internos.ACESSO_CONFIRMADO_TTL_MS - 92_000
+      );
+
+      vi.advanceTimersByTime(redeCache._internos.ACESSO_CONFIRMADO_TTL_MS);
+      expect(redeCache.tempoRestanteAteTeto("A")).toBeLessThan(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("offline (nenhuma chamada a lembrarAcesso) nunca estende o prazo -- só resposta positiva grava carimbo", () => {
     vi.useFakeTimers({ now: 1_000_000 });
     try {
