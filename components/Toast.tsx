@@ -46,6 +46,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       {/* Toasts rendered above BottomNav */}
       <div
+        role="status"
+        aria-live="polite"
         style={{
           position: "fixed",
           bottom: "88px",

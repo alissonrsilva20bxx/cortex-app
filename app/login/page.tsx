@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +22,35 @@ import styles from "./entry.module.css";
 
 type Stage = "motion" | "login" | "signup" | "forgot" | "check-email";
 type CheckEmailContext = "signup" | "reset";
+
+/**
+ * `/auth/callback` redireciona pra cá com `?error=...` quando o login por
+ * OAuth/link falha (código ausente, troca de sessão recusada pelo Supabase).
+ * Antes disso a falha terminava em silêncio -- sem toast, sem foco, nada
+ * (achado da Fase 5, ticket #128). O valor do parâmetro nunca é lido nem
+ * exibido: só a PRESENÇA de `error` importa aqui. Isso evita depender de
+ * uma lista de códigos pra não vazar texto cru do provedor (mesmo
+ * princípio de `mapAuthErrorMessage` em lib/auth.ts, só que a rota de
+ * callback nem chega a colocar a mensagem crua na URL -- ver route.ts).
+ *
+ * `useSearchParams` precisa de um Suspense boundary próprio (Next 14) --
+ * por isso este componente não renderiza nada visível, só dispara o toast
+ * e limpa o parâmetro da URL (evita reabrir o toast num refresh manual).
+ */
+function AuthErrorNotice() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const toast = useToast();
+
+  useEffect(() => {
+    if (!searchParams.get("error")) return;
+    toast.error("Não foi possível concluir a autenticação. Tente de novo.");
+    router.replace("/login");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -236,6 +265,9 @@ export default function LoginPage() {
 
   return (
     <div className={styles.page}>
+      <Suspense fallback={null}>
+        <AuthErrorNotice />
+      </Suspense>
       <div className={`${styles.screen} ${styles.loginArrival}`}>
         <header className={styles.brand}>
           <div
