@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import {
+  AlertCircle,
   BarChart3,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Hourglass,
+  Clock3,
   MessageSquareText,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -36,13 +37,13 @@ const FILTERS: { id: Filter; label: string }[] = [
 const WEEKDAY_LETTERS = ["D", "S", "T", "Q", "Q", "S", "S"];
 
 /**
- * Lacuna entre dois atendimentos consecutivos só vira o indicador visual
- * "Horário disponível" (issue #135) se for grande o suficiente pra não
- * virar ruído — 60min é só um limiar de legibilidade da UI, NÃO uma regra
- * de agendamento/duração de atendimento (o tipo `Job` real não tem campo
- * de duração; ver nota completa em `buildTimelineItems` abaixo).
+ * Lacuna entre dois atendimentos consecutivos só ganha uma nota de
+ * "próximo atendimento" (issue #135, revisão pós-fechamento) se for
+ * grande o suficiente pra não virar ruído — 60min é só um limiar de
+ * legibilidade da UI, NÃO uma regra de agendamento/duração de
+ * atendimento (ver nota completa em `buildTimelineItems` abaixo).
  */
-const GAP_INDICATOR_THRESHOLD_MIN = 60;
+const NEXT_JOB_NOTE_THRESHOLD_MIN = 60;
 
 /**
  * Superfície sólida (sem blur), mesmo princípio já aplicado em Início
@@ -191,22 +192,27 @@ function buildPeriodData(
 }
 
 /**
- * Itens da timeline do dia selecionado (issue #135): cada atendimento
- * real, intercalado com um indicador puramente visual "Horário
- * disponível" quando a lacuna até o próximo atendimento passa do limiar
- * de legibilidade. **100% derivado dos compromissos reais do dia** — o
- * intervalo mostrado é [hora de início de A, hora de início de B), nunca
- * um horário comercial ou regra de agendamento inventada: o tipo `Job`
- * real não tem campo de duração, então não há como saber quando um
- * atendimento "termina" de fato — mostrar o intervalo entre inícios é a
- * leitura mais honesta possível sem inventar dado. Por isso o indicador
- * é um `<div>` sem `onClick`, nunca um botão: não é uma promessa de
- * disponibilidade real pra agendar, só uma leitura visual da lacuna
- * (contrato explícito desta ticket).
+ * Itens da timeline do dia selecionado (issue #135, revisão
+ * pós-fechamento): cada atendimento real, intercalado com uma nota
+ * neutra "Próximo atendimento às HHhMM" quando a lacuna até o próximo
+ * atendimento passa do limiar de legibilidade.
+ *
+ * **Nunca alega que o espaço entre dois atendimentos está livre.** A
+ * revisão original mostrava um selo entre os horários de início de A e
+ * de B, dando a entender que aquele intervalo estava aberto pra marcar
+ * algo novo. Isso não é comprovável: o tipo `Job` real não tem campo de
+ * duração/hora de término, então a diferença entre o início de A e o
+ * início de B **não prova** que o tempo entre eles está vago (o
+ * atendimento A pode muito bem ocupar boa parte dele). Sem um dado real
+ * de início E término livres — que não existe hoje — aquele selo era uma
+ * promessa que o app não pode cumprir. A nota agora só descreve o que já
+ * é comprovadamente real (a hora do próximo atendimento), sem
+ * reivindicar nada sobre o espaço entre os dois. Continua um `<div>` sem
+ * `onClick`: nunca uma função, nunca clicável.
  */
 type TimelineItem =
   | { kind: "job"; job: Job }
-  | { kind: "gap"; fromLabel: string; toLabel: string };
+  | { kind: "next-note"; nextLabel: string };
 
 function buildTimelineItems(dayJobs: Job[]): TimelineItem[] {
   const sorted = [...dayJobs].sort((a, b) => a.hora.localeCompare(b.hora));
@@ -216,11 +222,10 @@ function buildTimelineItems(dayJobs: Job[]): TimelineItem[] {
     const next = sorted[i + 1];
     if (next) {
       const gapMin = timeToMinutes(next.hora) - timeToMinutes(job.hora);
-      if (gapMin >= GAP_INDICATOR_THRESHOLD_MIN) {
+      if (gapMin >= NEXT_JOB_NOTE_THRESHOLD_MIN) {
         items.push({
-          kind: "gap",
-          fromLabel: formatHora(job.hora),
-          toLabel: formatHora(next.hora),
+          kind: "next-note",
+          nextLabel: formatHora(next.hora),
         });
       }
     }
@@ -246,6 +251,19 @@ export function JobsTab({
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("sem");
 
+  // Estado de erro (issue #135, revisão pós-fechamento) — distinto de
+  // "carregou e não tem nada" (achado: antes, `data ? ... : []` tratava
+  // falha de rede/consulta exatamente como agenda vazia, um silêncio que
+  // engana a usuária). `hasLoadedOnce` marca se já existe uma leitura
+  // bem-sucedida nesta sessão; `loadError` marca a última tentativa como
+  // falha. `retryNonce` é o pulso que o botão "Tentar novamente" usa pra
+  // redisparar o efeito abaixo sem duplicar a lógica de fetch numa função
+  // solta fora dele — mesmo padrão já usado em RedeTab.tsx
+  // (`conversationsReloadKey`/`retryLoadConversations`).
+  const [loadError, setLoadError] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
+
   // Semana visível (calendário) e dia selecionado — não têm equivalente
   // real hoje (achado P0 #1 do relatório de paridade visual da Agenda);
   // `selectedDate` nasce em "hoje", igual ao padrão já usado em
@@ -263,17 +281,47 @@ export function JobsTab({
   const [anotacoesOpen, setAnotacoesOpen] = useState(false);
 
   useEffect(() => {
+    let ativo = true;
     setLoading(true);
     supabase
       .from("jobs")
       .select("*")
       .order("data", { ascending: true })
       .order("hora", { ascending: true })
-      .then(({ data }) => {
-        setJobs(data ? data.map(dbRowToJob) : []);
+      .then(({ data, error }) => {
+        if (!ativo) return;
+        if (error) {
+          // Não zera `jobs` pra [] — preserva o que já estava carregado
+          // (revalidação segura, pedido explícito da revisão). Numa 1ª
+          // carga sem dado nenhum ainda, `jobs` já é [] mesmo, então o
+          // painel de erro abaixo assume sozinho (ver `hasLoadedOnce`).
+          console.error("[JobsTab] falha ao carregar jobs:", error.message);
+          setLoadError(true);
+        } else {
+          setJobs(data ? data.map(dbRowToJob) : []);
+          setHasLoadedOnce(true);
+          setLoadError(false);
+        }
         setLoading(false);
       });
-  }, [refreshTrigger]);
+    return () => {
+      ativo = false;
+    };
+  }, [refreshTrigger, retryNonce]);
+
+  function retryLoadJobs() {
+    setRetryNonce((n) => n + 1);
+  }
+
+  // `loading` sozinho não basta pra decidir o que mostrar: durante uma
+  // revalidação em segundo plano (retry com `jobs` já preenchido), a UI
+  // deve continuar mostrando os dados existentes, não voltar pro spinner
+  // nem sumir com a timeline — só a 1ª carga (sem nada ainda) trava a
+  // tela toda. `blockingError` é quando não há nem dado nem carga em
+  // andamento pra mostrar: aí sim vira o painel de erro cheio, nunca o
+  // "Nenhum compromisso" de dia vazio.
+  const initialLoading = loading && !hasLoadedOnce;
+  const blockingError = loadError && !hasLoadedOnce;
 
   const filtered =
     filter === "todos" ? jobs : jobs.filter((j) => j.status === filter);
@@ -420,7 +468,7 @@ export function JobsTab({
         >
           Agenda
         </h1>
-        {!loading && (
+        {!initialLoading && !blockingError && (
           <span
             className="text-xs font-bold tabular-nums px-2 py-px rounded-full"
             style={{
@@ -539,7 +587,7 @@ export function JobsTab({
               {formatSelectedDateLabel(selectedDate)}
             </h2>
           </div>
-          {!loading && (
+          {!initialLoading && !blockingError && (
             <p
               className="mt-1"
               style={{ fontSize: "11px", color: "var(--text-muted)" }}
@@ -553,178 +601,262 @@ export function JobsTab({
           )}
         </div>
 
-        {/* Filtro de status — reimplementado localmente (não o componente
-            compartilhado `FilterChips`, usado também no Cofre): o
-            relatório de paridade encontrou que `FilterChips` renderiza
-            ~28px de altura, abaixo do alvo mínimo de 44px, mas é
-            compartilhado fora do escopo deste ticket (mudar o componente
-            afetaria o Cofre, "não amplie para... outras abas"). Mesmo
-            visual, só com alvo de toque corrigido. */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar mb-3 mt-2.5">
-          {FILTERS.map(({ id, label }) => {
-            const active = filter === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setFilter(id)}
-                aria-pressed={active}
-                className="shrink-0 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center justify-center"
-                style={{
-                  minHeight: "44px",
-                  background: active
-                    ? "rgb(var(--accent-rgb) / 0.18)"
-                    : "var(--surface)",
-                  border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-                  color: active ? "var(--accent)" : "var(--text-muted)",
-                  boxShadow: active ? "var(--glow-sm)" : "none",
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center pt-8">
-            <div
-              className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: "var(--accent)" }}
+        {/* Falha ao revalidar com dado já carregado (issue #135, revisão
+            pós-fechamento) — os dados antigos continuam abaixo intactos
+            (`jobs` nunca é zerado em erro, ver o efeito de fetch), só um
+            aviso não-bloqueante + "Tentar novamente". Mesmo padrão visual
+            do banner `offline` de ChatListScreen.tsx (Rede) — reaproveita
+            a linguagem já estabelecida no app pra esse tipo de aviso, em
+            vez de inventar uma nova. */}
+        {loadError && hasLoadedOnce && (
+          <div
+            className="flex items-center gap-2 px-3.5 py-2.5 mb-3 text-xs font-medium"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--danger)",
+              borderRadius: "var(--radius-lg)",
+              color: "var(--text-2)",
+            }}
+          >
+            <AlertCircle
+              size={14}
+              className="shrink-0"
+              style={{ color: "var(--danger)" }}
             />
+            <span className="flex-1">
+              Não foi possível atualizar. Mostrando dados já carregados.
+            </span>
+            <button
+              onClick={retryLoadJobs}
+              disabled={loading}
+              className="font-bold shrink-0 active:opacity-70 disabled:opacity-50"
+              style={{ color: "var(--accent)" }}
+            >
+              {loading ? "Tentando…" : "Tentar novamente"}
+            </button>
           </div>
-        ) : selectedDayJobs.length === 0 ? (
+        )}
+
+        {blockingError ? (
+          // 1ª carga falhou, sem nenhum dado confirmado ainda — distinto
+          // de "carregou e o dia está vazio de verdade" (achado real da
+          // revisão: antes, `data ? ... : []` tratava as duas situações
+          // como idênticas, um silêncio que engana a usuária). Sem
+          // filtros/timeline/total aqui: não há dado nenhum pra filtrar
+          // ou somar ainda.
           <GlassCard
             radius="md"
             className="flex flex-col items-center justify-center px-6 text-center"
-            style={{ ...SOLID_SURFACE_STYLE, minHeight: "118px" }}
+            style={{
+              backdropFilter: "none",
+              WebkitBackdropFilter: "none",
+              background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+              border: "1px solid var(--danger)",
+              minHeight: "160px",
+            }}
           >
-            <CalendarDays size={22} style={{ color: "var(--text-muted)" }} />
+            <AlertCircle size={22} style={{ color: "var(--danger)" }} />
             <p
               className="font-semibold mt-3"
               style={{ fontSize: "12px", color: "var(--text)" }}
             >
-              Nenhum compromisso neste dia
+              Não foi possível carregar sua agenda
             </p>
             <p
               className="mt-1"
               style={{ fontSize: "10px", color: "var(--text-muted)" }}
             >
-              {filter === "todos"
-                ? "Toque no + para adicionar um atendimento."
-                : `Nenhum atendimento "${filter}" neste dia.`}
+              Verifique sua conexão e tente novamente.
             </p>
+            <button
+              onClick={retryLoadJobs}
+              disabled={loading}
+              className="mt-4 px-4 rounded-xl text-xs font-bold active:opacity-70 disabled:opacity-50"
+              style={{
+                minHeight: "44px",
+                color: "var(--accent)",
+                border: "1px solid var(--accent)",
+              }}
+            >
+              {loading ? "Tentando…" : "Tentar novamente"}
+            </button>
           </GlassCard>
         ) : (
-          // Timeline por horário (issue #135, composição de
-          // /dev-preview/ios) — substitui a lista plana anterior. Linha
-          // vertical contínua + um ponto por atendimento + o card
-          // (JobCard, já sem a própria coluna de hora — ela mora aqui,
-          // fora do card) + indicador decorativo de lacuna entre
-          // atendimentos (ver `buildTimelineItems`).
-          <div className="relative">
-            <div
-              className="absolute"
-              style={{
-                left: "40px",
-                top: "6px",
-                bottom: "6px",
-                width: "1px",
-                background: "var(--border-color)",
-              }}
-            />
-            <div className="space-y-4">
-              {timelineItems.map((item, i) =>
-                item.kind === "job" ? (
-                  <div
-                    key={item.job.id}
-                    className="relative grid items-start gap-3"
-                    style={{ gridTemplateColumns: "34px 1fr" }}
+          <>
+            {/* Filtro de status — reimplementado localmente (não o
+                componente compartilhado `FilterChips`, usado também no
+                Cofre): o relatório de paridade encontrou que
+                `FilterChips` renderiza ~28px de altura, abaixo do alvo
+                mínimo de 44px, mas é compartilhado fora do escopo deste
+                ticket (mudar o componente afetaria o Cofre, "não amplie
+                para... outras abas"). Mesmo visual, só com alvo de toque
+                corrigido. */}
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar mb-3 mt-2.5">
+              {FILTERS.map(({ id, label }) => {
+                const active = filter === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setFilter(id)}
+                    aria-pressed={active}
+                    className="shrink-0 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center justify-center"
+                    style={{
+                      minHeight: "44px",
+                      background: active
+                        ? "rgb(var(--accent-rgb) / 0.18)"
+                        : "var(--surface)",
+                      border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
+                      color: active ? "var(--accent)" : "var(--text-muted)",
+                      boxShadow: active ? "var(--glow-sm)" : "none",
+                    }}
                   >
-                    <span
-                      className="font-semibold tabular-nums text-right"
-                      style={{
-                        fontSize: "11px",
-                        color: "var(--text-muted)",
-                        paddingTop: "14px",
-                      }}
-                    >
-                      {formatHora(item.job.hora)}
-                    </span>
-                    <span
-                      className="absolute rounded-full"
-                      style={{
-                        // Centralizado na linha vertical (left: 40px, o
-                        // meio dos 12px de gap entre a coluna de hora e o
-                        // card — gap-3), nunca em cima da própria coluna
-                        // de hora (0–34px): sobrepor o texto era um bug
-                        // real, achado na validação visual desta ticket
-                        // (o "0" de "14h00" ficava escondido atrás do
-                        // ponto).
-                        left: "35px",
-                        top: "16px",
-                        width: "10px",
-                        height: "10px",
-                        background: "var(--accent)",
-                        boxShadow: "0 0 8px rgb(var(--accent-rgb) / 0.5)",
-                      }}
-                    />
-                    <GlassCard
-                      radius="md"
-                      className="p-3.5"
-                      style={SOLID_SURFACE_STYLE}
-                    >
-                      <JobCard job={item.job} onClick={setDetailJob} />
-                    </GlassCard>
-                  </div>
-                ) : (
-                  <div
-                    key={`gap-${i}`}
-                    className="grid items-center gap-3"
-                    style={{ gridTemplateColumns: "34px 1fr" }}
-                  >
-                    <span />
-                    <div
-                      className="flex items-center gap-2 rounded-xl px-3 py-2"
-                      style={{
-                        border: "1px dashed var(--border-color)",
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      <Hourglass size={13} className="shrink-0" />
-                      <span style={{ fontSize: "11px" }}>
-                        <em className="not-italic font-medium">
-                          Horário disponível
-                        </em>{" "}
-                        · {item.fromLabel} – {item.toLabel}
-                      </span>
-                    </div>
-                  </div>
-                )
-              )}
+                    {label}
+                  </button>
+                );
+              })}
             </div>
-          </div>
-        )}
 
-        {/* Total do dia — soma real dos atendimentos visíveis (respeita o
-            filtro ativo, mesmo dado que a timeline acima mostra; nunca um
-            valor de "previsão" separado que incluiria atendimentos
-            escondidos pelo filtro). Rótulo muda conforme o dia selecionado
-            seja hoje ou não — "previsto hoje" só faz sentido pra hoje. */}
-        {!loading && selectedDayJobs.length > 0 && (
-          <div
-            className="flex items-center justify-between mt-5 pt-4"
-            style={{ borderTop: "1px solid var(--border-color)" }}
-          >
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-              {isViewingToday ? "Total de hoje" : "Total do dia"}
-            </span>
-            <strong
-              className="font-bold tabular-nums"
-              style={{ fontSize: "20px", color: "var(--accent)" }}
-            >
-              {formatBRL(dayTotal, 2)}
-            </strong>
-          </div>
+            {initialLoading ? (
+              <div className="flex justify-center pt-8">
+                <div
+                  className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+                  style={{ borderColor: "var(--accent)" }}
+                />
+              </div>
+            ) : selectedDayJobs.length === 0 ? (
+              <GlassCard
+                radius="md"
+                className="flex flex-col items-center justify-center px-6 text-center"
+                style={{ ...SOLID_SURFACE_STYLE, minHeight: "118px" }}
+              >
+                <CalendarDays
+                  size={22}
+                  style={{ color: "var(--text-muted)" }}
+                />
+                <p
+                  className="font-semibold mt-3"
+                  style={{ fontSize: "12px", color: "var(--text)" }}
+                >
+                  Nenhum compromisso neste dia
+                </p>
+                <p
+                  className="mt-1"
+                  style={{ fontSize: "10px", color: "var(--text-muted)" }}
+                >
+                  {filter === "todos"
+                    ? "Toque no + para adicionar um atendimento."
+                    : `Nenhum atendimento "${filter}" neste dia.`}
+                </p>
+              </GlassCard>
+            ) : (
+              // Timeline por horário (issue #135, composição de
+              // /dev-preview/ios) — substitui a lista plana anterior. Linha
+              // vertical contínua + um ponto por atendimento + o card
+              // (JobCard, já sem a própria coluna de hora — ela mora aqui,
+              // fora do card) + indicador decorativo de lacuna entre
+              // atendimentos (ver `buildTimelineItems`).
+              <div className="relative">
+                <div
+                  className="absolute"
+                  style={{
+                    left: "40px",
+                    top: "6px",
+                    bottom: "6px",
+                    width: "1px",
+                    background: "var(--border-color)",
+                  }}
+                />
+                <div className="space-y-4">
+                  {timelineItems.map((item, i) =>
+                    item.kind === "job" ? (
+                      <div
+                        key={item.job.id}
+                        className="relative grid items-start gap-3"
+                        style={{ gridTemplateColumns: "34px 1fr" }}
+                      >
+                        <span
+                          className="font-semibold tabular-nums text-right"
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--text-muted)",
+                            paddingTop: "14px",
+                          }}
+                        >
+                          {formatHora(item.job.hora)}
+                        </span>
+                        <span
+                          className="absolute rounded-full"
+                          style={{
+                            // Centralizado na linha vertical (left: 40px, o
+                            // meio dos 12px de gap entre a coluna de hora e o
+                            // card — gap-3), nunca em cima da própria coluna
+                            // de hora (0–34px): sobrepor o texto era um bug
+                            // real, achado na validação visual desta ticket
+                            // (o "0" de "14h00" ficava escondido atrás do
+                            // ponto).
+                            left: "35px",
+                            top: "16px",
+                            width: "10px",
+                            height: "10px",
+                            background: "var(--accent)",
+                            boxShadow: "0 0 8px rgb(var(--accent-rgb) / 0.5)",
+                          }}
+                        />
+                        <GlassCard
+                          radius="md"
+                          className="p-3.5"
+                          style={SOLID_SURFACE_STYLE}
+                        >
+                          <JobCard job={item.job} onClick={setDetailJob} />
+                        </GlassCard>
+                      </div>
+                    ) : (
+                      // Nota neutra, sem caixa/borda tracejada (que sugeriria
+                      // um slot reservável) — só uma linha de texto discreta
+                      // no fluxo: separação puramente visual, sem nenhuma
+                      // alegação sobre o espaço entre os dois atendimentos.
+                      <div
+                        key={`next-note-${i}`}
+                        className="flex items-center gap-2"
+                        style={{
+                          paddingLeft: "46px",
+                          color: "var(--text-muted)",
+                        }}
+                      >
+                        <Clock3 size={12} className="shrink-0" />
+                        <span style={{ fontSize: "11px" }}>
+                          Próximo atendimento às {item.nextLabel}
+                        </span>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Total do dia — soma real dos atendimentos visíveis
+                (respeita o filtro ativo, mesmo dado que a timeline acima
+                mostra; nunca um valor de "previsão" separado que
+                incluiria atendimentos escondidos pelo filtro). Rótulo
+                muda conforme o dia selecionado seja hoje ou não —
+                "previsto hoje" só faz sentido pra hoje. */}
+            {!initialLoading && selectedDayJobs.length > 0 && (
+              <div
+                className="flex items-center justify-between mt-5 pt-4"
+                style={{ borderTop: "1px solid var(--border-color)" }}
+              >
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                  {isViewingToday ? "Total de hoje" : "Total do dia"}
+                </span>
+                <strong
+                  className="font-bold tabular-nums"
+                  style={{ fontSize: "20px", color: "var(--accent)" }}
+                >
+                  {formatBRL(dayTotal, 2)}
+                </strong>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -738,10 +870,11 @@ export function JobsTab({
       <div
         className="grid gap-2 mt-5"
         style={{
-          gridTemplateColumns: !loading && jobs.length > 0 ? "1fr 1fr" : "1fr",
+          gridTemplateColumns:
+            !initialLoading && jobs.length > 0 ? "1fr 1fr" : "1fr",
         }}
       >
-        {!loading && jobs.length > 0 && (
+        {!initialLoading && jobs.length > 0 && (
           <button
             onClick={() => setResumoOpen(true)}
             className="flex items-center justify-center gap-2 rounded-2xl font-bold"
