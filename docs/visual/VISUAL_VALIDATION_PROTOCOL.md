@@ -55,22 +55,38 @@ ticket precisa registrar (worktree/branch/HEAD/PID/horário/porta/URL).
 ### 2. Capturar as telas
 
 Sem tooling de screenshot automatizado neste repo (sem Playwright como
-devDependency) — a captura é feita por um agente Claude Code usando as
-ferramentas de browser (`mcp__claude-in-chrome__*` ou `mcp__playwright__*`),
-seguindo este roteiro fixo por tela:
+devDependency) — a captura é feita por um agente Claude Code usando
+ferramentas de browser já disponíveis no ambiente.
 
-1. Navegar pra `http://localhost:<porta>/dev-preview/app` (app real).
-2. Redimensionar/emular viewport **390×844**, tirar screenshot.
-3. Redimensionar/emular viewport **430×932**, tirar screenshot.
+**Use `mcp__playwright__*`, não `mcp__claude-in-chrome__*`, para esta
+etapa.** Validado na execução de prova deste protocolo (#133): o
+`resize_window` da extensão Chrome redimensiona a _janela do SO_, não o
+viewport CSS da página — pedir 390×844 produzia um viewport real de
+~1707×820 (confirmado via `read_page`), inútil pra comparação por
+tamanho de tela. `mcp__playwright__browser_resize` chama
+`page.setViewportSize(...)` diretamente — viewport exato, confirmado nos
+4 PNGs da execução de prova (`validation-captures/133/`).
+
+Roteiro fixo por tela:
+
+1. `mcp__playwright__browser_navigate` pra `http://localhost:<porta>/dev-preview/app` (app real).
+2. `mcp__playwright__browser_resize` **390×844**, `mcp__playwright__browser_take_screenshot`.
+3. `mcp__playwright__browser_resize` **430×932**, `mcp__playwright__browser_take_screenshot`.
 4. Repetir 1–3 em `http://localhost:<porta>/dev-preview/ios` (protótipo),
    navegando até a mesma tela via os cliques equivalentes (as duas rotas
    têm estrutura de abas próxima, mas não idêntica — navegar manualmente,
    não assumir mesma coordenada de clique nas duas).
-5. Salvar os 4 arquivos (real×390, real×430, proto×390, proto×430) em
+5. `browser_take_screenshot` salva relativo ao cwd do servidor MCP do
+   Playwright, que pode não ser o worktree do redesign — mover/copiar os
+   4 arquivos (real×390, real×430, proto×390, proto×430) pra
    `validation-captures/<ticket>/<YYYYMMDD-HHmmss>/<tela>__<viewport>__<real|proto>.png`
    — `<ticket>` é o número da ticket sendo validada (ex. `134` pra Início),
    `<tela>` um slug curto (`inicio`, `agenda`, `financeiro`, `cofre`, `pin`,
    `pin-cofre`, `rede-feed`, `perfil-proprio`, `perfil-publico`, `ajustes`).
+
+Nota observada na execução de prova: a Início pode abrir com o sheet
+"Seu recap do mês" por cima (estado de 1ª visita) — dispensar antes de
+capturar, ou registrar deliberadamente se a captura for desse estado.
 
 `validation-captures/` é local, gitignored — nunca commitar screenshots
 neste repo.
