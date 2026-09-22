@@ -59,22 +59,20 @@ export function NotasSection({ userId }: Props) {
   }
 
   return (
-    <div className="mt-6">
-      <div className="flex items-center justify-between mb-3">
-        <p
-          className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Notas Gerais
+    // Sem cabeçalho próprio ("Notas Gerais") desde #135: o único uso deste
+    // componente (JobsTab, aba Agenda) agora é como corpo do sheet
+    // "Anotações" (BottomSheet compartilhado), que já traz o título na
+    // própria casca — um segundo rótulo seria redundante. `px-5 py-5`
+    // reproduz o padding padrão dos outros corpos de sheet do app (ver
+    // JobDetailSheet.tsx/ClienteDetailSheet.tsx).
+    <div className="px-5 py-5">
+      {saving && (
+        <p className="text-[11px] mb-2" style={{ color: "var(--text-muted)" }}>
+          Salvando…
         </p>
-        {saving && (
-          <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-            Salvando…
-          </p>
-        )}
-      </div>
+      )}
       <textarea
-        rows={5}
+        rows={7}
         className="w-full rounded-2xl px-4 py-3 text-sm leading-relaxed resize-none outline-none transition-colors"
         style={{
           background: "var(--surface)",

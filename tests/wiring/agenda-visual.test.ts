@@ -66,16 +66,34 @@ describe("JobsTab.tsx carries the T3 weekly-calendar composition", () => {
     expect(src).not.toMatch(/@media\s*\(\s*prefers-reduced-motion/);
   });
 
-  it("preserves the real status filter, chart, and notes functionality", () => {
+  it("preserves the real status filter and notes functionality", () => {
     expect(src).toContain("STATUS_META");
-    expect(src).toContain("MiniBarChart");
-    expect(src).toContain("DonutChart");
     expect(src).toContain("chartType");
     expect(src).toContain("NotasSection");
   });
 
   it("does not introduce a service-title or duration field the real Job type doesn't have", () => {
     expect(src).not.toMatch(/tituloServico|servicoTitulo|duracao|duration/i);
+  });
+
+  it("shows the real selected-day hora in the timeline row (moved out of JobCard by #135)", () => {
+    expect(src).toContain("job.hora");
+  });
+});
+
+describe("JobsTab.tsx delegates chart rendering to AgendaResumoSheet (#135) with real data, not fabricated", () => {
+  const src = read("components/jobs/AgendaResumoSheet.tsx");
+
+  it("AgendaResumoSheet.tsx still renders MiniBarChart and DonutChart (chart moved into a sheet, not dropped)", () => {
+    expect(src).toContain("MiniBarChart");
+    expect(src).toContain("DonutChart");
+  });
+
+  it("chartType/periodData/donutSegments/totalJobs are props, not recomputed/mocked inside the sheet", () => {
+    expect(src).toMatch(/chartType\s*[,:]/);
+    expect(src).toMatch(/periodData\s*[,:]/);
+    expect(src).toMatch(/donutSegments\s*[,:]/);
+    expect(src).not.toMatch(/buildPeriodData\(|supabase\.from/);
   });
 });
 
@@ -86,16 +104,15 @@ describe("JobCard.tsx keeps its real onClick contract and real fields only", () 
     expect(src).toContain("onClick: (job: Job) => void");
   });
 
-  it("only displays real Job fields (client name, hora, modalidade/local, valor, status)", () => {
+  it("only displays real Job fields (client name, modalidade/local, valor, status)", () => {
     expect(src).toContain("job.clienteNome");
-    expect(src).toContain("job.hora");
     expect(src).toContain("job.valor");
     expect(src).toContain("StatusBadge");
   });
 });
 
 describe("JobForm.tsx close button meets the 44px touch-target minimum", () => {
-  it('has an explicit 44px minHeight/minWidth on the close button', () => {
+  it("has an explicit 44px minHeight/minWidth on the close button", () => {
     const src = read("components/jobs/JobForm.tsx");
     expect(src).toContain('minWidth: "44px"');
     expect(src).toContain('minHeight: "44px"');
