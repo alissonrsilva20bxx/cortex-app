@@ -60,8 +60,8 @@ describe("FinanceiroTab.tsx keeps the 4 real sub-tabs, no reduction to a single 
   });
 });
 
-describe("VisaoTab.tsx uses real data/calculations, never a hardcoded lab value", () => {
-  const src = read("components/financeiro/VisaoTab.tsx");
+describe("FinanceiroHeroCard.tsx (issue #136) uses real data/calculations, never a hardcoded lab value", () => {
+  const src = read("components/financeiro/FinanceiroHeroCard.tsx");
 
   it("computes the chart from real lib/finance.ts calls, not a static dataset", () => {
     expect(src).toContain("buildChartData(");
@@ -74,12 +74,26 @@ describe("VisaoTab.tsx uses real data/calculations, never a hardcoded lab value"
     expect(src).toContain("formatBRL(saldo");
   });
 
+  it("uses the line-chart component (AreaSparkline, gradient fill + var(--accent), no hardcoded pink) as the 'area' preference option", () => {
+    expect(src).toContain("<AreaSparkline");
+    expect(src).not.toMatch(/#ff2d78|#ff4f85|#ff376e/i);
+  });
+
+  it("preserves the real bar/area chart preference (chartType prop) — never forces line-only, dropping the 'Barras' option", () => {
+    expect(src).toContain("<MiniBarChart");
+    expect(src).toMatch(/chartType\s*===\s*"area"/);
+  });
+
   it("does not contain any of the lab's hardcoded FinanceScreen numbers/text", () => {
     for (const fabricated of [
       "2.350",
       "7.200",
       "4.850",
       "10.000",
+      "2.480",
+      "4.250",
+      "1.770",
+      "+18%",
       "23%",
       "Ver relatórios completos",
       "Insight do mês",
@@ -89,13 +103,66 @@ describe("VisaoTab.tsx uses real data/calculations, never a hardcoded lab value"
     }
   });
 
-  it("does not contain the lab's hardcoded SVG polyline points", () => {
+  it("does not contain the lab's hardcoded SVG path/polyline", () => {
+    expect(src).not.toMatch(/M5 79 C35 69/);
     expect(src).not.toMatch(/points="0,110 35,110/);
   });
 
   it("does not use .section-label (eyebrow-caps root cause fixed in T2)", () => {
     // A prose mention in a comment (explaining the decision) is fine;
     // an actual className="section-label" usage is not.
+    expect(src).not.toMatch(/className=["'{].*section-label/);
+  });
+});
+
+describe("Honesty rule (issue #136) — variação % only with a real, non-zero previous period", () => {
+  const src = read("components/financeiro/FinanceiroHeroCard.tsx");
+
+  it("prevSaldo is computed from real lib/finance.ts calls against last month, not invented", () => {
+    expect(src).toContain('calcEarnings(jobs, receitas, "mes", prevRef)');
+    expect(src).toContain("monthExpenses(despesas, prevRef)");
+  });
+
+  it('variacaoPct is null (badge omitted) whenever prevSaldo is 0 — never a fabricated "0%" or invented number', () => {
+    expect(src).toContain("prevSaldo !== 0 ?");
+    expect(src).toMatch(/prevSaldo !== 0[\s\S]{0,100}: null/);
+  });
+
+  it("the badge only renders when variacaoPct is not null (real, computable value)", () => {
+    expect(src).toContain("{variacaoPct !== null && (");
+  });
+});
+
+describe("VisaoTab.tsx (issue #136) — Movimentações recentes, 100% real, never the lab's 3 fixed rows", () => {
+  const src = read("components/financeiro/VisaoTab.tsx");
+
+  it("merges real jobs concluídos + receitas + despesas, sorted by real date — never a static array", () => {
+    expect(src).toContain('.filter((j) => j.status === "concluído")');
+    expect(src).toContain("despesas.map((d) =>");
+    expect(src).toContain("receitas.map((r) =>");
+    expect(src).toContain(".sort((a, b) => b.data.localeCompare(a.data))");
+  });
+
+  it("does not contain the lab's hardcoded movement rows", () => {
+    for (const fabricated of [
+      "Marina Costa",
+      "Assinatura de ferramentas",
+      "Cliente Preflight QA",
+      "R$ 180,00",
+      "R$ 89,90",
+      "R$ 250,00",
+    ]) {
+      expect(src).not.toContain(fabricated);
+    }
+  });
+
+  it("rows are non-interactive (<div>, not <button>) — no invented 'edit generic movement' flow the real app can't fulfill", () => {
+    expect(src).not.toMatch(/onClick=\{.*openSheet|onClick=\{\(\) => onEdit/);
+    const rowMatch = src.match(/movements\.map\(\(m, i\) => \(\s*\r?\n\s*<div/);
+    expect(rowMatch).not.toBeNull();
+  });
+
+  it("does not use .section-label (eyebrow-caps root cause fixed in T2)", () => {
     expect(src).not.toMatch(/className=["'{].*section-label/);
   });
 });
