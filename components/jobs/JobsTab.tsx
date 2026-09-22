@@ -625,7 +625,7 @@ export function JobsTab({
             <div
               className="absolute"
               style={{
-                left: "34px",
+                left: "40px",
                 top: "6px",
                 bottom: "6px",
                 width: "1px",
@@ -653,7 +653,14 @@ export function JobsTab({
                     <span
                       className="absolute rounded-full"
                       style={{
-                        left: "29px",
+                        // Centralizado na linha vertical (left: 40px, o
+                        // meio dos 12px de gap entre a coluna de hora e o
+                        // card — gap-3), nunca em cima da própria coluna
+                        // de hora (0–34px): sobrepor o texto era um bug
+                        // real, achado na validação visual desta ticket
+                        // (o "0" de "14h00" ficava escondido atrás do
+                        // ponto).
+                        left: "35px",
                         top: "16px",
                         width: "10px",
                         height: "10px",
