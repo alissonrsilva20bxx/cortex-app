@@ -36,11 +36,14 @@ describe('ObjetivosCard — botão "Ver todos" (estado não-vazio) dispara onGoT
     );
   });
 
-  it('o estado vazio ("Adicionar objetivo") também usa onGoToMetas — mesmo destino, sem um segundo caminho concorrente pra Metas', () => {
-    // Garante que só existe UMA função de navegação pra Metas no componente
-    // (onGoToMetas), não duas ações que poderiam divergir.
-    const onGoToMetasUses = objetivosCardSrc.match(/onClick=\{onGoToMetas\}/g);
-    expect(onGoToMetasUses?.length).toBe(2); // estado vazio + estado com itens
+  it('o estado vazio ("Adicionar objetivo") também usa onGoToMetas, não um placeholder', () => {
+    // Verifica esse caminho especificamente (por proximidade de texto), em
+    // vez de contar ocorrências totais de onGoToMetas no arquivo — uma
+    // contagem exata quebraria com qualquer uso adicional legítimo (ex.: um
+    // novo sub-estado) sem que nenhum caminho obrigatório tivesse regredido.
+    expect(objetivosCardSrc).toMatch(
+      /onClick=\{onGoToMetas\}[\s\S]{0,400}Adicionar objetivo/
+    );
   });
 });
 
@@ -101,7 +104,13 @@ describe("FinanceiroTab — depois de consumido, o pulso não interfere em naveg
     expect(changeTabMatch![0]).not.toMatch(/focusTab/);
   });
 
-  it("focusTab é opcional e tipado como InnerTab | null — uma 2ª visita sem pulso (focusTab null/undefined) não força Metas de novo", () => {
-    expect(financeiroTabSrc).toMatch(/focusTab\?: InnerTab \| null;/);
+  it('a aba interna nasce em "visao" — uma 2ª visita sem pulso (focusTab null/undefined) não abre em Metas por padrão', () => {
+    // Checar só a assinatura `focusTab?: InnerTab | null` não garante nada
+    // sobre comportamento (um tipo opcional não impede um default errado).
+    // A garantia real é dupla: o guard-clause acima ("se não focusTab,
+    // return") já trava que o efeito não navega sem pulso; esta trava que o
+    // estado inicial da aba é "visao", não "metas" — as duas juntas provam
+    // que sem pulso a usuária nunca acaba em Metas involuntariamente.
+    expect(financeiroTabSrc).toMatch(/useState<InnerTab>\("visao"\)/);
   });
 });

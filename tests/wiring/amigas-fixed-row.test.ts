@@ -23,8 +23,11 @@ import { join } from "node:path";
  */
 
 const ROOT = join(__dirname, "..", "..");
+// Normaliza CRLF -> LF: os testes abaixo usam `\n` literal em indexOf/lastIndexOf
+// pra achar posições exatas de trecho de fonte, e isso não pode depender de
+// como o arquivo foi salvo no disco (core.autocrlf, checkout no Windows etc.).
 function read(relPath: string): string {
-  return readFileSync(join(ROOT, relPath), "utf-8");
+  return readFileSync(join(ROOT, relPath), "utf-8").replace(/\r\n/g, "\n");
 }
 
 const feedScreenSrc = read("components/rede/FeedScreen.tsx");
