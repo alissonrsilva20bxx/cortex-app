@@ -91,13 +91,7 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
   const ringOffset = RING_CIRCUMFERENCE * (1 - Math.min(1, ringFraction));
 
   return (
-    <GlassCard
-      radius="lg"
-      onClick={onGoToFinanceiro}
-      ariaLabel="Ver detalhes financeiros"
-      className="p-5"
-      style={SOLID_SURFACE_STYLE}
-    >
+    <GlassCard radius="lg" className="p-5" style={SOLID_SURFACE_STYLE}>
       {/* Duas colunas — valor à esquerda, anel de progresso à direita —
           mesma composição do card-herói do laboratório (page.tsx:282-330,
           grid-cols-[1fr_92px]). O anel usa a MESMA fração real que a
@@ -256,6 +250,32 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
           </p>
         )}
       </div>
+
+      {/* CTA aprovado do protótipo (/dev-preview/ios, "Ver minha evolução")
+          — issue #134. Antes desta ticket o card inteiro era o <button>
+          (GlassCard com onClick), sem afordância visível; a composição
+          aprovada usa um botão explícito de largura total, então o
+          GlassCard virou <div> (sem onClick) e este é o único elemento
+          clicável do card — mesmo padrão de afordância explícita já usado
+          pelos outros cards da Início (cabeçalho de NextJobCard, "Ver
+          todos" de ObjetivosCard), evitando <button> aninhado dentro do
+          <button> que o GlassCard clicável produzia. Cor sempre temática
+          (`var(--accent)`, convenção já usada em JobForm/OnboardingFlow) —
+          nunca o rosa fixo (`#ff2d78`) do CSS module do protótipo
+          (decisão da Fase 1, #124). Mesmo destino de navegação que o card
+          inteiro tinha antes (onGoToFinanceiro), sem função nova. */}
+      <button
+        onClick={onGoToFinanceiro}
+        className="mt-4 w-full py-3 rounded-2xl font-semibold flex items-center justify-center gap-1 transition-opacity active:opacity-80"
+        style={{
+          fontSize: "14px",
+          background: "var(--accent)",
+          color: "white",
+        }}
+      >
+        Ver minha evolução
+        <ChevronRight size={18} />
+      </button>
     </GlassCard>
   );
 }

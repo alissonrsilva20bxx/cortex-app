@@ -111,11 +111,13 @@ export default function DevPreviewApp() {
   const [objetivosRefreshKey, setObjetivosRefreshKey] = useState(0);
 
   const [finInnerTab, setFinInnerTab] = useState("visao");
-  // Pulso de navegação pro Financeiro abrir direto na sub-aba Metas — ver
-  // comentário de `focusTab` em FinanceiroTab.tsx (redesign iOS #122/#125).
-  const [financeiroFocusTab, setFinanceiroFocusTab] = useState<"metas" | null>(
-    null
-  );
+  // Pulso de navegação pro Financeiro abrir direto numa sub-aba específica
+  // ("metas" pro "Ver todos" de Objetivos, "visao" pro CTA "Ver minha
+  // evolução" do HeroCard — issue #134) — ver comentário de `focusTab` em
+  // FinanceiroTab.tsx (redesign iOS #122/#125).
+  const [financeiroFocusTab, setFinanceiroFocusTab] = useState<
+    "metas" | "visao" | null
+  >(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
@@ -253,7 +255,10 @@ export default function DevPreviewApp() {
             <HeroCard
               jobs={jobs}
               metas={metas}
-              onGoToFinanceiro={() => handleTabChange("financeiro")}
+              onGoToFinanceiro={() => {
+                handleTabChange("financeiro");
+                setFinanceiroFocusTab("visao");
+              }}
             />
             {homeCards.nextJob && <NextJobCard jobs={jobs} />}
             {(homeCards.objetivos ?? true) && (

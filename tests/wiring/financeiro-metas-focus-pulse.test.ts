@@ -3,18 +3,21 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Regressão — pulso de navegação Início (Objetivos "Ver todos") → Financeiro
- * → sub-aba Metas (redesign iOS quase nativo, wayfinder #122, ticket #125).
- * Mesmo padrão de inspeção de código-fonte já usado no projeto (sem DOM).
+ * Regressão — pulso de navegação Início → Financeiro → sub-aba específica
+ * (redesign iOS quase nativo, wayfinder #122). Duas origens usam o mesmo
+ * pulso: Objetivos "Ver todos" → "metas" (ticket #125) e o CTA "Ver minha
+ * evolução" do HeroCard → "visao" (ticket #134). Mesmo padrão de inspeção
+ * de código-fonte já usado no projeto (sem DOM).
  *
  * `FinanceiroTab` fica sempre montada (`TabPanel` usa display:none, nunca
  * desmonta — ver TabPanel.tsx), então um valor inicial de `useState` só
  * funcionaria na 1ª visita. A solução é um "pulso": `app/page.tsx` sobe
- * `financeiroFocusTab` pra "metas", `FinanceiroTab` consome (muda de aba +
- * chama `onFocusTabHandled`), e `app/page.tsx` zera o pulso de volta pra
- * `null`. Este arquivo trava as três pontas do contrato:
+ * `financeiroFocusTab` pra "metas" ou "visao", `FinanceiroTab` consome (muda
+ * de aba + chama `onFocusTabHandled`), e `app/page.tsx` zera o pulso de
+ * volta pra `null`. Este arquivo trava as três pontas do contrato:
  *
- * 1. "Ver todos" em Objetivos realmente dispara o pulso;
+ * 1. "Ver todos" em Objetivos e o CTA do HeroCard realmente disparam o
+ *    pulso, cada um com o valor certo;
  * 2. o pulso é consumido (muda a sub-aba) e depois zerado — não fica preso;
  * 3. depois de consumido, o pulso não interfere numa navegação manual
  *    subsequente da usuária entre as sub-abas do Financeiro.
@@ -26,6 +29,7 @@ function read(relPath: string): string {
 }
 
 const objetivosCardSrc = read("components/home/ObjetivosCard.tsx");
+const heroCardSrc = read("components/home/HeroCard.tsx");
 const pageSrc = read("app/page.tsx");
 const financeiroTabSrc = read("components/financeiro/FinanceiroTab.tsx");
 
@@ -54,9 +58,15 @@ describe("app/page.tsx — onGoToMetas dispara o pulso completo (troca de aba + 
     );
   });
 
-  it('financeiroFocusTab começa null (Financeiro abre em "Visão" por padrão em qualquer outra entrada)', () => {
+  it('HeroCard.onGoToFinanceiro (CTA "Ver minha evolução", #134) troca pra aba "financeiro" E seta financeiroFocusTab("visao") na mesma ação', () => {
     expect(pageSrc).toMatch(
-      /const \[financeiroFocusTab, setFinanceiroFocusTab\] = useState<"metas" \| null>\(\s*\r?\n?\s*null\s*\r?\n?\s*\);/
+      /<HeroCard[\s\S]*?onGoToFinanceiro=\{\(\) => \{\s*\r?\n\s*handleTabChange\("financeiro"\);\s*\r?\n\s*setFinanceiroFocusTab\("visao"\);\s*\r?\n\s*\}\}/
+    );
+  });
+
+  it('financeiroFocusTab aceita "metas" e "visao", começa null (Financeiro abre em "Visão" por padrão em qualquer outra entrada)', () => {
+    expect(pageSrc).toMatch(
+      /const \[financeiroFocusTab, setFinanceiroFocusTab\] = useState<\s*\r?\n\s*"metas" \| "visao" \| null\s*\r?\n\s*>\(null\);/
     );
   });
 
@@ -64,6 +74,31 @@ describe("app/page.tsx — onGoToMetas dispara o pulso completo (troca de aba + 
     expect(pageSrc).toMatch(
       /<FinanceiroTab[\s\S]*?focusTab=\{financeiroFocusTab\}[\s\S]*?onFocusTabHandled=\{\(\) => setFinanceiroFocusTab\(null\)\}/
     );
+  });
+});
+
+describe('HeroCard — botão "Ver minha evolução" (CTA aprovado, #134) dispara onGoToFinanceiro', () => {
+  it("o CTA de largura total usa onClick={onGoToFinanceiro}, não um placeholder", () => {
+    expect(heroCardSrc).toMatch(
+      /onClick=\{onGoToFinanceiro\}[\s\S]{0,400}Ver minha evolução/
+    );
+  });
+
+  it("o GlassCard do card-herói não é mais clicável (evita <button> aninhado dentro do <button> do CTA) — só o CTA explícito navega", () => {
+    expect(heroCardSrc).not.toMatch(
+      /<GlassCard[^>]*onClick=\{onGoToFinanceiro\}/
+    );
+  });
+
+  it("cor do CTA é temática (var(--accent)), nunca o rosa fixo do protótipo (#ff2d78, decisão da Fase 1/#124)", () => {
+    // Âncora no <button ... real (com onClick), não nos <button> soltos que
+    // aparecem dentro do comentário JSDoc acima dele no arquivo.
+    const ctaMatch = heroCardSrc.match(
+      /<button\s+onClick=\{onGoToFinanceiro\}[\s\S]*?<\/button>/
+    );
+    expect(ctaMatch).not.toBeNull();
+    expect(ctaMatch![0]).toMatch(/background:\s*"var\(--accent\)"/);
+    expect(ctaMatch![0]).not.toMatch(/#ff2d78|#ff376e/i);
   });
 });
 

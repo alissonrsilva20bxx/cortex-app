@@ -32,9 +32,14 @@ describe("§2-P0-1 — HeroCard clicável (navega a Financeiro) e calculado de j
   });
 
   it("app/page.tsx passa onGoToFinanceiro real (navega para a aba financeiro)", () => {
+    // Desde #134 (CTA "Ver minha evolução"), onGoToFinanceiro também dispara
+    // o pulso financeiroFocusTab("visao") na mesma ação — ver
+    // tests/wiring/financeiro-metas-focus-pulse.test.ts pro contrato
+    // completo do pulso; aqui só confirma que a navegação de aba continua
+    // real (handleTabChange("financeiro")), não um placeholder.
     const page = read("app/page.tsx");
     expect(page).toMatch(
-      /<HeroCard[\s\S]*?onGoToFinanceiro=\{\(\) => handleTabChange\("financeiro"\)\}/
+      /<HeroCard[\s\S]*?onGoToFinanceiro=\{\(\) => \{\s*\r?\n\s*handleTabChange\("financeiro"\);/
     );
   });
 });
