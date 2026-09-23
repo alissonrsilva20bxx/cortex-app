@@ -67,7 +67,8 @@ export function FilterChips<T extends string>({
                 : "var(--surface)",
               border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
               color: active ? "var(--accent)" : "var(--text-muted)",
-              boxShadow: active ? "var(--glow-sm)" : "none",
+              // Fundação Visual (#142): sem glow -- `.chipActive` do
+              // protótipo é só cor sólida + borda, nenhuma sombra.
             }}
           >
             {label}

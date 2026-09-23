@@ -86,7 +86,12 @@ export function BottomNav({ activeTab, onChange }: Props) {
               borderRadius: "999px",
               background: active ? "var(--accent)" : "transparent",
               color: active ? "#fff" : "var(--text-muted)",
-              boxShadow: active ? "var(--glow-sm)" : "none",
+              // Fundação Visual (#142): --glow-sm é um halo duplo (auréola +
+              // inset) que o `.navActive` do protótipo não tem -- lá é uma
+              // única sombra de elevação (0 0 18px rgba(accent,0.4)).
+              boxShadow: active
+                ? "0 0 18px rgb(var(--accent-rgb) / 0.4)"
+                : "none",
             }}
           >
             <Icon size={20} strokeWidth={active ? 2.3 : 1.8} />

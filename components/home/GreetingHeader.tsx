@@ -35,13 +35,18 @@ export function GreetingHeader({ usuario, onOpenAjustes }: Props) {
   return (
     <div className="flex items-start justify-between">
       <div>
-        {/* Escala literal do laboratório (page.tsx:256-260): 17px/-0.035em
-            título, 10px/-0.01em data — bem mais discreto que o título de
-            27px que o app tinha antes. */}
+        {/* Fundação Visual (redesign #122, ticket #142): escala corrigida
+            pra bater com `.greetingHeader h1/p` do protótipo aprovado
+            (30px/760/-0.035em título, 16px corpo/muted subtítulo; 28px
+            <390px) -- a escala anterior (17px/600 título, 10px subtítulo)
+            era uma decisão deliberada só do laboratório antigo, nunca
+            revisitada depois do protótipo iOS ser aprovado. Ver
+            docs/visual/IOS_VISUAL_SYSTEM.md, linha "Divergência real
+            confirmada". */}
         <h1
-          className="font-semibold leading-none"
+          className="leading-[1.12] text-[28px] min-[390px]:text-[30px]"
           style={{
-            fontSize: "17px",
+            fontWeight: 760,
             letterSpacing: "-0.035em",
             color: "var(--text)",
           }}
@@ -49,10 +54,8 @@ export function GreetingHeader({ usuario, onOpenAjustes }: Props) {
           {greeting}, {firstName}
         </h1>
         <p
-          className="capitalize font-medium mt-1 leading-none"
+          className="capitalize mt-[5px] leading-none text-base font-normal"
           style={{
-            fontSize: "10px",
-            letterSpacing: "-0.01em",
             color: "var(--text-muted)",
           }}
         >

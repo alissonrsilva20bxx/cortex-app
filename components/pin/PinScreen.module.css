@@ -128,7 +128,9 @@
 
 .intro h1 {
   margin: 0;
-  font-family: var(--font-display), "Plus Jakarta Sans", sans-serif;
+  /* Fundação Visual (#142): removida a família Plus Jakarta Sans -- o
+     protótipo (.pinIntro h1) nunca troca de família tipográfica, herda a
+     pilha nativa de .page (linha 26-27 deste arquivo). */
   font-size: 34px;
   font-weight: 620;
   line-height: 1.05;

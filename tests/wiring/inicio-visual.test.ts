@@ -70,10 +70,17 @@ describe("the Início component files on disk carry the T2 visual rewrite", () =
     expect(src).toContain("strokeDashoffset");
   });
 
-  it("GreetingHeader.tsx uses the lab's literal type scale (17px title), not the old 27px one", () => {
+  it("GreetingHeader.tsx uses the approved iOS prototype's greeting scale (30px/28px title, weight 760), not the old lab scale (17px) or the original 27px one", () => {
+    // Fundação Visual (redesign #122, ticket #142): a escala de 17px/600
+    // era uma decisão do laboratório anterior ao protótipo iOS aprovado,
+    // nunca revisitada -- o protótipo (`.greetingHeader h1`) usa
+    // 30px/760/-0.035em (28px <390px). Ver docs/visual/IOS_VISUAL_SYSTEM.md.
     const src = read("components/home/GreetingHeader.tsx");
-    expect(src).toContain('fontSize: "17px"');
+    expect(src).toContain("text-[28px]");
+    expect(src).toContain("min-[390px]:text-[30px]");
+    expect(src).toContain("fontWeight: 760");
     expect(src).not.toContain('fontSize: "27px"');
+    expect(src).not.toContain('fontSize: "17px"');
   });
 
   it("NextJobCard.tsx has the day/month date badge from the lab, not the old inline date text", () => {
