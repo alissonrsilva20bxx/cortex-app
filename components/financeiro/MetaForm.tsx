@@ -101,28 +101,27 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
 
   return (
     <>
+      {/* Fundação Visual (#142): mesmo material de components/ui/BottomSheet.tsx
+          -- backdrop preto semi-opaco sem blur, painel opaco sem blur,
+          raio do topo --radius-sheet (26px). */}
       {open && (
         <div
           className="fixed inset-0 z-50"
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            background: "rgb(var(--bg-rgb) / 0.5)",
-          }}
+          style={{ background: "rgba(0, 0, 0, 0.62)" }}
           onClick={onClose}
         />
       )}
 
       <div
-        className="fixed left-0 right-0 z-50 rounded-t-3xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed left-0 right-0 z-50 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: 0,
           transform: open ? "translateY(0)" : "translateY(105%)",
-          background: "var(--surface-2)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid var(--border-color)",
+          background: `linear-gradient(180deg, rgb(var(--bg-rgb) / 0.97), rgb(var(--bg-rgb) / 0.995) 70%)`,
+          border: "1px solid var(--card-border)",
           borderBottom: "none",
+          borderTopLeftRadius: "var(--radius-sheet)",
+          borderTopRightRadius: "var(--radius-sheet)",
         }}
       >
         {/* Header */}

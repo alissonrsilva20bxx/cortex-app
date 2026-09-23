@@ -58,25 +58,26 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
 
   return (
     <>
+      {/* Fundação Visual (#142): backdrop preto semi-opaco sem blur, como
+          `.sheetBackdrop` do protótipo (ver components/ui/BottomSheet.tsx). */}
       {open && (
         <div
           className="fixed inset-0 z-[200]"
-          style={{
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(4px)",
-          }}
+          style={{ background: "rgba(0, 0, 0, 0.62)" }}
           onClick={onClose}
         />
       )}
 
       <div
-        className="fixed left-0 right-0 z-[200] rounded-t-[28px] px-4 pt-5 pb-8 max-h-[90vh] overflow-y-auto transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed left-0 right-0 z-[200] px-4 pt-5 pb-8 max-h-[90vh] overflow-y-auto transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: 0,
           transform: open ? "translateY(0)" : "translateY(105%)",
           background: "var(--bg)",
-          border: "1px solid var(--border-color)",
+          border: "1px solid var(--card-border)",
           borderBottom: "none",
+          borderTopLeftRadius: "var(--radius-sheet)",
+          borderTopRightRadius: "var(--radius-sheet)",
         }}
       >
         <div
@@ -180,7 +181,9 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
           style={{
             background: "var(--accent)",
             color: "#fff",
-            boxShadow: "var(--glow)",
+            // Fundação Visual (#142): elevação direcional como
+            // `.sheetPrimary` do protótipo, não o halo difuso de --glow.
+            boxShadow: "0 10px 28px rgb(var(--accent-rgb) / 0.24)",
             opacity: loading ? 0.7 : 1,
           }}
         >

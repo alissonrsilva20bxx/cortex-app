@@ -88,30 +88,29 @@ export function FAB({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop -- Fundação Visual (#142): preto semi-opaco sem blur, como
+          `.sheetBackdrop` do protótipo (ver components/ui/BottomSheet.tsx). */}
       {open && (
         <div
           className="fixed inset-0 z-40"
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            background: "rgb(var(--bg-rgb) / 0.45)",
-          }}
+          style={{ background: "rgba(0, 0, 0, 0.62)" }}
           onClick={onToggle}
         />
       )}
 
-      {/* Bottom sheet */}
+      {/* Bottom sheet -- material igual ao de components/ui/BottomSheet.tsx:
+          gradiente opaco sobre --bg do tema, sem blur; raio do topo usa
+          --radius-sheet (26px), não o rounded-t-3xl (24px fixo do Tailwind). */}
       <div
-        className="fixed left-0 right-0 z-50 rounded-t-3xl px-5 pt-3 pb-8 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed left-0 right-0 z-50 px-5 pt-3 pb-8 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
           transform: open ? "translateY(0)" : "translateY(calc(100% + 100px))",
-          background: "var(--surface-2)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid var(--border-color)",
+          background: `linear-gradient(180deg, rgb(var(--bg-rgb) / 0.97), rgb(var(--bg-rgb) / 0.995) 70%)`,
+          border: "1px solid var(--card-border)",
           borderBottom: "none",
+          borderTopLeftRadius: "var(--radius-sheet)",
+          borderTopRightRadius: "var(--radius-sheet)",
         }}
       >
         {/* Drag handle */}
@@ -168,7 +167,9 @@ export function FAB({
           bottom: "calc(82px + 14px + env(safe-area-inset-bottom, 0px))",
           right: "20px",
           background: "var(--accent)",
-          boxShadow: "var(--glow)",
+          // Fundação Visual (#142): elevação direcional como `.addButton` do
+          // protótipo, não o halo difuso de --glow.
+          boxShadow: "0 10px 26px rgb(var(--accent-rgb) / 0.25)",
           transform: open ? "rotate(45deg)" : "rotate(0deg)",
         }}
       >
