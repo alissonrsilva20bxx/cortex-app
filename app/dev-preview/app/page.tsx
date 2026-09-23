@@ -19,6 +19,7 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
@@ -135,6 +136,15 @@ export default function DevPreviewApp() {
   // nem na validação do PIN. `__previewLock()` troca a árvore pelo
   // PinScreen; `__previewUnlock()` volta — a Rede remonta e deve restaurar
   // do cache em memória (redeCache), sem skeleton.
+  //
+  // `__previewOnboarding()` existe pelo mesmo motivo: `OnboardingFlow` só é
+  // montado na rota real (`app/page.tsx`), atrás de `isNewUser` (jobs/metas
+  // vazios + sessão real) — inalcançável neste harness sem esse gancho, já
+  // que os dados mockados aqui vêm sempre pré-semeados. Passa `jobs`/`metas`
+  // vazios próprios (não os do app, que têm seed) só pra forçar os 4 passos
+  // (welcome/goal/job/aha) a aparecerem; `onOpenJobForm` reaproveita o
+  // `JobForm` já montado abaixo.
+  const [onboardingPreview, setOnboardingPreview] = useState(false);
   useEffect(() => {
     const w = window as unknown as Record<string, () => void>;
     w.__previewLock = () => {
@@ -142,9 +152,11 @@ export default function DevPreviewApp() {
       setLocked(true);
     };
     w.__previewUnlock = () => setLocked(false);
+    w.__previewOnboarding = () => setOnboardingPreview(true);
     return () => {
       delete w.__previewLock;
       delete w.__previewUnlock;
+      delete w.__previewOnboarding;
     };
   }, []);
 
@@ -238,6 +250,37 @@ export default function DevPreviewApp() {
 
   if (locked && pinHash) {
     return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
+  }
+
+  if (onboardingPreview) {
+    return (
+      <div className="relative flex flex-col min-h-screen">
+        <main
+          className="flex-1 overflow-y-auto px-4"
+          style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
+        >
+          <OnboardingFlow
+            usuario={usuario}
+            jobs={[]}
+            metas={[]}
+            onOpenJobForm={() => setJobFormOpen(true)}
+            onMetaSaved={() => {}}
+            onPinSaved={(h) => setPinHash(h)}
+            onComplete={() => setOnboardingPreview(false)}
+          />
+        </main>
+        <JobForm
+          open={jobFormOpen}
+          job={null}
+          userId={usuario.id}
+          onClose={() => setJobFormOpen(false)}
+          onSaved={() => {
+            setJobFormOpen(false);
+            toast.success("Atendimento registrado!");
+          }}
+        />
+      </div>
+    );
   }
 
   return (
