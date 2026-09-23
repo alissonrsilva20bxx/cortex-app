@@ -1892,7 +1892,6 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
           fotoUrl={perfil?.avatar_url ?? null}
           meusPosts={posts.filter((p) => p.autorId === usuario.id)}
           liveLinks={liveLinks}
-          wishlistItems={wishlistItems}
           clientesCount={clientes.length}
           friendsCount={friends.length}
           defaultPrivacidade={defaultPrivacidade}
@@ -1915,6 +1914,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
             else avatarFileInputRef.current?.click();
           }}
           onShareProfile={shareProfile}
+          onPublish={() => setComposerOpen(true)}
           onOpenWishlist={() => push({ type: "wishlist" })}
           onOpenClientes={() => push({ type: "clientes" })}
           onOpenBloqueados={openBloqueados}

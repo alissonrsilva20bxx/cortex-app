@@ -1,15 +1,31 @@
 "use client";
 
-import { Share2, ChevronRight, Users2, Pencil, ShieldOff } from "lucide-react";
+import { useState } from "react";
+import {
+  Share2,
+  Pencil,
+  Plus,
+  MoreHorizontal,
+  Eye,
+  Gift,
+  Users2,
+  Shield,
+  ShieldOff,
+  Link2,
+} from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { OptionsSheet } from "./OptionsSheet";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { LiveLinksEditor, type LiveLink } from "./LiveLinksSection";
-import { WishlistCard } from "./WishlistCard";
-import { PostCard } from "./PostCard";
+import {
+  LiveLinksEditor,
+  LiveLinksPreview,
+  type LiveLink,
+} from "./LiveLinksSection";
+import { ProfilePostsGrid } from "./ProfilePostsGrid";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
-import { type Privacidade, type WishlistItem } from "@/lib/mockRede";
+import { type Privacidade } from "@/lib/mockRede";
 import type { FeedPost } from "@/lib/rede/feed";
 
 interface Props {
@@ -19,7 +35,6 @@ interface Props {
   fotoUrl: string | null;
   meusPosts: FeedPost[];
   liveLinks: LiveLink[];
-  wishlistItems: WishlistItem[];
   clientesCount: number;
   /** Amigas reais (RedeTab já carrega `friends` pra Amigas/gate de bloqueio)
    * — só a contagem, nenhum dado novo. */
@@ -37,16 +52,54 @@ interface Props {
   onEditProfile: () => void;
   onEditAvatar: () => void;
   onShareProfile: () => void;
+  /** Abre o composer real de novo post — mesmo `setComposerOpen` que o FAB
+   * já usa (RedeTab), nenhum fluxo de publicação paralelo. */
+  onPublish: () => void;
   onOpenWishlist: () => void;
   onOpenClientes: () => void;
   onOpenBloqueados: () => void;
   onOpenPerfilPublico: () => void;
   onChangeDefaultPrivacidade: (p: Privacidade) => void;
-  onToggleLike: (id: string) => void;
-  onComment: (post: FeedPost) => void;
-  onShare: (post: FeedPost) => void;
-  onOpenMenu: (post: FeedPost) => void;
+  /** Renova a URL assinada de uma foto (miniatura ou principal) --
+   * `ProfilePostsGrid`/`ProfilePhotoViewer` cuidam do resto (curtir/
+   * comentar/compartilhar ficam só no feed, não duplicados aqui). */
   onRenovarFoto: (path: string) => Promise<string | null>;
+}
+
+/**
+ * Botão de ação da linha Editar perfil / Publicar / Compartilhar —
+ * geometria portada de IosPrototypeApp.module.css `.profileActions`
+ * (grid 1fr 1fr 44px, botões 44px, radius 12px), cor sempre tokens de
+ * tema (nunca a borda/fundo fixos do protótipo).
+ */
+function ProfileActionButton({
+  icon,
+  label,
+  onClick,
+  iconOnly,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  iconOnly?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="flex items-center justify-center gap-1.5 text-xs font-bold transition-opacity active:opacity-70"
+      style={{
+        minHeight: 44,
+        borderRadius: 12,
+        border: "1px solid var(--border-color)",
+        background: "var(--surface)",
+        color: "var(--text)",
+      }}
+    >
+      {icon}
+      {!iconOnly && label}
+    </button>
+  );
 }
 
 export function MeuEspacoScreen({
@@ -56,7 +109,6 @@ export function MeuEspacoScreen({
   fotoUrl,
   meusPosts,
   liveLinks,
-  wishlistItems,
   clientesCount,
   friendsCount,
   defaultPrivacidade,
@@ -70,28 +122,46 @@ export function MeuEspacoScreen({
   onEditProfile,
   onEditAvatar,
   onShareProfile,
+  onPublish,
   onOpenWishlist,
   onOpenClientes,
   onOpenBloqueados,
   onOpenPerfilPublico,
   onChangeDefaultPrivacidade,
-  onToggleLike,
-  onComment,
-  onShare,
-  onOpenMenu,
   onRenovarFoto,
 }: Props) {
+  const [ferramentasOpen, setFerramentasOpen] = useState(false);
+  const [liveLinksSheetOpen, setLiveLinksSheetOpen] = useState(false);
+  const [privacidadeSheetOpen, setPrivacidadeSheetOpen] = useState(false);
+
   return (
     <div className="pb-4">
-      <ScreenHeader title="Meu espaço" onBack={onBack} />
+      <ScreenHeader
+        title="Meu espaço"
+        onBack={onBack}
+        action={
+          <button
+            onClick={() => setFerramentasOpen(true)}
+            aria-label="Ferramentas do perfil"
+            className="flex items-center justify-center rounded-full transition-opacity active:opacity-70"
+            style={{
+              width: 44,
+              height: 44,
+              border: "1px solid var(--border-color)",
+              color: "var(--text-muted)",
+            }}
+          >
+            <MoreHorizontal size={18} />
+          </button>
+        }
+      />
 
       {loading ? (
         <>
           <SkeletonProfileHeader />
           <div className="space-y-6">
-            <SkeletonList rows={3} />
-            <SkeletonGrid items={2} />
             <SkeletonList rows={1} />
+            <SkeletonGrid items={3} />
           </div>
         </>
       ) : error ? (
@@ -103,8 +173,9 @@ export function MeuEspacoScreen({
         </p>
       ) : (
         <>
-          {/* Identidade */}
-          <div className="flex flex-col items-center text-center mb-5">
+          {/* Identidade — hierarquia do contrato de paridade (§ Meu perfil):
+              1. avatar e números; 2. nome e bio. */}
+          <div className="flex flex-col items-center text-center mb-4">
             <Avatar
               nome={nomeExibicao}
               cor={cor}
@@ -114,14 +185,6 @@ export function MeuEspacoScreen({
               editable
             />
 
-            {/* Estatísticas — passo 1 da hierarquia "avatar e números
-                derivados de dados existentes" do contrato de paridade
-                (seção Meu perfil), como no protótipo aprovado
-                ("18 publicações · 246 amigas · 31 clientes"). Ausente até
-                este ticket (T20/#127) — os 3 números já existiam em
-                variáveis reais (meusPosts/friendsCount/clientesCount, essa
-                última já usada mais abaixo no card de Clientes), só
-                faltava esta linha juntando os três. Nenhum dado novo. */}
             <div className="flex items-center gap-6 mt-4">
               <div className="text-center">
                 <p
@@ -167,22 +230,12 @@ export function MeuEspacoScreen({
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 mt-3">
-              <p
-                className="font-bold"
-                style={{ fontSize: "18px", color: "var(--text)" }}
-              >
-                {nomeExibicao}
-              </p>
-              <button
-                onClick={onEditProfile}
-                aria-label="Editar perfil"
-                className="flex items-center justify-center active:opacity-60"
-                style={{ width: 44, height: 44, margin: "-15px" }}
-              >
-                <Pencil size={14} style={{ color: "var(--text-muted)" }} />
-              </button>
-            </div>
+            <p
+              className="font-bold mt-3"
+              style={{ fontSize: "18px", color: "var(--text)" }}
+            >
+              {nomeExibicao}
+            </p>
             {bio && (
               <p
                 className="text-sm mt-1 max-w-[280px]"
@@ -191,188 +244,147 @@ export function MeuEspacoScreen({
                 {bio}
               </p>
             )}
-            <button
-              onClick={onOpenPerfilPublico}
-              className="flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full text-xs font-semibold transition-opacity active:opacity-70"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border-color)",
-                color: "var(--text)",
-              }}
-            >
-              Ver como perfil público
-              <ChevronRight size={13} />
-            </button>
           </div>
 
-          {/* LiveLinks */}
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <p className="section-label">LiveLinks</p>
-              <button
-                onClick={onShareProfile}
-                className="flex items-center gap-1.5 text-xs font-semibold active:opacity-70"
-                style={{ color: "var(--accent)" }}
-              >
-                <Share2 size={13} />
-                Compartilhar perfil
-              </button>
-            </div>
-            <LiveLinksEditor
-              links={liveLinks}
-              onMove={onMoveLiveLink}
-              onEdit={onEditLiveLink}
-              onDelete={onDeleteLiveLink}
-              onAdd={onAddLiveLink}
+          {/* LiveLinks discretos — entre bio e ações (regra não-negociável
+              do mapa #122), sem cabeçalho de seção nem controles de
+              edição aqui: gerenciar (adicionar/editar/excluir/reordenar)
+              mudou pro menu de ferramentas (ver abaixo), preservando as
+              4 operações intactas. */}
+          <div className="mb-4">
+            <LiveLinksPreview links={liveLinks} />
+          </div>
+
+          {/* Ações — Editar perfil / Publicar / Compartilhar (contrato de
+              paridade § Meu perfil, ponto 4). Todos os 3 apontam pros
+              fluxos reais já existentes (ProfileEditForm, PostComposer via
+              o mesmo setComposerOpen do FAB, compartilhamento real). */}
+          <div
+            className="grid gap-2 mb-6"
+            style={{ gridTemplateColumns: "1fr 1fr 44px" }}
+          >
+            <ProfileActionButton
+              icon={<Pencil size={15} />}
+              label="Editar perfil"
+              onClick={onEditProfile}
             />
-          </section>
+            <ProfileActionButton
+              icon={<Plus size={16} />}
+              label="Publicar"
+              onClick={onPublish}
+            />
+            <ProfileActionButton
+              icon={<Share2 size={16} />}
+              label="Compartilhar perfil"
+              onClick={onShareProfile}
+              iconOnly
+            />
+          </div>
 
-          {/* Desejos */}
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <p className="section-label">Desejos</p>
-              <button
-                onClick={onOpenWishlist}
-                className="text-xs font-semibold active:opacity-70"
-                style={{ color: "var(--accent)" }}
-              >
-                Ver todos
-              </button>
-            </div>
-            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-              {wishlistItems.map((item) => (
-                <WishlistCard
-                  key={item.id}
-                  item={item}
-                  compact
-                  onClick={onOpenWishlist}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* Clientes */}
-          <section className="mb-6">
-            <p className="section-label mb-3">Clientes</p>
-            <GlassCard
-              radius="md"
-              onClick={onOpenClientes}
-              className="flex items-center gap-3.5 px-4 py-4"
-            >
-              <div
-                className="flex items-center justify-center rounded-xl shrink-0"
-                style={{
-                  width: 36,
-                  height: 36,
-                  background: "rgb(var(--accent-rgb) / 0.12)",
-                }}
-              >
-                <Users2 size={16} style={{ color: "var(--accent)" }} />
-              </div>
-              <div className="text-left flex-1">
-                <p
-                  className="font-semibold text-sm"
-                  style={{ color: "var(--text)" }}
-                >
-                  {clientesCount} clientes
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Área privada — não aparece no Feed
-                </p>
-              </div>
-              <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
-            </GlassCard>
-          </section>
-
-          {/* Minhas publicações */}
-          <section className="mb-6">
-            <p className="section-label mb-3">Minhas publicações</p>
-            {meusPosts.length === 0 ? (
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                Você ainda não publicou nada.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {meusPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onToggleLike={onToggleLike}
-                    onComment={onComment}
-                    onShare={onShare}
-                    onOpenMenu={onOpenMenu}
-                    onOpenAutor={() => {}}
-                    onRenovarFoto={onRenovarFoto}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Privacidade */}
+          {/* Grade de publicações — contrato de paridade § Meu perfil,
+              ponto 5. Só esta grade: nenhuma segunda aba (proibido pelo
+              contrato). */}
           <section>
-            <p className="section-label mb-3">Privacidade</p>
-            <GlassCard radius="md" className="p-4">
-              <p
-                className="text-xs mb-3"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Quem vê suas novas publicações por padrão
-              </p>
-              <SegmentedControl<Privacidade>
-                size="sm"
-                fullWidth
-                value={defaultPrivacidade}
-                onChange={onChangeDefaultPrivacidade}
-                options={[
-                  { id: "privado", label: "Privado" },
-                  { id: "amigas", label: "Amigas" },
-                  { id: "comunidade", label: "Comunidade" },
-                ]}
-              />
-            </GlassCard>
-          </section>
-
-          {/* Segurança */}
-          <section>
-            <p className="section-label mb-3">Segurança</p>
-            <GlassCard
-              radius="md"
-              onClick={onOpenBloqueados}
-              className="flex items-center gap-3.5 px-4 py-4"
-            >
-              <div
-                className="flex items-center justify-center rounded-xl shrink-0"
-                style={{
-                  width: 36,
-                  height: 36,
-                  background: "rgb(var(--danger-rgb) / 0.12)",
-                }}
-              >
-                <ShieldOff size={16} style={{ color: "var(--danger)" }} />
-              </div>
-              <div className="text-left flex-1">
-                <p
-                  className="font-semibold text-sm"
-                  style={{ color: "var(--text)" }}
-                >
-                  Pessoas bloqueadas
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Ver e desbloquear
-                </p>
-              </div>
-              <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
-            </GlassCard>
+            <p className="section-label mb-3">Publicações</p>
+            <ProfilePostsGrid
+              posts={meusPosts}
+              emptyMessage="Você ainda não publicou nada."
+              onRenovarFoto={onRenovarFoto}
+            />
           </section>
         </>
       )}
+
+      {/* Ferramentas do perfil — tudo que o contrato de paridade manda
+          preservar "no menu de ferramentas": ver como perfil público,
+          Desejos, Clientes privados, privacidade padrão, bloqueados,
+          gerenciamento de LiveLinks. Nenhuma dessas 6 funções mudou —
+          só saíram de seções sempre visíveis pra dentro deste menu. */}
+      <OptionsSheet
+        open={ferramentasOpen}
+        title="Ferramentas do perfil"
+        onClose={() => setFerramentasOpen(false)}
+        chevron
+        options={[
+          {
+            key: "preview",
+            label: "Ver como perfil público",
+            Icon: Eye,
+            onSelect: onOpenPerfilPublico,
+          },
+          {
+            key: "desejos",
+            label: "Desejos",
+            Icon: Gift,
+            onSelect: onOpenWishlist,
+          },
+          {
+            key: "clientes",
+            label: "Clientes privados",
+            Icon: Users2,
+            onSelect: onOpenClientes,
+          },
+          {
+            key: "livelinks",
+            label: "Gerenciar LiveLinks",
+            Icon: Link2,
+            onSelect: () => setLiveLinksSheetOpen(true),
+          },
+          {
+            key: "privacidade",
+            label: "Privacidade das publicações",
+            Icon: Shield,
+            onSelect: () => setPrivacidadeSheetOpen(true),
+          },
+          {
+            key: "bloqueados",
+            label: "Pessoas bloqueadas",
+            Icon: ShieldOff,
+            onSelect: onOpenBloqueados,
+          },
+        ]}
+      />
+
+      <BottomSheet
+        open={liveLinksSheetOpen}
+        onClose={() => setLiveLinksSheetOpen(false)}
+        title="LiveLinks"
+        largeCloseTarget
+      >
+        <div className="px-5 py-3 pb-6">
+          <LiveLinksEditor
+            links={liveLinks}
+            onMove={onMoveLiveLink}
+            onEdit={onEditLiveLink}
+            onDelete={onDeleteLiveLink}
+            onAdd={onAddLiveLink}
+          />
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={privacidadeSheetOpen}
+        onClose={() => setPrivacidadeSheetOpen(false)}
+        title="Privacidade das publicações"
+        largeCloseTarget
+      >
+        <div className="px-5 py-3 pb-6">
+          <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+            Quem vê suas novas publicações por padrão
+          </p>
+          <SegmentedControl<Privacidade>
+            size="sm"
+            fullWidth
+            value={defaultPrivacidade}
+            onChange={onChangeDefaultPrivacidade}
+            options={[
+              { id: "privado", label: "Privado" },
+              { id: "amigas", label: "Amigas" },
+              { id: "comunidade", label: "Comunidade" },
+            ]}
+          />
+        </div>
+      </BottomSheet>
     </div>
   );
 }

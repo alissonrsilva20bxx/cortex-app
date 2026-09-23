@@ -241,7 +241,16 @@ export function AjustesTab({
   }, [userId, setTheme]);
 
   useEffect(() => {
-    const handleHistoryBack = () => setActivePage(null);
+    // Só fecha se a PRÓPRIA chave saiu do estado -- sem isso, um Voltar
+    // que não tinha nada a ver com Ajustes (ex.: fechando o visualizador
+    // de foto do perfil da Rede, TabPanel mantém as duas abas montadas)
+    // também zerava `activePage` por reagir a QUALQUER popstate global.
+    // Achado na revisão de padrões da ticket #139 (redesign iOS/#122):
+    // risco pré-existente aqui, exposto por um 2º consumidor do mesmo
+    // padrão de histórico (ProfilePostsGrid.tsx) coexistir montado.
+    const handleHistoryBack = () => {
+      if (!window.history.state?.jobappSettingsPage) setActivePage(null);
+    };
     window.addEventListener("popstate", handleHistoryBack);
     return () => window.removeEventListener("popstate", handleHistoryBack);
   }, []);
