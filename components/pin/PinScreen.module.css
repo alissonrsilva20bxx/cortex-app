@@ -89,7 +89,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: clamp(28px, 8vh, 56px) 28px clamp(20px, 4vh, 32px);
+  /* Topo reduzido (achado da revisão visual #131 v3: o conjunto
+     wordmark/cadeado/título ficava concentrado demais no meio, sobrando
+     espaço não usado embaixo) -- desloca o bloco de entrada pra cima,
+     ainda proporcional à altura real via vh, nunca um valor fixo pra um
+     aparelho específico. */
+  padding: clamp(16px, 5vh, 40px) 28px clamp(20px, 4vh, 32px);
   text-align: center;
 }
 
@@ -110,7 +115,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: clamp(20px, 4vh, 32px);
+  /* Reduzido junto com o padding-top de .content acima (achado #131 v3) --
+     as duas margens juntas erguiam o bloco JobApp/cadeado/título alto
+     demais no centro da tela, deixando o teclado e o aviso de segurança
+     espremidos embaixo. */
+  margin-top: clamp(8px, 2.5vh, 20px);
 }
 
 .lockSeal {
@@ -151,7 +160,11 @@
   gap: 16px;
   align-items: center;
   justify-content: center;
-  margin: clamp(20px, 4vh, 28px) 0;
+  /* Achado #131 v3: margem vertical era simétrica (mesmo valor acima e
+     abaixo) -- a distância que precisava crescer era especificamente até
+     o teclado, não até o título. Topo ligeiramente menor (o bloco de
+     cima já ficou mais compacto), base maior. */
+  margin: clamp(14px, 3vh, 22px) 0 clamp(26px, 5.5vh, 42px);
 }
 
 .dots i {
@@ -182,7 +195,14 @@
   width: min(100%, 300px);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px 22px;
+  /* Achado #131 v3: 10px de row-gap fixo deixava as 4 linhas espremidas
+     mesmo em telas altas, enquanto o espaço sobrando se acumulava todo
+     depois do teclado (.privacy tem margin-top: auto). vh-based, não um
+     px fixo pra um aparelho -- cresce em telas altas, ainda cabe em
+     telas curtas (390×667 confirmado sem cortar/rolar). Column-gap
+     inalterado: só a distância ENTRE as linhas devia crescer, as colunas
+     continuam alinhadas. */
+  gap: clamp(16px, 3.2vh, 30px) 22px;
   margin-bottom: clamp(16px, 3vh, 26px);
 }
 
@@ -256,13 +276,24 @@
   outline-offset: -3px;
 }
 
-@media (max-height: 640px) {
+/* 640 -> 700px (achado #131 v3, protocolo de validação): 390×667 (tela
+   curta de referência) tinha 640 como teto, mas 667 > 640 nunca disparava
+   essa compressão -- o teclado com o row-gap maior (pro pedido principal
+   desta correção) estourava a viewport sem rolagem nenhuma disponível.
+   700px cobre 667 com folga; confirmado sem overflow em
+   390×667/390×844/430×932 (scratchpad/visual-diff/pin-check.js). */
+@media (max-height: 700px) {
   .content {
     padding-top: 16px;
+    padding-bottom: 16px;
   }
 
   .intro {
     margin-top: 12px;
+  }
+
+  .intro p {
+    min-height: 0;
   }
 
   .lockSeal {
@@ -276,7 +307,12 @@
   }
 
   .dots {
-    margin: 14px 0;
+    margin: 14px 0 20px;
+  }
+
+  .keypad {
+    gap: 12px 22px;
+    margin-bottom: 14px;
   }
 
   .keypad > button,
