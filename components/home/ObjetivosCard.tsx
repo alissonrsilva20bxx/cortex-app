@@ -37,7 +37,7 @@ const OBJ_CAT_EMOJIS: Record<string, string> = {
 export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   if (objetivos.length === 0) {
     return (
-      <GlassCard className="p-5" radius="md">
+      <GlassCard className="p-5" radius="lg">
         <div className="flex items-center gap-3 mb-4">
           <div
             className="flex items-center justify-center rounded-xl shrink-0"
@@ -66,6 +66,8 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             padrão já usado no botão "Ver todos" deste arquivo. */}
         <button
           onClick={onGoToMetas}
+          // Achado #131: marca pro FAB recuar se colidir (ver FAB.tsx).
+          data-fab-avoid
           className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.98]"
           style={{
             background: "rgb(var(--accent-rgb) / 0.08)",
@@ -92,7 +94,7 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   );
 
   return (
-    <GlassCard className="p-5" radius="md">
+    <GlassCard className="p-5" radius="lg">
       {/* "Ver todos" no cabeçalho, não mais um botão de largura total
           abaixo da lista — mesma posição do laboratório (page.tsx:388-397,
           "Objetivos" + "Ver todos" na mesma linha). */}
@@ -118,6 +120,10 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
         ) : (
           <button
             onClick={onGoToMetas}
+            // Achado #131: era exatamente este botão que o FAB cobria em
+            // 390px, sem o usuário precisar rolar — marca pro FAB recuar
+            // se colidir (ver FAB.tsx, useFabCollisionAvoidance).
+            data-fab-avoid
             className="flex items-center gap-0.5 font-bold shrink-0"
             style={{
               fontSize: "11px",
@@ -137,6 +143,9 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
           <button
             key={obj.id}
             onClick={() => onToggle(obj.id, !obj.concluido)}
+            // Achado #131: marca de conclusão também é uma ação real —
+            // recua o FAB se colidir (ver FAB.tsx).
+            data-fab-avoid
             className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl transition-all active:scale-[0.98]"
             style={{
               background: obj.concluido

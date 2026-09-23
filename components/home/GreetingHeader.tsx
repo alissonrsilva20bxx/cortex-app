@@ -70,33 +70,28 @@ export function GreetingHeader({ usuario, onOpenAjustes }: Props) {
         </p>
       </div>
 
-      {/* Avatar — dado real (foto/inicial), moldura sóbria do laboratório
-          (border-white/[0.07] + bg-white/[0.035], sem glow): brilho só em
-          seleção/progresso/ação primária, nunca decorativo. 36px visual
-          como os botões de ícone do laboratório; o alvo de toque real
-          cresce até 44px (WCAG 2.5.5) via padding, sem alterar a moldura.
-          Redesign iOS quase nativo (#122/#124): agora é o único acesso a
-          Ajustes, que saiu da BottomNav — precisa ser um botão real
-          (teclado/leitor de tela), não mais decorativo. */}
+      {/* Avatar — dado real (foto/inicial). 48×48, igual ao `.avatar` do
+          protótipo aprovado (achado da revisão visual #131: estava em
+          36px visual/44px de alvo de toque — o valor de 44px vinha de
+          WCAG 2.5.5, mas 48px já é maior que o mínimo, então o alvo de
+          toque real e a moldura voltam a ser o mesmo elemento, sem
+          precisar do padding extra de antes). Redesign iOS quase nativo
+          (#122/#124): agora é o único acesso a Ajustes, que saiu da
+          BottomNav — precisa ser um botão real (teclado/leitor de tela),
+          não mais decorativo. */}
       <button
         type="button"
         onClick={onOpenAjustes}
         aria-label="Abrir Ajustes"
-        className="relative flex items-center justify-center rounded-full shrink-0 transition-opacity active:opacity-70"
+        className="relative flex items-center justify-center rounded-full shrink-0 overflow-hidden transition-opacity active:opacity-70"
         style={{
-          width: "44px",
-          height: "44px",
+          width: "48px",
+          height: "48px",
+          border: "1px solid var(--border-color)",
+          background: "var(--surface)",
         }}
       >
-        <span
-          className="relative flex items-center justify-center rounded-full overflow-hidden"
-          style={{
-            width: "36px",
-            height: "36px",
-            border: "1px solid var(--border-color)",
-            background: "var(--surface)",
-          }}
-        >
+        <span className="relative flex items-center justify-center w-full h-full">
           {usuario.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

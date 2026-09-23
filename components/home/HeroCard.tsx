@@ -66,10 +66,32 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
   const ringOffset = RING_CIRCUMFERENCE * (1 - Math.min(1, ringFraction));
 
   return (
-    // Fundação Visual (#142): sem `style` — o card usa o material neutro
-    // compartilhado de `.glass-card` (globals.css), não uma superfície
-    // duplicada por arquivo. Ver nota equivalente em NextJobCard.tsx.
-    <GlassCard radius="lg" className="p-5">
+    // Fundação Visual (#142): sem `style` de superfície — o card usa o
+    // material neutro compartilhado de `.glass-card` (globals.css), não
+    // uma superfície duplicada por arquivo. Ver nota equivalente em
+    // NextJobCard.tsx. `overflow: hidden` é só pro heroGlow abaixo não
+    // vazar dos cantos arredondados do card (mesmo `overflow: hidden`
+    // que `.card` do protótipo tem).
+    <GlassCard radius="lg" className="p-5" style={{ overflow: "hidden" }}>
+      {/* Glow radial localizado (achado #131) — igual ao `.heroGlow` do
+          protótipo: um círculo de 190px, cortado pelo canto superior
+          direito do card, sem interagir com o layout (position:
+          absolute, sem afetar nenhum elemento em volta). rgb(var(--accent-rgb))
+          em vez do rosa fixo do protótipo, pra continuar temático. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          width: "190px",
+          height: "190px",
+          borderRadius: "50%",
+          right: "-65px",
+          top: "-70px",
+          background:
+            "radial-gradient(circle, rgb(var(--accent-rgb) / 0.22), transparent 68%)",
+        }}
+      />
+
       {/* Cabeçalho: título + subtítulo à esquerda, anel de progresso à
           direita — mesma composição do protótipo aprovado (`.heroTop`,
           /dev-preview/ios, IosPrototypeApp.tsx:1119-1127). "Sua projeção"
@@ -77,7 +99,7 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
           visual #131); o anel usa a MESMA fração real que a barra fina
           abaixo (p.pct ou p.barFraction), não é decorativo como no
           protótipo estático. */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
           {/* `.card-title` (globals.css) — mesma regra compartilhada que
               NextJobCard/ObjetivosCard usam pro próprio <h2>, espelhando
@@ -99,7 +121,7 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
 
         <div
           className="relative grid place-items-center shrink-0"
-          style={{ width: "86px", height: "86px" }}
+          style={{ width: "76px", height: "76px" }}
         >
           <svg
             viewBox="0 0 100 100"
@@ -135,12 +157,10 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
           {/* Avião, não o alvo genérico que estava aqui — é a identidade
               liberdade/viagem do app (protótipo, `.flightRing`), achado da
               revisão visual #131: um ícone genérico de meta apaga essa
-              identidade. Tamanho/cor medidos do protótipo (31px,
-              --p-accent-soft) e escalados pro nosso anel de 86px (vs os
-              76px dele) — var(--accent-soft) é o mesmo tom (pink-neon:
-              #ff80ab ≈ --p-accent-soft #ff78aa). */}
+              identidade. 31px/--accent-soft, igual ao protótipo (pink-neon:
+              #ff80ab ≈ --p-accent-soft #ff78aa — mesmo tom, paleta própria). */}
           <Plane
-            size={28}
+            size={31}
             className="absolute"
             style={{ color: "var(--accent-soft)" }}
           />
@@ -148,23 +168,22 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
       </div>
 
       {/* Valor — protagonista da tela (Início: "resumo financeiro como
-          protagonista"). 48px/700/-0.065em/--accent-soft, igual ao
-          `.bigMetric` do protótipo aprovado (achado da revisão visual
-          #131: tinha caído pra 30px/600/--accent — o protótipo usa a
-          variante SUAVE do acento aqui, reservando o acento cheio pro CTA
-          sólido, pra não competir pela atenção). Hierarquia: quando há
+          protagonista"). 48px/700/-0.065em/--accent-soft, SEM text-shadow
+          — igual ao `.bigMetric` do protótipo aprovado (achado da revisão
+          visual #131: tinha caído pra 30px/600/--accent + um brilho que o
+          protótipo não tem — o glow do card já vem do heroGlow radial
+          acima, não precisa duplicar no texto). Hierarquia: quando há
           meta, o número gigante é o PERCENTUAL (não o valor em reais) —
           o real vem como legenda menor embaixo, igual ao "R$ 4.860 de
           R$ 6.750,00" do laboratório. Sem meta não há percentual real pra
           mostrar (p.pct é null), então o valor em reais volta a ser o
           protagonista — nunca um % inventado. */}
       <p
-        className="font-bold tabular-nums leading-none mt-3"
+        className="relative font-bold tabular-nums leading-none mt-3"
         style={{
           fontSize: "48px",
           letterSpacing: "-0.065em",
           color: "var(--accent-soft)",
-          textShadow: "0 0 20px rgb(var(--accent-rgb) / 0.28)",
         }}
       >
         {p.pct !== null ? `${Math.round(p.pct)}%` : formatBRL(p.earned)}
@@ -241,16 +260,27 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
           pelos outros cards da Início (cabeçalho de NextJobCard, "Ver
           todos" de ObjetivosCard), evitando <button> aninhado dentro do
           <button> que o GlassCard clicável produzia. Cor sempre temática
-          (`var(--accent)`, convenção já usada em JobForm/OnboardingFlow) —
-          nunca o rosa fixo (`#ff2d78`) do CSS module do protótipo
-          (decisão da Fase 1, #124). Mesmo destino de navegação que o card
-          inteiro tinha antes (onGoToFinanceiro), sem função nova. */}
+          (`var(--accent)`/`--accent-soft`, convenção já usada em
+          JobForm/OnboardingFlow) — nunca o rosa fixo (`#ff2d78`/`#ff376e`)
+          do CSS module do protótipo (decisão da Fase 1, #124). Mesmo
+          destino de navegação que o card inteiro tinha antes
+          (onGoToFinanceiro), sem função nova.
+          16px/700/altura 48px/sombra — medido do `.primaryButton` do
+          protótipo (achado #131: estava em 14px/600, fundo sólido, sem
+          sombra, 45px de altura via padding em vez de min-height). O
+          gradiente usa `color-mix` com branco em vez do segundo hex fixo
+          do protótipo (`#ff376e`), pra continuar temático nos 8 temas. */}
       <button
         onClick={onGoToFinanceiro}
-        className="mt-4 w-full py-3 rounded-2xl font-semibold flex items-center justify-center gap-1 transition-opacity active:opacity-80"
+        // #131: recua o FAB se colidir (ver FAB.tsx).
+        data-fab-avoid
+        className="mt-4 w-full rounded-2xl font-bold flex items-center justify-center gap-1.5 transition-opacity active:opacity-80"
         style={{
-          fontSize: "14px",
-          background: "var(--accent)",
+          fontSize: "16px",
+          minHeight: "48px",
+          background:
+            "linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 85%, white))",
+          boxShadow: "0 9px 26px rgb(var(--accent-rgb) / 0.2)",
           color: "white",
         }}
       >

@@ -29,6 +29,10 @@ interface Props {
   /** Força a tag; por padrão é <button> se houver onClick, senão <div>. */
   as?: "div" | "button";
   ariaLabel?: string;
+  /** Marca o card pro FAB recuar se colidir (achado #131 — ver FAB.tsx,
+   * useFabCollisionAvoidance). Só pra cards que são, em si, uma ação real
+   * (ex.: NextJobCard inteiro expande ao toque). */
+  fabAvoid?: boolean;
 }
 
 export function GlassCard({
@@ -39,6 +43,7 @@ export function GlassCard({
   onClick,
   as,
   ariaLabel,
+  fabAvoid,
 }: Props) {
   const Tag = as ?? (onClick ? "button" : "div");
   const interactive = Tag === "button" || Boolean(onClick);
@@ -47,6 +52,7 @@ export function GlassCard({
     <Tag
       onClick={onClick}
       aria-label={ariaLabel}
+      data-fab-avoid={fabAvoid ? "" : undefined}
       className={`glass-card ${
         interactive
           ? "transition-all active:scale-[0.99] active:opacity-90"

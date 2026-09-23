@@ -35,8 +35,12 @@ const financeiroTabSrc = read("components/financeiro/FinanceiroTab.tsx");
 
 describe('ObjetivosCard — botão "Ver todos" (estado não-vazio) dispara onGoToMetas', () => {
   it('o botão "Ver todos" usa onClick={onGoToMetas}, não um placeholder', () => {
+    // Janela de 600 (não 400): achado #131 acrescentou `data-fab-avoid` +
+    // comentário curto no botão (ver FAB.tsx) — mais alguns chars entre o
+    // onClick e o texto, ainda bem dentro de "é o mesmo elemento", não de
+    // "achou um onGoToMetas qualquer em outro lugar do arquivo".
     expect(objetivosCardSrc).toMatch(
-      /onClick=\{onGoToMetas\}[\s\S]{0,400}Ver todos/
+      /onClick=\{onGoToMetas\}[\s\S]{0,600}Ver todos/
     );
   });
 
@@ -46,7 +50,7 @@ describe('ObjetivosCard — botão "Ver todos" (estado não-vazio) dispara onGoT
     // contagem exata quebraria com qualquer uso adicional legítimo (ex.: um
     // novo sub-estado) sem que nenhum caminho obrigatório tivesse regredido.
     expect(objetivosCardSrc).toMatch(
-      /onClick=\{onGoToMetas\}[\s\S]{0,400}Adicionar objetivo/
+      /onClick=\{onGoToMetas\}[\s\S]{0,600}Adicionar objetivo/
     );
   });
 });
@@ -79,8 +83,10 @@ describe("app/page.tsx — onGoToMetas dispara o pulso completo (troca de aba + 
 
 describe('HeroCard — botão "Ver minha evolução" (CTA aprovado, #134) dispara onGoToFinanceiro', () => {
   it("o CTA de largura total usa onClick={onGoToFinanceiro}, não um placeholder", () => {
+    // Janela de 600 (não 400) pelo mesmo motivo do teste equivalente de
+    // ObjetivosCard acima — achado #131 acrescentou `data-fab-avoid`.
     expect(heroCardSrc).toMatch(
-      /onClick=\{onGoToFinanceiro\}[\s\S]{0,400}Ver minha evolução/
+      /onClick=\{onGoToFinanceiro\}[\s\S]{0,600}Ver minha evolução/
     );
   });
 
@@ -97,7 +103,12 @@ describe('HeroCard — botão "Ver minha evolução" (CTA aprovado, #134) dispar
       /<button\s+onClick=\{onGoToFinanceiro\}[\s\S]*?<\/button>/
     );
     expect(ctaMatch).not.toBeNull();
-    expect(ctaMatch![0]).toMatch(/background:\s*"var\(--accent\)"/);
+    // Achado #131: virou um gradiente (medido do `.primaryButton` do
+    // protótipo) em vez de fundo sólido — ainda 100% var(--accent), nunca
+    // o hex fixo do protótipo.
+    expect(ctaMatch![0]).toMatch(
+      /background:\s*\n?\s*"linear-gradient\([^"]*var\(--accent\)/
+    );
     expect(ctaMatch![0]).not.toMatch(/#ff2d78|#ff376e/i);
   });
 });

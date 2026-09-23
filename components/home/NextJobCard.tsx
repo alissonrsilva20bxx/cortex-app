@@ -54,21 +54,17 @@ export function NextJobCard({ jobs }: Props) {
     <GlassCard
       className="p-5 duration-300"
       onClick={job ? () => setExpanded((v) => !v) : undefined}
-      radius="md"
-      // Fundação Visual (#142): sem `style` nenhum, o card usa o material
-      // neutro compartilhado de `.glass-card` (globals.css) — nada de
-      // superfície/borda duplicada por arquivo aqui (ver nota de HeroCard.tsx
-      // sobre a correção desse padrão). O único `style` que sobra é o glow
-      // extra de quando expandido, que `.glass-card` não tem como saber
-      // sozinha (depende de estado local).
-      style={
-        expanded
-          ? {
-              boxShadow:
-                "inset 0 1px 0 rgb(255 255 255 / 0.025), 0 14px 34px rgb(0 0 0 / 0.14), var(--glow-sm)",
-            }
-          : undefined
-      }
+      radius="lg"
+      // O card inteiro é uma ação real (expande ao toque) — marca pro FAB
+      // recuar se colidir (achado #131, ver FAB.tsx).
+      fabAvoid
+      // Fundação Visual (#142): sem `style` de superfície, o card usa o
+      // material neutro compartilhado de `.glass-card` (globals.css) —
+      // nada de superfície/borda duplicada por arquivo aqui (ver nota de
+      // HeroCard.tsx sobre a correção desse padrão). Achado #131: o glow
+      // extra de quando expandido (`var(--glow-sm)`) não tem equivalente
+      // no protótipo — removido, sobra só a elevação normal do
+      // `.glass-card`, sem tratamento especial nenhum aqui.
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
