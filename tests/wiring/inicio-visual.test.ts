@@ -63,10 +63,9 @@ describe("/dev-preview/app renders the T2 Início components", () => {
 });
 
 describe("the Início component files on disk carry the T2 visual rewrite", () => {
-  it("HeroCard.tsx has the two-column value+ring composition, not the old single-column layout", () => {
+  it("HeroCard.tsx keeps the real progress ring (not decorative)", () => {
     const src = read("components/home/HeroCard.tsx");
     expect(src).toContain("RING_CIRCUMFERENCE");
-    expect(src).toContain("grid-cols-[1fr_86px]");
     expect(src).toContain("strokeDashoffset");
   });
 
@@ -88,14 +87,68 @@ describe("the Início component files on disk carry the T2 visual rewrite", () =
     expect(src).toContain("formatDayBadge");
     expect(src).toContain("dayBadge");
   });
+});
 
-  it("all 4 components de-blur their GlassCard surface (solid, not the shared blurred glass)", () => {
+describe("the Início component files carry the #131 visual-review correction (real vs /dev-preview/ios)", () => {
+  it("HeroCard/NextJobCard/ObjetivosCard don't duplicate a per-file card surface anymore", () => {
+    // Achado #131: os 3 arquivos sobrescreviam a borda neutra de
+    // `.glass-card` (--card-border) por --border-color (cor-de-destaque
+    // do tema), produzindo um contorno temático (rosa em pink-neon etc.)
+    // que o protótipo aprovado não tem. A correção é usar SÓ o material
+    // compartilhado de `.glass-card` (sem `style` de superfície na própria
+    // GlassCard) — nenhum dos 3 deve mais montar a própria superfície com
+    // esse objeto. Não checa TODO uso de --border-color no arquivo (chips
+    // pequenos internos, como o selo de status de NextJobCard, continuam
+    // legitimamente temáticos — só a superfície do CARD é o que mudou).
     for (const file of [
       "components/home/HeroCard.tsx",
       "components/home/NextJobCard.tsx",
       "components/home/ObjetivosCard.tsx",
     ]) {
-      expect(read(file)).toContain('backdropFilter: "none"');
+      expect(read(file)).not.toContain("SOLID_SURFACE_STYLE");
     }
+  });
+
+  it("HeroCard.tsx restores the approved title/metric/icon (achado #131)", () => {
+    const src = read("components/home/HeroCard.tsx");
+    expect(src).toContain("Sua projeção");
+    expect(src).toMatch(/<Plane\b/);
+    expect(src).not.toMatch(/<Target\b/);
+    expect(src).toContain('fontSize: "48px"');
+  });
+
+  it("HeroCard/NextJobCard/ObjetivosCard share one card-title style, not 3 divergent inline copies", () => {
+    for (const file of [
+      "components/home/HeroCard.tsx",
+      "components/home/NextJobCard.tsx",
+      "components/home/ObjetivosCard.tsx",
+    ]) {
+      expect(read(file)).toMatch(/className="card-title"/);
+    }
+    expect(read("styles/globals.css")).toContain(".card-title {");
+  });
+
+  it("NextJobCard.tsx wraps the summary row in an inner block (bloco interno) using --card-border, not a magic value", () => {
+    const src = read("components/home/NextJobCard.tsx");
+    expect(src).toMatch(/border:\s*"1px solid var\(--card-border\)"/);
+  });
+
+  it("NextJobCard.tsx prices the atendimento in --warning, not --accent (achado #131)", () => {
+    const src = read("components/home/NextJobCard.tsx");
+    expect(src).toMatch(/color:\s*"var\(--warning\)"/);
+  });
+
+  it("NextJobCard.tsx gets getDaysUntil/countdownLabel/formatDayBadge from the tested lib module, not a local reimplementation", () => {
+    const src = read("components/home/NextJobCard.tsx");
+    expect(src).toMatch(
+      /import\s*\{[^}]*getDaysUntil[^}]*countdownLabel[^}]*formatDayBadge[^}]*\}\s*from\s*"@\/lib\/proximoAtendimento"/
+    );
+    expect(src).not.toMatch(/^function getDaysUntil/m);
+  });
+
+  it("GreetingHeader.tsx doesn't force capitalize on every word of the date anymore", () => {
+    const src = read("components/home/GreetingHeader.tsx");
+    expect(src).not.toMatch(/className="capitalize/);
+    expect(src).toMatch(/charAt\(0\)\.toUpperCase\(\)/);
   });
 });

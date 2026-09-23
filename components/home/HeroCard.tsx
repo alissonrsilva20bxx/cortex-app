@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Target } from "lucide-react";
+import { ChevronRight, Plane } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { formatBRL, monthProjection } from "@/lib/finance";
 import type { Job, Meta } from "@/lib/types";
@@ -14,31 +14,6 @@ interface Props {
   metas: Meta[];
   onGoToFinanceiro: () => void;
 }
-
-/**
- * Superfície sólida e legível (sem blur), como no laboratório visual —
- * `.jobapp-visual-launch` reserva o vidro pra navegação/sheets e usa
- * superfícies mais sólidas em cards de conteúdo. Repetido por arquivo
- * (não extraído pra um helper compartilhado) porque o escopo deste
- * ticket é só estes 4 componentes de Início — nada em `components/ui/`.
- *
- * `border` sobrescreve a borda cor-de-destaque de `.glass-card`
- * (globals.css) por uma neutra — mais perto do `border-white/[0.075]`
- * do laboratório. Uma coisa que o `style` inline NÃO alcança:
- * `.glass-card::before` (o "shine" — gradiente translúcido) continua
- * pintando por cima, porque pseudo-elemento não é afetado por inline
- * style. Removê-lo exigiria editar `components/ui/GlassCard.tsx` ou o
- * `.glass-card` global, fora do escopo permitido deste ticket — fica
- * registrado como resíduo aceito, não como fidelidade completa.
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
-} as const;
 
 /**
  * O card-herói: a projeção viva das metas. Peça central da Home e o
@@ -91,66 +66,34 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
   const ringOffset = RING_CIRCUMFERENCE * (1 - Math.min(1, ringFraction));
 
   return (
-    <GlassCard radius="lg" className="p-5" style={SOLID_SURFACE_STYLE}>
-      {/* Duas colunas — valor à esquerda, anel de progresso à direita —
-          mesma composição do card-herói do laboratório (page.tsx:282-330,
-          grid-cols-[1fr_92px]). O anel usa a MESMA fração real que a
-          barra fina abaixo (p.pct ou p.barFraction); não é decorativo. */}
-      <div className="grid grid-cols-[1fr_86px] items-center gap-4">
+    // Fundação Visual (#142): sem `style` — o card usa o material neutro
+    // compartilhado de `.glass-card` (globals.css), não uma superfície
+    // duplicada por arquivo. Ver nota equivalente em NextJobCard.tsx.
+    <GlassCard radius="lg" className="p-5">
+      {/* Cabeçalho: título + subtítulo à esquerda, anel de progresso à
+          direita — mesma composição do protótipo aprovado (`.heroTop`,
+          /dev-preview/ios, IosPrototypeApp.tsx:1119-1127). "Sua projeção"
+          é o título real do card (antes desaparecido — achado da revisão
+          visual #131); o anel usa a MESMA fração real que a barra fina
+          abaixo (p.pct ou p.barFraction), não é decorativo como no
+          protótipo estático. */}
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          {/* Legenda do card-herói — sentence case, 11px/medium, -0.015em,
-              texto a 55% de opacidade, como no laboratório
-              (app/dev-preview/launch/page.tsx, bloco "home"). NÃO é
-              `.section-label`: aquele eyebrow em caixa-alta com tracking
-              positivo (10.5px/700/0.1em/uppercase) não é usado em nenhum
-              header da tela Início no laboratório — era a causa raiz de
-              PR #41 ter sido reprovada por "ainda parecer o app antigo". */}
-          <p
-            className="font-medium"
-            style={{
-              fontSize: "11px",
-              letterSpacing: "-0.015em",
-              color: "color-mix(in srgb, var(--text) 55%, transparent)",
-            }}
-          >
-            Você já construiu
-          </p>
+          {/* `.card-title` (globals.css) — mesma regra compartilhada que
+              NextJobCard/ObjetivosCard usam pro próprio <h2>, espelhando
+              o `.card h2` único do protótipo (achado #131: os 3 arquivos
+              duplicavam 3 versões ligeiramente diferentes de 13px/600). */}
+          <h2 className="card-title">Sua projeção</h2>
+          {/* Subtítulo — mesmo papel do "Você está construindo no seu
+              ritmo" fixo do protótipo, mas com o mês real (dado que o
+              protótipo não tem, congelado em "0%"). */}
           <p
             className="font-medium mt-0.5"
-            style={{ fontSize: "11px", color: "var(--text-muted)" }}
+            style={{ fontSize: "13px", color: "var(--text-2)" }}
           >
-            {p.monthLabel} · no seu ritmo
-          </p>
-
-          {/* Valor — protagonista da tela (Início: "resumo financeiro
-              como protagonista"), mas o brilho fica discreto — a
-              disciplina Apple reserva neon pra seleção/progresso/ação
-              primária, não pra todo texto de destaque. Número e
-              tracking literais do laboratório (page.tsx:291-296).
-              Hierarquia igual à do laboratório: quando há meta, o
-              número gigante é o PERCENTUAL (não o valor em reais) — o
-              real vem como legenda menor embaixo, igual ao "R$ 4.860
-              de R$ 6.750,00" do laboratório. Sem meta não há percentual
-              real pra mostrar (p.pct é null), então o valor em reais
-              volta a ser o protagonista — nunca um % inventado. */}
-          <p
-            className="font-semibold tabular-nums leading-none mt-2"
-            style={{
-              fontSize: "30px",
-              letterSpacing: "-0.065em",
-              color: "var(--accent)",
-              textShadow: "0 0 20px rgb(var(--accent-rgb) / 0.28)",
-            }}
-          >
-            {p.pct !== null ? `${Math.round(p.pct)}%` : formatBRL(p.earned)}
-          </p>
-          <p
-            className="font-medium mt-1.5"
-            style={{ fontSize: "9px", color: "var(--text-muted)" }}
-          >
-            {p.pct !== null
-              ? `${formatBRL(p.earned)} de ${formatBRL(p.meta as number)}`
-              : "este mês"}
+            {p.isEmpty
+              ? "Você está construindo no seu ritmo"
+              : `${p.monthLabel} · no seu ritmo`}
           </p>
         </div>
 
@@ -189,13 +132,51 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
               />
             )}
           </svg>
-          <Target
-            size={22}
+          {/* Avião, não o alvo genérico que estava aqui — é a identidade
+              liberdade/viagem do app (protótipo, `.flightRing`), achado da
+              revisão visual #131: um ícone genérico de meta apaga essa
+              identidade. Tamanho/cor medidos do protótipo (31px,
+              --p-accent-soft) e escalados pro nosso anel de 86px (vs os
+              76px dele) — var(--accent-soft) é o mesmo tom (pink-neon:
+              #ff80ab ≈ --p-accent-soft #ff78aa). */}
+          <Plane
+            size={28}
             className="absolute"
-            style={{ color: "var(--text-2)" }}
+            style={{ color: "var(--accent-soft)" }}
           />
         </div>
       </div>
+
+      {/* Valor — protagonista da tela (Início: "resumo financeiro como
+          protagonista"). 48px/700/-0.065em/--accent-soft, igual ao
+          `.bigMetric` do protótipo aprovado (achado da revisão visual
+          #131: tinha caído pra 30px/600/--accent — o protótipo usa a
+          variante SUAVE do acento aqui, reservando o acento cheio pro CTA
+          sólido, pra não competir pela atenção). Hierarquia: quando há
+          meta, o número gigante é o PERCENTUAL (não o valor em reais) —
+          o real vem como legenda menor embaixo, igual ao "R$ 4.860 de
+          R$ 6.750,00" do laboratório. Sem meta não há percentual real pra
+          mostrar (p.pct é null), então o valor em reais volta a ser o
+          protagonista — nunca um % inventado. */}
+      <p
+        className="font-bold tabular-nums leading-none mt-3"
+        style={{
+          fontSize: "48px",
+          letterSpacing: "-0.065em",
+          color: "var(--accent-soft)",
+          textShadow: "0 0 20px rgb(var(--accent-rgb) / 0.28)",
+        }}
+      >
+        {p.pct !== null ? `${Math.round(p.pct)}%` : formatBRL(p.earned)}
+      </p>
+      <p
+        className="font-medium mt-1"
+        style={{ fontSize: "13px", color: "var(--text-muted)" }}
+      >
+        {p.pct !== null
+          ? `${formatBRL(p.earned)} de ${formatBRL(p.meta as number)}`
+          : "este mês"}
+      </p>
 
       {/* Barra fina — mesma fração do anel, legenda com o % exato e o
           link pro Financeiro (mantido do componente real). */}

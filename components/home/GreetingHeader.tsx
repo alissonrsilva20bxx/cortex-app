@@ -20,11 +20,18 @@ function getFirstName(nome: string): string {
 }
 
 function getFormattedDate(): string {
-  return new Date().toLocaleDateString("pt-BR", {
+  const raw = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
+  // Achado da revisão visual #131: a classe utilitária de capitalize
+  // (CSS text-transform) maiusculiza CADA palavra -- "Quarta-Feira, 23 De
+  // Setembro", incluindo a preposição "de". pt-BR natural só maiusculiza
+  // a primeira letra da frase (protótipo aprovado, /dev-preview/ios:
+  // "Quinta-feira, 10 de setembro") -- feito no conteúdo, não via CSS,
+  // pra também ficar certo se o texto for copiado/lido por leitor de tela.
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
 export function GreetingHeader({ usuario, onOpenAjustes }: Props) {
@@ -54,7 +61,7 @@ export function GreetingHeader({ usuario, onOpenAjustes }: Props) {
           {greeting}, {firstName}
         </h1>
         <p
-          className="capitalize mt-[5px] leading-none text-base font-normal"
+          className="mt-[5px] leading-none text-base font-normal"
           style={{
             color: "var(--text-muted)",
           }}

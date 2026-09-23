@@ -19,27 +19,25 @@ const OBJ_CAT_EMOJIS: Record<string, string> = {
 };
 
 /**
- * Superfície sólida (sem blur), como no laboratório visual. O laboratório
- * mostra "Objetivos" como barras de progresso percentuais (metas
- * financeiras) — o dado real de `Objetivo` é binário (`concluido`), sem
- * campo de percentual. Manter o contrato atual (checklist binário) e não
- * inventar uma % que não existe é a decisão registrada no ticket T2
- * (#29) e no princípio 3 do plano de integração visual: entregar com o
- * contrato atual, registrar a UI percentual como pendência de produto.
+ * Nota de contrato (não de material): o laboratório mostra "Objetivos"
+ * como barras de progresso percentuais (metas financeiras) — o dado real
+ * de `Objetivo` é binário (`concluido`), sem campo de percentual. Manter
+ * o contrato atual (checklist binário) e não inventar uma % que não
+ * existe é a decisão registrada no ticket T2 (#29) e no princípio 3 do
+ * plano de integração visual: entregar com o contrato atual, registrar a
+ * UI percentual como pendência de produto.
+ *
+ * Material: SEM `style` de superfície própria (achado #131) — o card usa
+ * o material neutro compartilhado de `.glass-card` (globals.css), como
+ * HeroCard/NextJobCard. A versão antiga duplicava um objeto de superfície
+ * próprio com `border: var(--border-color)`, que produzia um contorno temático
+ * (rosa em pink-neon, etc.) em vez da borda neutra `--card-border` que
+ * `.glass-card` já aplica.
  */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
-} as const;
-
 export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   if (objetivos.length === 0) {
     return (
-      <GlassCard className="p-5" radius="md" style={SOLID_SURFACE_STYLE}>
+      <GlassCard className="p-5" radius="md">
         <div className="flex items-center gap-3 mb-4">
           <div
             className="flex items-center justify-center rounded-xl shrink-0"
@@ -52,21 +50,9 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
             <ListChecks size={16} style={{ color: "var(--accent)" }} />
           </div>
           <div>
-            {/* Título de seção — 13px/semibold/-0.035em, cor plena, como
-                o <h2> "Objetivos" do laboratório
-                (app/dev-preview/launch/page.tsx, bloco "home"). NÃO é
-                `.section-label` — ver nota de causa-raiz em
-                HeroCard.tsx. */}
-            <h2
-              className="font-semibold"
-              style={{
-                fontSize: "13px",
-                letterSpacing: "-0.035em",
-                color: "var(--text)",
-              }}
-            >
-              Objetivos
-            </h2>
+            {/* `.card-title` (globals.css, achado #131) — mesma regra
+                compartilhada de HeroCard/NextJobCard. */}
+            <h2 className="card-title">Objetivos</h2>
             <p
               className="text-xs mt-0.5"
               style={{ color: "var(--text-muted)" }}
@@ -106,23 +92,14 @@ export function ObjetivosCard({ objetivos, onToggle, onGoToMetas }: Props) {
   );
 
   return (
-    <GlassCard className="p-5" radius="md" style={SOLID_SURFACE_STYLE}>
+    <GlassCard className="p-5" radius="md">
       {/* "Ver todos" no cabeçalho, não mais um botão de largura total
           abaixo da lista — mesma posição do laboratório (page.tsx:388-397,
           "Objetivos" + "Ver todos" na mesma linha). */}
       <div className="flex items-center justify-between mb-4">
         <div>
           {/* Mesmo tratamento do estado vazio acima — ver comentário lá. */}
-          <h2
-            className="font-semibold"
-            style={{
-              fontSize: "13px",
-              letterSpacing: "-0.035em",
-              color: "var(--text)",
-            }}
-          >
-            Objetivos
-          </h2>
+          <h2 className="card-title">Objetivos</h2>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {concluidos}/{todos} concluídos
           </p>
