@@ -10,7 +10,7 @@ import {
   Shield,
   Search,
   Lock,
-  Folder,
+  LockKeyhole,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { FilterChips } from "@/components/ui/FilterChips";
@@ -301,8 +301,6 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
 
-  const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
-
   const filtered = files
     .filter((f) => filter === "todos" || f.categoria === filter)
     .filter((f) =>
@@ -387,71 +385,67 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
         minTouchTarget
       />
 
-      {/* Resumo do armazenamento — números 100% reais (contagem e soma
-          de bytes de `files`, já buscados). Sem porcentagem/barra de
-          progresso: não existe cota real de armazenamento no backend
-          (relatório de paridade §4/P0-1/P0-2), então "% de uso" seria
-          inventado. Sem o aviso de que o dado é só uma prévia/estimativa
-          (o laboratório tinha um, porque os números dele eram
-          propositalmente fictícios) — aqui o dado é real, não precisa
-          do aviso. Só aparece quando há
-          pelo menos 1 arquivo — com o cofre vazio, o card ficaria
-          redundante em cima da mensagem de estado vazio abaixo. */}
-      {!loading && files.length > 0 && (
-        <GlassCard radius="md" className="mt-4 p-4" style={SOLID_SURFACE_STYLE}>
-          <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-            Resumo do armazenamento
-          </p>
-          <div className="mt-3 flex items-center gap-4">
-            <div
-              className="grid place-items-center rounded-full shrink-0"
-              style={{
-                width: "48px",
-                height: "48px",
-                background: "rgb(var(--accent-rgb) / 0.12)",
-              }}
-            >
-              <Folder size={22} style={{ color: "var(--accent)" }} />
-            </div>
-            <div>
-              <strong
-                className="font-medium tabular-nums"
-                style={{ fontSize: "20px", color: "var(--text)" }}
-              >
-                {files.length}
-              </strong>
-              <p style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                {files.length === 1 ? "arquivo" : "arquivos"}
-              </p>
-            </div>
-            <div
-              style={{
-                height: "40px",
-                borderLeft: "1px solid var(--border-color)",
-              }}
-            />
-            <div>
-              <strong
-                className="font-medium tabular-nums"
-                style={{ fontSize: "18px", color: "var(--text)" }}
-              >
-                {formatSize(totalBytes)}
-              </strong>
-              <p style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                no total
-              </p>
-            </div>
-          </div>
+      {/* Card "Protegido" — alinhado ao visual aprovado (/dev-preview/ios,
+          ticket #137): orbe + título "Protegido" + contagem real de
+          arquivos + linha de proteção. Layout/geometria vêm do protótipo
+          (IosPrototypeApp.module.css `.protectedCard`/`.shieldOrb`: orbe
+          de 72px, ícone 34px, título 23px); cor vem de `var(--accent)`,
+          nunca do rosa fixo do protótipo (mesma regra já aplicada em
+          Início/#134). Contagem 100% real (`files.length`, já buscado) —
+          nunca o "12 arquivos" fixo do laboratório. Sem MB total: o
+          protótipo aprovado não mostra essa métrica (decisão registrada
+          na ticket #137, não é omissão). Mensagem da última linha reaproveita
+          a mesma distinção PIN-vs-trava-do-app já usada no aviso do topo
+          desta tela — nenhuma regra nova. Mostrado sempre que não estiver
+          carregando (mesmo com 0 arquivos): o dado é real, "0 arquivos
+          armazenados" não é fictício, e é a mesma posição estrutural fixa
+          do protótipo. */}
+      {!loading && (
+        <GlassCard
+          radius="md"
+          className="flex items-center gap-4 mt-4 p-4"
+          style={SOLID_SURFACE_STYLE}
+        >
           <div
-            className="mt-3 flex items-center gap-2 pt-3"
+            className="grid place-items-center rounded-full shrink-0"
             style={{
-              borderTop: "1px solid var(--border-color)",
-              fontSize: "10px",
-              color: "var(--text-muted)",
+              width: "72px",
+              height: "72px",
+              background: "rgb(var(--accent-rgb) / 0.15)",
+              border: "1px solid rgb(var(--accent-rgb) / 0.25)",
             }}
           >
-            <Lock size={11} />
-            Acesso protegido pela conta e trava do app
+            <Shield size={34} style={{ color: "var(--accent)" }} />
+          </div>
+          <div>
+            <h2
+              className="font-semibold"
+              style={{
+                fontSize: "23px",
+                letterSpacing: "-0.03em",
+                color: "var(--text)",
+              }}
+            >
+              Protegido
+            </h2>
+            <p
+              className="mt-1 mb-2 tabular-nums"
+              style={{ fontSize: "13px", color: "var(--text-muted)" }}
+            >
+              {files.length}{" "}
+              {files.length === 1
+                ? "arquivo armazenado"
+                : "arquivos armazenados"}
+            </p>
+            <span
+              className="flex items-center gap-1.5"
+              style={{ fontSize: "11px", color: "var(--text-muted)" }}
+            >
+              <LockKeyhole size={16} />
+              {pinHash
+                ? "Acesso protegido pelo seu PIN"
+                : "Acesso protegido pela trava do app"}
+            </span>
           </div>
         </GlassCard>
       )}
