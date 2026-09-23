@@ -1961,6 +1961,15 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
                 blockUser(screen.userId);
                 pop();
               }}
+              // Mesmo gatilho que o "..." do PostCard já usa pra abrir a
+              // confirmação real de denúncia (ticket #140) -- não duplica
+              // serviço/feedback, só abre um passo antes (o "..." da
+              // grade/visualizador do perfil já sabe que não é o dono,
+              // pula direto pro "Motivo da denúncia" sem passar pelo menu
+              // "Publicação" completo, que teria Editar/Excluir).
+              onReportPost={(postId) =>
+                setReportTarget({ tipo: "post", id: postId })
+              }
               {...postActions}
             />
           );

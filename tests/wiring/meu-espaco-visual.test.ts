@@ -18,6 +18,7 @@ function read(relPath: string): string {
 }
 
 const screenSrc = read("components/rede/MeuEspacoScreen.tsx");
+const headerSrc = read("components/rede/ProfileIdentityHeader.tsx");
 const gridSrc = read("components/rede/ProfilePostsGrid.tsx");
 const viewerSrc = read("components/rede/ProfilePhotoViewer.tsx");
 const feedFotosSrc = read("components/rede/FeedFotos.tsx");
@@ -34,16 +35,16 @@ describe("MeuEspacoScreen — bio vem de campo real, não é schema novo (#139)"
     expect(redeTabSrc).toMatch(/bio=\{perfil\?\.bio\s*\?\?\s*""\}/);
   });
 
-  it("MeuEspacoScreen só renderiza a bio quando existe (sem placeholder ilustrativo)", () => {
-    expect(screenSrc).toMatch(/\{bio\s*&&\s*\(/);
+  it("ProfileIdentityHeader (compartilhado com #140, ver ProfileIdentityHeader.tsx) só renderiza a bio quando existe, sem placeholder ilustrativo", () => {
+    expect(headerSrc).toMatch(/\{bio\s*&&\s*\(/);
   });
 });
 
 describe("MeuEspacoScreen — estatísticas 100% reais (#139)", () => {
   it("contagens vêm de props reais (meusPosts.length/friendsCount/clientesCount), nunca fixas", () => {
-    expect(screenSrc).toContain("{meusPosts.length}");
-    expect(screenSrc).toContain("{friendsCount}");
-    expect(screenSrc).toContain("{clientesCount}");
+    expect(screenSrc).toContain("value: meusPosts.length");
+    expect(screenSrc).toContain("value: friendsCount");
+    expect(screenSrc).toContain("value: clientesCount");
   });
 
   it("RedeTab alimenta essas props com dado real (posts filtrados/friends/clientes carregados)", () => {
@@ -53,17 +54,22 @@ describe("MeuEspacoScreen — estatísticas 100% reais (#139)", () => {
     expect(redeTabSrc).toContain("friendsCount={friends.length}");
     expect(redeTabSrc).toContain("clientesCount={clientes.length}");
   });
+
+  it("ProfileIdentityHeader renderiza os números a partir do prop `stats`, nunca um número escrito no componente", () => {
+    expect(headerSrc).toContain("{stat.value}");
+    expect(headerSrc).not.toMatch(/>\s*\d+\s*</);
+  });
 });
 
 describe("MeuEspacoScreen — LiveLinks discretos entre bio e ações (regra não-negociável do mapa #122)", () => {
-  it("usa o preview discreto (LiveLinksPreview), não o editor pesado, no corpo principal", () => {
-    const bioIdx = screenSrc.indexOf("{bio &&");
+  it("usa o header de identidade compartilhado (avatar/números/nome/bio) antes do preview discreto de LiveLinks, antes das ações", () => {
+    const headerIdx = screenSrc.indexOf("<ProfileIdentityHeader");
     const actionsIdx = screenSrc.indexOf('label="Editar perfil"');
     const linksIdx = screenSrc.indexOf("<LiveLinksPreview");
-    expect(bioIdx).toBeGreaterThan(-1);
+    expect(headerIdx).toBeGreaterThan(-1);
     expect(actionsIdx).toBeGreaterThan(-1);
     expect(linksIdx).toBeGreaterThan(-1);
-    expect(linksIdx).toBeGreaterThan(bioIdx);
+    expect(linksIdx).toBeGreaterThan(headerIdx);
     expect(linksIdx).toBeLessThan(actionsIdx);
   });
 

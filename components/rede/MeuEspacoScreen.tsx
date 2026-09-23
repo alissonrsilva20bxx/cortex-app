@@ -14,7 +14,7 @@ import {
   Link2,
 } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
-import { Avatar } from "./Avatar";
+import { ProfileIdentityHeader } from "./ProfileIdentityHeader";
 import { OptionsSheet } from "./OptionsSheet";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -175,76 +175,19 @@ export function MeuEspacoScreen({
         <>
           {/* Identidade — hierarquia do contrato de paridade (§ Meu perfil):
               1. avatar e números; 2. nome e bio. */}
-          <div className="flex flex-col items-center text-center mb-4">
-            <Avatar
-              nome={nomeExibicao}
-              cor={cor}
-              fotoUrl={fotoUrl}
-              size="xl"
-              onClick={onEditAvatar}
-              editable
-            />
-
-            <div className="flex items-center gap-6 mt-4">
-              <div className="text-center">
-                <p
-                  className="font-bold tabular-nums"
-                  style={{ fontSize: "16px", color: "var(--text)" }}
-                >
-                  {meusPosts.length}
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  publicações
-                </p>
-              </div>
-              <div className="text-center">
-                <p
-                  className="font-bold tabular-nums"
-                  style={{ fontSize: "16px", color: "var(--text)" }}
-                >
-                  {friendsCount}
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  amigas
-                </p>
-              </div>
-              <div className="text-center">
-                <p
-                  className="font-bold tabular-nums"
-                  style={{ fontSize: "16px", color: "var(--text)" }}
-                >
-                  {clientesCount}
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  clientes
-                </p>
-              </div>
-            </div>
-
-            <p
-              className="font-bold mt-3"
-              style={{ fontSize: "18px", color: "var(--text)" }}
-            >
-              {nomeExibicao}
-            </p>
-            {bio && (
-              <p
-                className="text-sm mt-1 max-w-[280px]"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {bio}
-              </p>
-            )}
-          </div>
+          <ProfileIdentityHeader
+            nome={nomeExibicao}
+            bio={bio}
+            cor={cor}
+            fotoUrl={fotoUrl}
+            avatarEditable
+            onEditAvatar={onEditAvatar}
+            stats={[
+              { value: meusPosts.length, label: "publicações" },
+              { value: friendsCount, label: "amigas" },
+              { value: clientesCount, label: "clientes" },
+            ]}
+          />
 
           {/* LiveLinks discretos — entre bio e ações (regra não-negociável
               do mapa #122), sem cabeçalho de seção nem controles de

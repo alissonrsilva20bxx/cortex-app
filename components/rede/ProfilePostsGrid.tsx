@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIA_META, type FeedPost } from "@/lib/rede/feed";
 import { ProfilePhotoViewer } from "./ProfilePhotoViewer";
+import { ReportMenuButton } from "./ReportMenuButton";
 
 /**
  * Grade estilo Instagram das publicações de um perfil (ticket #139, Meu
@@ -15,9 +16,13 @@ import { ProfilePhotoViewer } from "./ProfilePhotoViewer";
  * prescreve um sheet de foto pro tap na grade; a 1ª tentativa desta
  * ticket, expandir o `PostCard` inline citando a decisão de PR #112
  * sobre o FEED, foi revertida por não se aplicar a este contexto).
- * Células de post sem foto mostram um trecho do texto real, mas não são
- * clicáveis — não há foto pra visualizar e nenhum outro destino foi
- * pedido pela ticket.
+ * Células de post sem foto mostram um trecho do texto real, mas não
+ * abrem visualizador — não há foto pra visualizar. Quando `onReportPost`
+ * está presente (post de outra pessoa, ticket #140), ganham um "..."
+ * discreto próprio (`ReportMenuButton`) com "Denunciar publicação" — sem
+ * isso, um post sem foto de terceiro ficaria sem NENHUM caminho de
+ * denúncia a partir do perfil, já que não existe visualizador pra
+ * carregar o cabeçalho que tem o mesmo "...".
  *
  * O componente cuida sozinho de: histórico do navegador (Voltar fecha o
  * visualizador antes de sair da tela — mesmo padrão já usado em
@@ -29,6 +34,11 @@ interface Props {
   posts: FeedPost[];
   emptyMessage: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** Presente = todo post desta grade pode ser denunciado (perfil de
+   * outra pessoa); ausente = nenhum (próprio perfil, #139) -- decidido
+   * pelo chamador (`PerfilPublicoScreen`: `isMe ? undefined : ...`), nunca
+   * aqui, pra este componente continuar sem saber nada sobre autoria. */
+  onReportPost?: (postId: string) => void;
 }
 
 /** Retrato de texto -- mostrado quando não há (ou falhou) a miniatura.
@@ -67,10 +77,12 @@ function GridTile({
   post,
   onOpen,
   onRenovarFoto,
+  onReportPost,
 }: {
   post: FeedPost;
   onOpen: (post: FeedPost, trigger: HTMLButtonElement) => void;
   onRenovarFoto: (path: string) => Promise<string | null>;
+  onReportPost?: (postId: string) => void;
 }) {
   const foto = post.fotos[0];
   const [src, setSrc] = useState<string | null>(foto?.thumbUrl ?? null);
@@ -97,12 +109,18 @@ function GridTile({
   }
 
   if (!foto) {
-    // Sem foto: mostra o texto real, mas não abre nada -- não existe
-    // visualizador de texto, e inventar um destino novo pra essas
-    // células não foi pedido pela ticket.
+    // Sem foto: mostra o texto real, não abre visualizador (não existe
+    // um pra texto) -- mas continua denunciável (#140) via um "..."
+    // próprio, já que não há cabeçalho de visualizador aqui pra carregar
+    // o mesmo botão.
     return (
       <div className="relative aspect-square overflow-hidden">
         <TextoFallback post={post} cat={cat} />
+        {onReportPost && (
+          <div className="absolute top-1.5 right-1.5">
+            <ReportMenuButton onReport={() => onReportPost(post.id)} />
+          </div>
+        )}
       </div>
     );
   }
@@ -139,6 +157,7 @@ export function ProfilePostsGrid({
   posts,
   emptyMessage,
   onRenovarFoto,
+  onReportPost,
 }: Props) {
   const [viewerPostId, setViewerPostId] = useState<string | null>(null);
   const lastTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -199,6 +218,7 @@ export function ProfilePostsGrid({
             post={post}
             onOpen={openViewer}
             onRenovarFoto={onRenovarFoto}
+            onReportPost={onReportPost}
           />
         ))}
       </div>
@@ -206,6 +226,7 @@ export function ProfilePostsGrid({
         post={viewerPost}
         onClose={closeViewer}
         onRenovarFoto={onRenovarFoto}
+        onReportPost={onReportPost}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { PhotoStage, prefereMovimentoReduzido } from "./FeedFotos";
+import { ReportMenuButton } from "./ReportMenuButton";
 import { resolveScrollBehavior } from "@/lib/rede/chatUi";
 import type { FeedPost } from "@/lib/rede/feed";
 
@@ -26,6 +27,17 @@ import type { FeedPost } from "@/lib/rede/feed";
  * existem no feed (`PostCard`) — duplicá-las na grade seria inventar
  * uma segunda superfície de interação só por parecer com o Instagram,
  * o que a ticket pediu explicitamente pra não fazer.
+ *
+ * Exceção: "Denunciar publicação" (ticket #140, achado do review de
+ * Standards em cima de #139) — diferente de curtir/comentar/compartilhar,
+ * denunciar é moderação/segurança, não convenção de engajamento; o
+ * contrato de paridade exige que uma função nunca desapareça, só mude de
+ * posição. `onReportPost` só chega aqui quando o post é de outra pessoa
+ * (`PerfilPublicoScreen` decide isso, nunca este componente) -- reusa
+ * integralmente o fluxo real de denúncia (RedeTab: `reportTarget` /
+ * `submitReport` / sheet "Motivo da denúncia" / `criarDenuncia` / toast),
+ * só com um "..." mais direto (sem o menu Editar/Excluir/Denunciar do
+ * `PostCard`, que não se aplica aqui -- já sabemos que não é o dono).
  */
 interface Props {
   /** Post cujas fotos estão sendo vistas, ou `null` = fechado. Quem
@@ -35,9 +47,19 @@ interface Props {
   post: FeedPost | null;
   onClose: () => void;
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** Presente = mostra "..." com "Denunciar publicação" no cabeçalho;
+   * ausente (undefined) = nunca mostra -- é assim que o próprio perfil
+   * (#139) nunca exibe a opção, sem este componente precisar saber nada
+   * sobre autoria. */
+  onReportPost?: (postId: string) => void;
 }
 
-export function ProfilePhotoViewer({ post, onClose, onRenovarFoto }: Props) {
+export function ProfilePhotoViewer({
+  post,
+  onClose,
+  onRenovarFoto,
+  onReportPost,
+}: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -136,12 +158,15 @@ export function ProfilePhotoViewer({ post, onClose, onRenovarFoto }: Props) {
       style={{ background: "rgba(8, 8, 10, 0.96)" }}
     >
       <div
-        className="flex items-center justify-end shrink-0"
+        className="flex items-center justify-end gap-2 shrink-0"
         style={{
           padding: "12px",
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
         }}
       >
+        {onReportPost && (
+          <ReportMenuButton onReport={() => onReportPost(post.id)} />
+        )}
         <button
           ref={closeButtonRef}
           type="button"
