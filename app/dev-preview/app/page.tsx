@@ -256,7 +256,7 @@ export default function DevPreviewApp() {
     return (
       <div className="relative flex flex-col min-h-screen">
         <main
-          className="flex-1 overflow-y-auto px-4"
+          className="flex-1 overflow-y-auto no-scrollbar px-4"
           style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
         >
           <OnboardingFlow
@@ -286,7 +286,7 @@ export default function DevPreviewApp() {
   return (
     <div className="relative flex flex-col min-h-screen">
       <main
-        className="flex-1 overflow-y-auto pb-40 px-4"
+        className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
         <TabPanel tab="home" activeTab={activeTab}>

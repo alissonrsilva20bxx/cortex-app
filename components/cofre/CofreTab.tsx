@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   FileText,
@@ -21,6 +21,8 @@ import {
   nextUnlockedOnActiveChange,
   nextUnlockedOnLoseFocus,
 } from "./lockGate";
+import * as cofreCache from "@/lib/cofre/cofreCache";
+import type { CofreFile } from "@/lib/cofre/cofreCache";
 
 type Categoria =
   | "todos"
@@ -75,15 +77,6 @@ const sectionTitleStyle = {
   color: "var(--text)",
 } as const;
 
-interface CofreFile {
-  name: string;
-  path: string;
-  categoria: string;
-  size: number;
-  createdAt: string;
-  mimeType?: string;
-}
-
 function FileIcon({ mime }: { mime?: string }) {
   const style = { color: "var(--accent)" };
   if (mime?.startsWith("image/"))
@@ -116,10 +109,35 @@ interface Props {
 }
 
 export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
-  const [files, setFiles] = useState<CofreFile[]>([]);
+  /**
+   * Semente do cache SWR (`lib/cofre/cofreCache.ts`), síncrona, 1x por
+   * conta -- mesmo padrão de `RedeTab` (`sementeRef`). Cobre o remount que
+   * a trava de PIN do APP (`app/page.tsx`: `if (locked && pinHash) return
+   * <PinScreen>`) causa na árvore inteira, incluindo este componente: sem
+   * isso, `files`/`loading` nasceriam vazios/`true` de novo a cada
+   * destrava do app, mesmo com os arquivos já vistos segundos antes ainda
+   * vivos no cache do módulo. A trava PRÓPRIA do Cofre (`unlocked` abaixo)
+   * não remonta este componente -- por isso não precisa desta semente de
+   * novo a cada ciclo: `files` simplesmente nunca é apagado só por sair da
+   * aba/perder foco (ver os dois efeitos logo abaixo), então o valor já em
+   * estado sobrevive sozinho entre entradas.
+   */
+  const sementeRef = useRef<{
+    userId: string;
+    files: CofreFile[] | null;
+  } | null>(null);
+  if (sementeRef.current === null || sementeRef.current.userId !== userId) {
+    cofreCache.vincularUsuario(userId);
+    sementeRef.current = { userId, files: cofreCache.ler(userId) };
+  }
+  const semente = sementeRef.current;
+
+  const [files, setFiles] = useState<CofreFile[]>(() => semente.files ?? []);
   const [filter, setFilter] = useState<Categoria>("todos");
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  // Só nasce `true` em cache miss de verdade (semente nula) -- com cache,
+  // o efeito abaixo vira revalidação em 2º plano, sem spinner.
+  const [loading, setLoading] = useState(() => semente.files === null);
 
   /**
    * Gate próprio do Cofre — corrige o defeito confirmado manualmente:
@@ -204,13 +222,23 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
 
   useEffect(() => {
     setUnlocked((prev) => nextUnlockedOnActiveChange(active, prev));
-    if (!active) setFiles([]);
+    // NÃO zera a lista de arquivos aqui (o bug original chamava o setter
+    // de `files` com um array vazio nesta mesma linha) -- sair da aba
+    // precisa só bloquear a INTERFACE (o gate acima já esconde tudo via
+    // "hidden"), não destruir o conteúdo já carregado. `files` continua em
+    // memória de componente (defesa adicional: o cache do módulo
+    // `cofreCache` também guarda o mesmo dado) pra reaparecer na hora
+    // quando a aba for reativada e o PIN for digitado de novo -- ver cache
+    // SWR abaixo.
   }, [active]);
 
   useEffect(() => {
     function lock() {
       setUnlocked(nextUnlockedOnLoseFocus());
-      setFiles([]);
+      // Idem acima: perder foco/visibilidade/pagehide precisa bloquear a
+      // TELA imediatamente (já garantido pelo gate), sem exceção -- mas não
+      // precisa destruir o cache da sessão. A lista de arquivos fica
+      // intocada.
     }
     function onVisibilityChange() {
       if (document.visibilityState === "hidden") lock();
@@ -239,9 +267,23 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
 
   const gateState = computeGateState({ active, pinHash, unlocked });
 
+  /**
+   * Busca dos arquivos -- cache SWR (`lib/cofre/cofreCache.ts`), mesma
+   * experiência já adotada na Rede: com cache, mostra na hora e revalida
+   * em silêncio; sem cache, mostra o carregamento como antes.
+   *
+   * `refreshTrigger` (bump do upload em `app/page.tsx`) cai neste mesmo
+   * efeito -- como só liga `setLoading(true)` em cache miss, um upload não
+   * joga a lista inteira de volta pro spinner: revalida em 2º plano e o
+   * arquivo novo aparece quando a consulta terminar.
+   */
   useEffect(() => {
     if (gateState !== "content") return;
-    setLoading(true);
+    const ep = cofreCache.epocaAtual();
+    const temCache = cofreCache.ler(userId) !== null;
+    if (!temCache) setLoading(true);
+
+    let ativo = true;
     const cats = ["comprovantes", "conversas", "documentos", "pessoal"];
     Promise.all(
       cats.map((cat) =>
@@ -262,16 +304,33 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
             }))
           )
       )
-    ).then((results) => {
-      const all = results
-        .flat()
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      setFiles(all);
-      setLoading(false);
-    });
+    )
+      .then((results) => {
+        // Resposta atrasada de uma conta anterior (troca de conta no meio
+        // do voo) não pode contaminar a conta atual.
+        if (!ativo || cofreCache.epocaAtual() !== ep) return;
+        const all = results
+          .flat()
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        cofreCache.escrever(userId, all, ep);
+        setFiles(all);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!ativo || cofreCache.epocaAtual() !== ep) return;
+        console.error("[CofreTab]", e);
+        // Falha na revalidação NÃO apaga o conteúdo já cacheado em tela --
+        // só encerra o carregamento (relevante no cache miss: sem isso o
+        // spinner ficaria preso pra sempre numa falha de rede).
+        setLoading(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, [userId, refreshTrigger, gateState]);
 
   if (gateState === "hidden") {

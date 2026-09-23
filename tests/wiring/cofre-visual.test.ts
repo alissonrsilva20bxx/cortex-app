@@ -216,11 +216,17 @@ describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug
     }
   });
 
-  it("clears fetched files from memory on lock (defense in depth, not just a visual gate)", () => {
-    expect(src).toMatch(/if \(!active\) setFiles\(\[\]\);/);
-    expect(src).toMatch(
-      /setUnlocked\(nextUnlockedOnLoseFocus\(\)\);\s*\r?\n\s*setFiles\(\[\]\);/
-    );
+  it("does NOT clear fetched files from memory on lock (superseded — see lib/cofre/cofreCache.ts)", () => {
+    // Former "defense in depth" decision, reversed deliberately: a
+    // confirmed defect showed that clearing `files` on every `!active`/
+    // blur/visibilitychange/pagehide made every re-entry into the Cofre
+    // after the PIN re-fetch and re-spin, even seconds after the same
+    // list was already on screen. The gate (`computeGateState`) is what
+    // keeps content off the DOM while locked — that guarantee doesn't
+    // depend on also discarding the in-memory list, and the SWR cache
+    // module (`lib/cofre/cofreCache.ts`) now deliberately keeps it around
+    // across a lock/unlock cycle within the same session.
+    expect(src).not.toMatch(/setFiles\(\[\]\)/);
   });
 
   it("app-session authorization (usuario/locked from app/page.tsx) is never referenced as a Cofre-unlock condition", () => {

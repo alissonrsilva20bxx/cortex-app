@@ -37,6 +37,7 @@ import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
+import * as cofreCache from "@/lib/cofre/cofreCache";
 import { isFreshAccount } from "@/lib/onboarding";
 import type {
   TabId,
@@ -308,11 +309,15 @@ export default function Page() {
   }, [usuario, locked, objetivosRefreshKey]);
 
   async function handleSignOut() {
-    // Zera o cache da Rede ANTES de sair -- em memória (a próxima conta
-    // nesta aba não herda nada) e no localStorage (req 4/6).
+    // Zera o cache da Rede e do Cofre ANTES de sair -- em memória (a
+    // próxima conta nesta aba não herda nada) e no localStorage (req
+    // 4/6). O Cofre não tem camada persistida (deliberado, ver
+    // `lib/cofre/cofreCache.ts`), então só o cache em memória precisa ser
+    // zerado.
     try {
       redeCache.limparTudo();
       redeCachePersist.limpar();
+      cofreCache.limparTudo();
     } catch (_) {}
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -362,7 +367,7 @@ export default function Page() {
   return (
     <div className="relative flex flex-col min-h-screen">
       <main
-        className="flex-1 overflow-y-auto pb-40 px-4"
+        className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
         {isNewUser && usuario && (
