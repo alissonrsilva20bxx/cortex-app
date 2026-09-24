@@ -22,21 +22,6 @@ const PERIOD_OPTS: { id: ChartPeriod; label: string }[] = [
   { id: "ano", label: "Ano" },
 ];
 
-/**
- * Superfície sólida (sem blur), mesmo padrão já estabelecido em Início
- * (T2), Agenda (T3) e no resto de Financeiro (T4). Repetido aqui (não
- * extraído pra `components/ui/`) porque o escopo deste ticket é só os
- * arquivos de `components/financeiro/`.
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
-} as const;
-
 interface Props {
   jobs: Job[];
   receitas: ReceitaAvulsa[];
@@ -113,7 +98,11 @@ export function FinanceiroHeroCard({
         )}
       </div>
 
-      <GlassCard radius="lg" className="p-5" style={SOLID_SURFACE_STYLE}>
+      {/* Fundação Visual (#142): sem `style` — material neutro compartilhado
+          de `.glass-card` (globals.css), mesma correção já feita em
+          Início (achado #131) pro mesmo `SOLID_SURFACE_STYLE` com
+          `border: var(--border-color)` tingido por tema. */}
+      <GlassCard radius="lg" className="p-5">
         <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
           Saldo do mês
         </p>

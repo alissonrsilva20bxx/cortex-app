@@ -5,18 +5,6 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { formatBRL, formatShortDate } from "@/lib/finance";
 import type { Job, Despesa, ReceitaAvulsa } from "@/lib/types";
 
-/**
- * Superfície sólida — mesmo padrão do resto de Financeiro/Início/Agenda.
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
-} as const;
-
 interface Movement {
   id: string;
   desc: string;
@@ -79,8 +67,14 @@ interface Props {
 export function VisaoTab({ jobs, despesas, receitas }: Props) {
   const movements = buildMovements(jobs, despesas, receitas);
 
+  // Fundação Visual (#142): sem `style` — material neutro compartilhado de
+  // `.glass-card` (globals.css), mesmo padrão já convergido em Início
+  // (achado #131, ver HeroCard.tsx) — o `SOLID_SURFACE_STYLE` local que
+  // existia aqui sobrescrevia com `border: var(--border-color)`, tingido
+  // por tema (contorno rosa nos temas de acento), a mesma causa-raiz já
+  // corrigida lá.
   return (
-    <GlassCard radius="md" className="p-4" style={SOLID_SURFACE_STYLE}>
+    <GlassCard radius="md" className="p-4">
       <p
         className="font-semibold mb-1"
         style={{

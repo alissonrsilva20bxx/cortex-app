@@ -45,21 +45,6 @@ const WEEKDAY_LETTERS = ["D", "S", "T", "Q", "Q", "S", "S"];
  */
 const NEXT_JOB_NOTE_THRESHOLD_MIN = 60;
 
-/**
- * Superfície sólida (sem blur), mesmo princípio já aplicado em Início
- * (T2): "conteúdo sólido, vidro só pra navegação/sheets". Repetido aqui
- * (não extraído pra `components/ui/`) porque o escopo deste ticket é só
- * os arquivos de `components/jobs/`.
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
-} as const;
-
 function toISODate(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -724,10 +709,16 @@ export function JobsTab({
                 />
               </div>
             ) : selectedDayJobs.length === 0 ? (
+              // Fundação Visual (#142): style só com o `minHeight`
+              // genuinamente próprio deste card vazio — o resto vem do
+              // material neutro compartilhado de `.glass-card`
+              // (globals.css), mesma correção já feita em Início (achado
+              // #131) pro `SOLID_SURFACE_STYLE` com `border:
+              // var(--border-color)` tingido por tema.
               <GlassCard
                 radius="md"
                 className="flex flex-col items-center justify-center px-6 text-center"
-                style={{ ...SOLID_SURFACE_STYLE, minHeight: "118px" }}
+                style={{ minHeight: "118px" }}
               >
                 <CalendarDays
                   size={22}
@@ -802,11 +793,7 @@ export function JobsTab({
                             boxShadow: "0 0 8px rgb(var(--accent-rgb) / 0.5)",
                           }}
                         />
-                        <GlassCard
-                          radius="md"
-                          className="p-3.5"
-                          style={SOLID_SURFACE_STYLE}
-                        >
+                        <GlassCard radius="md" className="p-3.5">
                           <JobCard job={item.job} onClick={setDetailJob} />
                         </GlassCard>
                       </div>
@@ -877,12 +864,17 @@ export function JobsTab({
         {!initialLoading && jobs.length > 0 && (
           <button
             onClick={() => setResumoOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-2xl font-bold"
+            // Fundação Visual (#142): `glass-card` (globals.css) no lugar
+            // do `SOLID_SURFACE_STYLE` local — não é um <GlassCard>
+            // (não precisa da escala de raio semântica), mas é a mesma
+            // classe de material neutro, aplicável a qualquer elemento.
+            // Mesma correção já feita em Início (achado #131) pro
+            // `border: var(--border-color)` tingido por tema.
+            className="glass-card flex items-center justify-center gap-2 rounded-2xl font-bold"
             style={{
               minHeight: "44px",
               fontSize: "13px",
               color: "var(--text)",
-              ...SOLID_SURFACE_STYLE,
             }}
           >
             <BarChart3 size={16} style={{ color: "var(--text-muted)" }} />
@@ -891,12 +883,12 @@ export function JobsTab({
         )}
         <button
           onClick={() => setAnotacoesOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-2xl font-bold"
+          // Fundação Visual (#142): mesma correção do botão "Resumo" acima.
+          className="glass-card flex items-center justify-center gap-2 rounded-2xl font-bold"
           style={{
             minHeight: "44px",
             fontSize: "13px",
             color: "var(--text)",
-            ...SOLID_SURFACE_STYLE,
           }}
         >
           <MessageSquareText size={16} style={{ color: "var(--text-muted)" }} />

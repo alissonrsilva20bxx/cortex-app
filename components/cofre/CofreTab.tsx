@@ -50,21 +50,6 @@ const CAT_RGB: Record<string, string> = {
 const catRgb = (cat: string) => CAT_RGB[cat] ?? "var(--accent-rgb)";
 
 /**
- * Superfície sólida (sem blur), mesmo padrão já estabelecido em Início
- * (T2), Agenda (T3) e Financeiro (T4): "conteúdo sólido, vidro só pra
- * navegação/sheets". Repetido aqui (não extraído pra `components/ui/`)
- * porque o escopo deste ticket é só os arquivos de `components/cofre/`.
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
-} as const;
-
-/**
  * Título de seção — 13px/semibold/-0.035em, cor plena, mesmo tratamento
  * já usado pros títulos de card de Início/Agenda/Financeiro (não
  * `.section-label`, o eyebrow uppercase cuja causa-raiz foi corrigida em
@@ -419,10 +404,16 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
       {/* Busca — literal do laboratório (VaultScreen, LaunchScreens.tsx:353-361).
           Filtro client-side sobre o array `files` já buscado, sem
           chamada de rede nova por tecla digitada. */}
+      {/* Fundação Visual (#142): style só com o `height` genuinamente
+          próprio deste card de busca — o resto (background/borda/sombra)
+          vem do material neutro compartilhado de `.glass-card`
+          (globals.css), mesma correção já feita em Início (achado #131)
+          pro `SOLID_SURFACE_STYLE` com `border: var(--border-color)`
+          tingido por tema. */}
       <GlassCard
         radius="md"
         className="flex items-center gap-3 px-3"
-        style={{ height: "44px", ...SOLID_SURFACE_STYLE }}
+        style={{ height: "44px" }}
       >
         <Search size={16} style={{ color: "var(--text-muted)" }} />
         <input
@@ -460,11 +451,7 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
           armazenados" não é fictício, e é a mesma posição estrutural fixa
           do protótipo. */}
       {!loading && (
-        <GlassCard
-          radius="md"
-          className="flex items-center gap-4 mt-4 p-4"
-          style={SOLID_SURFACE_STYLE}
-        >
+        <GlassCard radius="md" className="flex items-center gap-4 mt-4 p-4">
           <div
             className="grid place-items-center rounded-full shrink-0"
             style={{
@@ -513,11 +500,7 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
       <h2 className="font-semibold mt-4" style={sectionTitleStyle}>
         Arquivos recentes
       </h2>
-      <GlassCard
-        radius="md"
-        className="mt-2 overflow-hidden p-0"
-        style={SOLID_SURFACE_STYLE}
-      >
+      <GlassCard radius="md" className="mt-2 overflow-hidden p-0">
         {loading ? (
           <div className="flex justify-center py-12">
             <div
