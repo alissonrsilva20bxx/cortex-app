@@ -70,6 +70,14 @@ interface Props {
   onHomeCardsChange: (c: HomeCardConfig) => void;
   onCardStylesChange: (c: CardStyleConfig) => void;
   onChartPrefsChange: (c: ChartPrefConfig) => void;
+  /** Redesign iOS quase nativo (wayfinder #122, ticket #124): Ajustes
+   * deixou de ser uma aba da BottomNav (agora só 5 destinos) e passou a
+   * abrir pelo avatar da Início — por isso precisa de uma saída própria
+   * de volta, que a barra (sempre visível, com "Início" alcançável) já
+   * cobria implicitamente antes. Só aparece na raiz de Ajustes: dentro de
+   * uma sub-página, o botão de voltar existente (closeSettingsPage) já
+   * volta pra raiz primeiro. */
+  onClose: () => void;
 }
 
 /** Um grupo de ajustes (rótulo + card único) -- a aparência do laboratório
@@ -179,6 +187,7 @@ export function AjustesTab({
   onHomeCardsChange,
   onCardStylesChange,
   onChartPrefsChange,
+  onClose,
 }: Props) {
   const { theme, setTheme, mode, setMode } = useTheme();
   const [pinEnabled, setPinEnabled] = useState(false);
@@ -232,7 +241,16 @@ export function AjustesTab({
   }, [userId, setTheme]);
 
   useEffect(() => {
-    const handleHistoryBack = () => setActivePage(null);
+    // Só fecha se a PRÓPRIA chave saiu do estado -- sem isso, um Voltar
+    // que não tinha nada a ver com Ajustes (ex.: fechando o visualizador
+    // de foto do perfil da Rede, TabPanel mantém as duas abas montadas)
+    // também zerava `activePage` por reagir a QUALQUER popstate global.
+    // Achado na revisão de padrões da ticket #139 (redesign iOS/#122):
+    // risco pré-existente aqui, exposto por um 2º consumidor do mesmo
+    // padrão de histórico (ProfilePostsGrid.tsx) coexistir montado.
+    const handleHistoryBack = () => {
+      if (!window.history.state?.jobappSettingsPage) setActivePage(null);
+    };
     window.addEventListener("popstate", handleHistoryBack);
     return () => window.removeEventListener("popstate", handleHistoryBack);
   }, []);
@@ -393,7 +411,17 @@ export function AjustesTab({
           >
             <ChevronLeft size={22} />
           </button>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full"
+            aria-label="Voltar para Início"
+            style={{ color: "var(--text)" }}
+          >
+            <ChevronLeft size={22} />
+          </button>
+        )}
         <h2
           ref={pageHeadingRef}
           tabIndex={activePage ? -1 : undefined}

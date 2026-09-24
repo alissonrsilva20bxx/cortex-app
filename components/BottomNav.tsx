@@ -6,7 +6,6 @@ import {
   Wallet,
   ShieldCheck,
   UsersRound,
-  Settings,
 } from "lucide-react";
 import type { TabId } from "@/lib/types";
 import { useScrollCompact } from "@/lib/useScrollCompact";
@@ -15,13 +14,17 @@ import {
   getBottomNavCompactStyle,
 } from "@/lib/bottomNavCompactStyle";
 
+// Redesign iOS quase nativo (wayfinder #122, ticket #124): exatamente 5
+// destinos — Ajustes saiu da barra e passou a abrir pelo avatar da Início
+// (GreetingHeader) / voltar pelo próprio Ajustes. "ajustes" continua um
+// TabId válido (lib/types.ts) e a TabPanel continua funcionando igual —
+// só parou de ganhar um botão próprio aqui.
 const TABS: { id: TabId; label: string; Icon: typeof Home }[] = [
   { id: "home", label: "Início", Icon: Home },
   { id: "jobs", label: "Agenda", Icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", Icon: Wallet },
   { id: "cofre", label: "Cofre", Icon: ShieldCheck },
   { id: "rede", label: "Rede", Icon: UsersRound },
-  { id: "ajustes", label: "Ajustes", Icon: Settings },
 ];
 
 interface Props {
@@ -83,7 +86,12 @@ export function BottomNav({ activeTab, onChange }: Props) {
               borderRadius: "999px",
               background: active ? "var(--accent)" : "transparent",
               color: active ? "#fff" : "var(--text-muted)",
-              boxShadow: active ? "var(--glow-sm)" : "none",
+              // Fundação Visual (#142): --glow-sm é um halo duplo (auréola +
+              // inset) que o `.navActive` do protótipo não tem -- lá é uma
+              // única sombra de elevação (0 0 18px rgba(accent,0.4)).
+              boxShadow: active
+                ? "0 0 18px rgb(var(--accent-rgb) / 0.4)"
+                : "none",
             }}
           >
             <Icon size={20} strokeWidth={active ? 2.3 : 1.8} />

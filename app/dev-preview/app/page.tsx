@@ -19,6 +19,7 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
@@ -60,8 +61,23 @@ export default function DevPreviewApp() {
   const mockInitialized = useRef(false);
   if (!mockInitialized.current) {
     mockInitialized.current = true;
+    // `?objetivos=0|1|N` — só diagnóstico do vão NextJobCard→ObjetivosCard
+    // (#131, validação real): reproduz os 3 estados do critério de aceite
+    // sem precisar de conta real. Ausente ou inválido = comportamento de
+    // sempre (todos). Ver comentário de `buildMockAppSeed` em mockAppData.ts.
+    const objetivosParam =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("objetivos")
+        : null;
+    const objetivosCount =
+      objetivosParam !== null && /^\d+$/.test(objetivosParam)
+        ? Number(objetivosParam)
+        : undefined;
     __setMockSupabaseClient(
-      createMockSupabaseClient(buildMockAppSeed(), MOCK_APP_USUARIO.id)
+      createMockSupabaseClient(
+        buildMockAppSeed({ objetivosCount }),
+        MOCK_APP_USUARIO.id
+      )
     );
   }
 
@@ -111,6 +127,13 @@ export default function DevPreviewApp() {
   const [objetivosRefreshKey, setObjetivosRefreshKey] = useState(0);
 
   const [finInnerTab, setFinInnerTab] = useState("visao");
+  // Pulso de navegação pro Financeiro abrir direto numa sub-aba específica
+  // ("metas" pro "Ver todos" de Objetivos, "visao" pro CTA "Ver minha
+  // evolução" do HeroCard — issue #134) — ver comentário de `focusTab` em
+  // FinanceiroTab.tsx (redesign iOS #122/#125).
+  const [financeiroFocusTab, setFinanceiroFocusTab] = useState<
+    "metas" | "visao" | null
+  >(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
@@ -128,6 +151,15 @@ export default function DevPreviewApp() {
   // nem na validação do PIN. `__previewLock()` troca a árvore pelo
   // PinScreen; `__previewUnlock()` volta — a Rede remonta e deve restaurar
   // do cache em memória (redeCache), sem skeleton.
+  //
+  // `__previewOnboarding()` existe pelo mesmo motivo: `OnboardingFlow` só é
+  // montado na rota real (`app/page.tsx`), atrás de `isNewUser` (jobs/metas
+  // vazios + sessão real) — inalcançável neste harness sem esse gancho, já
+  // que os dados mockados aqui vêm sempre pré-semeados. Passa `jobs`/`metas`
+  // vazios próprios (não os do app, que têm seed) só pra forçar os 4 passos
+  // (welcome/goal/job/aha) a aparecerem; `onOpenJobForm` reaproveita o
+  // `JobForm` já montado abaixo.
+  const [onboardingPreview, setOnboardingPreview] = useState(false);
   useEffect(() => {
     const w = window as unknown as Record<string, () => void>;
     w.__previewLock = () => {
@@ -135,9 +167,11 @@ export default function DevPreviewApp() {
       setLocked(true);
     };
     w.__previewUnlock = () => setLocked(false);
+    w.__previewOnboarding = () => setOnboardingPreview(true);
     return () => {
       delete w.__previewLock;
       delete w.__previewUnlock;
+      delete w.__previewOnboarding;
     };
   }, []);
 
@@ -233,26 +267,67 @@ export default function DevPreviewApp() {
     return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
   }
 
+  if (onboardingPreview) {
+    return (
+      <div className="relative flex flex-col min-h-screen">
+        <main
+          className="flex-1 overflow-y-auto no-scrollbar px-4"
+          style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
+        >
+          <OnboardingFlow
+            usuario={usuario}
+            jobs={[]}
+            metas={[]}
+            onOpenJobForm={() => setJobFormOpen(true)}
+            onMetaSaved={() => {}}
+            onPinSaved={(h) => setPinHash(h)}
+            onComplete={() => setOnboardingPreview(false)}
+          />
+        </main>
+        <JobForm
+          open={jobFormOpen}
+          job={null}
+          userId={usuario.id}
+          onClose={() => setJobFormOpen(false)}
+          onSaved={() => {
+            setJobFormOpen(false);
+            toast.success("Atendimento registrado!");
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex flex-col min-h-screen">
       <main
-        className="flex-1 overflow-y-auto pb-40 px-4"
+        className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
         <TabPanel tab="home" activeTab={activeTab}>
-          <GreetingHeader usuario={usuario} />
-          <div className="mt-6 space-y-4">
+          <GreetingHeader
+            usuario={usuario}
+            onOpenAjustes={() => handleTabChange("ajustes")}
+          />
+          {/* Grid+gap explícito, espelha app/page.tsx (achado #131). */}
+          <div className="mt-6 grid gap-4">
             <HeroCard
               jobs={jobs}
               metas={metas}
-              onGoToFinanceiro={() => handleTabChange("financeiro")}
+              onGoToFinanceiro={() => {
+                handleTabChange("financeiro");
+                setFinanceiroFocusTab("visao");
+              }}
             />
             {homeCards.nextJob && <NextJobCard jobs={jobs} />}
             {(homeCards.objetivos ?? true) && (
               <ObjetivosCard
                 objetivos={objetivos}
                 onToggle={handleToggleObjetivo}
-                onGoToMetas={() => handleTabChange("financeiro")}
+                onGoToMetas={() => {
+                  handleTabChange("financeiro");
+                  setFinanceiroFocusTab("metas");
+                }}
               />
             )}
             <InstallBanner />
@@ -282,6 +357,8 @@ export default function DevPreviewApp() {
             objetivos={objetivos}
             onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
             onToggleObjetivo={handleToggleObjetivo}
+            focusTab={financeiroFocusTab}
+            onFocusTabHandled={() => setFinanceiroFocusTab(null)}
           />
         </TabPanel>
 
@@ -328,6 +405,7 @@ export default function DevPreviewApp() {
             onHomeCardsChange={() => {}}
             onCardStylesChange={() => {}}
             onChartPrefsChange={setChartPrefs}
+            onClose={() => handleTabChange("home")}
           />
         </TabPanel>
       </main>

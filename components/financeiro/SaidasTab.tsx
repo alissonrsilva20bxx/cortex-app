@@ -6,17 +6,6 @@ import { formatBRL, formatShortDate } from "@/lib/finance";
 import { CAT_LABELS, CAT_EMOJIS } from "./constants";
 import type { Despesa } from "@/lib/types";
 
-/**
- * Superfície sólida — mesmo padrão de VisaoTab.tsx/EntradasTab.tsx (T4),
- * Início (T2) e Agenda (T3).
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-} as const;
-
 interface Props {
   despesas: Despesa[];
   despMes: Despesa[];
@@ -45,10 +34,13 @@ export function SaidasTab({
   return (
     <div>
       {/* Header total */}
+      {/* Fundação Visual (#142): sem `style` — material neutro compartilhado
+          de `.glass-card` (globals.css), mesma correção já feita em
+          Início (achado #131) pro mesmo `SOLID_SURFACE_STYLE` com
+          `border: var(--border-color)` tingido por tema. */}
       <GlassCard
         radius="md"
         className="p-4 mb-4 flex items-center justify-between"
-        style={SOLID_SURFACE_STYLE}
       >
         <div>
           {/* Legenda sentence-case — não `.section-label`, mesma
@@ -88,7 +80,7 @@ export function SaidasTab({
 
       {/* Breakdown por categoria */}
       {catEntries.length > 0 && (
-        <GlassCard radius="md" className="p-4 mb-4" style={SOLID_SURFACE_STYLE}>
+        <GlassCard radius="md" className="p-4 mb-4">
           <p
             className="mb-3"
             style={{ fontSize: "11px", color: "var(--text-muted)" }}
@@ -142,7 +134,6 @@ export function SaidasTab({
               key={d.id}
               radius="md"
               className="flex items-center gap-3 px-4 py-3"
-              style={SOLID_SURFACE_STYLE}
             >
               <span style={{ fontSize: 20 }}>
                 {CAT_EMOJIS[d.categoria] ?? "📦"}
