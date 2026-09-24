@@ -397,7 +397,16 @@ export default function Page() {
                 usuario={usuario}
                 onOpenAjustes={() => handleTabChange("ajustes")}
               />
-              <div className="mt-6 space-y-4">
+              {/* Stack explícito (achado #131, validação real no iPhone: vão
+                  de ~110-130px em vez de 16px entre NextJobCard e
+                  ObjetivosCard) -- `grid`+`gap` em vez de `space-y-4`
+                  (margin-top via `:not([hidden]) ~ :not([hidden])`).
+                  `gap` do Grid é uma propriedade do próprio container
+                  aplicada uniformemente entre TODOS os filhos diretos, sem
+                  depender de seletor de irmão nem de nenhum filho ficar
+                  "colapsado" (maxHeight/overflow) pra não contar como
+                  "não-oculto" -- por construção, não por reparo pontual. */}
+              <div className="mt-6 grid gap-4">
                 {/* Card-herói: a projeção viva das metas (o coração) */}
                 <HeroCard
                   jobs={jobs}

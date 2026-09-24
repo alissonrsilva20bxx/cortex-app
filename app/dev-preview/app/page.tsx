@@ -61,8 +61,23 @@ export default function DevPreviewApp() {
   const mockInitialized = useRef(false);
   if (!mockInitialized.current) {
     mockInitialized.current = true;
+    // `?objetivos=0|1|N` — só diagnóstico do vão NextJobCard→ObjetivosCard
+    // (#131, validação real): reproduz os 3 estados do critério de aceite
+    // sem precisar de conta real. Ausente ou inválido = comportamento de
+    // sempre (todos). Ver comentário de `buildMockAppSeed` em mockAppData.ts.
+    const objetivosParam =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("objetivos")
+        : null;
+    const objetivosCount =
+      objetivosParam !== null && /^\d+$/.test(objetivosParam)
+        ? Number(objetivosParam)
+        : undefined;
     __setMockSupabaseClient(
-      createMockSupabaseClient(buildMockAppSeed(), MOCK_APP_USUARIO.id)
+      createMockSupabaseClient(
+        buildMockAppSeed({ objetivosCount }),
+        MOCK_APP_USUARIO.id
+      )
     );
   }
 
@@ -294,7 +309,8 @@ export default function DevPreviewApp() {
             usuario={usuario}
             onOpenAjustes={() => handleTabChange("ajustes")}
           />
-          <div className="mt-6 space-y-4">
+          {/* Grid+gap explícito, espelha app/page.tsx (achado #131). */}
+          <div className="mt-6 grid gap-4">
             <HeroCard
               jobs={jobs}
               metas={metas}

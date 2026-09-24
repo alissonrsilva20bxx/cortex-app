@@ -16,8 +16,17 @@ const hoursAgoIso = (h: number) =>
   new Date(Date.now() - h * 3_600_000).toISOString();
 
 /** Semente completa do "banco" mockado — chamada uma vez ao ativar o shell,
- * assim cada sessão de preview começa do mesmo estado "vivido". */
-export function buildMockAppSeed(): MockSupabaseSeed {
+ * assim cada sessão de preview começa do mesmo estado "vivido".
+ *
+ * `opts.objetivosCount` existe só pra diagnóstico de layout (achado da
+ * validação real de #131: vão de ~110-130px entre NextJobCard e
+ * ObjetivosCard no Preview real) — reproduz os estados 0/1/vários
+ * objetivos sem precisar de conta real nem de apagar dados um por um
+ * pela UI (que só marca concluído, nunca remove). `undefined` mantém o
+ * comportamento de sempre (todos os 4). */
+export function buildMockAppSeed(opts?: {
+  objetivosCount?: number;
+}): MockSupabaseSeed {
   const uid = MOCK_APP_USER_ID;
 
   const jobs = [
@@ -228,7 +237,7 @@ export function buildMockAppSeed(): MockSupabaseSeed {
     },
   ];
 
-  const objetivos = [
+  const objetivosAll = [
     {
       id: "obj-1",
       user_id: uid,
@@ -266,6 +275,10 @@ export function buildMockAppSeed(): MockSupabaseSeed {
       criado_em: daysFromNow(-14),
     },
   ];
+  const objetivos = objetivosAll.slice(
+    0,
+    opts?.objetivosCount ?? objetivosAll.length
+  );
 
   const notas = [
     {
