@@ -9,17 +9,6 @@ import { PERIODO_LABELS, OBJ_CATS } from "./constants";
 import type { Job, Meta, ReceitaAvulsa, Objetivo } from "@/lib/types";
 
 /**
- * Superfície sólida — mesmo padrão dos outros arquivos de Financeiro
- * (T4), Início (T2) e Agenda (T3).
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-} as const;
-
-/**
  * Título de seção — 13px/semibold/-0.035em, cor plena, mesmo tratamento
  * já usado pros títulos de card de Início/Agenda (não `.section-label`,
  * o eyebrow uppercase cuja causa-raiz foi corrigida em T2). "Metas
@@ -76,8 +65,12 @@ export function MetasTab({
 
   return (
     <div className="space-y-4">
-      {/* Metas financeiras */}
-      <GlassCard radius="md" className="p-4" style={SOLID_SURFACE_STYLE}>
+      {/* Metas financeiras. Fundação Visual (#142): sem `style` — material
+          neutro compartilhado de `.glass-card` (globals.css), mesma
+          correção já feita em Início (achado #131) pro mesmo
+          `SOLID_SURFACE_STYLE` com `border: var(--border-color)` tingido
+          por tema. */}
+      <GlassCard radius="md" className="p-4">
         <div className="flex items-center gap-2 mb-4">
           <Target size={14} style={{ color: "var(--accent)" }} />
           <h2 className="font-semibold" style={sectionTitleStyle}>
@@ -140,8 +133,8 @@ export function MetasTab({
         </div>
       </GlassCard>
 
-      {/* Objetivos de vida */}
-      <GlassCard radius="md" className="p-4" style={SOLID_SURFACE_STYLE}>
+      {/* Objetivos de vida. Fundação Visual (#142): mesma correção acima. */}
+      <GlassCard radius="md" className="p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span style={{ fontSize: 14 }}>🌟</span>

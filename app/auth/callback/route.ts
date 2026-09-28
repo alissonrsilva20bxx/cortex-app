@@ -50,9 +50,10 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(error.message)}`, origin)
-    );
+    // Código genérico, nunca a mensagem crua do provedor (que iria parar na
+    // URL -- histórico do navegador, referrer, logs) -- /login só verifica
+    // a PRESENÇA de `error` e mostra uma mensagem própria (Fase 5, #128).
+    return NextResponse.redirect(new URL("/login?error=auth_failed", origin));
   }
 
   return response;

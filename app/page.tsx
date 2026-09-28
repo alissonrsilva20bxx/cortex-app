@@ -37,6 +37,7 @@ import { useToast } from "@/components/Toast";
 import { supabase } from "@/lib/supabase";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
+import * as cofreCache from "@/lib/cofre/cofreCache";
 import { isFreshAccount } from "@/lib/onboarding";
 import type {
   TabId,
@@ -127,6 +128,13 @@ export default function Page() {
   const [objetivosRefreshKey, setObjetivosRefreshKey] = useState(0);
 
   const [finInnerTab, setFinInnerTab] = useState("visao");
+  // Pulso de navegação pro Financeiro abrir direto numa sub-aba específica
+  // ("metas" pro "Ver todos" de Objetivos, "visao" pro CTA "Ver minha
+  // evolução" do HeroCard — issue #134) — ver comentário de `focusTab` em
+  // FinanceiroTab.tsx (redesign iOS #122/#125).
+  const [financeiroFocusTab, setFinanceiroFocusTab] = useState<
+    "metas" | "visao" | null
+  >(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
@@ -301,11 +309,15 @@ export default function Page() {
   }, [usuario, locked, objetivosRefreshKey]);
 
   async function handleSignOut() {
-    // Zera o cache da Rede ANTES de sair -- em memória (a próxima conta
-    // nesta aba não herda nada) e no localStorage (req 4/6).
+    // Zera o cache da Rede e do Cofre ANTES de sair -- em memória (a
+    // próxima conta nesta aba não herda nada) e no localStorage (req
+    // 4/6). O Cofre não tem camada persistida (deliberado, ver
+    // `lib/cofre/cofreCache.ts`), então só o cache em memória precisa ser
+    // zerado.
     try {
       redeCache.limparTudo();
       redeCachePersist.limpar();
+      cofreCache.limparTudo();
     } catch (_) {}
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -355,7 +367,7 @@ export default function Page() {
   return (
     <div className="relative flex flex-col min-h-screen">
       <main
-        className="flex-1 overflow-y-auto pb-40 px-4"
+        className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
         {isNewUser && usuario && (
@@ -381,13 +393,28 @@ export default function Page() {
         {!isNewUser && usuario && (
           <>
             <TabPanel tab="home" activeTab={activeTab}>
-              <GreetingHeader usuario={usuario} />
-              <div className="mt-6 space-y-4">
+              <GreetingHeader
+                usuario={usuario}
+                onOpenAjustes={() => handleTabChange("ajustes")}
+              />
+              {/* Stack explícito (achado #131, validação real no iPhone: vão
+                  de ~110-130px em vez de 16px entre NextJobCard e
+                  ObjetivosCard) -- `grid`+`gap` em vez de `space-y-4`
+                  (margin-top via `:not([hidden]) ~ :not([hidden])`).
+                  `gap` do Grid é uma propriedade do próprio container
+                  aplicada uniformemente entre TODOS os filhos diretos, sem
+                  depender de seletor de irmão nem de nenhum filho ficar
+                  "colapsado" (maxHeight/overflow) pra não contar como
+                  "não-oculto" -- por construção, não por reparo pontual. */}
+              <div className="mt-6 grid gap-4">
                 {/* Card-herói: a projeção viva das metas (o coração) */}
                 <HeroCard
                   jobs={jobs}
                   metas={metas}
-                  onGoToFinanceiro={() => handleTabChange("financeiro")}
+                  onGoToFinanceiro={() => {
+                    handleTabChange("financeiro");
+                    setFinanceiroFocusTab("visao");
+                  }}
                 />
 
                 {/* Próximo atendimento — o motor diário */}
@@ -398,7 +425,10 @@ export default function Page() {
                   <ObjetivosCard
                     objetivos={objetivos}
                     onToggle={handleToggleObjetivo}
-                    onGoToMetas={() => handleTabChange("financeiro")}
+                    onGoToMetas={() => {
+                      handleTabChange("financeiro");
+                      setFinanceiroFocusTab("metas");
+                    }}
                   />
                 )}
 
@@ -431,6 +461,8 @@ export default function Page() {
                 objetivos={objetivos}
                 onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
                 onToggleObjetivo={handleToggleObjetivo}
+                focusTab={financeiroFocusTab}
+                onFocusTabHandled={() => setFinanceiroFocusTab(null)}
               />
             </TabPanel>
 
@@ -460,6 +492,7 @@ export default function Page() {
                 onHomeCardsChange={setHomeCards}
                 onCardStylesChange={setCardStyles}
                 onChartPrefsChange={setChartPrefs}
+                onClose={() => handleTabChange("home")}
               />
             </TabPanel>
           </>

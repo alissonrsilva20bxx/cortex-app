@@ -67,7 +67,9 @@ function ratioDe(foto: FotoPost): number | null {
   return clampRatio(foto.largura / foto.altura);
 }
 
-function prefereMovimentoReduzido() {
+// Exportado (ticket #139): ProfilePhotoViewer.tsx reusa em vez de
+// reescrever a mesma expressão de matchMedia.
+export function prefereMovimentoReduzido() {
   return (
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
@@ -191,7 +193,15 @@ const bleed = (altura: number, ratio: number): React.CSSProperties => ({
 
 // ─────────────────────────────── palco ──────────────────────────────────
 
-function PhotoStage({
+/**
+ * Exportado (ticket #139/#140, redesign iOS): `ProfilePhotoViewer.tsx`
+ * reusa este componente pro visualizador dedicado da grade de perfil —
+ * mesma lógica real de assinatura/renovação/crossfade/erro-com-retry, só
+ * o contêiner ao redor muda (tela cheia vs. sangra o card do feed). Sem
+ * isso a grade teria que reimplementar assinatura+renovação+trava-contra-
+ * loop do zero, duplicando a parte que já é a mais delicada deste arquivo.
+ */
+export function PhotoStage({
   foto,
   alt,
   onRenovarFoto,

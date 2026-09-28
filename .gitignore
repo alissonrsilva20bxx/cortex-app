@@ -11,3 +11,5 @@ tsconfig.tsbuildinfo
 .vercel
 .scratch
 .playwright-mcp
+.visual-validation
+/validation-captures

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { UserPlus, MessageCircle, Gift, Sparkles } from "lucide-react";
+import { UserPlus, MessageCircle, Gift, Sparkles, Users2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { RedeHeader } from "./RedeHeader";
@@ -204,7 +204,26 @@ export function FeedScreen({
         ]}
       />
 
-      <div className="space-y-3">
+      {/* Entrada fixa pra Amigas/Solicitações/Descobrir — como no protótipo
+          (linha própria logo abaixo dos tabs, sempre visível). Achado T20/#127:
+          os blocos contextuais de "solicitações"/"descobrir" abaixo só
+          aparecem intercalados no feed (após o 2º/5º/7º post — `queue.shift()`
+          só roda dentro do `.forEach` de `visiblePosts`), então com feed vazio
+          ou curto (comum pra quem acabou de entrar na Rede, que é justamente
+          quem mais precisa achar gente) o acesso à tela de amigas ficava
+          inatingível — violava "Preservar: Minhas amigas, Solicitações e
+          Descobrir" do contrato. Reaproveita `onOpenAmigas`, já existente e já
+          fiado a `AmigasScreen` em RedeTab.tsx — nenhuma lógica nova, só
+          garante o caminho permanente que os blocos contextuais abaixo não
+          garantem sozinhos. */}
+      <ContextualBlock
+        icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
+        title="Amigas"
+        subtitle="Solicitações e descobrir pessoas"
+        onClick={onOpenAmigas}
+      />
+
+      <div className="space-y-3 mt-3">
         {/* Skeleton só em cache miss de verdade -- com posts cacheados em
             tela, um refresh em 2º plano (`loading` ainda true) NÃO volta pro
             skeleton, e uma falha de rede NÃO cobre o conteúdo com o erro

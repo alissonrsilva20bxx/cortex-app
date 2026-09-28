@@ -10,10 +10,10 @@ import {
   X,
 } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
-import { Avatar } from "./Avatar";
+import { ProfileIdentityHeader } from "./ProfileIdentityHeader";
 import { LiveLinksPreview, type LiveLink } from "./LiveLinksSection";
 import { WishlistCard } from "./WishlistCard";
-import { PostCard } from "./PostCard";
+import { ProfilePostsGrid } from "./ProfilePostsGrid";
 import { OptionsSheet } from "./OptionsSheet";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
 import type { WishlistItem } from "@/lib/mockRede";
@@ -40,11 +40,16 @@ interface Props {
   onOpenChat?: () => void;
   onSendRequest?: () => void;
   onBlock?: () => void;
-  onToggleLike: (id: string) => void;
-  onComment: (post: FeedPost) => void;
-  onShare: (post: FeedPost) => void;
-  onOpenMenu: (post: FeedPost) => void;
+  /** Renova a URL assinada de uma foto (miniatura ou principal) --
+   * `ProfilePostsGrid`/`ProfilePhotoViewer` cuidam do resto (curtir/
+   * comentar/compartilhar ficam só no feed, não duplicados aqui -- mesmo
+   * contrato de `MeuEspacoScreen`, ticket #139). */
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** Dispara o fluxo real de denúncia (RedeTab: `setReportTarget`), ticket
+   * #140. Sempre recebido de `RedeTab` (mesmo callback estável usado pelo
+   * `PostCard`), mas só repassado à grade quando `!isMe` (ver abaixo) --
+   * nunca no preview do próprio perfil, onde toda publicação é sua. */
+  onReportPost?: (postId: string) => void;
 }
 
 export function PerfilPublicoScreen({
@@ -65,11 +70,8 @@ export function PerfilPublicoScreen({
   onOpenChat,
   onSendRequest,
   onBlock,
-  onToggleLike,
-  onComment,
-  onShare,
-  onOpenMenu,
   onRenovarFoto,
+  onReportPost,
 }: Props) {
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
 
@@ -97,31 +99,31 @@ export function PerfilPublicoScreen({
         </p>
       ) : (
         <>
-          <div className="flex flex-col items-center text-center mb-5">
-            <Avatar nome={nome} cor={cor} fotoUrl={fotoUrl} size="xl" />
-            <p
-              className="font-bold mt-3"
-              style={{ fontSize: "18px", color: "var(--text)" }}
-            >
-              {nome}
-            </p>
-            {handle && (
-              <p
-                className="text-xs mt-0.5"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {handle}
-              </p>
-            )}
-            <p
-              className="text-sm mt-2 max-w-[280px]"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {bio}
-            </p>
+          {/* Identidade — mesma hierarquia de #139 (§ Meu perfil: avatar,
+              nome, bio), sem números (contrato só os exige explicitamente
+              pro próprio perfil) e sem avatar editável (nunca em perfil de
+              outra pessoa, inclusive no preview do próprio). */}
+          <ProfileIdentityHeader
+            nome={nome}
+            bio={bio}
+            cor={cor}
+            fotoUrl={fotoUrl}
+            handle={handle}
+          />
 
+          {/* LiveLinks discretos entre bio e ações — regra não-negociável
+              do mapa #122, válida em qualquer tela de perfil, não só a
+              própria. Antes desta ticket, esta seção vinha DEPOIS da linha
+              de ações; reposicionada aqui, sem mudar o dado exibido
+              (`liveLinks` de terceiros continua vazio -- fora do escopo
+              já registrado, ver RedeTab.tsx). */}
+          <div className="mb-4">
+            <LiveLinksPreview links={liveLinks} />
+          </div>
+
+          <div className="flex flex-col items-center text-center mb-6">
             {!isMe && (
-              <div className="flex items-center gap-2 mt-4">
+              <div className="flex items-center gap-2">
                 {isFriend ? (
                   <button
                     onClick={onOpenChat}
@@ -170,19 +172,11 @@ export function PerfilPublicoScreen({
               </div>
             )}
             {isMe && (
-              <p
-                className="text-[11px] mt-4"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                 É assim que quem não é sua amiga vê seu perfil.
               </p>
             )}
           </div>
-
-          <section className="mb-6">
-            <p className="section-label mb-3">LiveLinks</p>
-            <LiveLinksPreview links={liveLinks} />
-          </section>
 
           {wishlistPublico.length > 0 && (
             <section className="mb-6">
@@ -195,25 +189,28 @@ export function PerfilPublicoScreen({
             </section>
           )}
 
-          {posts.length > 0 && (
-            <section>
-              <p className="section-label mb-3">Publicações</p>
-              <div className="space-y-3">
-                {posts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onToggleLike={onToggleLike}
-                    onComment={onComment}
-                    onShare={onShare}
-                    onOpenMenu={onOpenMenu}
-                    onOpenAutor={() => {}}
-                    onRenovarFoto={onRenovarFoto}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+          {/* Grade de publicações estilo Instagram — mesma paridade de
+              #139 (§ Meu perfil, ponto 5), reusando `ProfilePostsGrid`
+              (genérico, recebe posts/callbacks, nada específico de "Meu
+              espaço"). `onReportPost` só chega quando `!isMe` -- é assim
+              que "Denunciar publicação" nunca aparece no preview do
+              próprio perfil, sem a grade/visualizador precisarem saber
+              nada sobre autoria (achado do review de Standards de #140:
+              denunciar é moderação/segurança, não pode desaparecer só
+              porque o post saiu da paginação do feed). */}
+          <section>
+            <p className="section-label mb-3">Publicações</p>
+            <ProfilePostsGrid
+              posts={posts}
+              emptyMessage={
+                isMe
+                  ? "Você ainda não publicou nada."
+                  : "Nenhuma publicação ainda."
+              }
+              onRenovarFoto={onRenovarFoto}
+              onReportPost={isMe ? undefined : onReportPost}
+            />
+          </section>
         </>
       )}
 

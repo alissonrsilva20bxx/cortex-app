@@ -113,7 +113,8 @@ export function PinSetup({ open, userId, onClose, onSaved }: Props) {
                 border: "2px solid",
                 borderColor:
                   current.length > i ? "var(--accent)" : "var(--border-color)",
-                boxShadow: current.length > i ? "var(--glow)" : "none",
+                // Fundação Visual (#142): `.pinDots i.pinDotFilled` do
+                // protótipo não tem sombra, só troca de cor/borda.
               }}
             />
           ))}

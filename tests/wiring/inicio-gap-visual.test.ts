@@ -32,9 +32,14 @@ describe("§2-P0-1 — HeroCard clicável (navega a Financeiro) e calculado de j
   });
 
   it("app/page.tsx passa onGoToFinanceiro real (navega para a aba financeiro)", () => {
+    // Desde #134 (CTA "Ver minha evolução"), onGoToFinanceiro também dispara
+    // o pulso financeiroFocusTab("visao") na mesma ação — ver
+    // tests/wiring/financeiro-metas-focus-pulse.test.ts pro contrato
+    // completo do pulso; aqui só confirma que a navegação de aba continua
+    // real (handleTabChange("financeiro")), não um placeholder.
     const page = read("app/page.tsx");
     expect(page).toMatch(
-      /<HeroCard[\s\S]*?onGoToFinanceiro=\{\(\) => handleTabChange\("financeiro"\)\}/
+      /<HeroCard[\s\S]*?onGoToFinanceiro=\{\(\) => \{\s*\r?\n\s*handleTabChange\("financeiro"\);/
     );
   });
 });
@@ -90,14 +95,29 @@ describe("§2-P0-4 — CTA de novo atendimento sempre abre o JobForm real comple
   });
 });
 
-describe("§2-P1-1 — Início não introduz ícones de notificação/perfil (vivem na Rede hoje)", () => {
-  it("GreetingHeader (usado na Início) não ganhou um sino de notificação novo, nem um avatar clicável de atalho", () => {
+describe("§2-P1-1 — Início não introduz ícones de notificação (vivem na Rede hoje); avatar só abre Ajustes", () => {
+  // Redesign iOS quase nativo (wayfinder #122, ticket #124, contrato de
+  // paridade "Navegação global"): Ajustes saiu da BottomNav e passou a
+  // abrir só pelo avatar da Início — supersede a proibição original de
+  // "avatar clicável" desta suíte (§2-P1-1), mas não a de sino de
+  // notificação novo, que continua de pé.
+  it("GreetingHeader (usado na Início) não ganhou um sino de notificação novo", () => {
     const src = read("components/home/GreetingHeader.tsx");
-    // O avatar da própria usuária já existe legitimamente aqui (mostra a
-    // foto/inicial dela na saudação); o que o item proíbe é um sino de
-    // notificação novo, ou um avatar que navegue/abra algo ao ser clicado.
     expect(src).not.toMatch(/Bell|notificac/i);
-    expect(src).not.toMatch(/onClick=\{/);
+  });
+
+  it("avatar da Início é clicável e abre Ajustes, nada além disso", () => {
+    const src = read("components/home/GreetingHeader.tsx");
+    expect(src).toMatch(/onOpenAjustes:\s*\(\)\s*=>\s*void/);
+    expect(src).toMatch(/onClick=\{onOpenAjustes\}/);
+    expect(src).toMatch(/aria-label="Abrir Ajustes"/);
+  });
+
+  it('app/page.tsx só liga o avatar da Início a handleTabChange("ajustes")', () => {
+    const page = read("app/page.tsx");
+    expect(page).toMatch(
+      /<GreetingHeader\s+usuario=\{usuario\}\s+onOpenAjustes=\{\(\)\s*=>\s*handleTabChange\("ajustes"\)\}/
+    );
   });
 });
 

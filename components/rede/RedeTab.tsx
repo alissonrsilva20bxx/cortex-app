@@ -1892,8 +1892,8 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
           fotoUrl={perfil?.avatar_url ?? null}
           meusPosts={posts.filter((p) => p.autorId === usuario.id)}
           liveLinks={liveLinks}
-          wishlistItems={wishlistItems}
           clientesCount={clientes.length}
+          friendsCount={friends.length}
           defaultPrivacidade={defaultPrivacidade}
           loading={perfil === null && !perfilError}
           error={perfilError}
@@ -1914,6 +1914,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
             else avatarFileInputRef.current?.click();
           }}
           onShareProfile={shareProfile}
+          onPublish={() => setComposerOpen(true)}
           onOpenWishlist={() => push({ type: "wishlist" })}
           onOpenClientes={() => push({ type: "clientes" })}
           onOpenBloqueados={openBloqueados}
@@ -1960,6 +1961,15 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
                 blockUser(screen.userId);
                 pop();
               }}
+              // Mesmo gatilho que o "..." do PostCard já usa pra abrir a
+              // confirmação real de denúncia (ticket #140) -- não duplica
+              // serviço/feedback, só abre um passo antes (o "..." da
+              // grade/visualizador do perfil já sabe que não é o dono,
+              // pula direto pro "Motivo da denúncia" sem passar pelo menu
+              // "Publicação" completo, que teria Editar/Excluir).
+              onReportPost={(postId) =>
+                setReportTarget({ tipo: "post", id: postId })
+              }
               {...postActions}
             />
           );

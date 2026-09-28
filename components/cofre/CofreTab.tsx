@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   FileText,
@@ -10,7 +10,7 @@ import {
   Shield,
   Search,
   Lock,
-  Folder,
+  LockKeyhole,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { FilterChips } from "@/components/ui/FilterChips";
@@ -21,6 +21,8 @@ import {
   nextUnlockedOnActiveChange,
   nextUnlockedOnLoseFocus,
 } from "./lockGate";
+import * as cofreCache from "@/lib/cofre/cofreCache";
+import type { CofreFile } from "@/lib/cofre/cofreCache";
 
 type Categoria =
   | "todos"
@@ -48,21 +50,6 @@ const CAT_RGB: Record<string, string> = {
 const catRgb = (cat: string) => CAT_RGB[cat] ?? "var(--accent-rgb)";
 
 /**
- * Superfície sólida (sem blur), mesmo padrão já estabelecido em Início
- * (T2), Agenda (T3) e Financeiro (T4): "conteúdo sólido, vidro só pra
- * navegação/sheets". Repetido aqui (não extraído pra `components/ui/`)
- * porque o escopo deste ticket é só os arquivos de `components/cofre/`.
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
-} as const;
-
-/**
  * Título de seção — 13px/semibold/-0.035em, cor plena, mesmo tratamento
  * já usado pros títulos de card de Início/Agenda/Financeiro (não
  * `.section-label`, o eyebrow uppercase cuja causa-raiz foi corrigida em
@@ -74,15 +61,6 @@ const sectionTitleStyle = {
   letterSpacing: "-0.035em",
   color: "var(--text)",
 } as const;
-
-interface CofreFile {
-  name: string;
-  path: string;
-  categoria: string;
-  size: number;
-  createdAt: string;
-  mimeType?: string;
-}
 
 function FileIcon({ mime }: { mime?: string }) {
   const style = { color: "var(--accent)" };
@@ -116,10 +94,35 @@ interface Props {
 }
 
 export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
-  const [files, setFiles] = useState<CofreFile[]>([]);
+  /**
+   * Semente do cache SWR (`lib/cofre/cofreCache.ts`), síncrona, 1x por
+   * conta -- mesmo padrão de `RedeTab` (`sementeRef`). Cobre o remount que
+   * a trava de PIN do APP (`app/page.tsx`: `if (locked && pinHash) return
+   * <PinScreen>`) causa na árvore inteira, incluindo este componente: sem
+   * isso, `files`/`loading` nasceriam vazios/`true` de novo a cada
+   * destrava do app, mesmo com os arquivos já vistos segundos antes ainda
+   * vivos no cache do módulo. A trava PRÓPRIA do Cofre (`unlocked` abaixo)
+   * não remonta este componente -- por isso não precisa desta semente de
+   * novo a cada ciclo: `files` simplesmente nunca é apagado só por sair da
+   * aba/perder foco (ver os dois efeitos logo abaixo), então o valor já em
+   * estado sobrevive sozinho entre entradas.
+   */
+  const sementeRef = useRef<{
+    userId: string;
+    files: CofreFile[] | null;
+  } | null>(null);
+  if (sementeRef.current === null || sementeRef.current.userId !== userId) {
+    cofreCache.vincularUsuario(userId);
+    sementeRef.current = { userId, files: cofreCache.ler(userId) };
+  }
+  const semente = sementeRef.current;
+
+  const [files, setFiles] = useState<CofreFile[]>(() => semente.files ?? []);
   const [filter, setFilter] = useState<Categoria>("todos");
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  // Só nasce `true` em cache miss de verdade (semente nula) -- com cache,
+  // o efeito abaixo vira revalidação em 2º plano, sem spinner.
+  const [loading, setLoading] = useState(() => semente.files === null);
 
   /**
    * Gate próprio do Cofre — corrige o defeito confirmado manualmente:
@@ -204,13 +207,23 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
 
   useEffect(() => {
     setUnlocked((prev) => nextUnlockedOnActiveChange(active, prev));
-    if (!active) setFiles([]);
+    // NÃO zera a lista de arquivos aqui (o bug original chamava o setter
+    // de `files` com um array vazio nesta mesma linha) -- sair da aba
+    // precisa só bloquear a INTERFACE (o gate acima já esconde tudo via
+    // "hidden"), não destruir o conteúdo já carregado. `files` continua em
+    // memória de componente (defesa adicional: o cache do módulo
+    // `cofreCache` também guarda o mesmo dado) pra reaparecer na hora
+    // quando a aba for reativada e o PIN for digitado de novo -- ver cache
+    // SWR abaixo.
   }, [active]);
 
   useEffect(() => {
     function lock() {
       setUnlocked(nextUnlockedOnLoseFocus());
-      setFiles([]);
+      // Idem acima: perder foco/visibilidade/pagehide precisa bloquear a
+      // TELA imediatamente (já garantido pelo gate), sem exceção -- mas não
+      // precisa destruir o cache da sessão. A lista de arquivos fica
+      // intocada.
     }
     function onVisibilityChange() {
       if (document.visibilityState === "hidden") lock();
@@ -239,9 +252,23 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
 
   const gateState = computeGateState({ active, pinHash, unlocked });
 
+  /**
+   * Busca dos arquivos -- cache SWR (`lib/cofre/cofreCache.ts`), mesma
+   * experiência já adotada na Rede: com cache, mostra na hora e revalida
+   * em silêncio; sem cache, mostra o carregamento como antes.
+   *
+   * `refreshTrigger` (bump do upload em `app/page.tsx`) cai neste mesmo
+   * efeito -- como só liga `setLoading(true)` em cache miss, um upload não
+   * joga a lista inteira de volta pro spinner: revalida em 2º plano e o
+   * arquivo novo aparece quando a consulta terminar.
+   */
   useEffect(() => {
     if (gateState !== "content") return;
-    setLoading(true);
+    const ep = cofreCache.epocaAtual();
+    const temCache = cofreCache.ler(userId) !== null;
+    if (!temCache) setLoading(true);
+
+    let ativo = true;
     const cats = ["comprovantes", "conversas", "documentos", "pessoal"];
     Promise.all(
       cats.map((cat) =>
@@ -262,16 +289,33 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
             }))
           )
       )
-    ).then((results) => {
-      const all = results
-        .flat()
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      setFiles(all);
-      setLoading(false);
-    });
+    )
+      .then((results) => {
+        // Resposta atrasada de uma conta anterior (troca de conta no meio
+        // do voo) não pode contaminar a conta atual.
+        if (!ativo || cofreCache.epocaAtual() !== ep) return;
+        const all = results
+          .flat()
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        cofreCache.escrever(userId, all, ep);
+        setFiles(all);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!ativo || cofreCache.epocaAtual() !== ep) return;
+        console.error("[CofreTab]", e);
+        // Falha na revalidação NÃO apaga o conteúdo já cacheado em tela --
+        // só encerra o carregamento (relevante no cache miss: sem isso o
+        // spinner ficaria preso pra sempre numa falha de rede).
+        setLoading(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, [userId, refreshTrigger, gateState]);
 
   if (gateState === "hidden") {
@@ -300,8 +344,6 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
       .createSignedUrl(path, 120);
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
-
-  const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
 
   const filtered = files
     .filter((f) => filter === "todos" || f.categoria === filter)
@@ -362,10 +404,16 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
       {/* Busca — literal do laboratório (VaultScreen, LaunchScreens.tsx:353-361).
           Filtro client-side sobre o array `files` já buscado, sem
           chamada de rede nova por tecla digitada. */}
+      {/* Fundação Visual (#142): style só com o `height` genuinamente
+          próprio deste card de busca — o resto (background/borda/sombra)
+          vem do material neutro compartilhado de `.glass-card`
+          (globals.css), mesma correção já feita em Início (achado #131)
+          pro `SOLID_SURFACE_STYLE` com `border: var(--border-color)`
+          tingido por tema. */}
       <GlassCard
         radius="md"
         className="flex items-center gap-3 px-3"
-        style={{ height: "44px", ...SOLID_SURFACE_STYLE }}
+        style={{ height: "44px" }}
       >
         <Search size={16} style={{ color: "var(--text-muted)" }} />
         <input
@@ -387,71 +435,63 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
         minTouchTarget
       />
 
-      {/* Resumo do armazenamento — números 100% reais (contagem e soma
-          de bytes de `files`, já buscados). Sem porcentagem/barra de
-          progresso: não existe cota real de armazenamento no backend
-          (relatório de paridade §4/P0-1/P0-2), então "% de uso" seria
-          inventado. Sem o aviso de que o dado é só uma prévia/estimativa
-          (o laboratório tinha um, porque os números dele eram
-          propositalmente fictícios) — aqui o dado é real, não precisa
-          do aviso. Só aparece quando há
-          pelo menos 1 arquivo — com o cofre vazio, o card ficaria
-          redundante em cima da mensagem de estado vazio abaixo. */}
-      {!loading && files.length > 0 && (
-        <GlassCard radius="md" className="mt-4 p-4" style={SOLID_SURFACE_STYLE}>
-          <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-            Resumo do armazenamento
-          </p>
-          <div className="mt-3 flex items-center gap-4">
-            <div
-              className="grid place-items-center rounded-full shrink-0"
-              style={{
-                width: "48px",
-                height: "48px",
-                background: "rgb(var(--accent-rgb) / 0.12)",
-              }}
-            >
-              <Folder size={22} style={{ color: "var(--accent)" }} />
-            </div>
-            <div>
-              <strong
-                className="font-medium tabular-nums"
-                style={{ fontSize: "20px", color: "var(--text)" }}
-              >
-                {files.length}
-              </strong>
-              <p style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                {files.length === 1 ? "arquivo" : "arquivos"}
-              </p>
-            </div>
-            <div
-              style={{
-                height: "40px",
-                borderLeft: "1px solid var(--border-color)",
-              }}
-            />
-            <div>
-              <strong
-                className="font-medium tabular-nums"
-                style={{ fontSize: "18px", color: "var(--text)" }}
-              >
-                {formatSize(totalBytes)}
-              </strong>
-              <p style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                no total
-              </p>
-            </div>
-          </div>
+      {/* Card "Protegido" — alinhado ao visual aprovado (/dev-preview/ios,
+          ticket #137): orbe + título "Protegido" + contagem real de
+          arquivos + linha de proteção. Layout/geometria vêm do protótipo
+          (IosPrototypeApp.module.css `.protectedCard`/`.shieldOrb`: orbe
+          de 72px, ícone 34px, título 23px); cor vem de `var(--accent)`,
+          nunca do rosa fixo do protótipo (mesma regra já aplicada em
+          Início/#134). Contagem 100% real (`files.length`, já buscado) —
+          nunca o "12 arquivos" fixo do laboratório. Sem MB total: o
+          protótipo aprovado não mostra essa métrica (decisão registrada
+          na ticket #137, não é omissão). Mensagem da última linha reaproveita
+          a mesma distinção PIN-vs-trava-do-app já usada no aviso do topo
+          desta tela — nenhuma regra nova. Mostrado sempre que não estiver
+          carregando (mesmo com 0 arquivos): o dado é real, "0 arquivos
+          armazenados" não é fictício, e é a mesma posição estrutural fixa
+          do protótipo. */}
+      {!loading && (
+        <GlassCard radius="md" className="flex items-center gap-4 mt-4 p-4">
           <div
-            className="mt-3 flex items-center gap-2 pt-3"
+            className="grid place-items-center rounded-full shrink-0"
             style={{
-              borderTop: "1px solid var(--border-color)",
-              fontSize: "10px",
-              color: "var(--text-muted)",
+              width: "72px",
+              height: "72px",
+              background: "rgb(var(--accent-rgb) / 0.15)",
+              border: "1px solid rgb(var(--accent-rgb) / 0.25)",
             }}
           >
-            <Lock size={11} />
-            Acesso protegido pela conta e trava do app
+            <Shield size={34} style={{ color: "var(--accent)" }} />
+          </div>
+          <div>
+            <h2
+              className="font-semibold"
+              style={{
+                fontSize: "23px",
+                letterSpacing: "-0.03em",
+                color: "var(--text)",
+              }}
+            >
+              Protegido
+            </h2>
+            <p
+              className="mt-1 mb-2 tabular-nums"
+              style={{ fontSize: "13px", color: "var(--text-muted)" }}
+            >
+              {files.length}{" "}
+              {files.length === 1
+                ? "arquivo armazenado"
+                : "arquivos armazenados"}
+            </p>
+            <span
+              className="flex items-center gap-1.5"
+              style={{ fontSize: "11px", color: "var(--text-muted)" }}
+            >
+              <LockKeyhole size={16} />
+              {pinHash
+                ? "Acesso protegido pelo seu PIN"
+                : "Acesso protegido pela trava do app"}
+            </span>
           </div>
         </GlassCard>
       )}
@@ -460,11 +500,7 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
       <h2 className="font-semibold mt-4" style={sectionTitleStyle}>
         Arquivos recentes
       </h2>
-      <GlassCard
-        radius="md"
-        className="mt-2 overflow-hidden p-0"
-        style={SOLID_SURFACE_STYLE}
-      >
+      <GlassCard radius="md" className="mt-2 overflow-hidden p-0">
         {loading ? (
           <div className="flex justify-center py-12">
             <div

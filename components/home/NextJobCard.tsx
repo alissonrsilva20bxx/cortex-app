@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { ChevronDown, MapPin, Video, Clock } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
+import {
+  getDaysUntil,
+  countdownLabel,
+  formatDayBadge,
+} from "@/lib/proximoAtendimento";
 import type { Job } from "@/lib/types";
 
 interface Props {
@@ -22,20 +27,6 @@ function getProximoJob(jobs: Job[]): Job | null {
   return upcoming[0] ?? null;
 }
 
-function getDaysUntil(data: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(data + "T00:00:00");
-  return Math.round((d.getTime() - today.getTime()) / 86_400_000);
-}
-
-function countdownLabel(days: number): string {
-  if (days < 0) return "Atrasado";
-  if (days === 0) return "Hoje";
-  if (days === 1) return "Amanhã";
-  return `em ${days} dias`;
-}
-
 const formatBRL = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
     v
@@ -46,67 +37,43 @@ const formatTime = (hora: string) => {
   return `${h}h${m}`;
 };
 
-/** Dia/mês curto pro selo de data — "21" + "AGO", como no laboratório. */
-export function formatDayBadge(data: string): { day: string; month: string } {
-  const d = new Date(data + "T00:00:00");
-  return {
-    day: String(d.getDate()),
-    month: d
-      .toLocaleDateString("pt-BR", { month: "short" })
-      .replace(".", "")
-      .toUpperCase(),
-  };
-}
-
-/**
- * Superfície sólida (sem blur), como no laboratório visual — mesmo
- * tratamento de HeroCard/ObjetivosCard, nomeado aqui (em vez de inline)
- * pra ficar consistente com os outros dois arquivos deste ticket.
- * `border` sobrescreve a borda cor-de-destaque de `.glass-card` por uma
- * neutra (mais perto do laboratório); o "shine" de `.glass-card::before`
- * não é alcançável por inline style — resíduo aceito, ver HeroCard.tsx.
- */
-const SOLID_SURFACE_STYLE = {
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-  background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-  border: "1px solid var(--border-color)",
-} as const;
+// `formatDayBadge` reexportado do módulo de lógica pura (lib/
+// proximoAtendimento.ts, achado #131) — JobDetailSheet.tsx importa daqui,
+// então o caminho de import dele continua o mesmo sem precisar tocar lá.
+export { formatDayBadge };
 
 export function NextJobCard({ jobs }: Props) {
   const [expanded, setExpanded] = useState(false);
   const job = getProximoJob(jobs);
   const dayBadge = job ? formatDayBadge(job.data) : null;
+  // Fallback honesto (achado #131): data inválida/implausível vira `null`
+  // em vez de "em 12131022 dias" -- o selo some, não mente.
+  const countdown = job ? countdownLabel(getDaysUntil(job.data)) : null;
 
   return (
     <GlassCard
       className="p-5 duration-300"
       onClick={job ? () => setExpanded((v) => !v) : undefined}
-      radius="md"
-      style={{
-        ...SOLID_SURFACE_STYLE,
-        boxShadow: expanded
-          ? "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 2px 1px rgb(0 0 0 / 0.12), 0 12px 32px rgb(0 0 0 / 0.22), var(--glow-sm)"
-          : "inset 0 1px 0 rgb(255 255 255 / 0.035), 0 10px 30px rgb(0 0 0 / 0.18)",
-      }}
+      radius="lg"
+      // O card inteiro é uma ação real (expande ao toque) — marca pro FAB
+      // recuar se colidir (achado #131, ver FAB.tsx).
+      fabAvoid
+      // Fundação Visual (#142): sem `style` de superfície, o card usa o
+      // material neutro compartilhado de `.glass-card` (globals.css) —
+      // nada de superfície/borda duplicada por arquivo aqui (ver nota de
+      // HeroCard.tsx sobre a correção desse padrão). Achado #131: o glow
+      // extra de quando expandido (`var(--glow-sm)`) não tem equivalente
+      // no protótipo — removido, sobra só a elevação normal do
+      // `.glass-card`, sem tratamento especial nenhum aqui.
     >
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
-        {/* Título de seção — 13px/semibold/-0.035em, cor de texto plena,
-            como o <h2> do laboratório (app/dev-preview/launch/page.tsx,
-            bloco "home"). NÃO é `.section-label`: ver nota de causa-raiz
-            em HeroCard.tsx (mesmo diagnóstico vale pros 3 arquivos deste
-            ticket). */}
-        <h2
-          className="font-semibold"
-          style={{
-            fontSize: "13px",
-            letterSpacing: "-0.035em",
-            color: "var(--text)",
-          }}
-        >
-          Próximo atendimento
-        </h2>
+        {/* `.card-title` (globals.css, achado #131) — mesma regra
+            compartilhada de HeroCard/ObjetivosCard, espelhando o único
+            `.card h2` (20px/400) do protótipo aprovado. Antes era um
+            13px/600 próprio deste arquivo (ver histórico do componente),
+            fora do padrão do protótipo medido por computedStyle. */}
+        <h2 className="card-title">Próximo atendimento</h2>
         {job && (
           <ChevronDown
             size={15}
@@ -128,9 +95,28 @@ export function NextJobCard({ jobs }: Props) {
         </p>
       ) : (
         <>
-          {/* Summary row — selo de dia/mês à esquerda, como no laboratório
-              (troca o "12 jul" solto por um bloco de data compacto). */}
-          <div className="flex items-start justify-between gap-3">
+          {/* Bloco interno (Fundação Visual #142/#131) — o card externo já é
+              uma superfície (.glass-card); a composição aprovada do
+              protótipo (`.nextJob`) tem um SEGUNDO bloco, mais discreto,
+              só pra linha de resumo — não a mistura direto no padding do
+              card. Fundo NEUTRO (color-mix com --text, não --surface):
+              medição de computedStyle (revisão #131) achou que --surface
+              é tingida de acento por tema (pink-neon:
+              rgba(255,45,120,0.05)) — mesma classe de problema do
+              --border-color no card externo, só que no preenchimento. O
+              protótipo usa um branco neutro (rgba(255,255,255,0.04));
+              color-mix com --text reproduz isso E se adapta sozinho ao
+              modo claro (--text vira escuro), sem precisar de um segundo
+              valor hardcoded por modo. */}
+          <div
+            className="flex items-start justify-between gap-3"
+            style={{
+              padding: "13px",
+              borderRadius: "var(--radius-sm)",
+              background: "color-mix(in srgb, var(--text) 4%, transparent)",
+              border: "1px solid var(--card-border)",
+            }}
+          >
             <div className="flex items-start gap-3 min-w-0">
               <div
                 className="grid shrink-0 place-items-center"
@@ -138,8 +124,11 @@ export function NextJobCard({ jobs }: Props) {
                   width: "48px",
                   height: "48px",
                   borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border-color)",
-                  background: "var(--surface)",
+                  border: "1px solid var(--card-border)",
+                  // Neutro, mesmo raciocínio do bloco interno acima — o
+                  // protótipo usa o mesmo branco neutro pro `.dateTile`
+                  // (rgba(255,255,255,0.04)) que pro `.nextJob` em volta.
+                  background: "color-mix(in srgb, var(--text) 4%, transparent)",
                 }}
               >
                 <span
@@ -186,27 +175,32 @@ export function NextJobCard({ jobs }: Props) {
               </div>
             </div>
 
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              {/* Countdown chip with glow */}
+            {/* Valor em --warning (protótipo, `.jobValue strong` — cor de
+                atendimento agendado/pendente, ver IOS_VISUAL_SYSTEM.md),
+                não mais var(--accent). O selo de contagem virou legenda
+                simples acima do valor (sem pílula/glow/borda própria) —
+                nenhum chip pode dominar a composição (achado da revisão
+                visual de #131); `null` (data inválida/implausível, achado
+                #131) some em vez de mostrar uma contagem inventada. */}
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              {countdown && (
+                <span
+                  className="font-semibold"
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.01em",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  {countdown}
+                </span>
+              )}
               <span
-                className="font-bold px-3 py-1 rounded-full"
+                className="font-bold"
                 style={{
-                  fontSize: "11px",
-                  letterSpacing: "0.01em",
-                  background: "rgb(var(--accent-rgb) / 0.12)",
-                  color: "var(--accent)",
-                  boxShadow: "0 0 10px rgb(var(--accent-rgb) / 0.2)",
-                  border: "1px solid rgb(var(--accent-rgb) / 0.2)",
-                }}
-              >
-                {countdownLabel(getDaysUntil(job.data))}
-              </span>
-              <span
-                className="font-extrabold"
-                style={{
-                  fontSize: "16px",
+                  fontSize: "15px",
                   letterSpacing: "-0.02em",
-                  color: "var(--accent)",
+                  color: "var(--warning)",
                 }}
               >
                 {formatBRL(job.valor)}

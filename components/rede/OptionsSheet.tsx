@@ -1,6 +1,6 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
+import { ChevronRight, type LucideIcon } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 
 export interface SheetOption {
@@ -16,16 +16,30 @@ interface Props {
   title: string;
   options: SheetOption[];
   onClose: () => void;
+  /**
+   * Seta à direita em cada linha (ticket #139, menu de ferramentas do
+   * perfil — linhas de navegação, não de ação imediata como
+   * bloquear/denunciar). Opt-in, default `false`: preserva o visual dos
+   * 3 consumidores existentes (Amigas, Perfil público, Feed), que são
+   * ações, não navegação.
+   */
+  chevron?: boolean;
 }
 
 /**
  * Sheet genérico de opções — usado pelo menu de publicação e compartilhar.
  * Botão fechar sempre em 44×44 (achado #56) — diferente do `BottomSheet`
  * genérico, aqui não há motivo pra manter o alvo pequeno em nenhum dos
- * três consumidores atuais (Amigas, Perfil público, Feed), então o
- * passthrough vem fixo em vez de opt-in por chamador.
+ * consumidores atuais, então o passthrough vem fixo em vez de opt-in por
+ * chamador.
  */
-export function OptionsSheet({ open, title, options, onClose }: Props) {
+export function OptionsSheet({
+  open,
+  title,
+  options,
+  onClose,
+  chevron = false,
+}: Props) {
   return (
     <BottomSheet open={open} onClose={onClose} title={title} largeCloseTarget>
       <div className="px-5 py-3 pb-6 space-y-1">
@@ -43,11 +57,14 @@ export function OptionsSheet({ open, title, options, onClose }: Props) {
               style={{ color: danger ? "var(--danger)" : "var(--text-muted)" }}
             />
             <span
-              className="font-medium text-sm"
+              className="font-medium text-sm flex-1"
               style={{ color: danger ? "var(--danger)" : "var(--text)" }}
             >
               {label}
             </span>
+            {chevron && !danger && (
+              <ChevronRight size={16} style={{ color: "var(--text-muted)" }} />
+            )}
           </button>
         ))}
       </div>

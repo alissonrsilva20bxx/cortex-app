@@ -79,11 +79,20 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // `no-scrollbar` (styles/globals.css) vai no <html>, não só no <main>.
+  // O indicador visível de rolagem confirmado manualmente é do
+  // VIEWPORT/documento -- verificado ao vivo (Playwright): o `<main
+  // overflow-y-auto>` de `app/page.tsx` nunca chega a overflow-ar sozinho
+  // (scrollHeight === clientHeight; ver memória "main nunca rola, quem
+  // rola é window"), quem rola de verdade é `document.documentElement`
+  // (scrollHeight > innerHeight). `<main>` também tem a classe (defesa
+  // extra pro dia em que ele passar a rolar sozinho de verdade), mas
+  // sozinha ela não escondia a barra real.
   return (
     <html
       lang="pt-BR"
       data-theme="pink-neon"
-      className={jakarta.variable}
+      className={`${jakarta.variable} no-scrollbar`}
       suppressHydrationWarning
     >
       <head>

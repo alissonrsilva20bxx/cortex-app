@@ -28,7 +28,8 @@ export function Switch({ checked, onChange, disabled, ariaLabel }: Props) {
         width: 42,
         height: 24,
         background: checked ? "var(--accent)" : "var(--surface-2)",
-        boxShadow: checked ? "var(--glow-sm)" : "none",
+        // Fundação Visual (#142): sem glow -- nenhum toggle do protótipo
+        // tem sombra difusa, só a mudança de cor do trilho.
         border: "1px solid var(--border-color)",
       }}
     >

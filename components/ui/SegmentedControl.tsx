@@ -53,9 +53,11 @@ export function SegmentedControl<T extends string>({
                 : "px-2.5 py-1 rounded-lg text-[11px]"
             }`}
             style={{
+              // Fundação Visual (#142): sem glow no estado ativo -- o
+              // `.segmented .segmentActive` do protótipo é só
+              // fundo+peso, nenhuma sombra (ver IOS_VISUAL_SYSTEM.md).
               background: active ? "var(--accent)" : "transparent",
               color: active ? "#fff" : "var(--text-muted)",
-              boxShadow: active && isMd ? "var(--glow-sm)" : "none",
             }}
           >
             {label}

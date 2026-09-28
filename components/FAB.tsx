@@ -1,7 +1,74 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Plus, Briefcase, TrendingUp, Upload } from "lucide-react";
+import { collidesWithAny, type Rect } from "@/lib/rectCollision";
 import type { TabId } from "@/lib/types";
+
+/**
+ * Evita que o FAB (fixo, z-50) obstrua uma ação real — achado da revisão
+ * visual #131: em 390px, o FAB cobria "Ver todos" de Objetivos já na
+ * posição de rolagem inicial (sem o usuário precisar rolar até lá). Como
+ * o FAB é `position: fixed` e o conteúdo da aba tem altura variável (nº
+ * de objetivos, atendimento visível ou não, meta definida ou não), não
+ * dá pra "consertar" isso com um valor de espaçamento fixo — qualquer
+ * card real pode, em algum estado de dados, acabar posicionado atrás do
+ * FAB. A correção é o FAB verificar sua PRÓPRIA colisão contra os
+ * elementos acionáveis marcados com `data-fab-avoid` (mesmo padrão em
+ * qualquer aba, não só Início) e recuar (opacidade baixa +
+ * `pointer-events: none`, sem desmontar) enquanto colide — a ação por
+ * baixo fica sempre alcançável, e o FAB volta assim que o usuário rola
+ * o suficiente pra desobstruir. Preserva a criação de atendimento: o FAB
+ * nunca é removido, só cede passagem temporariamente.
+ */
+function useFabCollisionAvoidance(active: boolean) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [obstructed, setObstructed] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setObstructed(false);
+      return;
+    }
+
+    function check() {
+      const el = ref.current;
+      if (!el) return;
+      const fabRect: Rect = el.getBoundingClientRect();
+      const avoidRects = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-fab-avoid]")
+      ).map((n) => n.getBoundingClientRect());
+      setObstructed(collidesWithAny(fabRect, avoidRects));
+    }
+
+    check();
+
+    let raf = 0;
+    function onScrollOrResize() {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(check);
+    }
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize);
+
+    // Conteúdo pode mudar de altura sem scroll/resize nenhum (marcar
+    // objetivo como concluído reordena a lista, abrir/fechar o
+    // NextJobCard expande, trocar homeCards em Ajustes some com um
+    // card) -- observa o container rolável pra pegar essas mudanças.
+    const scrollRoot = document.querySelector("main") ?? document.body;
+    const resizeObserver = new ResizeObserver(onScrollOrResize);
+    resizeObserver.observe(scrollRoot);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("resize", onScrollOrResize);
+      resizeObserver.disconnect();
+    };
+  }, [active]);
+
+  return { ref, obstructed };
+}
 
 interface SheetAction {
   label: string;
@@ -77,6 +144,16 @@ export function FAB({
       ? (financeiroSubTab && FINANCEIRO_SHEET_ACTIONS[financeiroSubTab]) ||
         FINANCEIRO_SHEET_ACTIONS.saidas
       : SHEET_ACTIONS[activeTab];
+
+  // Hook chamado incondicionalmente (Regras dos Hooks) — o `return null`
+  // por falta de `action` vem DEPOIS. Só verifica colisão com o sheet
+  // fechado -- com ele aberto o botão vira o "X" de fechar sobre o
+  // próprio backdrop, sem risco de cobrir outra ação (a tela toda já
+  // está bloqueada pelo backdrop).
+  const { ref: fabRef, obstructed } = useFabCollisionAvoidance(
+    Boolean(action) && !open
+  );
+
   if (!action) return null;
 
   const { label, description, Icon } = action;
@@ -88,30 +165,29 @@ export function FAB({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop -- Fundação Visual (#142): preto semi-opaco sem blur, como
+          `.sheetBackdrop` do protótipo (ver components/ui/BottomSheet.tsx). */}
       {open && (
         <div
           className="fixed inset-0 z-40"
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            background: "rgb(var(--bg-rgb) / 0.45)",
-          }}
+          style={{ background: "rgba(0, 0, 0, 0.62)" }}
           onClick={onToggle}
         />
       )}
 
-      {/* Bottom sheet */}
+      {/* Bottom sheet -- material igual ao de components/ui/BottomSheet.tsx:
+          gradiente opaco sobre --bg do tema, sem blur; raio do topo usa
+          --radius-sheet (26px), não o rounded-t-3xl (24px fixo do Tailwind). */}
       <div
-        className="fixed left-0 right-0 z-50 rounded-t-3xl px-5 pt-3 pb-8 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed left-0 right-0 z-50 px-5 pt-3 pb-8 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
           transform: open ? "translateY(0)" : "translateY(calc(100% + 100px))",
-          background: "var(--surface-2)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid var(--border-color)",
+          background: `linear-gradient(180deg, rgb(var(--bg-rgb) / 0.97), rgb(var(--bg-rgb) / 0.995) 70%)`,
+          border: "1px solid var(--card-border)",
           borderBottom: "none",
+          borderTopLeftRadius: "var(--radius-sheet)",
+          borderTopRightRadius: "var(--radius-sheet)",
         }}
       >
         {/* Drag handle */}
@@ -158,9 +234,16 @@ export function FAB({
         </button>
       </div>
 
-      {/* FAB button */}
+      {/* FAB button — recua (opacidade baixa + pointer-events: none) em vez
+          de desmontar quando `obstructed` (achado #131): a ação de criar
+          continua existindo, só cede passagem enquanto colide com algo
+          marcado `data-fab-avoid`; volta ao normal assim que o usuário rola
+          o suficiente pra desobstruir. */}
       <button
+        ref={fabRef}
         onClick={onToggle}
+        aria-hidden={obstructed || undefined}
+        tabIndex={obstructed ? -1 : undefined}
         className="fixed z-50 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90"
         style={{
           width: "48px",
@@ -168,8 +251,12 @@ export function FAB({
           bottom: "calc(82px + 14px + env(safe-area-inset-bottom, 0px))",
           right: "20px",
           background: "var(--accent)",
-          boxShadow: "var(--glow)",
+          // Fundação Visual (#142): elevação direcional como `.addButton` do
+          // protótipo, não o halo difuso de --glow.
+          boxShadow: "0 10px 26px rgb(var(--accent-rgb) / 0.25)",
           transform: open ? "rotate(45deg)" : "rotate(0deg)",
+          opacity: obstructed ? 0.28 : 1,
+          pointerEvents: obstructed ? "none" : "auto",
         }}
       >
         <Plus size={22} color="white" strokeWidth={2.5} />

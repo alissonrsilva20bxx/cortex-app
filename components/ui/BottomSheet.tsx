@@ -103,13 +103,13 @@ export function BottomSheet({
   return (
     <>
       {open && (
+        // Fundação Visual (#142): `.sheetBackdrop` do protótipo escurece com
+        // preto puro semi-opaco, sem borrar o conteúdo atrás -- o blur(6px)
+        // + tinta do tema aqui era uma composição que o protótipo não tem
+        // (ver docs/visual/IOS_VISUAL_SYSTEM.md, seção "Sheets").
         <div
           className="fixed inset-0 z-[60]"
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            background: "rgb(var(--bg-rgb) / 0.55)",
-          }}
+          style={{ background: "rgba(0, 0, 0, 0.62)" }}
           onClick={onClose}
         />
       )}
@@ -128,13 +128,18 @@ export function BottomSheet({
           transitionProperty: "transform, visibility",
           transitionDuration: "300ms, 0s",
           transitionDelay: open ? "0s, 0s" : "0s, 300ms",
-          background: "var(--surface-2)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid var(--border-color)",
+          // Fundação Visual (#142): `.sheet` do protótipo é opaco (gradiente
+          // sobre o próprio --bg do tema), sem backdrop-filter -- var(--surface-2)
+          // sozinho é quase transparente (ex. rgba(255,255,255,0.07) no
+          // grafite) e só "funcionava" visualmente por causa do blur(24px)
+          // que simulava vidro fosco. Gradiente análogo ao do protótipo
+          // (linear-gradient(180deg, #220b14, #12040a 70%)), portado pro
+          // --bg de cada tema.
+          background: `linear-gradient(180deg, rgb(var(--bg-rgb) / 0.97), rgb(var(--bg-rgb) / 0.995) 70%)`,
+          border: "1px solid var(--card-border)",
           borderBottom: "none",
-          borderTopLeftRadius: "var(--radius-xl)",
-          borderTopRightRadius: "var(--radius-xl)",
+          borderTopLeftRadius: "var(--radius-sheet)",
+          borderTopRightRadius: "var(--radius-sheet)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >

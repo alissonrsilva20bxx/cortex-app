@@ -1,11 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Delete } from "lucide-react";
+import { Delete, LockKeyhole, ShieldCheck } from "lucide-react";
 import { verifyPin } from "@/lib/pin";
 import styles from "./PinScreen.module.css";
 
-const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
+/**
+ * Teclado T9 circular — igual ao aprovado em /dev-preview/ios (ticket
+ * #138): dígito + letras (ABC/DEF/...) sob cada botão redondo, mesmo
+ * mapa de letras do protótipo (`IosPrototypeApp.tsx` `pinKeys`). `key`
+ * é o valor real usado por `press()` (dígito, `"del"` pra apagar, ou
+ * `""` pro espaço em branco do grid 3×4); `letters` é só rótulo visual.
+ */
+const KEYS: { key: string; letters: string }[] = [
+  { key: "1", letters: "" },
+  { key: "2", letters: "ABC" },
+  { key: "3", letters: "DEF" },
+  { key: "4", letters: "GHI" },
+  { key: "5", letters: "JKL" },
+  { key: "6", letters: "MNO" },
+  { key: "7", letters: "PQRS" },
+  { key: "8", letters: "TUV" },
+  { key: "9", letters: "WXYZ" },
+  { key: "", letters: "" },
+  { key: "0", letters: "" },
+  { key: "del", letters: "" },
+];
 
 interface Props {
   pinHash: string;
@@ -87,16 +107,21 @@ export function PinScreen({
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
-      <div className={styles.atmosphere} aria-hidden="true" />
-      <header className={styles.header}>
-        <span className={styles.wordmark}>JobApp</span>
-        {vault ? <span className={styles.contextLabel}>Cofre</span> : null}
-      </header>
+      <div className={styles.atmosphere} aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
 
-      <section className={styles.content}>
-        <div className={styles.copy}>
+      <div className={styles.content}>
+        <span className={styles.wordmark}>JobApp</span>
+
+        <div className={styles.intro}>
+          <div className={styles.lockSeal}>
+            <LockKeyhole size={27} />
+          </div>
           <h1 id="pin-screen-title">
-            {vault ? "Abra seu cofre." : "Digite seu PIN."}
+            {vault ? "Abra seu cofre" : "Digite seu PIN"}
           </h1>
           <p aria-live="polite">
             {error
@@ -112,20 +137,21 @@ export function PinScreen({
         </div>
 
         <div
-          className={styles.pinRail}
+          className={styles.dots}
+          data-unlocked={unlocked ? "true" : "false"}
           style={{ animation: shake ? "pinShake 0.4s ease" : "none" }}
           aria-label={`${digits.length} de 4 dígitos preenchidos`}
         >
           {[0, 1, 2, 3].map((index) => (
             <i
               key={index}
-              className={`${digits.length > index ? styles.filled : ""} ${error ? styles.invalid : ""}`}
+              className={`${digits.length > index ? styles.dotFilled : ""} ${error ? styles.dotInvalid : ""}`}
             />
           ))}
         </div>
 
         <div className={styles.keypad} aria-label="Teclado do PIN">
-          {KEYS.map((key, index) => {
+          {KEYS.map(({ key, letters }, index) => {
             if (!key) return <span key={index} aria-hidden="true" />;
             const isDelete = key === "del";
             return (
@@ -136,20 +162,26 @@ export function PinScreen({
                 disabled={verifying}
                 aria-label={isDelete ? "Apagar último dígito" : `Dígito ${key}`}
               >
-                {isDelete ? <Delete size={19} /> : key}
+                {isDelete ? (
+                  <Delete size={22} />
+                ) : (
+                  <>
+                    <strong>{key}</strong>
+                    {letters && <small>{letters}</small>}
+                  </>
+                )}
               </button>
             );
           })}
         </div>
 
-        <footer className={styles.footer}>
-          <p>
-            {vault
-              ? "O Cofre será bloqueado novamente quando você sair desta área."
-              : "Seu espaço permanece protegido neste aparelho."}
-          </p>
-        </footer>
-      </section>
+        <p className={styles.privacy}>
+          <ShieldCheck size={14} aria-hidden="true" />
+          {vault
+            ? "O Cofre será bloqueado novamente quando você sair desta área."
+            : "Seu espaço permanece protegido neste aparelho."}
+        </p>
+      </div>
 
       <style>{`@keyframes pinShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 50% { transform: translateX(7px); } 75% { transform: translateX(-4px); } }`}</style>
     </main>
