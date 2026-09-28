@@ -642,6 +642,19 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   // lógica de fetch numa função solta fora do efeito.
   const [conversationsError, setConversationsError] = useState(false);
   const [conversationsReloadKey, setConversationsReloadKey] = useState(0);
+  // "Iniciar conversa" no perfil público: guarda por usuário (não um único
+  // boolean global) contra toque duplo/chamadas concorrentes de
+  // `openChatWithUser` -- o servidor
+  // já garante 1 única conversa por par via advisory lock + UNIQUE
+  // (rede_criar_conversa_1a1, RD-19), mas sem isto o cliente ainda podia
+  // disparar duas chamadas pro MESMO par e inserir a mesma conversa duas
+  // vezes no estado local. Por usuário (Set), não um boolean só, porque um
+  // global bloquearia silenciosamente abrir conversa com a pessoa B
+  // enquanto a abertura com a pessoa A (de uma tela já deixada pra trás)
+  // ainda está em voo -- isso seria falha silenciosa.
+  const [openingChatUserIds, setOpeningChatUserIds] = useState<Set<string>>(
+    () => new Set()
+  );
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [threadLoading, setThreadLoading] = useState(false);
   const [threadError, setThreadError] = useState(false);
@@ -1335,6 +1348,10 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       openChatThread(existing.id);
       return;
     }
+    if (openingChatUserIds.has(userId)) {
+      return;
+    }
+    setOpeningChatUserIds((prev) => new Set(prev).add(userId));
     try {
       const conversaId = await abrirConversa1a1(supabase, {
         outroUserId: userId,
@@ -1354,7 +1371,13 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       push({ type: "chatThread", conversationId: conversaId });
     } catch (e) {
       console.error("[RedeTab abrir conversa]", e);
-      toast.error("Não foi possível abrir a conversa.");
+      toast.error("Não foi possível abrir a conversa. Tente novamente.");
+    } finally {
+      setOpeningChatUserIds((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
     }
   }
 
@@ -1956,6 +1979,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
               error={!profile.isMe && otherProfileError}
               onBack={pop}
               onOpenChat={() => openChatWithUser(screen.userId)}
+              chatOpening={openingChatUserIds.has(screen.userId)}
               onSendRequest={() => sendRequest(screen.userId)}
               onBlock={() => {
                 blockUser(screen.userId);

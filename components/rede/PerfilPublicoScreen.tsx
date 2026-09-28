@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   Ban,
   X,
+  Loader2,
 } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { ProfileIdentityHeader } from "./ProfileIdentityHeader";
@@ -38,6 +39,10 @@ interface Props {
   error: boolean;
   onBack: () => void;
   onOpenChat?: () => void;
+  /** Verdadeiro enquanto `onOpenChat` está resolvendo (abrindo ou criando a
+   * conversa 1:1) -- desabilita o botão pra impedir toque duplo e mostra o
+   * spinner, mesmo padrão do botão de enviar em `ChatThreadScreen`. */
+  chatOpening?: boolean;
   onSendRequest?: () => void;
   onBlock?: () => void;
   /** Renova a URL assinada de uma foto (miniatura ou principal) --
@@ -68,6 +73,7 @@ export function PerfilPublicoScreen({
   error,
   onBack,
   onOpenChat,
+  chatOpening = false,
   onSendRequest,
   onBlock,
   onRenovarFoto,
@@ -124,16 +130,29 @@ export function PerfilPublicoScreen({
           <div className="flex flex-col items-center text-center mb-6">
             {!isMe && (
               <div className="flex items-center gap-2">
-                {isFriend ? (
+                {/* "Conversar" deixa de depender de amizade --
+                    a RPC (rede_criar_conversa_1a1) já permite abrir
+                    conversa com qualquer membro da Rede não bloqueado,
+                    amiga ou não; só a UI restringia isso a mais do que o
+                    backend exige. Continua ausente quando `onOpenChat` não
+                    é passado (defensivo, mesmo padrão de `onBlock` abaixo). */}
+                {onOpenChat && (
                   <button
                     onClick={onOpenChat}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity active:opacity-70"
+                    disabled={chatOpening}
+                    aria-label="Iniciar conversa"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-opacity active:opacity-70 disabled:opacity-60"
                     style={{ background: "var(--accent)", color: "#fff" }}
                   >
-                    <MessageCircle size={13} />
+                    {chatOpening ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <MessageCircle size={13} />
+                    )}
                     Conversar
                   </button>
-                ) : requestSent ? (
+                )}
+                {isFriend ? null : requestSent ? (
                   <span
                     className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold"
                     style={{
