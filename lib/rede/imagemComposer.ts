@@ -1,6 +1,6 @@
 /**
  * Processamento de foto no cliente, ANTES de publicar (chamado do
- * PostComposer ao escolher o arquivo). Produz duas imagens JPEG:
+ * PostComposer ao escolher o arquivo). Post: duas imagens JPEG:
  *
  *   - principal: maior lado <= 1280 px, <= 150 KB
  *   - miniatura: maior lado <=  400 px, <=  30 KB
@@ -66,12 +66,19 @@ function dimensionar(
   };
 }
 
+/**
+ * Formatos de saída. Post é sempre JPEG: o bucket `rede-midia` só aceita
+ * `image/jpeg` (migration 0033) e a rota de upload valida isso. A foto de
+ * perfil (bucket `avatares`, sem trava de formato) tenta WebP primeiro.
+ */
+type FormatoSaida = "image/jpeg" | "image/webp";
+
 function criarCanvas(
   largura: number,
   altura: number
 ): {
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-  toBlob: (q: number) => Promise<Blob>;
+  toBlob: (q: number, tipo?: FormatoSaida) => Promise<Blob>;
 } {
   if (typeof OffscreenCanvas !== "undefined") {
     const canvas = new OffscreenCanvas(largura, altura);
@@ -79,7 +86,8 @@ function criarCanvas(
     if (!ctx) throw new FotoInvalidaError("canvas 2d indisponível");
     return {
       ctx,
-      toBlob: (q) => canvas.convertToBlob({ type: "image/jpeg", quality: q }),
+      toBlob: (q, tipo = "image/jpeg") =>
+        canvas.convertToBlob({ type: tipo, quality: q }),
     };
   }
   const canvas = document.createElement("canvas");
@@ -89,12 +97,12 @@ function criarCanvas(
   if (!ctx) throw new FotoInvalidaError("canvas 2d indisponível");
   return {
     ctx,
-    toBlob: (q) =>
+    toBlob: (q, tipo = "image/jpeg") =>
       new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(
           (b) =>
             b ? resolve(b) : reject(new FotoInvalidaError("toBlob vazio")),
-          "image/jpeg",
+          tipo,
           q
         )
       ),
@@ -179,9 +187,15 @@ export const AVATAR_LADO = 512;
 export const AVATAR_MAX_BYTES = 80 * 1024;
 
 /**
- * Foto de perfil: recorte quadrado central, <= 512 px, JPEG <= 80 KB, sem
+ * Foto de perfil: recorte quadrado central, <= 512 px, <= 80 KB, sem
  * metadados. Antes ia o arquivo original (até 5 MB da câmera) -- upload e
  * download lentos pra um círculo que nunca passa de 88 px na tela.
+ *
+ * Sai em WebP (mesma qualidade visual em bem menos bytes) quando o
+ * navegador sabe codificar; senão em JPEG. Navegador sem encoder WebP
+ * (Safari/iPhone, por exemplo) devolve PNG em silêncio em vez de erro --
+ * por isso a checagem é pelo `blob.type`, não por try/catch. O tipo final
+ * fica em `blob.type` pra quem sobe escolher extensão e contentType.
  */
 export async function processarFotoParaAvatar(file: File): Promise<Blob> {
   if (!TIPOS_ACEITOS.includes(file.type)) {
@@ -204,12 +218,18 @@ export async function processarFotoParaAvatar(file: File): Promise<Blob> {
     const corte = Math.min(bitmap.width, bitmap.height);
     const sx = Math.round((bitmap.width - corte) / 2);
     const sy = Math.round((bitmap.height - corte) / 2);
+    let formato: FormatoSaida = "image/webp";
     for (const lado of [AVATAR_LADO, 400, 320]) {
       const final = Math.min(lado, corte);
       const { ctx, toBlob } = criarCanvas(final, final);
       ctx.drawImage(bitmap, sx, sy, corte, corte, 0, 0, final, final);
       for (const q of [0.82, 0.72, 0.62, 0.52]) {
-        const blob = await toBlob(q);
+        let blob = await toBlob(q, formato);
+        if (blob.type !== formato) {
+          // Sem encoder WebP: daqui pra frente, só JPEG.
+          formato = "image/jpeg";
+          blob = await toBlob(q, formato);
+        }
         if (blob.size <= AVATAR_MAX_BYTES) return blob;
       }
     }

@@ -82,3 +82,25 @@ describe("Foto de perfil rápida", () => {
     expect(rede).toMatch(/URL\.revokeObjectURL\(/);
   });
 });
+
+describe("Foto de perfil em WebP, com JPEG de reserva", () => {
+  it("tenta WebP e cai pra JPEG quando o navegador não codifica WebP", () => {
+    expect(composer).toMatch(/let formato: FormatoSaida = "image\/webp";/);
+    // Safari devolve PNG em vez de erro: a checagem é pelo tipo do blob.
+    expect(composer).toMatch(
+      /if \(blob\.type !== formato\) \{[^}]*formato = "image\/jpeg";[^}]*blob = await toBlob\(q, formato\);/
+    );
+  });
+
+  it("post continua só JPEG (bucket rede-midia aceita só image/jpeg)", () => {
+    expect(composer).toMatch(/toBlob: \(q, tipo = "image\/jpeg"\) =>/);
+    expect(composer).not.toMatch(/renderizar\([^)]*webp/);
+  });
+
+  it("extensão do arquivo segue o formato que saiu", () => {
+    expect(rede).toMatch(
+      /envio\.type === "image\/webp"\s*\?\s*"webp"\s*:\s*"jpg"/
+    );
+    expect(rede).toMatch(/contentType: envio\.type \|\| file\.type,/);
+  });
+});

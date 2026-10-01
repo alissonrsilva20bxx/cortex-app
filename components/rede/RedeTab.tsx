@@ -1756,7 +1756,13 @@ export function RedeTab({
       previa = URL.createObjectURL(envio);
       setAvatarPrevia(previa);
 
-      const ext = envio === file ? file.name.split(".").pop() || "jpg" : "jpg";
+      // A compressão sai em WebP ou JPEG (ver processarFotoParaAvatar).
+      const ext =
+        envio === file
+          ? file.name.split(".").pop() || "jpg"
+          : envio.type === "image/webp"
+            ? "webp"
+            : "jpg";
       const path = `${usuario.id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("avatares")
