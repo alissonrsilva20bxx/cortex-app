@@ -252,6 +252,7 @@ export function FAB({
         ref={fabRef}
         onClick={onToggle}
         aria-label={open ? "Fechar" : "Criar novo"}
+        data-tour="fab"
         aria-expanded={open}
         aria-hidden={obstructed || undefined}
         tabIndex={obstructed ? -1 : undefined}

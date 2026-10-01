@@ -31,6 +31,7 @@ import {
   SEEN_THIS_TAB_KEY,
 } from "@/components/entry/OpeningMotion";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { AppTour } from "@/components/onboarding/AppTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
@@ -41,6 +42,7 @@ import * as cofreCache from "@/lib/cofre/cofreCache";
 import * as pinHashCache from "@/lib/pinHashCache";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { isFreshAccount } from "@/lib/onboarding";
+import { tourDoneKey } from "@/lib/appTour";
 import type {
   TabId,
   Usuario,
@@ -118,6 +120,9 @@ export default function Page() {
   // na janela entre revelar `usuario` e o fetch de jobs/metas terminar.
   const [dataLoaded, setDataLoaded] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(false);
+  // Tour guiado do app (lib/appTour.ts): abre sozinho logo depois do
+  // onboarding de conta nova; depois, só por Ajustes → "Ver tour do app".
+  const [tourOpen, setTourOpen] = useState(false);
   // Trava a decisão "é 1º uso?" na 1ª leitura confirmada dos dados, em vez
   // de recalcular a cada render: sem isso, o próprio ato de completar uma
   // etapa do onboarding (ex.: salvar a 1ª meta) muda `metas` o bastante
@@ -422,10 +427,20 @@ export default function Page() {
       !locked &&
       !(isNewUserSession === true && !onboardingDone) &&
       !fabOpen &&
+      !tourOpen &&
       !chatComposerFocused &&
       activeTab !== "ajustes",
     onChange: handleTabChange,
   });
+
+  function closeTour() {
+    if (usuario) {
+      try {
+        localStorage.setItem(tourDoneKey(usuario.id), "1");
+      } catch (_) {}
+    }
+    setTourOpen(false);
+  }
 
   if (!entryDone) {
     return <OpeningMotion onDone={() => setEntryDone(true)} />;
@@ -468,6 +483,13 @@ export default function Page() {
                 localStorage.setItem(onboardingDoneKey(usuario.id), "1");
               } catch (_) {}
               setOnboardingDone(true);
+              let tourDone = false;
+              try {
+                tourDone = Boolean(
+                  localStorage.getItem(tourDoneKey(usuario.id))
+                );
+              } catch (_) {}
+              if (!tourDone) setTourOpen(true);
             }}
           />
         )}
@@ -490,14 +512,16 @@ export default function Page() {
                   "não-oculto" -- por construção, não por reparo pontual. */}
               <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
                 {/* Card-herói: a projeção viva das metas (o coração) */}
-                <HeroCard
-                  jobs={jobs}
-                  metas={metas}
-                  onGoToFinanceiro={() => {
-                    handleTabChange("financeiro");
-                    setFinanceiroFocusTab("visao");
-                  }}
-                />
+                <div data-tour="home-hero">
+                  <HeroCard
+                    jobs={jobs}
+                    metas={metas}
+                    onGoToFinanceiro={() => {
+                      handleTabChange("financeiro");
+                      setFinanceiroFocusTab("visao");
+                    }}
+                  />
+                </div>
 
                 {/* Próximo atendimento — o motor diário */}
                 {homeCards.nextJob && <NextJobCard jobs={jobs} />}
@@ -580,6 +604,10 @@ export default function Page() {
                 onCardStylesChange={setCardStyles}
                 onChartPrefsChange={setChartPrefs}
                 onClose={() => handleTabChange("home")}
+                onOpenTour={() => {
+                  handleTabChange("home");
+                  setTourOpen(true);
+                }}
               />
             </TabPanel>
           </>
@@ -597,6 +625,15 @@ export default function Page() {
           />
           <BottomNav activeTab={activeTab} onChange={handleTabChange} />
         </>
+      )}
+
+      {tourOpen && !isNewUser && usuario && (
+        <AppTour
+          userId={usuario.id}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onClose={closeTour}
+        />
       )}
 
       {!isNewUser && usuario && dataLoaded && <RecapSheet jobs={jobs} />}

@@ -20,6 +20,7 @@ import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { AppTour } from "@/components/onboarding/AppTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
@@ -162,6 +163,8 @@ export default function DevPreviewApp() {
   // (welcome/goal/job/aha) a aparecerem; `onOpenJobForm` reaproveita o
   // `JobForm` já montado abaixo.
   const [onboardingPreview, setOnboardingPreview] = useState(false);
+  // Tour guiado (espelha app/page.tsx); `__previewTour()` abre direto.
+  const [tourOpen, setTourOpen] = useState(false);
   useEffect(() => {
     const w = window as unknown as Record<string, () => void>;
     w.__previewLock = () => {
@@ -170,9 +173,14 @@ export default function DevPreviewApp() {
     };
     w.__previewUnlock = () => setLocked(false);
     w.__previewOnboarding = () => setOnboardingPreview(true);
+    w.__previewTour = () => {
+      setActiveTab("home");
+      setTourOpen(true);
+    };
     return () => {
       delete w.__previewLock;
       delete w.__previewUnlock;
+      delete w.__previewTour;
       delete w.__previewOnboarding;
     };
   }, []);
@@ -286,6 +294,7 @@ export default function DevPreviewApp() {
       !locked &&
       !onboardingPreview &&
       !fabOpen &&
+      !tourOpen &&
       !chatComposerFocused &&
       activeTab !== "ajustes",
     onChange: handleTabChange,
@@ -309,7 +318,10 @@ export default function DevPreviewApp() {
             onOpenJobForm={() => setJobFormOpen(true)}
             onMetaSaved={() => {}}
             onPinSaved={(h) => setPinHash(h)}
-            onComplete={() => setOnboardingPreview(false)}
+            onComplete={() => {
+              setOnboardingPreview(false);
+              setTourOpen(true);
+            }}
           />
         </main>
         <JobForm
@@ -340,14 +352,16 @@ export default function DevPreviewApp() {
           />
           {/* Grid+gap explícito, espelha app/page.tsx (achado #131). */}
           <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
-            <HeroCard
-              jobs={jobs}
-              metas={metas}
-              onGoToFinanceiro={() => {
-                handleTabChange("financeiro");
-                setFinanceiroFocusTab("visao");
-              }}
-            />
+            <div data-tour="home-hero">
+              <HeroCard
+                jobs={jobs}
+                metas={metas}
+                onGoToFinanceiro={() => {
+                  handleTabChange("financeiro");
+                  setFinanceiroFocusTab("visao");
+                }}
+              />
+            </div>
             {homeCards.nextJob && <NextJobCard jobs={jobs} />}
             {(homeCards.objetivos ?? true) && (
               <ObjetivosCard
@@ -437,6 +451,10 @@ export default function DevPreviewApp() {
             onCardStylesChange={() => {}}
             onChartPrefsChange={setChartPrefs}
             onClose={() => handleTabChange("home")}
+            onOpenTour={() => {
+              handleTabChange("home");
+              setTourOpen(true);
+            }}
           />
         </TabPanel>
       </main>
@@ -452,6 +470,15 @@ export default function DevPreviewApp() {
           />
           <BottomNav activeTab={activeTab} onChange={handleTabChange} />
         </>
+      )}
+
+      {tourOpen && (
+        <AppTour
+          userId={usuario.id}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onClose={() => setTourOpen(false)}
+        />
       )}
 
       {dataLoaded && <RecapSheet jobs={jobs} />}

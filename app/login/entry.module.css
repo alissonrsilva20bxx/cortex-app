@@ -257,6 +257,11 @@
   outline: 2px solid var(--text);
   outline-offset: 3px;
 }
+/* Campo de texto: o foco já aparece na borda do container
+   (label > div:focus-within); o anel extra era o "contorno" em volta. */
+.form input:focus-visible {
+  outline: none;
+}
 
 @keyframes loginArrival {
   from {

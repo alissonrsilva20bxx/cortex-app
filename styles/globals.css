@@ -562,10 +562,21 @@ select {
 
 /* ── Acessibilidade — foco de teclado ──────────────────────────────── */
 button:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Campo de texto casa com :focus-visible em QUALQUER foco, inclusive
+   toque -- o anel aparecia em volta de todo campo ao digitar, desde o
+   login. No iOS o campo focado só mostra o cursor; quem já desenha
+   estado de foco é o próprio container (ex.: :focus-within do login). */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline: none;
 }
 
 /* ── Legibilidade mínima ───────────────────────────────────────────

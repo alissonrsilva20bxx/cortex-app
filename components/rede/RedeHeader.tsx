@@ -92,12 +92,15 @@ export function RedeHeader({
         <IconButton onClick={onOpenChat} label="Conversas" badge={unreadChats}>
           <MessageCircle size={17} style={{ color: "var(--text-muted)" }} />
         </IconButton>
-        <Avatar
-          nome={usuarioNome}
-          fotoUrl={usuarioFotoUrl}
-          size="md"
-          onClick={onOpenMeuEspaco}
-        />
+        {/* Alvo do tour do app (lib/appTour.ts, passo "rede-perfil"). */}
+        <span data-tour="rede-perfil" className="inline-flex rounded-full">
+          <Avatar
+            nome={usuarioNome}
+            fotoUrl={usuarioFotoUrl}
+            size="md"
+            onClick={onOpenMeuEspaco}
+          />
+        </span>
       </div>
     </div>
   );

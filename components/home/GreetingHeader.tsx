@@ -83,6 +83,7 @@ export function GreetingHeader({ usuario, onOpenAjustes }: Props) {
         type="button"
         onClick={onOpenAjustes}
         aria-label="Abrir Ajustes"
+        data-tour="home-ajustes"
         className="relative flex items-center justify-center rounded-full shrink-0 overflow-hidden transition-opacity active:opacity-70"
         style={{
           width: "48px",

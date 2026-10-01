@@ -22,6 +22,7 @@ import {
   Palette,
   Home,
   Database,
+  Compass,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
@@ -78,6 +79,8 @@ interface Props {
    * uma sub-página, o botão de voltar existente (closeSettingsPage) já
    * volta pra raiz primeiro. */
   onClose: () => void;
+  /** Reabre o tour guiado do app (lib/appTour.ts). */
+  onOpenTour?: () => void;
 }
 
 /** Um grupo de ajustes (rótulo + card único) -- a aparência do laboratório
@@ -188,6 +191,7 @@ export function AjustesTab({
   onCardStylesChange,
   onChartPrefsChange,
   onClose,
+  onOpenTour,
 }: Props) {
   const { theme, setTheme, mode, setMode } = useTheme();
   const [pinEnabled, setPinEnabled] = useState(false);
@@ -495,16 +499,27 @@ export function AjustesTab({
             </GlassCard>
           </SettingsGroup>
 
-          {!standalone ? (
+          {onOpenTour || !standalone ? (
             <SettingsGroup title="Aplicativo">
               <GlassCard radius="md" className="overflow-hidden p-0">
-                <SettingsMenuRow
-                  icon={<Smartphone size={17} />}
-                  title="Instalar JobApp"
-                  detail="Acesso rápido e funcionamento offline"
-                  onClick={() => openSettingsPage("install")}
-                  last
-                />
+                {onOpenTour ? (
+                  <SettingsMenuRow
+                    icon={<Compass size={17} />}
+                    title="Ver tour do app"
+                    detail="Onde fica cada coisa, passo a passo"
+                    onClick={onOpenTour}
+                    last={standalone}
+                  />
+                ) : null}
+                {!standalone ? (
+                  <SettingsMenuRow
+                    icon={<Smartphone size={17} />}
+                    title="Instalar JobApp"
+                    detail="Acesso rápido e funcionamento offline"
+                    onClick={() => openSettingsPage("install")}
+                    last
+                  />
+                ) : null}
               </GlassCard>
             </SettingsGroup>
           ) : null}
