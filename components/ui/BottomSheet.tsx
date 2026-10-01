@@ -1,8 +1,31 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import { X } from "lucide-react";
 import { getFocusCycleTarget } from "./focusTrap";
+import { rubberBandSheet, shouldDismissSheet } from "@/lib/sheetDrag";
+
+const EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
+
+// O véu aparece/some em fade junto com o painel (antes surgia e sumia
+// seco, num frame) — `visibility` só desliga depois do fade de saída.
+function backdropTransition(open: boolean) {
+  return open
+    ? `opacity 300ms ${EASE}, visibility 0s linear 0s`
+    : `opacity 300ms ${EASE}, visibility 0s linear 300ms`;
+}
+
+interface DragState {
+  id: number;
+  startY: number;
+  dy: number;
+  samples: Array<{ t: number; y: number }>;
+}
 
 /**
  * Casca de bottom-sheet única (overlay com blur + painel deslizante +
@@ -48,6 +71,10 @@ export function BottomSheet({
   largeCloseTarget = false,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const openRef = useRef(open);
+  openRef.current = open;
   // `onClose` chega como closure nova a cada render em vários consumidores
   // (ex.: PostComposer embrulha onClose num `() => { reset(); onClose(); }`
   // inline) -- se o efeito abaixo dependesse de `onClose` direto, cada
@@ -100,19 +127,97 @@ export function BottomSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Arrastar pra baixo pela pega/cabeçalho fecha o sheet, como no iOS: o
+  // painel segue o dedo 1:1 (com resistência pra cima), o véu clareia na
+  // mesma proporção, e ao soltar decide por distância (25% da altura) ou
+  // velocidade (flick). Mexe direto no estilo do DOM durante o gesto —
+  // passar por estado do React a cada pointermove re-renderizaria o
+  // conteúdo inteiro do sheet a 120Hz. Só o cabeçalho arrasta: o corpo
+  // pode ter lista rolável/campos e não deve brigar com isso.
+  function handleDragStart(e: ReactPointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if ((e.target as HTMLElement).closest("button")) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    dragRef.current = {
+      id: e.pointerId,
+      startY: e.clientY,
+      dy: 0,
+      samples: [{ t: e.timeStamp, y: e.clientY }],
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    panel.style.transitionProperty = "none";
+    if (backdropRef.current) backdropRef.current.style.transition = "none";
+  }
+
+  function handleDragMove(e: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    const panel = panelRef.current;
+    if (!drag || drag.id !== e.pointerId || !panel) return;
+    drag.dy = rubberBandSheet(e.clientY - drag.startY);
+    drag.samples.push({ t: e.timeStamp, y: e.clientY });
+    if (drag.samples.length > 6) drag.samples.shift();
+    panel.style.transform = `translateY(${drag.dy}px)`;
+    if (backdropRef.current) {
+      const progress = Math.max(0, drag.dy) / (panel.offsetHeight || 1);
+      backdropRef.current.style.opacity = String(1 - progress);
+    }
+  }
+
+  function handleDragEnd(e: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    const panel = panelRef.current;
+    if (!drag || drag.id !== e.pointerId || !panel) return;
+    dragRef.current = null;
+    const first = drag.samples[0];
+    const last = drag.samples[drag.samples.length - 1];
+    const velocity = (last.y - first.y) / Math.max(1, last.t - first.t);
+    const dismiss =
+      e.type === "pointerup" &&
+      shouldDismissSheet(drag.dy, panel.offsetHeight, velocity);
+
+    panel.style.transitionProperty = "transform, visibility";
+    const backdrop = backdropRef.current;
+    if (backdrop) backdrop.style.transition = backdropTransition(true);
+
+    function snapBack() {
+      if (!panel) return;
+      panel.style.transform = "translateY(0)";
+      if (backdrop) backdrop.style.opacity = "1";
+    }
+
+    if (!dismiss) {
+      snapBack();
+      return;
+    }
+    // Deixa o painel onde o dedo soltou: o React troca o transform pra
+    // fora da tela no próximo render e a transição parte daqui. Se quem
+    // usa o sheet recusar fechar (ex.: confirmar descarte), volta.
+    onCloseRef.current();
+    requestAnimationFrame(() => {
+      if (openRef.current) snapBack();
+    });
+  }
+
   return (
     <>
-      {open && (
-        // Fundação Visual (#142): `.sheetBackdrop` do protótipo escurece com
-        // preto puro semi-opaco, sem borrar o conteúdo atrás -- o blur(6px)
-        // + tinta do tema aqui era uma composição que o protótipo não tem
-        // (ver docs/visual/IOS_VISUAL_SYSTEM.md, seção "Sheets").
-        <div
-          className="fixed inset-0 z-[60]"
-          style={{ background: "rgba(0, 0, 0, 0.62)" }}
-          onClick={onClose}
-        />
-      )}
+      {/* Fundação Visual (#142): `.sheetBackdrop` do protótipo escurece com
+          preto puro semi-opaco, sem borrar o conteúdo atrás -- o blur(6px)
+          + tinta do tema aqui era uma composição que o protótipo não tem
+          (ver docs/visual/IOS_VISUAL_SYSTEM.md, seção "Sheets"). */}
+      <div
+        ref={backdropRef}
+        aria-hidden="true"
+        className="fixed inset-0 z-[60]"
+        style={{
+          background: "rgba(0, 0, 0, 0.62)",
+          opacity: open ? 1 : 0,
+          visibility: open ? "visible" : "hidden",
+          pointerEvents: open ? "auto" : "none",
+          transition: backdropTransition(open),
+        }}
+        onClick={onClose}
+      />
 
       <div
         ref={panelRef}
@@ -146,7 +251,14 @@ export function BottomSheet({
         {/* Cabeçalho + pega */}
         <div
           className="relative flex items-center justify-between px-5 pt-4 pb-3 shrink-0"
-          style={{ borderBottom: "1px solid var(--border-color)" }}
+          style={{
+            borderBottom: "1px solid var(--border-color)",
+            touchAction: "none",
+          }}
+          onPointerDown={handleDragStart}
+          onPointerMove={handleDragMove}
+          onPointerUp={handleDragEnd}
+          onPointerCancel={handleDragEnd}
         >
           <div
             className="w-9 h-1 rounded-full absolute left-1/2 -translate-x-1/2 top-3"

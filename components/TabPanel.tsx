@@ -6,9 +6,10 @@ import type { TabId } from "@/lib/types";
 /**
  * Mantém a aba montada em segundo plano (display:none) em vez de
  * desmontar ao trocar — evita reconsultar o Supabase toda vez que a
- * usuária volta pra uma aba já visitada. `animate-fade-up` reaplica
- * sozinha: navegadores reiniciam animações CSS quando o elemento sai
- * de display:none, então cada troca ainda ganha a transição.
+ * usuária volta pra uma aba já visitada. Troca SECA, sem fade: numa
+ * tab bar do iOS a aba nova simplesmente aparece (a animação fica pra
+ * navegação em profundidade — push/pop dentro da aba). O fade-up que
+ * existia aqui fazia toda troca de aba parecer uma página web recarregando.
  */
 interface Props {
   tab: TabId;
@@ -18,10 +19,7 @@ interface Props {
 
 export function TabPanel({ tab, activeTab, children }: Props) {
   return (
-    <div
-      className="animate-fade-up"
-      style={{ display: activeTab === tab ? "block" : "none" }}
-    >
+    <div style={{ display: activeTab === tab ? "block" : "none" }}>
       {children}
     </div>
   );

@@ -16,6 +16,9 @@ interface Props {
    * Repassado até o `RedeTab` pra restaurar a rolagem só quando a Rede
    * está de fato visível. */
   active?: boolean;
+  /** Incrementa a cada toque na aba Rede JÁ ativa (gesto do iOS: volta a
+   * pilha pra raiz / rola o Feed pro topo). */
+  reselectSignal?: number;
   onChatFocusChange?: (focused: boolean) => void;
 }
 
@@ -46,6 +49,7 @@ type EstadoGate =
 export function RedeGatedTab({
   usuario,
   active = true,
+  reselectSignal,
   onChatFocusChange,
 }: Props) {
   // ── Política do acesso lembrado (teto de confiança, não "validade curta") ──
@@ -291,6 +295,7 @@ export function RedeGatedTab({
       <RedeTab
         usuario={usuario}
         active={active}
+        reselectSignal={reselectSignal}
         onChatFocusChange={onChatFocusChange}
       />
     );

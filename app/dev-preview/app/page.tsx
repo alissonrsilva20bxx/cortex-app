@@ -105,6 +105,7 @@ export default function DevPreviewApp() {
   }, []);
 
   const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [redeReselect, setRedeReselect] = useState(0);
   const [fabOpen, setFabOpen] = useState(false);
 
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -238,8 +239,15 @@ export default function DevPreviewApp() {
   }
 
   function handleTabChange(tab: TabId) {
-    setActiveTab(tab);
     setFabOpen(false);
+    // Mesmo gesto da rota real (app/page.tsx): tocar de novo na aba ativa
+    // volta a Rede pra raiz ou rola a aba pro topo.
+    if (tab === activeTab) {
+      if (tab === "rede") setRedeReselect((n) => n + 1);
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setActiveTab(tab);
   }
 
   function handleFabAction() {
@@ -310,7 +318,7 @@ export default function DevPreviewApp() {
             onOpenAjustes={() => handleTabChange("ajustes")}
           />
           {/* Grid+gap explícito, espelha app/page.tsx (achado #131). */}
-          <div className="mt-6 grid gap-4">
+          <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
             <HeroCard
               jobs={jobs}
               metas={metas}
@@ -392,6 +400,7 @@ export default function DevPreviewApp() {
           )}
           <RedeGatedTab
             usuario={usuario}
+            reselectSignal={redeReselect}
             onChatFocusChange={setChatComposerFocused}
           />
         </TabPanel>

@@ -76,6 +76,7 @@ const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
 export default function Page() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [redeReselect, setRedeReselect] = useState(0);
   const [fabOpen, setFabOpen] = useState(false);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
 
@@ -324,8 +325,16 @@ export default function Page() {
   }
 
   function handleTabChange(tab: TabId) {
-    setActiveTab(tab);
     setFabOpen(false);
+    if (tab === activeTab) {
+      // Tocar de novo na aba ativa = gesto nativo do iOS: na Rede, com
+      // uma subtela aberta, volta pra raiz (Feed); em qualquer outro caso
+      // rola suave até o topo.
+      if (tab === "rede") setRedeReselect((n) => n + 1);
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setActiveTab(tab);
   }
 
   function handleFabAction() {
@@ -406,7 +415,7 @@ export default function Page() {
                   depender de seletor de irmão nem de nenhum filho ficar
                   "colapsado" (maxHeight/overflow) pra não contar como
                   "não-oculto" -- por construção, não por reparo pontual. */}
-              <div className="mt-6 grid gap-4">
+              <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
                 {/* Card-herói: a projeção viva das metas (o coração) */}
                 <HeroCard
                   jobs={jobs}
@@ -479,6 +488,7 @@ export default function Page() {
               <RedeGatedTab
                 usuario={usuario}
                 active={activeTab === "rede"}
+                reselectSignal={redeReselect}
                 onChatFocusChange={setChatComposerFocused}
               />
             </TabPanel>

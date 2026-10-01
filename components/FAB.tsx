@@ -167,13 +167,22 @@ export function FAB({
     <>
       {/* Backdrop -- Fundação Visual (#142): preto semi-opaco sem blur, como
           `.sheetBackdrop` do protótipo (ver components/ui/BottomSheet.tsx). */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40"
-          style={{ background: "rgba(0, 0, 0, 0.62)" }}
-          onClick={onToggle}
-        />
-      )}
+      {/* Fade de entrada/saída (antes surgia seco num frame), como o
+          véu do BottomSheet. */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-40"
+        style={{
+          background: "rgba(0, 0, 0, 0.62)",
+          opacity: open ? 1 : 0,
+          visibility: open ? "visible" : "hidden",
+          pointerEvents: open ? "auto" : "none",
+          transition: open
+            ? "opacity 300ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0s linear 0s"
+            : "opacity 300ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0s linear 300ms",
+        }}
+        onClick={onToggle}
+      />
 
       {/* Bottom sheet -- material igual ao de components/ui/BottomSheet.tsx:
           gradiente opaco sobre --bg do tema, sem blur; raio do topo usa
@@ -204,7 +213,7 @@ export function FAB({
         </p>
 
         <button
-          className="flex items-center gap-3 w-full px-4 py-4 rounded-2xl transition-opacity active:opacity-70"
+          className="press flex items-center gap-3 w-full px-4 py-4 rounded-2xl active:opacity-70"
           style={{
             background: "var(--surface)",
             border: "1px solid var(--border-color)",
@@ -242,6 +251,8 @@ export function FAB({
       <button
         ref={fabRef}
         onClick={onToggle}
+        aria-label={open ? "Fechar" : "Criar novo"}
+        aria-expanded={open}
         aria-hidden={obstructed || undefined}
         tabIndex={obstructed ? -1 : undefined}
         className="fixed z-50 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90"
@@ -254,12 +265,22 @@ export function FAB({
           // Fundação Visual (#142): elevação direcional como `.addButton` do
           // protótipo, não o halo difuso de --glow.
           boxShadow: "0 10px 26px rgb(var(--accent-rgb) / 0.25)",
-          transform: open ? "rotate(45deg)" : "rotate(0deg)",
           opacity: obstructed ? 0.28 : 1,
           pointerEvents: obstructed ? "none" : "auto",
         }}
       >
-        <Plus size={22} color="white" strokeWidth={2.5} />
+        {/* A rotação mora no ícone, não no botão: um `transform` inline no
+            botão anulava o `active:scale-90` (estilo inline vence classe) e
+            o toque no FAB não dava feedback nenhum. */}
+        <Plus
+          size={22}
+          color="white"
+          strokeWidth={2.5}
+          style={{
+            transform: open ? "rotate(45deg)" : "rotate(0deg)",
+            transition: "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)",
+          }}
+        />
       </button>
     </>
   );

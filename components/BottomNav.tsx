@@ -77,7 +77,7 @@ export function BottomNav({ activeTab, onChange }: Props) {
             key={id}
             onClick={() => onChange(id)}
             aria-label={label}
-            className="flex items-center justify-center transition-all duration-200"
+            className="flex items-center justify-center transition-all duration-200 active:scale-90"
             style={{
               height: `${BOTTOM_NAV_MIN_TOUCH_TARGET}px`,
               width: active

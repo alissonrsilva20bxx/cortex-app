@@ -29,20 +29,29 @@ function readScrollTop(target: EventTarget | null): number | null {
  * pra troca de aba nunca herdar um estado de rolagem de outra tela. Como
  * quem rola de fato é o document/window (não um `<main>` próprio por aba —
  * `TabPanel` mantém todas montadas com `display:none`), trocar de aba por
- * si só NÃO move o scroll: a pílula reexpande (compact reseta) mas a
- * aba nova pode abrir no meio do conteúdo em vez do topo. Por isso o mesmo
- * reset também leva o scroll de volta pro topo do alvo mais recente
- * conhecido — sem isso a pílula "mente" que a tela está no topo.
+ * si só NÃO move o scroll. Antes o reset levava toda aba pro topo; agora
+ * cada aba LEMBRA a própria rolagem (mapa resetKey → scrollY), como numa
+ * tab bar nativa do iOS: sair da Agenda no meio da lista e voltar devolve
+ * a lista no mesmo ponto. Aba nunca visitada abre no topo.
+ *
+ * A posição é gravada a cada evento de scroll do window (antes do
+ * throttle por frame, pra última posição nunca se perder) sob a chave
+ * ativa naquele momento. O efeito de reset roda em sincronia com o commit
+ * do clique (efeito de evento discreto no React 18), antes do navegador
+ * despachar o scroll "corrigido" da troca — então a posição da aba que
+ * saiu nunca é sobrescrita pela altura da aba que entrou.
  */
 export function useScrollCompact(resetKey?: unknown): boolean {
   const [compact, setCompact] = useState(false);
   const stateRef = useRef<ScrollCompactState>(INITIAL_SCROLL_COMPACT_STATE);
-  const scrollTargetRef = useRef<EventTarget | null>(null);
   const mountedRef = useRef(false);
+  const keyRef = useRef<unknown>(resetKey);
+  const positionsRef = useRef(new Map<unknown, number>());
 
   useEffect(() => {
     stateRef.current = INITIAL_SCROLL_COMPACT_STATE;
     setCompact(false);
+    keyRef.current = resetKey;
 
     // Só reposiciona o scroll em trocas de aba de verdade — no mount
     // inicial não há "aba anterior" cuja rolagem precise ser corrigida.
@@ -50,16 +59,14 @@ export function useScrollCompact(resetKey?: unknown): boolean {
       mountedRef.current = true;
       return;
     }
-    const target = scrollTargetRef.current;
-    if (target === window || target === document) {
-      // `behavior: "instant"` explícito — `globals.css` liga
-      // `scroll-behavior: smooth` na página inteira, e uma troca de aba
-      // não é o tipo de rolagem que deveria animar (a usuária já está
-      // olhando pro conteúdo da aba nova; a rolagem só corrige a posição).
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    } else if (target instanceof HTMLElement) {
-      target.scrollTop = 0;
-    }
+    // Sempre o window: é ele que rola o conteúdo das abas. Um alvo
+    // interno (HTMLElement, ex. lista do chat) mantém o próprio scrollTop
+    // sozinho — `display:none` não zera a rolagem de um elemento.
+    // `behavior: "instant"` explícito — a troca de aba não é o tipo de
+    // rolagem que deveria animar (a usuária já está olhando pro conteúdo
+    // da aba nova; a rolagem só repõe a posição dela).
+    const saved = positionsRef.current.get(resetKey) ?? 0;
+    window.scrollTo({ top: saved, left: 0, behavior: "instant" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
 
@@ -68,8 +75,11 @@ export function useScrollCompact(resetKey?: unknown): boolean {
 
     function handleScroll(e: Event) {
       const scrollTop = readScrollTop(e.target);
-      if (scrollTop === null || frame !== null) return;
-      scrollTargetRef.current = e.target;
+      if (scrollTop === null) return;
+      if (e.target === window || e.target === document) {
+        positionsRef.current.set(keyRef.current, scrollTop);
+      }
+      if (frame !== null) return;
       frame = requestAnimationFrame(() => {
         frame = null;
         const next = nextScrollCompactState(stateRef.current, scrollTop);

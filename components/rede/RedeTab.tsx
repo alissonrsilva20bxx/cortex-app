@@ -120,6 +120,7 @@ import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
+import { useStackNav } from "@/lib/useStackNav";
 
 // useLayoutEffect avisa "does nothing on the server" no SSR de um
 // componente client — cai pra useEffect nesse lado (nunca roda no servidor
@@ -190,11 +191,19 @@ interface Props {
   /** Se a aba Rede está visível agora. Só restaura a rolagem da Rede
    * quando `true` — nunca mexe na rolagem de outra aba (req 2). */
   active?: boolean;
+  /** Incrementa a cada toque na aba Rede já ativa: com subtela aberta,
+   * volta pra raiz (Feed); já no Feed, rola suave pro topo. */
+  reselectSignal?: number;
   /** Simula o teclado abrindo — repassado até a página, que esconde a BottomNav. */
   onChatFocusChange?: (focused: boolean) => void;
 }
 
-export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
+export function RedeTab({
+  usuario,
+  active = true,
+  reselectSignal,
+  onChatFocusChange,
+}: Props) {
   const toast = useToast();
 
   // ── Semente do cache (síncrona, 1x por conta) ──
@@ -357,11 +366,22 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   }, [usuario.id, reconexaoKey]);
 
   // ── Navegação: pilha local, sem 2ª barra de navegação (o Feed é a base) ──
-  const [stack, setStack] = useState<RedeScreen[]>([{ type: "feed" }]);
-  const screen = stack[stack.length - 1];
-  const push = (s: RedeScreen) => setStack((prev) => [...prev, s]);
-  const pop = () =>
-    setStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
+  // Transições estilo iOS (push/pop deslizando, arrastar da borda pra
+  // voltar) e rolagem lembrada por nível -- ver lib/useStackNav.ts.
+  const { stack, screen, pageRef, push, pop, popToRoot } =
+    useStackNav<RedeScreen>({ type: "feed" }, active);
+
+  // Tocar de novo na aba Rede já ativa (gesto nativo do iOS): numa subtela,
+  // volta pra raiz; já no Feed, rola suave pro topo. O valor inicial do
+  // sinal não é um toque.
+  const ultimoReselect = useRef(reselectSignal);
+  useEffect(() => {
+    if (reselectSignal === ultimoReselect.current) return;
+    ultimoReselect.current = reselectSignal;
+    if (stack.length > 1) popToRoot();
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reselectSignal]);
 
   // ── Feed real (paginado, issue do escopo de fotos -- listarFeed nunca
   // buscava mais que 1 página do feed inteiro) ──
@@ -564,7 +584,11 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     if (posts.length === 0) return; // conteúdo ainda não pronto
     const y = redeCache.scrollLembrado();
     scrollRestaurado.current = true;
-    if (y != null) window.scrollTo(0, y);
+    // Adiado 1 frame (ainda antes do próximo paint): a troca de aba repõe
+    // a rolagem lembrada por aba no efeito passivo da BottomNav
+    // (useScrollCompact), que roda DEPOIS deste layout effect -- sem o
+    // rAF, a 1ª visita à Rede na sessão voltaria pro topo por cima daqui.
+    if (y != null) requestAnimationFrame(() => window.scrollTo(0, y));
   }, [active, screen.type, posts.length]);
 
   // ── Amigas real -- buscado sob demanda ao entrar na tela (não no mount,
@@ -1697,7 +1721,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       setWishlistFormOpen(false);
       setEditingWishlist(null);
       toast.success("Desejo compartilhado no Feed!");
-      setStack([{ type: "feed" }]);
+      popToRoot({ toTop: true });
     } catch (e) {
       console.error("[RedeTab compartilhar desejo]", e);
       toast.error("Não foi possível compartilhar no Feed.");
@@ -1811,230 +1835,234 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
 
   return (
     <div className="pb-4">
-      {screen.type === "feed" && (
-        <FeedScreen
-          usuario={usuario}
-          usuarioFotoUrl={perfil?.avatar_url ?? null}
-          posts={posts}
-          friends={friends.map((f) => f.id)}
-          wishlistItems={wishlistItems}
-          pendingRequestsCount={requests.length}
-          unreadChats={unreadChats}
-          unreadNotifs={unreadNotifs}
-          loading={feedLoading}
-          error={feedError}
-          hasMore={feedHasMore}
-          loadingMore={feedLoadingMore}
-          segmento={segmento}
-          onSegmentoChange={trocarSegmento}
-          onLoadMore={loadMorePosts}
-          onOpenSearch={() => push({ type: "busca" })}
-          onOpenNotifs={() => setNotifSheetOpen(true)}
-          onOpenChat={() => push({ type: "chatList" })}
-          onOpenMeuEspaco={() => push({ type: "meuEspaco" })}
-          onOpenAmigas={() => push({ type: "amigas" })}
-          onOpenWishlist={() => push({ type: "wishlist" })}
-          onOpenComposer={() => setComposerOpen(true)}
-          onOpenAutor={openAutor}
-          {...postActions}
-        />
-      )}
+      {/* Só as telas da pilha: durante uma transição este bloco é clonado e
+          escondido (sheets ficam fora, sempre vivos). */}
+      <div ref={pageRef}>
+        {screen.type === "feed" && (
+          <FeedScreen
+            usuario={usuario}
+            usuarioFotoUrl={perfil?.avatar_url ?? null}
+            posts={posts}
+            friends={friends.map((f) => f.id)}
+            wishlistItems={wishlistItems}
+            pendingRequestsCount={requests.length}
+            unreadChats={unreadChats}
+            unreadNotifs={unreadNotifs}
+            loading={feedLoading}
+            error={feedError}
+            hasMore={feedHasMore}
+            loadingMore={feedLoadingMore}
+            segmento={segmento}
+            onSegmentoChange={trocarSegmento}
+            onLoadMore={loadMorePosts}
+            onOpenSearch={() => push({ type: "busca" })}
+            onOpenNotifs={() => setNotifSheetOpen(true)}
+            onOpenChat={() => push({ type: "chatList" })}
+            onOpenMeuEspaco={() => push({ type: "meuEspaco" })}
+            onOpenAmigas={() => push({ type: "amigas" })}
+            onOpenWishlist={() => push({ type: "wishlist" })}
+            onOpenComposer={() => setComposerOpen(true)}
+            onOpenAutor={openAutor}
+            {...postActions}
+          />
+        )}
 
-      {screen.type === "busca" && (
-        <SearchScreen
-          posts={posts}
-          onBack={pop}
-          onOpenAutor={openAutor}
-          onOpenPost={(p) => setCommentsPostId(p.id)}
-          onSearchPessoas={(q) => buscarPessoas(supabase, q)}
-        />
-      )}
+        {screen.type === "busca" && (
+          <SearchScreen
+            posts={posts}
+            onBack={pop}
+            onOpenAutor={openAutor}
+            onOpenPost={(p) => setCommentsPostId(p.id)}
+            onSearchPessoas={(q) => buscarPessoas(supabase, q)}
+          />
+        )}
 
-      {screen.type === "amigas" && (
-        <AmigasScreen
-          loading={amigasLoading}
-          friends={friends}
-          requests={requests}
-          sugestoes={sugestoes}
-          sentRequests={sentRequests}
-          onBack={pop}
-          onAccept={acceptRequest}
-          onDecline={declineRequest}
-          onSendRequest={sendRequest}
-          onRemoveFriend={removeFriend}
-          onBlock={blockUser}
-          onOpenChat={openChatWithUser}
-          onOpenProfile={openAutor}
-        />
-      )}
+        {screen.type === "amigas" && (
+          <AmigasScreen
+            loading={amigasLoading}
+            friends={friends}
+            requests={requests}
+            sugestoes={sugestoes}
+            sentRequests={sentRequests}
+            onBack={pop}
+            onAccept={acceptRequest}
+            onDecline={declineRequest}
+            onSendRequest={sendRequest}
+            onRemoveFriend={removeFriend}
+            onBlock={blockUser}
+            onOpenChat={openChatWithUser}
+            onOpenProfile={openAutor}
+          />
+        )}
 
-      {screen.type === "chatList" && (
-        <ChatListScreen
-          loading={conversationsLoading}
-          error={conversationsError}
-          offline={!online}
-          conversations={conversations}
-          onBack={pop}
-          onOpenThread={openChatThread}
-          onRetryLoad={retryLoadConversations}
-        />
-      )}
+        {screen.type === "chatList" && (
+          <ChatListScreen
+            loading={conversationsLoading}
+            error={conversationsError}
+            offline={!online}
+            conversations={conversations}
+            onBack={pop}
+            onOpenThread={openChatThread}
+            onRetryLoad={retryLoadConversations}
+          />
+        )}
 
-      {screen.type === "chatThread" &&
-        (() => {
-          const convo = conversations.find(
-            (c) => c.id === screen.conversationId
-          );
-          if (!convo) return null;
-          return (
-            <ChatThreadScreen
-              conversation={convo}
-              messages={messages[convo.id] ?? []}
-              loading={threadLoading}
-              error={threadError}
-              offline={!online}
-              onBack={pop}
-              onOpenAutor={openAutor}
-              onOpenMenu={() => setChatMenuOpen(true)}
-              onSend={(texto) => sendMessage(convo.id, texto)}
-              onRetry={(messageId) => retrySend(convo.id, messageId)}
-              onRetryLoad={retryLoadThread}
-              onComposerFocusChange={onChatFocusChange}
-              hasMoreMessages={hasMoreMessages[convo.id] ?? false}
-              loadingMoreMessages={loadingMoreMessages}
-              onLoadMoreMessages={loadMoreMessages}
-            />
-          );
-        })()}
+        {screen.type === "chatThread" &&
+          (() => {
+            const convo = conversations.find(
+              (c) => c.id === screen.conversationId
+            );
+            if (!convo) return null;
+            return (
+              <ChatThreadScreen
+                conversation={convo}
+                messages={messages[convo.id] ?? []}
+                loading={threadLoading}
+                error={threadError}
+                offline={!online}
+                onBack={pop}
+                onOpenAutor={openAutor}
+                onOpenMenu={() => setChatMenuOpen(true)}
+                onSend={(texto) => sendMessage(convo.id, texto)}
+                onRetry={(messageId) => retrySend(convo.id, messageId)}
+                onRetryLoad={retryLoadThread}
+                onComposerFocusChange={onChatFocusChange}
+                hasMoreMessages={hasMoreMessages[convo.id] ?? false}
+                loadingMoreMessages={loadingMoreMessages}
+                onLoadMoreMessages={loadMoreMessages}
+              />
+            );
+          })()}
 
-      {screen.type === "meuEspaco" && (
-        <MeuEspacoScreen
-          nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
-          bio={perfil?.bio ?? ""}
-          cor={perfil?.cor_avatar ?? "var(--accent)"}
-          fotoUrl={perfil?.avatar_url ?? null}
-          meusPosts={posts.filter((p) => p.autorId === usuario.id)}
-          liveLinks={liveLinks}
-          clientesCount={clientes.length}
-          friendsCount={friends.length}
-          defaultPrivacidade={defaultPrivacidade}
-          loading={perfil === null && !perfilError}
-          error={perfilError}
-          onBack={pop}
-          onMoveLiveLink={moveLiveLink}
-          onEditLiveLink={(link) => {
-            setEditingLiveLink(link);
-            setLiveLinkFormOpen(true);
-          }}
-          onDeleteLiveLink={deleteLiveLink}
-          onAddLiveLink={() => {
-            setEditingLiveLink(null);
-            setLiveLinkFormOpen(true);
-          }}
-          onEditProfile={() => setProfileEditOpen(true)}
-          onEditAvatar={() => {
-            if (perfil?.avatar_url) setAvatarOptionsOpen(true);
-            else avatarFileInputRef.current?.click();
-          }}
-          onShareProfile={shareProfile}
-          onPublish={() => setComposerOpen(true)}
-          onOpenWishlist={() => push({ type: "wishlist" })}
-          onOpenClientes={() => push({ type: "clientes" })}
-          onOpenBloqueados={openBloqueados}
-          onOpenPerfilPublico={() =>
-            push({ type: "perfilPublico", userId: usuario.id })
-          }
-          onChangeDefaultPrivacidade={setDefaultPrivacidade}
-          {...postActions}
-        />
-      )}
+        {screen.type === "meuEspaco" && (
+          <MeuEspacoScreen
+            nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
+            bio={perfil?.bio ?? ""}
+            cor={perfil?.cor_avatar ?? "var(--accent)"}
+            fotoUrl={perfil?.avatar_url ?? null}
+            meusPosts={posts.filter((p) => p.autorId === usuario.id)}
+            liveLinks={liveLinks}
+            clientesCount={clientes.length}
+            friendsCount={friends.length}
+            defaultPrivacidade={defaultPrivacidade}
+            loading={perfil === null && !perfilError}
+            error={perfilError}
+            onBack={pop}
+            onMoveLiveLink={moveLiveLink}
+            onEditLiveLink={(link) => {
+              setEditingLiveLink(link);
+              setLiveLinkFormOpen(true);
+            }}
+            onDeleteLiveLink={deleteLiveLink}
+            onAddLiveLink={() => {
+              setEditingLiveLink(null);
+              setLiveLinkFormOpen(true);
+            }}
+            onEditProfile={() => setProfileEditOpen(true)}
+            onEditAvatar={() => {
+              if (perfil?.avatar_url) setAvatarOptionsOpen(true);
+              else avatarFileInputRef.current?.click();
+            }}
+            onShareProfile={shareProfile}
+            onPublish={() => setComposerOpen(true)}
+            onOpenWishlist={() => push({ type: "wishlist" })}
+            onOpenClientes={() => push({ type: "clientes" })}
+            onOpenBloqueados={openBloqueados}
+            onOpenPerfilPublico={() =>
+              push({ type: "perfilPublico", userId: usuario.id })
+            }
+            onChangeDefaultPrivacidade={setDefaultPrivacidade}
+            {...postActions}
+          />
+        )}
 
-      {screen.type === "perfilPublico" &&
-        (() => {
-          const profile = buildProfile(screen.userId);
-          const isFriend = profile.isMe
-            ? false
-            : friends.some((f) => f.id === screen.userId);
-          const wishlistPublico = profile.isMe
-            ? wishlistItems.filter((w) => w.privacidade === "comunidade")
-            : [];
-          // LiveLinks de outras pessoas ainda não têm de onde vir --
-          // nenhuma ticket do mapa expõe LiveLinks de terceiros, só o
-          // próprio perfil (ticket 09). Fora do escopo por enquanto.
-          const livelinksExibidos = profile.isMe ? liveLinks : [];
-          return (
-            <PerfilPublicoScreen
-              nome={profile.nome}
-              handle={profile.handle}
-              cor={profile.cor}
-              fotoUrl={profile.fotoUrl}
-              bio={profile.bio}
-              isMe={profile.isMe}
-              isFriend={isFriend}
-              requestSent={sentRequests.includes(screen.userId)}
-              liveLinks={livelinksExibidos}
-              wishlistPublico={wishlistPublico}
-              posts={posts.filter((p) => p.autorId === screen.userId)}
-              loading={!profile.isMe && otherProfileLoading}
-              error={!profile.isMe && otherProfileError}
-              onBack={pop}
-              onOpenChat={() => openChatWithUser(screen.userId)}
-              chatOpening={openingChatUserIds.has(screen.userId)}
-              onSendRequest={() => sendRequest(screen.userId)}
-              onBlock={() => {
-                blockUser(screen.userId);
-                pop();
-              }}
-              // Mesmo gatilho que o "..." do PostCard já usa pra abrir a
-              // confirmação real de denúncia (ticket #140) -- não duplica
-              // serviço/feedback, só abre um passo antes (o "..." da
-              // grade/visualizador do perfil já sabe que não é o dono,
-              // pula direto pro "Motivo da denúncia" sem passar pelo menu
-              // "Publicação" completo, que teria Editar/Excluir).
-              onReportPost={(postId) =>
-                setReportTarget({ tipo: "post", id: postId })
-              }
-              {...postActions}
-            />
-          );
-        })()}
+        {screen.type === "perfilPublico" &&
+          (() => {
+            const profile = buildProfile(screen.userId);
+            const isFriend = profile.isMe
+              ? false
+              : friends.some((f) => f.id === screen.userId);
+            const wishlistPublico = profile.isMe
+              ? wishlistItems.filter((w) => w.privacidade === "comunidade")
+              : [];
+            // LiveLinks de outras pessoas ainda não têm de onde vir --
+            // nenhuma ticket do mapa expõe LiveLinks de terceiros, só o
+            // próprio perfil (ticket 09). Fora do escopo por enquanto.
+            const livelinksExibidos = profile.isMe ? liveLinks : [];
+            return (
+              <PerfilPublicoScreen
+                nome={profile.nome}
+                handle={profile.handle}
+                cor={profile.cor}
+                fotoUrl={profile.fotoUrl}
+                bio={profile.bio}
+                isMe={profile.isMe}
+                isFriend={isFriend}
+                requestSent={sentRequests.includes(screen.userId)}
+                liveLinks={livelinksExibidos}
+                wishlistPublico={wishlistPublico}
+                posts={posts.filter((p) => p.autorId === screen.userId)}
+                loading={!profile.isMe && otherProfileLoading}
+                error={!profile.isMe && otherProfileError}
+                onBack={pop}
+                onOpenChat={() => openChatWithUser(screen.userId)}
+                chatOpening={openingChatUserIds.has(screen.userId)}
+                onSendRequest={() => sendRequest(screen.userId)}
+                onBlock={() => {
+                  blockUser(screen.userId);
+                  pop();
+                }}
+                // Mesmo gatilho que o "..." do PostCard já usa pra abrir a
+                // confirmação real de denúncia (ticket #140) -- não duplica
+                // serviço/feedback, só abre um passo antes (o "..." da
+                // grade/visualizador do perfil já sabe que não é o dono,
+                // pula direto pro "Motivo da denúncia" sem passar pelo menu
+                // "Publicação" completo, que teria Editar/Excluir).
+                onReportPost={(postId) =>
+                  setReportTarget({ tipo: "post", id: postId })
+                }
+                {...postActions}
+              />
+            );
+          })()}
 
-      {screen.type === "wishlist" && (
-        <WishlistScreen
-          items={wishlistItems}
-          onBack={pop}
-          onAddNew={() => {
-            setEditingWishlist(null);
-            setWishlistFormOpen(true);
-          }}
-          onOpenItem={(item) => {
-            setEditingWishlist(item);
-            setWishlistFormOpen(true);
-          }}
-        />
-      )}
+        {screen.type === "wishlist" && (
+          <WishlistScreen
+            items={wishlistItems}
+            onBack={pop}
+            onAddNew={() => {
+              setEditingWishlist(null);
+              setWishlistFormOpen(true);
+            }}
+            onOpenItem={(item) => {
+              setEditingWishlist(item);
+              setWishlistFormOpen(true);
+            }}
+          />
+        )}
 
-      {screen.type === "clientes" && (
-        <ClientesScreen
-          clientes={clientes}
-          onBack={pop}
-          onAddNew={() => {
-            setEditingCliente(null);
-            setClienteFormOpen(true);
-          }}
-          onOpenCliente={setClienteDetail}
-        />
-      )}
+        {screen.type === "clientes" && (
+          <ClientesScreen
+            clientes={clientes}
+            onBack={pop}
+            onAddNew={() => {
+              setEditingCliente(null);
+              setClienteFormOpen(true);
+            }}
+            onOpenCliente={setClienteDetail}
+          />
+        )}
 
-      {screen.type === "bloqueados" && (
-        <BlockedUsersScreen
-          items={bloqueados}
-          loading={bloqueadosLoading}
-          error={bloqueadosError}
-          onBack={pop}
-          onUnblock={unblockUser}
-        />
-      )}
+        {screen.type === "bloqueados" && (
+          <BlockedUsersScreen
+            items={bloqueados}
+            loading={bloqueadosLoading}
+            error={bloqueadosError}
+            onBack={pop}
+            onUnblock={unblockUser}
+          />
+        )}
+      </div>
 
       {/* ── Sheets globais ── */}
       <PostComposer
