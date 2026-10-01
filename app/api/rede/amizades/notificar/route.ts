@@ -1,19 +1,16 @@
 import "server-only";
 
 import { NextResponse, type NextRequest } from "next/server";
-import webpush from "web-push";
 
+import {
+  enviarPushPara,
+  eventoRecente,
+  nomeExibicao,
+} from "../../../../../lib/rede/pushEnvio";
 import { createClient } from "../../../../../lib/supabase-server";
 import { getSupabaseAdmin } from "../../../../../lib/supabaseAdmin";
 
 export const runtime = "nodejs";
-
-/**
- * Janela em que o evento ainda conta como "acabou de acontecer". Sem ela,
- * a chamadora poderia repetir a rota com um pedido antigo e martelar a
- * outra pessoa de push.
- */
-export const JANELA_NOTIFICAR_MS = 5 * 60 * 1000;
 
 /**
  * Push de pedido de amizade -- mesmo desenho de `mensagens/notificar`: o
@@ -25,7 +22,7 @@ export const JANELA_NOTIFICAR_MS = 5 * 60 * 1000;
  * é uma das pontas) e decide pelo estado real:
  *   - pendente e ela é quem pediu  → avisa a destinatária ("quer ser sua amiga");
  *   - aceita e ela é quem aceitou  → avisa quem pediu ("aceitou seu pedido").
- * Qualquer outra combinação não notifica ninguém.
+ * Qualquer outra combinação, ou evento fora da janela, não notifica ninguém.
  */
 export async function POST(request: NextRequest) {
   let recebido: unknown;
@@ -83,10 +80,12 @@ export async function POST(request: NextRequest) {
 
   let destinatarioId: string;
   let quando: string | null;
+  let titulo: string;
   let corpo: string;
   if (amizade.status === "pendente" && amizade.solicitante_id === user.id) {
     destinatarioId = amizade.destinatario_id;
     quando = amizade.criado_em;
+    titulo = "Pedido de amizade";
     corpo = "quer ser sua amiga na Rede.";
   } else if (
     amizade.status === "aceita" &&
@@ -94,100 +93,35 @@ export async function POST(request: NextRequest) {
   ) {
     destinatarioId = amizade.solicitante_id;
     quando = amizade.respondido_em;
+    titulo = "Nova amiga";
     corpo = "aceitou seu pedido de amizade.";
   } else {
     return NextResponse.json({ sent: 0 });
   }
 
-  const instante = quando ? Date.parse(quando) : NaN;
-  if (
-    !Number.isFinite(instante) ||
-    Date.now() - instante > JANELA_NOTIFICAR_MS
-  ) {
+  if (!eventoRecente(quando)) {
     return NextResponse.json({ sent: 0 });
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
-
-  const [{ data: perfil }, { data: subs, error: subsError }] =
-    await Promise.all([
-      supabaseAdmin
-        .from("rede_perfis")
-        .select("nome_exibicao")
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("push_subscriptions")
-        .select("id, endpoint, p256dh, auth")
-        .in("user_id", [destinatarioId]),
-    ]);
-
-  if (subsError) {
-    console.error("[notificar amizade] falha ao buscar inscrições", subsError);
-    return NextResponse.json(
-      { error: "Não foi possível notificar" },
-      { status: 500 }
-    );
-  }
-
-  if (!subs || subs.length === 0) {
-    return NextResponse.json({ sent: 0 });
-  }
-
-  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-  if (!vapidPublicKey || !vapidPrivateKey) {
-    console.error("[notificar amizade] VAPID keys não configuradas");
-    return NextResponse.json(
-      { error: "Push não configurado" },
-      { status: 500 }
-    );
-  }
-
-  webpush.setVapidDetails(
-    "mailto:suporte@jobapp.app",
-    vapidPublicKey,
-    vapidPrivateKey
+  const admin = getSupabaseAdmin();
+  const nome = await nomeExibicao(admin, user.id);
+  const resultado = await enviarPushPara(
+    admin,
+    [destinatarioId],
+    {
+      title: titulo,
+      body: `${nome} ${corpo}`,
+      // Uma notificação por pedido: reenviar/aceitar substitui, não empilha.
+      tag: `rede-amizade-${amizadeId}`,
+    },
+    "notificar amizade"
   );
 
-  const nome = perfil?.nome_exibicao?.trim() || "Alguém";
-  const payload = JSON.stringify({
-    title: amizade.status === "pendente" ? "Pedido de amizade" : "Nova amiga",
-    body: `${nome} ${corpo}`,
-    // Uma notificação por pedido: reenviar/aceitar de novo substitui, não empilha.
-    tag: `rede-amizade-${amizadeId}`,
-    url: "/",
-  });
-
-  let sent = 0;
-  for (const sub of subs) {
-    try {
-      await webpush.sendNotification(
-        {
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth },
-        },
-        payload
-      );
-      sent++;
-    } catch (err) {
-      const status = (err as { statusCode?: number }).statusCode;
-      if (status === 404 || status === 410) {
-        const { error: deleteError } = await supabaseAdmin
-          .from("push_subscriptions")
-          .delete()
-          .eq("id", sub.id);
-        if (deleteError) {
-          console.error(
-            "[notificar amizade] falha ao remover inscrição expirada",
-            deleteError
-          );
-        }
-      } else {
-        console.error("[notificar amizade] falha ao enviar push", err);
-      }
-    }
+  if (!resultado.ok) {
+    return NextResponse.json(
+      { error: resultado.error },
+      { status: resultado.status }
+    );
   }
-
-  return NextResponse.json({ sent });
+  return NextResponse.json({ sent: resultado.sent });
 }

@@ -28,10 +28,8 @@ vi.mock("web-push", () => ({
   },
 }));
 
-import {
-  JANELA_NOTIFICAR_MS,
-  POST,
-} from "../../../app/api/rede/amizades/notificar/route";
+import { POST } from "../../../app/api/rede/amizades/notificar/route";
+import { JANELA_NOTIFICAR_MS } from "../../../lib/rede/pushEnvio";
 
 type Amizade = {
   solicitante_id: string;

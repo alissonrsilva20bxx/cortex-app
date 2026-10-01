@@ -1025,6 +1025,20 @@ export function RedeTab({
         : p
     );
 
+  // Push nativo pra autora (curtida/comentário), fire-and-forget como nas
+  // mensagens; o servidor confere o estado real e ignora o próprio post.
+  function notificarPost(
+    body:
+      | { tipo: "curtida"; postId: string }
+      | { tipo: "comentario"; postId: string; comentarioId: string }
+  ) {
+    fetch("/api/rede/posts/notificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch((e) => console.error("[RedeTab notificar post]", e));
+  }
+
   async function toggleLike(id: string) {
     // Marca a curtida como pendente: um `listarFeed` que já estava em voo
     // não pode desfazer esse like ao resolver depois (req 6). Ver
@@ -1032,7 +1046,8 @@ export function RedeTab({
     likesPendentes.current.add(id);
     aplicarPosts(alternarCurtidaLocal(id));
     try {
-      await alternarCurtida(supabase, { postId: id });
+      const { curtido } = await alternarCurtida(supabase, { postId: id });
+      if (curtido) notificarPost({ tipo: "curtida", postId: id });
     } catch (e) {
       console.error("[RedeTab curtida]", e);
       // Reverte a atualização otimista se a chamada real falhar.
@@ -1045,7 +1060,12 @@ export function RedeTab({
 
   async function addComment(postId: string, texto: string) {
     try {
-      await criarComentario(supabase, { postId, texto });
+      const comentario = await criarComentario(supabase, { postId, texto });
+      notificarPost({
+        tipo: "comentario",
+        postId,
+        comentarioId: comentario.id,
+      });
       const atualizados = await listarComentarios(supabase, postId);
       setComments(atualizados);
       aplicarPosts((prev) =>
