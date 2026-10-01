@@ -57,10 +57,24 @@ describe("PinScreen — teclado T9 circular aprovado (#138)", () => {
     expect(cssSrc).not.toMatch(/#e34468|#ff2d78/i);
   });
 
-  it("título e selo batem em pixel com o protótipo aprovado (34px/-0.04em, selo 68px/23px de margem)", () => {
-    expect(cssSrc).toContain("font-size: 34px");
+  it("título e selo batem em pixel com o protótipo aprovado (34px/-0.04em, selo 68px/23px de margem) em telas altas", () => {
+    // Escalam pela altura (dvh) em telas baixas, mas o teto continua sendo
+    // o tamanho aprovado.
+    expect(cssSrc).toMatch(/font-size: clamp\(\d+px, [\d.]+dvh, 34px\)/);
     expect(cssSrc).toContain("letter-spacing: -0.04em");
-    expect(cssSrc).toContain("margin-bottom: 23px");
+    expect(cssSrc).toMatch(/width: clamp\(\d+px, [\d.]+dvh, 68px\)/);
+    expect(cssSrc).toMatch(/margin-bottom: clamp\(\d+px, [\d.]+dvh, 23px\)/);
+  });
+
+  it("sem degrau de breakpoint em 700px: tamanho do teclado é contínuo (dvh)", () => {
+    expect(cssSrc).not.toContain("@media (max-height: 700px)");
+    const keyRule = cssSrc.match(
+      /\.keypad > button,\s*\.keypad > span \{([\s\S]*?)\n\}/
+    );
+    expect(keyRule).not.toBeNull();
+    expect(keyRule![1]).toMatch(/width: clamp\(56px, 9dvh, 68px\)/);
+    // vh no Safari com barra de endereço mede a viewport grande -> estoura.
+    expect(cssSrc).not.toMatch(/[\d.]vh\b/);
   });
 });
 
