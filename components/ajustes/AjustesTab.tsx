@@ -36,7 +36,7 @@ import { InstallSheet } from "@/components/install/InstallSheet";
 import { computeAssinatura } from "@/lib/assinatura";
 import { formatBRL, totalEarnings } from "@/lib/finance";
 import { exportarDadosCSV } from "@/lib/exportarDados";
-import { isStandalone } from "@/lib/platform";
+import { isIOS, isStandalone } from "@/lib/platform";
 import {
   isPushSupported,
   isPushSubscribed,
@@ -206,6 +206,10 @@ export function AjustesTab({
     status: AssinaturaStatus;
   } | null>(null);
   const [pushSupported, setPushSupported] = useState(false);
+  // iPhone numa aba do Safari: não existe PushManager (a Apple só libera
+  // push pro app instalado na tela de início). Em vez de sumir com a opção,
+  // mostra a linha apontando pra instalação.
+  const [pushNeedsInstall, setPushNeedsInstall] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState<string | null>(null);
@@ -240,6 +244,8 @@ export function AjustesTab({
     if (isPushSupported()) {
       setPushSupported(true);
       isPushSubscribed().then(setPushEnabled);
+    } else if (isIOS() && !isStandalone()) {
+      setPushNeedsInstall(true);
     }
     setStandalone(isStandalone());
   }, [userId, setTheme]);
@@ -485,7 +491,7 @@ export function AjustesTab({
                 title="Tela inicial"
                 detail="Cards e gráficos"
                 onClick={() => openSettingsPage("home")}
-                last={!pushSupported}
+                last={!pushSupported && !pushNeedsInstall}
               />
               {pushSupported ? (
                 <SettingsMenuRow
@@ -493,6 +499,14 @@ export function AjustesTab({
                   title="Notificações"
                   detail={pushEnabled ? "Ativadas" : "Desativadas"}
                   onClick={() => openSettingsPage("notifications")}
+                  last
+                />
+              ) : pushNeedsInstall ? (
+                <SettingsMenuRow
+                  icon={<Bell size={17} />}
+                  title="Notificações"
+                  detail="Instale o app para ativar"
+                  onClick={() => setInstallSheetOpen(true)}
                   last
                 />
               ) : null}
@@ -907,7 +921,9 @@ export function AjustesTab({
                   className="mt-0.5 font-medium"
                   style={{ fontSize: "12px", color: "var(--text-muted)" }}
                 >
-                  Abre mais rápido e funciona offline
+                  {pushNeedsInstall
+                    ? "Abre mais rápido, funciona offline e libera as notificações"
+                    : "Abre mais rápido e funciona offline"}
                 </p>
               </div>
             </GlassCard>
