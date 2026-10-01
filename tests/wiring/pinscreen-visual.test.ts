@@ -84,8 +84,26 @@ describe("PinScreen — distingue PIN geral e PIN do Cofre (ponto crítico da #1
     expect(tsxSrc).toContain("Seu espaço permanece protegido neste aparelho.");
   });
 
-  it("segue sem nenhum botão de cancelar (decisão deliberada da Fase 3/#126, não regredida)", () => {
-    expect(tsxSrc).not.toMatch(/cancelar/i);
+  // A Fase 3/#126 tirou o cancelar de propósito; o usuário reabriu
+  // (2026-10-01: "quando entra em cofre não tem opção de voltar"). Volta
+  // só como saída opcional: a tecla apagar vira "Cancelar" com 0 dígitos e
+  // SÓ quando o chamador passa `onCancel` (o Cofre). O PIN geral do app não
+  // passa, então continua sem saída -- ali não há pra onde voltar.
+  it("'Cancelar' só existe como troca da tecla apagar, com 0 dígitos e onCancel presente", () => {
+    expect(tsxSrc).toMatch(
+      /const isCancel = isDelete && digits\.length === 0 && !!onCancel;/
+    );
+    expect(tsxSrc).toMatch(/digits\.length === 0 && onCancel\)/);
+  });
+
+  it("o PIN geral do app não passa onCancel (sem saída); o do Cofre passa", () => {
+    const pageSrc = readFileSync(join(ROOT, "app", "page.tsx"), "utf-8");
+    const cofreSrc = readFileSync(
+      join(ROOT, "components", "cofre", "CofreTab.tsx"),
+      "utf-8"
+    );
+    expect(pageSrc).not.toMatch(/onCancel=/);
+    expect(cofreSrc).toMatch(/onCancel=\{onExit\}/);
   });
 });
 

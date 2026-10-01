@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MessageCircle,
   Check,
@@ -24,10 +24,17 @@ function ChipButton({
   onClick,
   children,
   variant = "primary",
+  label,
+  text,
 }: {
   onClick: () => void;
   children: React.ReactNode;
   variant?: "primary" | "ghost" | "danger";
+  /** Nome acessível do botão de ícone (VoiceOver). */
+  label: string;
+  /** Mostra o rótulo escrito ao lado do ícone -- pra ação principal da
+   * linha, onde um ícone sozinho deixa dúvida. */
+  text?: boolean;
 }) {
   const styles: Record<string, React.CSSProperties> = {
     primary: { background: "var(--accent)", color: "#fff" },
@@ -45,10 +52,16 @@ function ChipButton({
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center rounded-full font-semibold transition-opacity active:opacity-70"
-      style={{ height: 44, width: 44, ...styles[variant] }}
+      aria-label={text ? undefined : label}
+      className="flex items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-opacity active:opacity-70"
+      style={{
+        height: 44,
+        ...(text ? { paddingInline: 16 } : { width: 44 }),
+        ...styles[variant],
+      }}
     >
       {children}
+      {text && label}
     </button>
   );
 }
@@ -84,7 +97,20 @@ export function AmigasScreen({
   onOpenChat,
   onOpenProfile,
 }: Props) {
-  const [tab, setTab] = useState<SubTab>("amigas");
+  // Com pedido esperando resposta, abre direto em Solicitações -- é o que
+  // a pessoa veio fazer (o badge/notificação trouxe ela até aqui).
+  const [tab, setTabState] = useState<SubTab>(
+    requests.length > 0 ? "solicitacoes" : "amigas"
+  );
+  const escolheuAbaRef = useRef(false);
+  function setTab(next: SubTab) {
+    escolheuAbaRef.current = true;
+    setTabState(next);
+  }
+  useEffect(() => {
+    if (escolheuAbaRef.current) return;
+    if (!loading && requests.length > 0) setTabState("solicitacoes");
+  }, [loading, requests.length]);
   const [menuUser, setMenuUser] = useState<PessoaResumo | null>(null);
   const [blockConfirmUser, setBlockConfirmUser] = useState<PessoaResumo | null>(
     null
@@ -129,11 +155,15 @@ export function AmigasScreen({
                     onOpenProfile={() => onOpenProfile(user.id)}
                     action={
                       <>
-                        <ChipButton onClick={() => onOpenChat(user.id)}>
+                        <ChipButton
+                          label="Conversar"
+                          onClick={() => onOpenChat(user.id)}
+                        >
                           <MessageCircle size={15} />
                         </ChipButton>
                         <ChipButton
                           variant="ghost"
+                          label="Mais opções"
                           onClick={() => setMenuUser(user)}
                         >
                           <MoreHorizontal size={15} />
@@ -165,11 +195,16 @@ export function AmigasScreen({
                       <>
                         <ChipButton
                           variant="danger"
+                          label="Recusar"
                           onClick={() => onDecline(req.id)}
                         >
                           <X size={15} />
                         </ChipButton>
-                        <ChipButton onClick={() => onAccept(req)}>
+                        <ChipButton
+                          label="Aceitar"
+                          text
+                          onClick={() => onAccept(req)}
+                        >
                           <Check size={15} />
                         </ChipButton>
                       </>
@@ -206,7 +241,11 @@ export function AmigasScreen({
                             Enviado
                           </span>
                         ) : (
-                          <ChipButton onClick={() => onSendRequest(user.id)}>
+                          <ChipButton
+                            label="Adicionar"
+                            text
+                            onClick={() => onSendRequest(user.id)}
+                          >
                             <UserPlus size={15} />
                           </ChipButton>
                         )

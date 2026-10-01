@@ -88,7 +88,7 @@ describe("FeedScreen — linha fixa de Amigas é incondicional (fora do items.ma
 describe("Rede — onOpenAmigas navega pra AmigasScreen de verdade (não placeholder)", () => {
   it('RedeTab liga onOpenAmigas a um push real de tela ({ type: "amigas" })', () => {
     expect(redeTabSrc).toMatch(
-      /onOpenAmigas=\{\(\) => push\(\{ type: "amigas" \}\)\}/
+      /onOpenAmigas=\{\(\) => \{\s*revalidarSocial\(\);\s*push\(\{ type: "amigas" \}\);\s*\}\}/
     );
   });
 

@@ -294,7 +294,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
             <textarea
               rows={3}
               style={{ ...inputStyle, resize: "none" }}
-              placeholder="Notas sobre o atendimento..."
+              placeholder="Só deste atendimento: cor escolhida, alergia, sinal pago…"
               value={form.observacoes}
               onChange={(e) => set("observacoes", e.target.value)}
             />

@@ -19,7 +19,10 @@ interface Props {
 
 export function TabPanel({ tab, activeTab, children }: Props) {
   return (
-    <div style={{ display: activeTab === tab ? "block" : "none" }}>
+    <div
+      data-tab-panel={tab}
+      style={{ display: activeTab === tab ? "block" : "none" }}
+    >
       {children}
     </div>
   );

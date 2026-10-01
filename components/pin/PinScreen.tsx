@@ -31,12 +31,17 @@ interface Props {
   pinHash: string;
   onUnlock: () => void;
   context?: "app" | "vault";
+  /** Saída sem digitar o PIN (só faz sentido no Cofre: a trava do app não
+   * tem pra onde voltar). Como no código de acesso do iOS, a tecla de
+   * apagar vira "Cancelar" enquanto nenhum dígito foi digitado. */
+  onCancel?: () => void;
 }
 
 export function PinScreen({
   pinHash,
   onUnlock: unlock,
   context = "app",
+  onCancel,
 }: Props) {
   const [digits, setDigits] = useState<string[]>([]);
   const [shake, setShake] = useState(false);
@@ -85,6 +90,10 @@ export function PinScreen({
   function press(key: string) {
     if (verifying) return;
     if (key === "del") {
+      if (digits.length === 0 && onCancel) {
+        onCancel();
+        return;
+      }
       setDigits((current) => current.slice(0, -1));
     } else if (key) {
       setDigits((current) =>
@@ -154,15 +163,25 @@ export function PinScreen({
           {KEYS.map(({ key, letters }, index) => {
             if (!key) return <span key={index} aria-hidden="true" />;
             const isDelete = key === "del";
+            const isCancel = isDelete && digits.length === 0 && !!onCancel;
             return (
               <button
                 key={`${key}-${index}`}
                 type="button"
                 onClick={() => press(key)}
                 disabled={verifying}
-                aria-label={isDelete ? "Apagar último dígito" : `Dígito ${key}`}
+                aria-label={
+                  isCancel
+                    ? "Cancelar"
+                    : isDelete
+                      ? "Apagar último dígito"
+                      : `Dígito ${key}`
+                }
+                data-key={isCancel ? "cancel" : isDelete ? "del" : undefined}
               >
-                {isDelete ? (
+                {isCancel ? (
+                  <span className={styles.textKey}>Cancelar</span>
+                ) : isDelete ? (
                   <Delete size={22} />
                 ) : (
                   <>

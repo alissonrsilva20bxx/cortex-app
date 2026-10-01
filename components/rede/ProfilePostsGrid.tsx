@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIA_META, type FeedPost } from "@/lib/rede/feed";
 import { ProfilePhotoViewer } from "./ProfilePhotoViewer";
-import { ReportMenuButton } from "./ReportMenuButton";
+import { OwnPostMenuButton, ReportMenuButton } from "./ReportMenuButton";
 
 /**
  * Grade estilo Instagram das publicações de um perfil (ticket #139, Meu
@@ -39,6 +39,10 @@ interface Props {
    * pelo chamador (`PerfilPublicoScreen`: `isMe ? undefined : ...`), nunca
    * aqui, pra este componente continuar sem saber nada sobre autoria. */
   onReportPost?: (postId: string) => void;
+  /** Presente = posts da própria pessoa (o chamador decide): cada célula e o
+   * visualizador ganham um "..." com "Excluir publicação". Mutuamente
+   * exclusivo com `onReportPost` -- de novo decidido pelo chamador. */
+  onDeletePost?: (postId: string) => void;
 }
 
 /** Retrato de texto -- mostrado quando não há (ou falhou) a miniatura.
@@ -78,11 +82,13 @@ function GridTile({
   onOpen,
   onRenovarFoto,
   onReportPost,
+  onDeletePost,
 }: {
   post: FeedPost;
   onOpen: (post: FeedPost, trigger: HTMLButtonElement) => void;
   onRenovarFoto: (path: string) => Promise<string | null>;
   onReportPost?: (postId: string) => void;
+  onDeletePost?: (postId: string) => void;
 }) {
   const foto = post.fotos[0];
   const [src, setSrc] = useState<string | null>(foto?.thumbUrl ?? null);
@@ -121,29 +127,43 @@ function GridTile({
             <ReportMenuButton onReport={() => onReportPost(post.id)} />
           </div>
         )}
+        {onDeletePost && (
+          <div className="absolute top-0 right-0">
+            <OwnPostMenuButton onDelete={() => onDeletePost(post.id)} />
+          </div>
+        )}
       </div>
     );
   }
 
+  // Célula com foto: o "..." de excluir fica IRMÃO do <button> que abre o
+  // visualizador (botão dentro de botão não é HTML válido).
   return (
-    <button
-      type="button"
-      onClick={(e) => onOpen(post, e.currentTarget)}
-      aria-label={`Abrir foto da publicação: ${post.texto.slice(0, 40) || "sem legenda"}`}
-      className="relative aspect-square overflow-hidden active:opacity-80 transition-opacity"
-    >
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- miniatura assinada (Storage), não um asset estático do Next
-        <img
-          src={src}
-          alt=""
-          className="w-full h-full object-cover"
-          onError={handleImgError}
-        />
-      ) : (
-        <TextoFallback post={post} cat={cat} />
+    <div className="relative aspect-square overflow-hidden">
+      <button
+        type="button"
+        onClick={(e) => onOpen(post, e.currentTarget)}
+        aria-label={`Abrir foto da publicação: ${post.texto.slice(0, 40) || "sem legenda"}`}
+        className="w-full h-full active:opacity-80 transition-opacity"
+      >
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element -- miniatura assinada (Storage), não um asset estático do Next
+          <img
+            src={src}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={handleImgError}
+          />
+        ) : (
+          <TextoFallback post={post} cat={cat} />
+        )}
+      </button>
+      {onDeletePost && (
+        <div className="absolute top-0 right-0">
+          <OwnPostMenuButton onDelete={() => onDeletePost(post.id)} />
+        </div>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -158,6 +178,7 @@ export function ProfilePostsGrid({
   emptyMessage,
   onRenovarFoto,
   onReportPost,
+  onDeletePost,
 }: Props) {
   const [viewerPostId, setViewerPostId] = useState<string | null>(null);
   const lastTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -219,6 +240,7 @@ export function ProfilePostsGrid({
             onOpen={openViewer}
             onRenovarFoto={onRenovarFoto}
             onReportPost={onReportPost}
+            onDeletePost={onDeletePost}
           />
         ))}
       </div>
@@ -227,6 +249,14 @@ export function ProfilePostsGrid({
         onClose={closeViewer}
         onRenovarFoto={onRenovarFoto}
         onReportPost={onReportPost}
+        onDeletePost={
+          onDeletePost
+            ? (postId) => {
+                closeViewer();
+                onDeletePost(postId);
+              }
+            : undefined
+        }
       />
     </div>
   );

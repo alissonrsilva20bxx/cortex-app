@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 
 // useLayoutEffect emite aviso "does nothing on the server" durante o SSR de
 // um componente client — cai pra useEffect nesse lado (nunca roda no
@@ -38,6 +38,8 @@ import { supabase } from "@/lib/supabase";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import * as cofreCache from "@/lib/cofre/cofreCache";
+import * as pinHashCache from "@/lib/pinHashCache";
+import { useTabSwipe } from "@/lib/useTabSwipe";
 import { isFreshAccount } from "@/lib/onboarding";
 import type {
   TabId,
@@ -72,6 +74,14 @@ const DEFAULT_CARD_STYLES: CardStyleConfig = {
   financeSummary: "standard",
 };
 const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
+
+/** Falha de rede (offline / servidor inalcançável), não sessão inválida. */
+function isNetworkError(error: { name?: string; status?: number }): boolean {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return true;
+  }
+  return error.name === "AuthRetryableFetchError" || error.status === 0;
+}
 
 export default function Page() {
   const toast = useToast();
@@ -163,32 +173,58 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
+    let cancelado = false;
+    async function boot() {
+      // Online, getUser() valida a sessão no servidor. Sem rede ele devolve
+      // erro em vez do usuário -- aí cai pra sessão guardada no aparelho,
+      // pro PWA abrir offline (cada aba mostra o que tem em cache). Uma
+      // sessão REJEITADA pelo servidor (resposta sem erro de rede) não cai
+      // nesse fallback.
+      const { data, error } = await supabase.auth.getUser();
+      let authUser = data.user;
+      if (!authUser && error && isNetworkError(error)) {
+        const { data: s } = await supabase.auth.getSession();
+        authUser = s.session?.user ?? null;
+      }
+      if (!authUser || cancelado) return;
       const u: Usuario = {
-        id: data.user.id,
-        nome:
-          data.user.user_metadata?.full_name ?? data.user.email ?? "Usuário",
-        email: data.user.email ?? "",
-        avatarUrl: data.user.user_metadata?.avatar_url,
+        id: authUser.id,
+        nome: authUser.user_metadata?.full_name ?? authUser.email ?? "Usuário",
+        email: authUser.email ?? "",
+        avatarUrl: authUser.user_metadata?.avatar_url,
       };
 
       // Só revela o usuário (e libera as buscas de dados sensíveis) depois
       // de saber se há PIN a cumprir — evita a tela de conteúdo desenhar
       // (ou pré-carregar dados) antes da trava, mesmo por um instante (§5.2).
-      supabase
+      // Sem rede, usa a última resposta guardada (`lib/pinHashCache.ts`);
+      // sem nenhuma guardada, não abre (falha fechada).
+      const { data: cfg, error: cfgError } = await supabase
         .from("configuracoes")
         .select("pin_hash")
-        .eq("user_id", data.user.id)
-        .single()
-        .then(({ data: cfg }) => {
-          if (cfg?.pin_hash) {
-            setPinHash(cfg.pin_hash);
-            setLocked(true);
-          }
-          setUsuario(u);
-        });
-    });
+        .eq("user_id", authUser.id)
+        .single();
+      let hash: string | null;
+      // PGRST116 = conta ainda sem linha em `configuracoes` (sem PIN).
+      if (!cfgError || cfgError.code === "PGRST116") {
+        hash = cfg?.pin_hash ?? null;
+        pinHashCache.gravar(authUser.id, hash);
+      } else {
+        const guardado = pinHashCache.ler(authUser.id);
+        if (guardado === undefined) return;
+        hash = guardado;
+      }
+      if (cancelado) return;
+      if (hash) {
+        setPinHash(hash);
+        setLocked(true);
+      }
+      setUsuario(u);
+    }
+    boot();
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   // Re-trava ~30s depois de ir para segundo plano (§5.2): "abriu, minimizou,
@@ -244,33 +280,41 @@ export default function Page() {
         .order("data")
         .order("hora"),
       supabase.from("metas").select("*").eq("user_id", usuario.id),
-    ]).then(([{ data: jobsData }, { data: metasData }]) => {
-      if (jobsData) {
-        setJobs(
-          jobsData.map((j) => ({
-            id: j.id,
-            clienteNome: j.cliente_nome,
-            data: j.data,
-            hora: j.hora,
-            valor: j.valor,
-            modalidade: j.modalidade,
-            local: j.local ?? undefined,
-            status: j.status,
-            observacoes: j.observacoes ?? undefined,
-            criadoEm: j.criado_em,
-          }))
-        );
+    ]).then(
+      ([
+        { data: jobsData, error: jobsErr },
+        { data: metasData, error: metasErr },
+      ]) => {
+        // Sem rede: mantém o que já está na tela e não decide "1º uso" com
+        // listas vazias que só estão vazias porque a busca falhou.
+        if (jobsErr || metasErr) return;
+        if (jobsData) {
+          setJobs(
+            jobsData.map((j) => ({
+              id: j.id,
+              clienteNome: j.cliente_nome,
+              data: j.data,
+              hora: j.hora,
+              valor: j.valor,
+              modalidade: j.modalidade,
+              local: j.local ?? undefined,
+              status: j.status,
+              observacoes: j.observacoes ?? undefined,
+              criadoEm: j.criado_em,
+            }))
+          );
+        }
+        if (metasData) {
+          setMetas(
+            metasData.map((m) => ({
+              periodo: m.periodo,
+              valorAlvo: m.valor_alvo,
+            }))
+          );
+        }
+        setDataLoaded(true);
       }
-      if (metasData) {
-        setMetas(
-          metasData.map((m) => ({
-            periodo: m.periodo,
-            valorAlvo: m.valor_alvo,
-          }))
-        );
-      }
-      setDataLoaded(true);
-    });
+    );
   }, [usuario, locked, jobsRefreshKey, financeiroRefreshKey]);
 
   useEffect(() => {
@@ -310,15 +354,14 @@ export default function Page() {
   }, [usuario, locked, objetivosRefreshKey]);
 
   async function handleSignOut() {
-    // Zera o cache da Rede e do Cofre ANTES de sair -- em memória (a
-    // próxima conta nesta aba não herda nada) e no localStorage (req
-    // 4/6). O Cofre não tem camada persistida (deliberado, ver
-    // `lib/cofre/cofreCache.ts`), então só o cache em memória precisa ser
-    // zerado.
+    // Zera o cache da Rede, do Cofre e do PIN ANTES de sair -- em memória
+    // (a próxima conta nesta aba não herda nada) e no localStorage (req
+    // 4/6; `cofreCache.limparTudo` apaga as duas camadas do Cofre).
     try {
       redeCache.limparTudo();
       redeCachePersist.limpar();
       cofreCache.limparTudo();
+      pinHashCache.limparTudo();
     } catch (_) {}
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -358,6 +401,32 @@ export default function Page() {
     );
   }
 
+  // Última aba fora do Cofre -- pra onde o "Cancelar" do PIN do Cofre
+  // volta. (A rolagem de cada aba já é lembrada pela BottomNav, em
+  // `lib/useScrollCompact.ts`.)
+  const abaAntesDoCofre = useRef<TabId>("home");
+  useEffect(() => {
+    if (activeTab !== "cofre") abaAntesDoCofre.current = activeTab;
+  }, [activeTab]);
+
+  // Arrastar pro lado troca de aba (Início ↔ Agenda ↔ Financeiro ↔ Cofre ↔
+  // Rede). Desligado no onboarding, com o FAB aberto, com o teclado do
+  // chat aberto e em Ajustes (fora da barra de abas).
+  const mainRef = useRef<HTMLElement>(null);
+  useTabSwipe({
+    containerRef: mainRef,
+    activeTab,
+    enabled:
+      entryDone &&
+      Boolean(usuario) &&
+      !locked &&
+      !(isNewUserSession === true && !onboardingDone) &&
+      !fabOpen &&
+      !chatComposerFocused &&
+      activeTab !== "ajustes",
+    onChange: handleTabChange,
+  });
+
   if (!entryDone) {
     return <OpeningMotion onDone={() => setEntryDone(true)} />;
   }
@@ -377,6 +446,7 @@ export default function Page() {
     <div className="relative flex flex-col min-h-screen">
       <main
         className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
+        ref={mainRef}
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
         {isNewUser && usuario && (
@@ -389,7 +459,10 @@ export default function Page() {
               setJobFormOpen(true);
             }}
             onMetaSaved={() => setFinanceiroRefreshKey((k) => k + 1)}
-            onPinSaved={(h) => setPinHash(h)}
+            onPinSaved={(h) => {
+              setPinHash(h);
+              pinHashCache.gravar(usuario.id, h);
+            }}
             onComplete={() => {
               try {
                 localStorage.setItem(onboardingDoneKey(usuario.id), "1");
@@ -481,6 +554,7 @@ export default function Page() {
                 refreshTrigger={cofreRefreshKey}
                 pinHash={pinHash}
                 active={activeTab === "cofre"}
+                onExit={() => handleTabChange(abaAntesDoCofre.current)}
               />
             </TabPanel>
 
@@ -498,7 +572,10 @@ export default function Page() {
                 userId={usuario.id}
                 jobs={jobs}
                 onSignOut={handleSignOut}
-                onPinHashChange={(h) => setPinHash(h)}
+                onPinHashChange={(h) => {
+                  setPinHash(h);
+                  pinHashCache.gravar(usuario.id, h);
+                }}
                 onHomeCardsChange={setHomeCards}
                 onCardStylesChange={setCardStyles}
                 onChartPrefsChange={setChartPrefs}

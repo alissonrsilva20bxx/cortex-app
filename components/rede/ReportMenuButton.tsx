@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, Flag } from "lucide-react";
+import { MoreHorizontal, Flag, Trash2, X } from "lucide-react";
 import { OptionsSheet } from "./OptionsSheet";
 
 interface Props {
@@ -37,33 +37,7 @@ export function ReportMenuButton({ onReport }: Props) {
 
   return (
     <>
-      {/* Alvo de toque real em 44×44 (achado #56, mesmo truque de
-          PostCard.tsx: `width/height: 44` no <button>, círculo visual
-          menor por dentro) -- o círculo de 32px sozinho, como na 1ª
-          versão, era discreto demais pro mínimo documentado no repo. */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(true);
-        }}
-        aria-label="Mais opções"
-        className="flex items-center justify-center active:opacity-70"
-        style={{ width: 44, height: 44 }}
-      >
-        <span
-          aria-hidden="true"
-          className="flex items-center justify-center rounded-full"
-          style={{
-            width: 32,
-            height: 32,
-            background: "rgba(0,0,0,0.5)",
-            color: "#fff",
-          }}
-        >
-          <MoreHorizontal size={16} />
-        </span>
-      </button>
+      <DotsTrigger onClick={() => setOpen(true)} />
       <OptionsSheet
         open={open}
         title="Publicação"
@@ -75,6 +49,92 @@ export function ReportMenuButton({ onReport }: Props) {
             Icon: Flag,
             danger: true,
             onSelect: onReport,
+          },
+        ]}
+      />
+    </>
+  );
+}
+
+/** O "..." em si: alvo de toque real em 44×44 (achado #56, mesmo truque de
+ * PostCard.tsx: `width/height: 44` no <button>, círculo visual menor por
+ * dentro) -- o círculo de 32px sozinho era discreto demais pro mínimo
+ * documentado no repo. */
+function DotsTrigger({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      aria-label="Mais opções"
+      className="flex items-center justify-center active:opacity-70"
+      style={{ width: 44, height: 44 }}
+    >
+      <span
+        aria-hidden="true"
+        className="flex items-center justify-center rounded-full"
+        style={{
+          width: 32,
+          height: 32,
+          background: "rgba(0,0,0,0.5)",
+          color: "#fff",
+        }}
+      >
+        <MoreHorizontal size={16} />
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Par do `ReportMenuButton` pras publicações da PRÓPRIA pessoa (grade e
+ * visualizador de Meu espaço): "Excluir publicação" + confirmação, tudo
+ * aqui dentro. Antes, excluir só existia no "..." do feed -- quem ia
+ * procurar no próprio perfil (o lugar óbvio) não achava a opção.
+ *
+ * A confirmação mora aqui (e não no sheet "Excluir publicação?" do
+ * RedeTab) porque o visualizador de foto fica por cima do RedeTab: um
+ * sheet aberto lá embaixo nasceria escondido atrás dele.
+ */
+export function OwnPostMenuButton({ onDelete }: { onDelete: () => void }) {
+  const [step, setStep] = useState<"fechado" | "menu" | "confirmar">("fechado");
+
+  return (
+    <>
+      <DotsTrigger onClick={() => setStep("menu")} />
+      <OptionsSheet
+        open={step === "menu"}
+        title="Publicação"
+        onClose={() => setStep((s) => (s === "menu" ? "fechado" : s))}
+        options={[
+          {
+            key: "excluir",
+            label: "Excluir publicação",
+            Icon: Trash2,
+            danger: true,
+            onSelect: () => setStep("confirmar"),
+          },
+        ]}
+      />
+      <OptionsSheet
+        open={step === "confirmar"}
+        title="Excluir publicação?"
+        onClose={() => setStep("fechado")}
+        options={[
+          {
+            key: "confirmar",
+            label: "Sim, excluir",
+            Icon: Trash2,
+            danger: true,
+            onSelect: onDelete,
+          },
+          {
+            key: "cancelar",
+            label: "Cancelar",
+            Icon: X,
+            onSelect: () => {},
           },
         ]}
       />

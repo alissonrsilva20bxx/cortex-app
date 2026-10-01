@@ -246,14 +246,18 @@ describe("RedeTab revalida em 2º plano ao reconectar (sem skeleton, sem duplica
 
   it("evento `online` faz bump numa chave que entra nas deps dos fetches", () => {
     expect(src).toMatch(/setReconexaoKey\(\(k\) => k \+ 1\)/);
-    // feed, perfil, amigas
+    // feed, perfil
     const deps = src.match(/\}, \[usuario\.id, reconexaoKey\]\);/g) ?? [];
-    expect(deps.length).toBeGreaterThanOrEqual(3);
+    expect(deps.length).toBeGreaterThanOrEqual(2);
+    // amigas também revalida quando `revalidarSocial()` (socialKey) faz bump
+    expect(src).toMatch(/\}, \[usuario\.id, reconexaoKey, socialKey\]\);/);
     // conversas + notificações reaproveitam a chave junto do reloadKey
     expect(src).toMatch(
-      /\[usuario\.id, conversationsReloadKey, reconexaoKey\]/
+      /\[usuario\.id, conversationsReloadKey, reconexaoKey, socialKey\]/
     );
-    expect(src).toMatch(/\[usuario\.id, notificacoesReloadKey, reconexaoKey\]/);
+    expect(src).toMatch(
+      /\[usuario\.id, notificacoesReloadKey, reconexaoKey, socialKey\]/
+    );
   });
 
   it("hasMore do refresh não ressuscita nem esconde o botão indevidamente", () => {

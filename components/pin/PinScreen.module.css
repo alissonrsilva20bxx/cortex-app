@@ -257,6 +257,27 @@
   color: #a69ca1;
 }
 
+/* "Cancelar" do Cofre: texto solto, sem o círculo das teclas -- como o
+   "Cancelar" do código de acesso do iOS. */
+.keypad > button[data-key="cancel"] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.keypad > button[data-key="cancel"]:active {
+  transform: none;
+  border-color: transparent;
+  background: transparent;
+  opacity: 0.5;
+}
+
+.textKey {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #f5f1f3;
+}
+
 .privacy {
   display: flex;
   align-items: center;

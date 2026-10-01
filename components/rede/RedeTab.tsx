@@ -285,6 +285,32 @@ export function RedeTab({
     };
   }, []);
 
+  // ── Revalidação social (Amigas + Notificações + Conversas) ──
+  // Antes só buscava ao montar e ao reconectar: uma solicitação de amizade
+  // (ou mensagem) que chegava com o app aberto nunca aparecia até recarregar
+  // a página -- "a amiga me adicionou e eu não tenho como aceitar". Agora
+  // também revalida ao voltar pra aba Rede, ao app voltar pro primeiro plano
+  // e ao abrir Notificações/Amigas. No máximo 1x a cada 15s, em 2º plano
+  // (mesma reconciliação sem skeleton do `reconexaoKey`).
+  const [socialKey, setSocialKey] = useState(0);
+  const ultimaRevalidacaoRef = useRef(Date.now());
+  const revalidarSocial = useCallback(() => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) return;
+    const agora = Date.now();
+    if (agora - ultimaRevalidacaoRef.current < 15_000) return;
+    ultimaRevalidacaoRef.current = agora;
+    setSocialKey((k) => k + 1);
+  }, []);
+  useEffect(() => {
+    if (!active) return;
+    revalidarSocial();
+    function onVisible() {
+      if (document.visibilityState === "visible") revalidarSocial();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [active, revalidarSocial]);
+
   // ── Perfil real + LiveLinks ──
   const [perfil, setPerfil] = useState<Perfil | null>(
     () => semente.perfil?.perfil ?? null
@@ -651,7 +677,7 @@ export function RedeTab({
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, reconexaoKey]);
+  }, [usuario.id, reconexaoKey, socialKey]);
 
   // ── Chat real ──
   const [conversations, setConversations] = useState<ConversaResumo[]>(
@@ -713,7 +739,7 @@ export function RedeTab({
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, conversationsReloadKey, reconexaoKey]);
+  }, [usuario.id, conversationsReloadKey, reconexaoKey, socialKey]);
 
   function retryLoadConversations() {
     setConversationsLoading(true);
@@ -889,7 +915,7 @@ export function RedeTab({
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, notificacoesReloadKey, reconexaoKey]);
+  }, [usuario.id, notificacoesReloadKey, reconexaoKey, socialKey]);
 
   function retryLoadNotificacoes() {
     setNotificacoesLoading(true);
@@ -1232,9 +1258,27 @@ export function RedeTab({
     }
   }
   async function sendRequest(userId: string) {
+    // A outra pessoa já pediu: "Adicionar" é aceitar o pedido dela.
+    const pedidoDela = requests.find((r) => r.pessoa.id === userId);
+    if (pedidoDela) {
+      await acceptRequest(pedidoDela);
+      return;
+    }
     try {
-      await enviarPedidoAmizade(supabase, { destinatarioId: userId });
-      setSentRequests((prev) => [...prev, userId]);
+      const amizade = await enviarPedidoAmizade(supabase, {
+        destinatarioId: userId,
+      });
+      if (amizade.status === "aceita") {
+        // Havia um pedido dela que a lista ainda não mostrava (aceite
+        // automático no serviço): recarrega Amigas/Solicitações.
+        setRequests((prev) => prev.filter((r) => r.pessoa.id !== userId));
+        setSocialKey((k) => k + 1);
+        toast.success("Agora vocês são amigas!");
+        return;
+      }
+      setSentRequests((prev) =>
+        prev.includes(userId) ? prev : [...prev, userId]
+      );
       toast.success("Solicitação enviada!");
     } catch (e) {
       console.error("[RedeTab enviar pedido]", e);
@@ -1837,7 +1881,9 @@ export function RedeTab({
     <div className="pb-4">
       {/* Só as telas da pilha: durante uma transição este bloco é clonado e
           escondido (sheets ficam fora, sempre vivos). */}
-      <div ref={pageRef}>
+      {/* Numa subtela (perfil, chat, amigas...) arrastar pro lado é
+          "voltar" (useStackNav), não trocar de aba. */}
+      <div ref={pageRef} data-no-tab-swipe={stack.length > 1 ? "" : undefined}>
         {screen.type === "feed" && (
           <FeedScreen
             usuario={usuario}
@@ -1856,10 +1902,16 @@ export function RedeTab({
             onSegmentoChange={trocarSegmento}
             onLoadMore={loadMorePosts}
             onOpenSearch={() => push({ type: "busca" })}
-            onOpenNotifs={() => setNotifSheetOpen(true)}
+            onOpenNotifs={() => {
+              revalidarSocial();
+              setNotifSheetOpen(true);
+            }}
             onOpenChat={() => push({ type: "chatList" })}
             onOpenMeuEspaco={() => push({ type: "meuEspaco" })}
-            onOpenAmigas={() => push({ type: "amigas" })}
+            onOpenAmigas={() => {
+              revalidarSocial();
+              push({ type: "amigas" });
+            }}
             onOpenWishlist={() => push({ type: "wishlist" })}
             onOpenComposer={() => setComposerOpen(true)}
             onOpenAutor={openAutor}
@@ -1972,6 +2024,7 @@ export function RedeTab({
               push({ type: "perfilPublico", userId: usuario.id })
             }
             onChangeDefaultPrivacidade={setDefaultPrivacidade}
+            onDeletePost={deletePost}
             {...postActions}
           />
         )}
@@ -1982,6 +2035,9 @@ export function RedeTab({
             const isFriend = profile.isMe
               ? false
               : friends.some((f) => f.id === screen.userId);
+            const pedidoRecebido = profile.isMe
+              ? undefined
+              : requests.find((r) => r.pessoa.id === screen.userId);
             const wishlistPublico = profile.isMe
               ? wishlistItems.filter((w) => w.privacidade === "comunidade")
               : [];
@@ -2008,6 +2064,17 @@ export function RedeTab({
                 onOpenChat={() => openChatWithUser(screen.userId)}
                 chatOpening={openingChatUserIds.has(screen.userId)}
                 onSendRequest={() => sendRequest(screen.userId)}
+                incomingRequest={!!pedidoRecebido}
+                onAcceptRequest={
+                  pedidoRecebido
+                    ? () => acceptRequest(pedidoRecebido)
+                    : undefined
+                }
+                onDeclineRequest={
+                  pedidoRecebido
+                    ? () => declineRequest(pedidoRecebido.id)
+                    : undefined
+                }
                 onBlock={() => {
                   blockUser(screen.userId);
                   pop();

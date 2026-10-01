@@ -12,6 +12,7 @@ export function NotasSection({ userId }: Props) {
   const [conteudo, setConteudo] = useState("");
   const [saving, setSaving] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendenteRef = useRef<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -54,9 +55,28 @@ export function NotasSection({ userId }: Props) {
 
   function handleChange(text: string) {
     setConteudo(text);
+    pendenteRef.current = text;
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => autosave(text), 1200);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      pendenteRef.current = null;
+      autosave(text);
+    }, 1200);
   }
+
+  // Fechar o sheet logo depois de digitar não pode perder o texto: salva
+  // na hora o que ainda estava esperando o debounce.
+  const autosaveRef = useRef(autosave);
+  autosaveRef.current = autosave;
+  useEffect(
+    () => () => {
+      if (timerRef.current && pendenteRef.current !== null) {
+        clearTimeout(timerRef.current);
+        autosaveRef.current(pendenteRef.current);
+      }
+    },
+    []
+  );
 
   return (
     // Sem cabeçalho próprio ("Notas Gerais") desde #135: o único uso deste
@@ -66,11 +86,10 @@ export function NotasSection({ userId }: Props) {
     // reproduz o padding padrão dos outros corpos de sheet do app (ver
     // JobDetailSheet.tsx/ClienteDetailSheet.tsx).
     <div className="px-5 py-5">
-      {saving && (
-        <p className="text-[11px] mb-2" style={{ color: "var(--text-muted)" }}>
-          Salvando…
-        </p>
-      )}
+      <p className="text-[12px] mb-3" style={{ color: "var(--text-muted)" }}>
+        Lembretes gerais, fora de um atendimento. Pra anotar algo de uma cliente
+        ou horário, use “Observações” dentro do atendimento.
+      </p>
       <textarea
         rows={7}
         className="w-full rounded-2xl px-4 py-3 text-sm leading-relaxed resize-none outline-none transition-colors"
@@ -79,10 +98,18 @@ export function NotasSection({ userId }: Props) {
           border: "1px solid var(--border-color)",
           color: "var(--text)",
         }}
-        placeholder="Anotações livres, lembretes, ideias…"
+        placeholder="Ex.: repor esmaltes, ligar pro fornecedor…"
         value={conteudo}
         onChange={(e) => handleChange(e.target.value)}
+        aria-label="Bloco de notas"
       />
+      <p
+        className="text-[11px] mt-2"
+        style={{ color: "var(--text-muted)" }}
+        aria-live="polite"
+      >
+        {saving ? "Salvando…" : "Salvo automaticamente"}
+      </p>
     </div>
   );
 }

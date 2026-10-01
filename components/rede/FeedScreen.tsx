@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { UserPlus, MessageCircle, Gift, Sparkles, Users2 } from "lucide-react";
+import { UserPlus, MessageCircle, Gift, Users2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { RedeHeader } from "./RedeHeader";
@@ -9,7 +9,6 @@ import { ContextualBlock } from "./ContextualBlock";
 import { PostCard } from "./PostCard";
 import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
-import { DISCOVER_PEOPLE, findUser } from "@/lib/mockRede";
 import type { FeedPost } from "@/lib/rede/feed";
 import type { WishlistItem } from "@/lib/rede/wishlist";
 import type { Usuario } from "@/lib/types";
@@ -22,13 +21,6 @@ interface ContextualBlockDef {
   title: string;
   subtitle: string;
   onClick: () => void;
-  /**
-   * Bloco alimentado por fixture local (lib/mockRede.ts), sem tabela real
-   * por trás — precisa de rótulo visível pra não ficar indistinguível dos
-   * blocos reais (solicitações de amizade, mensagens não lidas). Ver T7,
-   * achado P0 do relatório de paridade do Feed.
-   */
-  demo?: boolean;
 }
 
 interface Props {
@@ -110,16 +102,16 @@ export function FeedScreen({
   const wishlistPertoDaMeta = wishlistItems.find(
     (w) => w.estado !== "conquistado" && w.valorAtual / w.valorAlvo >= 0.7
   );
-  const discover = DISCOVER_PEOPLE.map((d) => findUser(d.userId)).filter(
-    Boolean
-  );
 
   const blocks: ContextualBlockDef[] = [];
   if (pendingRequestsCount > 0) {
     blocks.push({
       key: "solicitacoes",
       icon: <UserPlus size={17} style={{ color: "var(--accent)" }} />,
-      title: `Você recebeu ${pendingRequestsCount} solicitações de amizade`,
+      title:
+        pendingRequestsCount === 1
+          ? "Você recebeu 1 solicitação de amizade"
+          : `Você recebeu ${pendingRequestsCount} solicitações de amizade`,
       subtitle: "Toque para ver quem quer se conectar",
       onClick: onOpenAmigas,
     });
@@ -128,7 +120,10 @@ export function FeedScreen({
     blocks.push({
       key: "mensagens",
       icon: <MessageCircle size={17} style={{ color: "var(--accent)" }} />,
-      title: `${unreadChats} mensagens não lidas`,
+      title:
+        unreadChats === 1
+          ? "1 mensagem não lida"
+          : `${unreadChats} mensagens não lidas`,
       subtitle: "Suas conversas estão esperando",
       onClick: onOpenChat,
     });
@@ -142,22 +137,15 @@ export function FeedScreen({
       onClick: onOpenWishlist,
     });
   }
-  if (discover.length > 0) {
-    blocks.push({
-      key: "descobrir",
-      icon: <Sparkles size={17} style={{ color: "var(--accent)" }} />,
-      title: "Pessoas que talvez você conheça",
-      subtitle: discover.map((u) => u!.nome.split(" ")[0]).join(", "),
-      onClick: onOpenAmigas,
-      demo: true,
-    });
-  }
-
-  const queue = [...blocks];
   type FeedItem =
     | { type: "post"; post: FeedPost }
     | { type: "block"; block: ContextualBlockDef };
   const items: FeedItem[] = [];
+  // Pedido de amizade esperando resposta vai no topo: entremeado nos posts
+  // ele só aparecia a partir do 2º post (e nunca num feed vazio/curto).
+  const pedidos = blocks.find((b) => b.key === "solicitacoes");
+  if (pedidos) items.push({ type: "block", block: pedidos });
+  const queue = blocks.filter((b) => b !== pedidos);
   visiblePosts.forEach((post, i) => {
     items.push({ type: "post", post });
     if ([1, 4, 6].includes(i) && queue.length) {
@@ -267,15 +255,6 @@ export function FeedScreen({
                   subtitle={item.block.subtitle}
                   onClick={item.block.onClick}
                 />
-                {item.block.demo && (
-                  <p
-                    className="text-center text-[11px] font-semibold mt-1.5"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Demonstração — sugestão de exemplo, ainda sem dado real por
-                    trás
-                  </p>
-                )}
               </div>
             )
           )

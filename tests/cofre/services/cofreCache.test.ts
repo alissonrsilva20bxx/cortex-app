@@ -1,12 +1,13 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as cofreCache from "../../../lib/cofre/cofreCache";
 import type { CofreFile } from "../../../lib/cofre/cofreCache";
 
 /**
- * Cache SWR em memória do Cofre. Ambiente `node`, sem `localStorage` -- este
- * módulo é deliberadamente memory-only (ver cabeçalho de
- * `lib/cofre/cofreCache.ts`), nada aqui deveria tocar disco.
+ * Cache SWR do Cofre. Ambiente `node`, sem `localStorage` -- os blocos
+ * abaixo exercitam só a camada em memória; a camada persistida (abrir
+ * instantâneo/offline) tem o próprio bloco no fim, com um localStorage em
+ * memória.
  */
 
 function file(name: string, over: Partial<CofreFile> = {}): CofreFile {
@@ -121,5 +122,91 @@ describe("nenhum signed URL entra no cache", () => {
     expect(Object.keys(lido ?? {}).sort()).toEqual(
       ["categoria", "createdAt", "mimeType", "name", "path", "size"].sort()
     );
+  });
+});
+
+/** localStorage mínimo em memória -- o ambiente do vitest é `node`. */
+function memStorage(): Storage {
+  const m = new Map<string, string>();
+  return {
+    get length() {
+      return m.size;
+    },
+    key: (i) => Array.from(m.keys())[i] ?? null,
+    getItem: (k) => (m.has(k) ? m.get(k)! : null),
+    setItem: (k, v) => void m.set(k, String(v)),
+    removeItem: (k) => void m.delete(k),
+    clear: () => m.clear(),
+  };
+}
+
+describe("camada persistida (reabrir o PWA / offline)", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", memStorage());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  /** Módulo novo = documento novo (reload, iOS descartou o PWA). */
+  async function moduloNovo() {
+    vi.resetModules();
+    return import("../../../lib/cofre/cofreCache");
+  }
+
+  it("lista escrita sobrevive a um documento novo (hit sem rede)", async () => {
+    const a = await moduloNovo();
+    a.vincularUsuario("u1");
+    a.escrever("u1", [file("a.pdf")]);
+
+    const b = await moduloNovo();
+    b.vincularUsuario("u1");
+    expect(b.ler("u1")).toEqual([file("a.pdf")]);
+  });
+
+  it("documento novo de outra conta não enxerga a lista da anterior", async () => {
+    const a = await moduloNovo();
+    a.vincularUsuario("u1");
+    a.escrever("u1", [file("a.pdf")]);
+
+    const b = await moduloNovo();
+    b.vincularUsuario("u2");
+    expect(b.ler("u2")).toBeNull();
+  });
+
+  it("logout apaga o disco também", async () => {
+    const a = await moduloNovo();
+    a.vincularUsuario("u1");
+    a.escrever("u1", [file("a.pdf")]);
+    a.limparTudo();
+
+    const b = await moduloNovo();
+    b.vincularUsuario("u1");
+    expect(b.ler("u1")).toBeNull();
+  });
+
+  it("JSON corrompido ou de outra versão vira cache miss, sem lançar", async () => {
+    localStorage.setItem("jobapp-cofre-cache:u1", "{nao-e-json");
+    localStorage.setItem(
+      "jobapp-cofre-cache:u2",
+      JSON.stringify({ v: 999, userId: "u2", ts: 1, files: [] })
+    );
+    const b = await moduloNovo();
+    b.vincularUsuario("u1");
+    expect(b.ler("u1")).toBeNull();
+    const c = await moduloNovo();
+    c.vincularUsuario("u2");
+    expect(c.ler("u2")).toBeNull();
+  });
+
+  it("só metadados vão pro disco (nenhuma URL)", async () => {
+    const a = await moduloNovo();
+    a.vincularUsuario("u1");
+    a.escrever("u1", [
+      { ...file("a.pdf"), signedUrl: "https://x" } as unknown as CofreFile,
+    ]);
+    const raw = localStorage.getItem("jobapp-cofre-cache:u1") ?? "";
+    expect(raw).not.toContain("https://x");
   });
 });

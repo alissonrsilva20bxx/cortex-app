@@ -36,11 +36,11 @@ const mensagensSrc = read("lib/rede/mensagens.ts");
 describe("PerfilPublicoScreen — botão Conversar não depende mais de amizade", () => {
   it("renderiza 'Conversar' fora da ternária isFriend/requestSent (antes só amigas o viam)", () => {
     // Âncora: o bloco `{onOpenChat && (<button ...>Conversar</button>)}`
-    // precisa vir ANTES da ternária `isFriend ? null : requestSent ? ... :
+    // precisa vir ANTES da ternária `isFriend ? (chip) : mostrarPedido ? ... :
     // ...`, e essa ternária não pode mais conter o texto "Conversar" --
     // sem isso, o gate por amizade reapareceria por regressão.
     const chatBlockIdx = screenSrc.indexOf("{onOpenChat && (");
-    const ternaryIdx = screenSrc.indexOf("isFriend ? null : requestSent");
+    const ternaryIdx = screenSrc.indexOf("{isFriend ? (");
     expect(chatBlockIdx).toBeGreaterThan(-1);
     expect(ternaryIdx).toBeGreaterThan(-1);
     expect(chatBlockIdx).toBeLessThan(ternaryIdx);
@@ -67,7 +67,10 @@ describe("PerfilPublicoScreen — botão Conversar não depende mais de amizade"
   });
 
   it("rótulo acessível claro ('Iniciar conversa') além do texto visível ('Conversar')", () => {
-    const chatBlockEnd = screenSrc.indexOf("Conversar", screenSrc.indexOf("{onOpenChat && ("));
+    const chatBlockEnd = screenSrc.indexOf(
+      "Conversar",
+      screenSrc.indexOf("{onOpenChat && (")
+    );
     const chatBlock = screenSrc.slice(
       screenSrc.indexOf("{onOpenChat && ("),
       chatBlockEnd + "Conversar".length
@@ -113,9 +116,7 @@ describe("RedeTab.openChatWithUser — reusa conversa existente sem chamar a RPC
     expect(mensagensSrc).toContain('client.rpc("rede_criar_conversa_1a1"');
     // Nenhum novo `.from("rede_conversas")` de escrita direta em RedeTab --
     // toda escrita passa pela RPC (que tem o advisory lock).
-    expect(redeTabSrc).not.toMatch(
-      /\.from\("rede_conversas"\)\s*\.insert/
-    );
+    expect(redeTabSrc).not.toMatch(/\.from\("rede_conversas"\)\s*\.insert/);
   });
 });
 
@@ -134,7 +135,9 @@ describe("RedeTab.openChatWithUser — toque duplo/chamada concorrente não dupl
     const fnStart = redeTabSrc.indexOf("async function openChatWithUser");
     const fnEnd = redeTabSrc.indexOf("\n  }\n", fnStart);
     const fn = redeTabSrc.slice(fnStart, fnEnd);
-    const setBeforeIdx = fn.indexOf("setOpeningChatUserIds((prev) => new Set(prev).add(userId))");
+    const setBeforeIdx = fn.indexOf(
+      "setOpeningChatUserIds((prev) => new Set(prev).add(userId))"
+    );
     const rpcIdx = fn.indexOf("abrirConversa1a1(supabase");
     expect(setBeforeIdx).toBeGreaterThan(-1);
     expect(setBeforeIdx).toBeLessThan(rpcIdx);

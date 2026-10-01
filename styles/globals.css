@@ -345,6 +345,29 @@
   color-scheme: light;
 }
 
+/* Acentos claros demais pro modo claro: texto branco em cima deles
+   (segmento ativo, dia selecionado, FAB, aba ativa) ficava abaixo de 2.5:1
+   no Gold/Ocean/Emerald/Grafite. Mesmo tratamento que --success/--danger/
+   --warning já recebem abaixo -- e o mesmo que o iOS faz com as cores do
+   sistema (tom mais escuro no claro). Pink/Purple/Crimson/Midnight já
+   passam, ficam como estão. */
+[data-mode="light"][data-theme="gold"] {
+  --accent: #c27803;
+  --accent-rgb: 194 120 3;
+}
+[data-mode="light"][data-theme="ocean"] {
+  --accent: #009a9c;
+  --accent-rgb: 0 154 156;
+}
+[data-mode="light"][data-theme="emerald"] {
+  --accent: #059669;
+  --accent-rgb: 5 150 105;
+}
+[data-mode="light"][data-theme="grafite"] {
+  --accent: #71717a;
+  --accent-rgb: 113 113 122;
+}
+
 /* [data-mode="light"] .glass-card mora junto do resto de `.glass-card`,
    perto do final do arquivo (Fundação Visual #142) -- movido pra lá pra
    ficar ao lado do material que ele sobrescreve, em vez de separado por
