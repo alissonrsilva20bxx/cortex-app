@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Bell } from "lucide-react";
 
-import { TOUR_STEPS, tourPlacement } from "@/lib/appTour";
+import { stepsDoTour, tourPlacement, type RedeAcessoTour } from "@/lib/appTour";
 import { isPushSubscribed, isPushSupported, subscribeToPush } from "@/lib/push";
 import type { TabId } from "@/lib/types";
 
@@ -19,12 +19,17 @@ interface Props {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   onClose: () => void;
+  /** Sem convite resgatado, os passos da Rede falam da vitrine/convite em
+   * vez do feed e do perfil (que a usuária ainda não tem). */
+  redeAcesso?: RedeAcessoTour;
 }
 
 /** Folga do destaque em volta do elemento. */
 const PAD = 6;
 /** Quanto esperar o alvo aparecer (troca de aba) antes de cair no cartão central. */
 const ESPERA_ALVO_MS = 700;
+/** Quanto esperar a Rede dizer se há convite antes de seguir com o texto padrão. */
+const ESPERA_ACESSO_REDE_MS = 2500;
 
 function isIOSNaoInstalado(): boolean {
   if (typeof window === "undefined") return false;
@@ -41,13 +46,34 @@ function isIOSNaoInstalado(): boolean {
  * Nos passos de navegação, tocar no furo troca de aba como a usuária
  * faria — o tour ensina o gesto, não só descreve.
  */
-export function AppTour({ userId, activeTab, onTabChange, onClose }: Props) {
+export function AppTour({
+  userId,
+  activeTab,
+  onTabChange,
+  onClose,
+  redeAcesso = "liberado",
+}: Props) {
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const [esperando, setEsperando] = useState(true);
   const [vh, setVh] = useState(800);
-  const step = TOUR_STEPS[i];
-  const last = i === TOUR_STEPS.length - 1;
+  const steps = stepsDoTour(redeAcesso);
+  const step = steps[i];
+  const last = i === steps.length - 1;
+
+  // Num passo da Rede, enquanto ela ainda confere o convite, segura o
+  // cartão um instante (senão o texto do feed pisca antes da vitrine).
+  const [desistiuDeEsperarRede, setDesistiuDeEsperarRede] = useState(false);
+  const aguardandoRede =
+    step.tab === "rede" && redeAcesso === "pendente" && !desistiuDeEsperarRede;
+  useEffect(() => {
+    if (!aguardandoRede) return;
+    const t = setTimeout(
+      () => setDesistiuDeEsperarRede(true),
+      ESPERA_ACESSO_REDE_MS
+    );
+    return () => clearTimeout(t);
+  }, [aguardandoRede]);
 
   // Push no último passo: só oferece se der pra ativar de verdade aqui.
   const [push, setPush] = useState<"indisponivel" | "off" | "on" | "ativando">(
@@ -220,7 +246,7 @@ export function AppTour({ userId, activeTab, onTabChange, onClose }: Props) {
         />
       )}
 
-      {!esperando && (
+      {!esperando && !aguardandoRede && (
         <div
           key={step.id}
           className="absolute left-4 right-4 mx-auto max-w-[420px] rounded-[20px] p-5"
@@ -236,7 +262,7 @@ export function AppTour({ userId, activeTab, onTabChange, onClose }: Props) {
             className="text-xs font-semibold mb-1"
             style={{ color: "var(--accent)" }}
           >
-            {i + 1} de {TOUR_STEPS.length}
+            {i + 1} de {steps.length}
           </p>
           <h2
             className="text-lg font-extrabold mb-1.5"

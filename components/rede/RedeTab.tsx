@@ -214,6 +214,9 @@ interface Props {
   reselectSignal?: number;
   /** Simula o teclado abrindo — repassado até a página, que esconde a BottomNav. */
   onChatFocusChange?: (focused: boolean) => void;
+  /** Foto de perfil salva na Rede (null = perfil sem foto), pra o Início
+   * mostrar a mesma. */
+  onFotoPerfilChange?: (url: string | null) => void;
 }
 
 export function RedeTab({
@@ -221,6 +224,7 @@ export function RedeTab({
   active = true,
   reselectSignal,
   onChatFocusChange,
+  onFotoPerfilChange,
 }: Props) {
   const toast = useToast();
 
@@ -344,6 +348,16 @@ export function RedeTab({
   // memória, nunca vai pro perfil/cache persistido.
   const [avatarPrevia, setAvatarPrevia] = useState<string | null>(null);
   const fotoPropria = avatarPrevia ?? perfil?.avatar_url ?? null;
+  // Só a foto já salva (nunca a prévia blob:, que é revogada) sobe pro
+  // Início; perfil ainda não carregado não avisa nada.
+  const fotoPerfilSalva = perfil ? (perfil.avatar_url ?? null) : undefined;
+  const onFotoPerfilChangeRef = useRef(onFotoPerfilChange);
+  onFotoPerfilChangeRef.current = onFotoPerfilChange;
+  useEffect(() => {
+    if (fotoPerfilSalva !== undefined) {
+      onFotoPerfilChangeRef.current?.(fotoPerfilSalva);
+    }
+  }, [fotoPerfilSalva]);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   // Perfis reais de outras autoras, buscados sob demanda ao abrir o perfil
   // público de alguém a partir de um post/comentário real (ver openAutor).

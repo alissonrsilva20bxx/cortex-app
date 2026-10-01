@@ -21,6 +21,7 @@ import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { AppTour } from "@/components/onboarding/AppTour";
+import type { RedeAcessoTour } from "@/lib/appTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
@@ -165,6 +166,10 @@ export default function DevPreviewApp() {
   const [onboardingPreview, setOnboardingPreview] = useState(false);
   // Tour guiado (espelha app/page.tsx); `__previewTour()` abre direto.
   const [tourOpen, setTourOpen] = useState(false);
+  const [redeAcesso, setRedeAcesso] = useState<RedeAcessoTour>("pendente");
+  // Foto do perfil da Rede: o Início mostra a mesma (cai na da conta Google
+  // quando a Rede não tem foto ou não está liberada).
+  const [fotoRede, setFotoRede] = useState<string | null>(null);
   useEffect(() => {
     const w = window as unknown as Record<string, () => void>;
     w.__previewLock = () => {
@@ -349,6 +354,7 @@ export default function DevPreviewApp() {
           <GreetingHeader
             usuario={usuario}
             onOpenAjustes={() => handleTabChange("ajustes")}
+            fotoUrl={fotoRede}
           />
           {/* Grid+gap explícito, espelha app/page.tsx (achado #131). */}
           <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
@@ -438,6 +444,8 @@ export default function DevPreviewApp() {
             usuario={usuario}
             reselectSignal={redeReselect}
             onChatFocusChange={setChatComposerFocused}
+            onAcessoChange={setRedeAcesso}
+            onFotoPerfilChange={setFotoRede}
           />
         </TabPanel>
 
@@ -478,6 +486,7 @@ export default function DevPreviewApp() {
           activeTab={activeTab}
           onTabChange={handleTabChange}
           onClose={() => setTourOpen(false)}
+          redeAcesso={redeAcesso}
         />
       )}
 

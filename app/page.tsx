@@ -42,7 +42,7 @@ import * as cofreCache from "@/lib/cofre/cofreCache";
 import * as pinHashCache from "@/lib/pinHashCache";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { isFreshAccount } from "@/lib/onboarding";
-import { tourDoneKey } from "@/lib/appTour";
+import { tourDoneKey, type RedeAcessoTour } from "@/lib/appTour";
 import type {
   TabId,
   Usuario,
@@ -123,6 +123,10 @@ export default function Page() {
   // Tour guiado do app (lib/appTour.ts): abre sozinho logo depois do
   // onboarding de conta nova; depois, só por Ajustes → "Ver tour do app".
   const [tourOpen, setTourOpen] = useState(false);
+  const [redeAcesso, setRedeAcesso] = useState<RedeAcessoTour>("pendente");
+  // Foto do perfil da Rede: o Início mostra a mesma (cai na da conta Google
+  // quando a Rede não tem foto ou não está liberada).
+  const [fotoRede, setFotoRede] = useState<string | null>(null);
   // Trava a decisão "é 1º uso?" na 1ª leitura confirmada dos dados, em vez
   // de recalcular a cada render: sem isso, o próprio ato de completar uma
   // etapa do onboarding (ex.: salvar a 1ª meta) muda `metas` o bastante
@@ -500,6 +504,7 @@ export default function Page() {
               <GreetingHeader
                 usuario={usuario}
                 onOpenAjustes={() => handleTabChange("ajustes")}
+                fotoUrl={fotoRede}
               />
               {/* Stack explícito (achado #131, validação real no iPhone: vão
                   de ~110-130px em vez de 16px entre NextJobCard e
@@ -588,6 +593,8 @@ export default function Page() {
                 active={activeTab === "rede"}
                 reselectSignal={redeReselect}
                 onChatFocusChange={setChatComposerFocused}
+                onAcessoChange={setRedeAcesso}
+                onFotoPerfilChange={setFotoRede}
               />
             </TabPanel>
 
@@ -633,6 +640,7 @@ export default function Page() {
           activeTab={activeTab}
           onTabChange={handleTabChange}
           onClose={closeTour}
+          redeAcesso={redeAcesso}
         />
       )}
 

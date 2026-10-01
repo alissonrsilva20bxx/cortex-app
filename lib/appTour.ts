@@ -122,6 +122,47 @@ export const TOUR_STEPS: TourStep[] = [
   },
 ];
 
+/** Situação do convite da Rede, como o `RedeGatedTab` informa. */
+export type RedeAcessoTour = "pendente" | "liberado" | "bloqueado";
+
+/**
+ * Quem ainda não resgatou convite vê a vitrine da Rede, não o feed nem o
+ * próprio perfil -- os passos da Rede trocam por estes (mesma quantidade,
+ * pra contagem "x de N" não pular). Cada um substitui o passo de mesmo
+ * índice da lista padrão.
+ */
+const PASSOS_REDE_BLOQUEADA: Record<string, TourStep> = {
+  "go-rede": {
+    id: "go-rede",
+    tab: "financeiro",
+    target: "nav-rede",
+    title: "E a Rede",
+    body: "Toque em Rede pra conhecer a comunidade.",
+    goTo: "rede",
+    cta: "Abrir Rede",
+  },
+  "rede-feed": {
+    id: "rede-vitrine",
+    tab: "rede",
+    target: null,
+    title: "A Rede",
+    body: "É a comunidade do JobApp: feed, amigas e mensagens entre profissionais. A entrada é só por convite, então ela fica liberada quando você usar o seu.",
+  },
+  "rede-perfil": {
+    id: "rede-convite",
+    tab: "rede",
+    target: "rede-convite",
+    title: "Tem um convite?",
+    body: "Toque aqui pra digitar o código que você recebeu. Ainda não tem? Peça pra participar da beta pelo botão acima.",
+  },
+};
+
+/** Passos do tour conforme o acesso à Rede (pendente segue a lista padrão). */
+export function stepsDoTour(acesso: RedeAcessoTour): TourStep[] {
+  if (acesso !== "bloqueado") return TOUR_STEPS;
+  return TOUR_STEPS.map((s) => PASSOS_REDE_BLOQUEADA[s.id] ?? s);
+}
+
 export const tourDoneKey = (userId: string) => `jobapp-tour-done:${userId}`;
 
 /** Onde o cartão do passo fica em relação ao destaque. */

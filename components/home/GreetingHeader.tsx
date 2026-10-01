@@ -6,6 +6,8 @@ interface Props {
   /** Redesign iOS quase nativo (wayfinder #122, ticket #124): Ajustes saiu
    * da BottomNav — o avatar da Início é agora o único ponto de acesso. */
   onOpenAjustes: () => void;
+  /** Foto do perfil da Rede, quando houver: o Início mostra a mesma. */
+  fotoUrl?: string | null;
 }
 
 function getGreeting(): string {
@@ -34,7 +36,9 @@ function getFormattedDate(): string {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
-export function GreetingHeader({ usuario, onOpenAjustes }: Props) {
+export function GreetingHeader({ usuario, onOpenAjustes, fotoUrl }: Props) {
+  // Foto da Rede tem prioridade; sem ela, a da conta (Google).
+  const foto = fotoUrl || usuario.avatarUrl;
   const greeting = useMemo(getGreeting, []);
   const date = useMemo(getFormattedDate, []);
   const firstName = getFirstName(usuario.nome);
@@ -93,13 +97,9 @@ export function GreetingHeader({ usuario, onOpenAjustes }: Props) {
         }}
       >
         <span className="relative flex items-center justify-center w-full h-full">
-          {usuario.avatarUrl ? (
+          {foto ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={usuario.avatarUrl}
-              alt=""
-              className="w-full h-full object-cover"
-            />
+            <img src={foto} alt="" className="w-full h-full object-cover" />
           ) : (
             <span
               className="text-sm font-bold"
