@@ -1237,9 +1237,19 @@ export function RedeTab({
   }
 
   // ── Amigas ──
+  // Push nativo pra outra ponta (pedido novo / pedido aceito). Mesmo esquema
+  // das mensagens: fire-and-forget, o servidor confere o estado real.
+  function notificarAmizade(amizadeId: string) {
+    fetch("/api/rede/amizades/notificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amizadeId }),
+    }).catch((e) => console.error("[RedeTab notificar amizade]", e));
+  }
   async function acceptRequest(req: SolicitacaoAmizade) {
     try {
       await aceitarPedidoAmizade(supabase, { amizadeId: req.id });
+      notificarAmizade(req.id);
       setRequests((prev) => prev.filter((r) => r.id !== req.id));
       setFriends((prev) => [...prev, req.pessoa]);
       toast.success("Agora vocês são amigas!");
@@ -1268,6 +1278,7 @@ export function RedeTab({
       const amizade = await enviarPedidoAmizade(supabase, {
         destinatarioId: userId,
       });
+      notificarAmizade(amizade.id);
       if (amizade.status === "aceita") {
         // Havia um pedido dela que a lista ainda não mostrava (aceite
         // automático no serviço): recarrega Amigas/Solicitações.
