@@ -9,6 +9,7 @@ import { ContextualBlock } from "./ContextualBlock";
 import { PostCard } from "./PostCard";
 import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import type { FeedPost } from "@/lib/rede/feed";
 import type { WishlistItem } from "@/lib/rede/wishlist";
 import type { Usuario } from "@/lib/types";
@@ -44,6 +45,8 @@ interface Props {
   /** Buscando a próxima página agora — distinto do `loading` inicial. */
   loadingMore: boolean;
   onLoadMore: () => void;
+  /** Puxar o feed pra baixo no topo: resolve quando a busca termina. */
+  onRefresh: () => Promise<void>;
   onOpenSearch: () => void;
   onOpenNotifs: () => void;
   onOpenChat: () => void;
@@ -75,6 +78,7 @@ export function FeedScreen({
   segmento,
   onSegmentoChange,
   onLoadMore,
+  onRefresh,
   onOpenSearch,
   onOpenNotifs,
   onOpenChat,
@@ -154,45 +158,46 @@ export function FeedScreen({
   });
 
   return (
-    <div className="pb-4">
-      <RedeHeader
-        usuarioNome={usuario.nome}
-        usuarioFotoUrl={usuarioFotoUrl}
-        unreadChats={unreadChats}
-        unreadNotifs={unreadNotifs}
-        onSearch={onOpenSearch}
-        onOpenNotifs={onOpenNotifs}
-        onOpenChat={onOpenChat}
-        onOpenMeuEspaco={onOpenMeuEspaco}
-      />
+    <PullToRefresh onRefresh={onRefresh}>
+      <div className="pb-4">
+        <RedeHeader
+          usuarioNome={usuario.nome}
+          usuarioFotoUrl={usuarioFotoUrl}
+          unreadChats={unreadChats}
+          unreadNotifs={unreadNotifs}
+          onSearch={onOpenSearch}
+          onOpenNotifs={onOpenNotifs}
+          onOpenChat={onOpenChat}
+          onOpenMeuEspaco={onOpenMeuEspaco}
+        />
 
-      {/* Compositor — entrada estática, abre o composer completo em sheet */}
-      <GlassCard
-        as="button"
-        radius="lg"
-        onClick={onOpenComposer}
-        className="flex items-center gap-3 px-4 py-3.5 mb-4"
-      >
-        <Avatar nome={usuario.nome} fotoUrl={usuarioFotoUrl} size="md" />
-        <span
-          className="flex-1 text-sm text-left"
-          style={{ color: "var(--text-muted)" }}
+        {/* Compositor — entrada estática, abre o composer completo em sheet */}
+        <GlassCard
+          as="button"
+          radius="lg"
+          onClick={onOpenComposer}
+          className="flex items-center gap-3 px-4 py-3.5 mb-4"
         >
-          Compartilhe algo…
-        </span>
-      </GlassCard>
+          <Avatar nome={usuario.nome} fotoUrl={usuarioFotoUrl} size="md" />
+          <span
+            className="flex-1 text-sm text-left"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Compartilhe algo…
+          </span>
+        </GlassCard>
 
-      <SegmentedControl<Segmento>
-        className="mb-4"
-        value={segmento}
-        onChange={onSegmentoChange}
-        options={[
-          { id: "paraVoce", label: "Para você" },
-          { id: "amigas", label: "Amigas" },
-        ]}
-      />
+        <SegmentedControl<Segmento>
+          className="mb-4"
+          value={segmento}
+          onChange={onSegmentoChange}
+          options={[
+            { id: "paraVoce", label: "Para você" },
+            { id: "amigas", label: "Amigas" },
+          ]}
+        />
 
-      {/* Entrada fixa pra Amigas/Solicitações/Descobrir — como no protótipo
+        {/* Entrada fixa pra Amigas/Solicitações/Descobrir — como no protótipo
           (linha própria logo abaixo dos tabs, sempre visível). Achado T20/#127:
           os blocos contextuais de "solicitações"/"descobrir" abaixo só
           aparecem intercalados no feed (após o 2º/5º/7º post — `queue.shift()`
@@ -204,77 +209,78 @@ export function FeedScreen({
           fiado a `AmigasScreen` em RedeTab.tsx — nenhuma lógica nova, só
           garante o caminho permanente que os blocos contextuais abaixo não
           garantem sozinhos. */}
-      <ContextualBlock
-        icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
-        title="Amigas"
-        subtitle="Solicitações e descobrir pessoas"
-        onClick={onOpenAmigas}
-      />
+        <ContextualBlock
+          icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
+          title="Amigas"
+          subtitle="Solicitações e descobrir pessoas"
+          onClick={onOpenAmigas}
+        />
 
-      <div className="space-y-3 mt-3">
-        {/* Skeleton só em cache miss de verdade -- com posts cacheados em
+        <div className="space-y-3 mt-3">
+          {/* Skeleton só em cache miss de verdade -- com posts cacheados em
             tela, um refresh em 2º plano (`loading` ainda true) NÃO volta pro
             skeleton, e uma falha de rede NÃO cobre o conteúdo com o erro
             (req 2 e 4). */}
-        {loading && posts.length === 0 ? (
-          <SkeletonList rows={3} />
-        ) : error && posts.length === 0 ? (
-          <p
-            className="text-sm text-center py-12"
-            style={{ color: "var(--danger)" }}
-          >
-            Não foi possível carregar o feed. Tente novamente mais tarde.
-          </p>
-        ) : items.length === 0 ? (
-          <p
-            className="text-sm text-center py-12"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {segmento === "amigas"
-              ? "Nenhuma publicação das suas amigas ainda."
-              : "Nenhuma publicação por aqui ainda."}
-          </p>
-        ) : (
-          items.map((item) =>
-            item.type === "post" ? (
-              <PostCard
-                key={item.post.id}
-                post={item.post}
-                onToggleLike={onToggleLike}
-                onComment={onComment}
-                onShare={onShare}
-                onOpenMenu={onOpenMenu}
-                onOpenAutor={onOpenAutor}
-                onRenovarFoto={onRenovarFoto}
-              />
-            ) : (
-              <div key={item.block.key}>
-                <ContextualBlock
-                  icon={item.block.icon}
-                  title={item.block.title}
-                  subtitle={item.block.subtitle}
-                  onClick={item.block.onClick}
+          {loading && posts.length === 0 ? (
+            <SkeletonList rows={3} />
+          ) : error && posts.length === 0 ? (
+            <p
+              className="text-sm text-center py-12"
+              style={{ color: "var(--danger)" }}
+            >
+              Não foi possível carregar o feed. Tente novamente mais tarde.
+            </p>
+          ) : items.length === 0 ? (
+            <p
+              className="text-sm text-center py-12"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {segmento === "amigas"
+                ? "Nenhuma publicação das suas amigas ainda."
+                : "Nenhuma publicação por aqui ainda."}
+            </p>
+          ) : (
+            items.map((item) =>
+              item.type === "post" ? (
+                <PostCard
+                  key={item.post.id}
+                  post={item.post}
+                  onToggleLike={onToggleLike}
+                  onComment={onComment}
+                  onShare={onShare}
+                  onOpenMenu={onOpenMenu}
+                  onOpenAutor={onOpenAutor}
+                  onRenovarFoto={onRenovarFoto}
                 />
-              </div>
+              ) : (
+                <div key={item.block.key}>
+                  <ContextualBlock
+                    icon={item.block.icon}
+                    title={item.block.title}
+                    subtitle={item.block.subtitle}
+                    onClick={item.block.onClick}
+                  />
+                </div>
+              )
             )
-          )
+          )}
+        </div>
+
+        {!error && items.length > 0 && hasMore && (
+          <button
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            className="w-full mt-4 py-3 rounded-2xl text-sm font-semibold transition-opacity active:opacity-70 disabled:opacity-50"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border-color)",
+              color: "var(--text-2)",
+            }}
+          >
+            {loadingMore ? "Carregando…" : "Carregar mais publicações"}
+          </button>
         )}
       </div>
-
-      {!error && items.length > 0 && hasMore && (
-        <button
-          onClick={onLoadMore}
-          disabled={loadingMore}
-          className="w-full mt-4 py-3 rounded-2xl text-sm font-semibold transition-opacity active:opacity-70 disabled:opacity-50"
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border-color)",
-            color: "var(--text-2)",
-          }}
-        >
-          {loadingMore ? "Carregando…" : "Carregar mais publicações"}
-        </button>
-      )}
-    </div>
+    </PullToRefresh>
   );
 }

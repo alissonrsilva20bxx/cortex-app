@@ -117,6 +117,10 @@ import {
   type Notificacao,
 } from "@/lib/rede/notificacoes";
 import * as redeCache from "@/lib/rede/redeCache";
+import {
+  processarFotoParaAvatar,
+  FotoInvalidaError,
+} from "@/lib/rede/imagemComposer";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
@@ -173,6 +177,20 @@ function avatarPathFromUrl(url: string | null | undefined): string | null {
 }
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Resolve quando a imagem terminou de baixar (ou falhou, ou estourou o
+ * tempo) -- nunca rejeita. */
+function precarregarImagem(url: string, ms = 6000): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const t = setTimeout(resolve, ms);
+    img.onload = img.onerror = () => {
+      clearTimeout(t);
+      resolve();
+    };
+    img.src = url;
+  });
+}
 
 type RedeScreen =
   | { type: "feed" }
@@ -322,6 +340,10 @@ export function RedeTab({
   const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  // Prévia local (blob:) da foto nova enquanto o upload roda -- só em
+  // memória, nunca vai pro perfil/cache persistido.
+  const [avatarPrevia, setAvatarPrevia] = useState<string | null>(null);
+  const fotoPropria = avatarPrevia ?? perfil?.avatar_url ?? null;
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   // Perfis reais de outras autoras, buscados sob demanda ao abrir o perfil
   // público de alguém a partir de um post/comentário real (ver openAutor).
@@ -494,10 +516,32 @@ export function RedeTab({
     });
   }
 
+  // ── Puxar pra atualizar (estilo Instagram) ──
+  // Bump em `feedReloadKey` re-roda o effect do feed abaixo (mesma
+  // reconciliação em 2º plano da reconexão, sem skeleton). A promise
+  // devolvida pro PullToRefresh resolve quando essa busca termina.
+  const [feedReloadKey, setFeedReloadKey] = useState(0);
+  const feedRefreshDoneRef = useRef<(() => void) | null>(null);
+  const atualizarFeedPuxando = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      feedRefreshDoneRef.current?.();
+      feedRefreshDoneRef.current = resolve;
+      setFeedReloadKey((k) => k + 1);
+      // Solicitações/notificações/conversas junto, sem o throttle de 15s.
+      setSocialKey((k) => k + 1);
+    });
+  }, []);
+
   useEffect(() => {
     let ativo = true;
     const ep = redeCache.epocaAtual();
     const temSemente = semente.feed !== null;
+    const puxando = feedRefreshDoneRef.current !== null;
+    const terminarPuxada = () => {
+      const done = feedRefreshDoneRef.current;
+      feedRefreshDoneRef.current = null;
+      done?.();
+    };
     listarFeed(supabase)
       .then((data) => {
         if (!ativo || !epocaValida(ep)) return;
@@ -538,6 +582,9 @@ export function RedeTab({
         if (!ativo || !epocaValida(ep)) return;
         // Falha de rede com feed cacheado em tela: mantém o conteúdo
         // navegável, não vira erro duro (req 4).
+        if (temSemente && puxando) {
+          toast.error("Não foi possível atualizar o feed.");
+        }
         if (temSemente) {
           setFeedLoading(false);
           return;
@@ -545,12 +592,15 @@ export function RedeTab({
         toast.error("Não foi possível carregar o feed.");
         setFeedError(true);
         setFeedLoading(false);
+      })
+      .finally(() => {
+        if (ativo) terminarPuxada();
       });
     return () => {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, reconexaoKey]);
+  }, [usuario.id, reconexaoKey, feedReloadKey]);
 
   async function loadMorePosts() {
     if (feedLoadingMore || !feedHasMore || posts.length === 0) return;
@@ -1673,17 +1723,34 @@ export function RedeTab({
       toast.error("Selecione uma imagem.");
       return;
     }
-    if (file.size > AVATAR_MAX_BYTES) {
-      toast.error("A imagem deve ter até 5MB.");
-      return;
-    }
     setAvatarUploading(true);
+    let previa: string | null = null;
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      // Recorte quadrado 512px/<=80KB no aparelho: antes subia o original
+      // (até 5MB da câmera) e a foto demorava pra subir e pra aparecer.
+      // Formato que o canvas não lê (ex.: HEIC no Mac) cai no original.
+      let envio: Blob = file;
+      try {
+        envio = await processarFotoParaAvatar(file);
+      } catch (err) {
+        if (!(err instanceof FotoInvalidaError)) throw err;
+        if (file.size > AVATAR_MAX_BYTES) {
+          toast.error("A imagem deve ter até 5MB.");
+          return;
+        }
+      }
+      previa = URL.createObjectURL(envio);
+      setAvatarPrevia(previa);
+
+      const ext = envio === file ? file.name.split(".").pop() || "jpg" : "jpg";
       const path = `${usuario.id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("avatares")
-        .upload(path, file, { contentType: file.type });
+        .upload(path, envio, {
+          contentType: envio.type || file.type,
+          // Path é único por upload: pode cachear pra sempre.
+          cacheControl: "31536000",
+        });
       if (uploadError) throw uploadError;
 
       const {
@@ -1693,6 +1760,9 @@ export function RedeTab({
       const updated = await atualizarPerfil(supabase, {
         avatarUrl: publicUrl,
       });
+      // Baixa a URL pública antes de trocar a prévia por ela -- sem isso o
+      // círculo piscava vazio até a imagem remota chegar.
+      await precarregarImagem(publicUrl);
       sincronizarPerfilNoCache(updated);
       if (oldPath) {
         supabase.storage
@@ -1705,6 +1775,8 @@ export function RedeTab({
       console.error("[RedeTab upload avatar]", e);
       toast.error("Não foi possível enviar a foto.");
     } finally {
+      setAvatarPrevia(null);
+      if (previa) URL.revokeObjectURL(previa);
       setAvatarUploading(false);
     }
   }
@@ -1872,7 +1944,7 @@ export function RedeTab({
         handle: undefined,
         cor: perfil?.cor_avatar,
         bio: perfil?.bio ?? "",
-        fotoUrl: perfil?.avatar_url ?? null,
+        fotoUrl: fotoPropria,
         isMe: true,
       };
     }
@@ -1918,7 +1990,7 @@ export function RedeTab({
         {screen.type === "feed" && (
           <FeedScreen
             usuario={usuario}
-            usuarioFotoUrl={perfil?.avatar_url ?? null}
+            usuarioFotoUrl={fotoPropria}
             posts={posts}
             friends={friends.map((f) => f.id)}
             wishlistItems={wishlistItems}
@@ -1932,6 +2004,7 @@ export function RedeTab({
             segmento={segmento}
             onSegmentoChange={trocarSegmento}
             onLoadMore={loadMorePosts}
+            onRefresh={atualizarFeedPuxando}
             onOpenSearch={() => push({ type: "busca" })}
             onOpenNotifs={() => {
               revalidarSocial();
@@ -2022,7 +2095,7 @@ export function RedeTab({
             nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
             bio={perfil?.bio ?? ""}
             cor={perfil?.cor_avatar ?? "var(--accent)"}
-            fotoUrl={perfil?.avatar_url ?? null}
+            fotoUrl={fotoPropria}
             meusPosts={posts.filter((p) => p.autorId === usuario.id)}
             liveLinks={liveLinks}
             clientesCount={clientes.length}
@@ -2166,7 +2239,7 @@ export function RedeTab({
       <PostComposer
         open={composerOpen}
         usuarioNome={usuario.nome}
-        usuarioFotoUrl={perfil?.avatar_url ?? null}
+        usuarioFotoUrl={fotoPropria}
         editingPost={editingPost}
         onClose={() => {
           setComposerOpen(false);
@@ -2179,7 +2252,7 @@ export function RedeTab({
       <CommentsSheet
         postId={commentsPostId}
         usuarioNome={usuario.nome}
-        usuarioFotoUrl={perfil?.avatar_url ?? null}
+        usuarioFotoUrl={fotoPropria}
         comments={comments}
         loading={commentsLoading}
         onClose={() => setCommentsPostId(null)}

@@ -174,3 +174,49 @@ export async function processarFotoParaPost(
     bitmap.close?.();
   }
 }
+
+export const AVATAR_LADO = 512;
+export const AVATAR_MAX_BYTES = 80 * 1024;
+
+/**
+ * Foto de perfil: recorte quadrado central, <= 512 px, JPEG <= 80 KB, sem
+ * metadados. Antes ia o arquivo original (até 5 MB da câmera) -- upload e
+ * download lentos pra um círculo que nunca passa de 88 px na tela.
+ */
+export async function processarFotoParaAvatar(file: File): Promise<Blob> {
+  if (!TIPOS_ACEITOS.includes(file.type)) {
+    throw new FotoInvalidaError(
+      `tipo não suportado: ${file.type || "desconhecido"}`
+    );
+  }
+  if (file.size > 30 * 1024 * 1024) {
+    throw new FotoInvalidaError("arquivo grande demais (acima de 30 MB)");
+  }
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await carregarBitmap(file);
+  } catch {
+    throw new FotoInvalidaError("não foi possível ler a imagem");
+  }
+
+  try {
+    const corte = Math.min(bitmap.width, bitmap.height);
+    const sx = Math.round((bitmap.width - corte) / 2);
+    const sy = Math.round((bitmap.height - corte) / 2);
+    for (const lado of [AVATAR_LADO, 400, 320]) {
+      const final = Math.min(lado, corte);
+      const { ctx, toBlob } = criarCanvas(final, final);
+      ctx.drawImage(bitmap, sx, sy, corte, corte, 0, 0, final, final);
+      for (const q of [0.82, 0.72, 0.62, 0.52]) {
+        const blob = await toBlob(q);
+        if (blob.size <= AVATAR_MAX_BYTES) return blob;
+      }
+    }
+    throw new FotoInvalidaError(
+      `não foi possível comprimir a foto de perfil para <= ${Math.round(AVATAR_MAX_BYTES / 1024)} KB`
+    );
+  } finally {
+    bitmap.close?.();
+  }
+}
