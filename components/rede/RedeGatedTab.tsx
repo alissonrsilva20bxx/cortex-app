@@ -9,6 +9,7 @@ import { verificarAcessoConvite, type AcessoConvite } from "@/lib/rede/acesso";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Usuario } from "@/lib/types";
+import type { RedeAcessoTour } from "@/lib/appTour";
 
 interface Props {
   usuario: Usuario;
@@ -16,7 +17,15 @@ interface Props {
    * Repassado até o `RedeTab` pra restaurar a rolagem só quando a Rede
    * está de fato visível. */
   active?: boolean;
+  /** Incrementa a cada toque na aba Rede JÁ ativa (gesto do iOS: volta a
+   * pilha pra raiz / rola o Feed pro topo). */
+  reselectSignal?: number;
   onChatFocusChange?: (focused: boolean) => void;
+  /** Avisa o pai se a Rede está liberada ou na vitrine de convite -- o tour
+   * do app troca os passos do feed/perfil pelos da vitrine. */
+  onAcessoChange?: (acesso: RedeAcessoTour) => void;
+  /** Foto do perfil da Rede (null = sem foto ou sem acesso). */
+  onFotoPerfilChange?: (url: string | null) => void;
 }
 
 /** Enquanto `estado === "semRede"`, tenta de novo nesse intervalo mesmo sem
@@ -46,7 +55,10 @@ type EstadoGate =
 export function RedeGatedTab({
   usuario,
   active = true,
+  reselectSignal,
   onChatFocusChange,
+  onAcessoChange,
+  onFotoPerfilChange,
 }: Props) {
   // ── Política do acesso lembrado (teto de confiança, não "validade curta") ──
   // `verificarAcessoConvite` classifica cada resposta em `unlocked` +
@@ -261,6 +273,22 @@ export function RedeGatedTab({
     return () => clearInterval(t);
   }, [estado]);
 
+  const onAcessoChangeRef = useRef(onAcessoChange);
+  onAcessoChangeRef.current = onAcessoChange;
+  const onFotoPerfilChangeRef = useRef(onFotoPerfilChange);
+  onFotoPerfilChangeRef.current = onFotoPerfilChange;
+  useEffect(() => {
+    // Perdeu o acesso: o Início volta pra foto da conta.
+    if (estado === "semAcesso") onFotoPerfilChangeRef.current?.(null);
+    onAcessoChangeRef.current?.(
+      estado === "liberado"
+        ? "liberado"
+        : estado === "semAcesso"
+          ? "bloqueado"
+          : "pendente"
+    );
+  }, [estado]);
+
   if (estado === "verificando" || estado === "semRede") {
     return (
       <div className="flex flex-col items-center gap-3 pt-12 px-6 text-center">
@@ -291,7 +319,9 @@ export function RedeGatedTab({
       <RedeTab
         usuario={usuario}
         active={active}
+        reselectSignal={reselectSignal}
         onChatFocusChange={onChatFocusChange}
+        onFotoPerfilChange={onFotoPerfilChange}
       />
     );
   }

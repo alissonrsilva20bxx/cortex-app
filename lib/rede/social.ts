@@ -302,8 +302,61 @@ export async function enviarPedidoAmizade(
           "aceita"
         );
       }
+
+      // O índice único vale pro par em qualquer status: uma relação antiga
+      // (já pedida, já aceita ou recusada) bloqueia o insert.
+      const existente = await buscarAmizadeDoPar(
+        client,
+        solicitanteId,
+        input.destinatarioId
+      );
+
+      if (existente) {
+        if (existente.status !== "recusada") {
+          // Pedido meu ainda pendente ou amizade já aceita: nada a fazer.
+          return existente;
+        }
+
+        if (existente.destinatario_id === solicitanteId) {
+          // Fui eu quem recusou antes e agora quero adicionar: apaga a
+          // recusa (RLS deixa as duas pontas apagarem) e pede de novo.
+          const { data: apagadas, error: erroApagar } = await client
+            .from("rede_amizades")
+            .delete()
+            .eq("id", existente.id)
+            .select("id");
+          if (erroApagar) throw erroApagar;
+          // Sem linha apagada (RLS/corrida) não tenta de novo: evita laço.
+          if (!apagadas?.length) throw error;
+          return enviarPedidoAmizade(client, input);
+        }
+
+        // A outra pessoa recusou meu pedido: não reenvia (evita insistência)
+        // e não expõe a recusa -- pra quem pediu, continua "enviada".
+        return existente;
+      }
     }
 
+    throw error;
+  }
+
+  return data;
+}
+
+async function buscarAmizadeDoPar(
+  client: RedeClient,
+  usuarioId: string,
+  outroUserId: string
+): Promise<Amizade | null> {
+  const { data, error } = await client
+    .from("rede_amizades")
+    .select("*")
+    .or(
+      `and(solicitante_id.eq.${usuarioId},destinatario_id.eq.${outroUserId}),and(solicitante_id.eq.${outroUserId},destinatario_id.eq.${usuarioId})`
+    )
+    .maybeSingle();
+
+  if (error) {
     throw error;
   }
 

@@ -349,6 +349,7 @@ export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
         {solicitando ? "Enviando…" : "Quero participar da beta"}
       </button>
       <button
+        data-tour="rede-convite"
         onClick={() => onSheetChange("chave")}
         className="w-full flex items-center justify-center text-xs font-semibold active:opacity-70"
         style={{ color: "var(--text-muted)", minHeight: "44px" }}

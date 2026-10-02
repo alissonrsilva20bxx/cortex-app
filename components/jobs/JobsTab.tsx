@@ -8,7 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  MessageSquareText,
+  NotebookPen,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatBRL } from "@/lib/finance";
@@ -853,7 +853,11 @@ export function JobsTab({
           superseded pelo usuário (issue #122, Notes 2026-09-22).
           "Resumo" só aparece se existir algum atendimento em toda a
           história (mesmo gate que o card colapsável antigo já tinha,
-          preservado); "Anotações" sempre aparece (nunca teve esse gate). */}
+          preservado); "Anotações" sempre aparece (nunca teve esse gate).
+          Renomeado pra "Bloco de notas": com o mesmo nome das
+          "Observações" de cada atendimento, as duas pareciam a mesma
+          coisa em dois lugares. Este é o bloco GERAL da pessoa; o de um
+          atendimento continua dentro do atendimento. */}
       <div
         className="grid gap-2 mt-5"
         style={{
@@ -891,8 +895,8 @@ export function JobsTab({
             color: "var(--text)",
           }}
         >
-          <MessageSquareText size={16} style={{ color: "var(--text-muted)" }} />
-          Anotações
+          <NotebookPen size={16} style={{ color: "var(--text-muted)" }} />
+          Bloco de notas
         </button>
       </div>
 
@@ -919,7 +923,7 @@ export function JobsTab({
       <BottomSheet
         open={anotacoesOpen}
         onClose={() => setAnotacoesOpen(false)}
-        title="Anotações"
+        title="Bloco de notas"
       >
         <NotasSection userId={userId} />
       </BottomSheet>

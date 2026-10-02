@@ -94,7 +94,9 @@
      espaço não usado embaixo) -- desloca o bloco de entrada pra cima,
      ainda proporcional à altura real via vh, nunca um valor fixo pra um
      aparelho específico. */
-  padding: clamp(16px, 5vh, 40px) 28px clamp(20px, 4vh, 32px);
+  /* dvh, não vh: no Safari com barra de endereço, a unidade vh mede a
+     viewport GRANDE (barra recolhida), maior que a área visível de fato. */
+  padding: clamp(12px, 4dvh, 40px) 28px clamp(16px, 3.5dvh, 32px);
   text-align: center;
 }
 
@@ -119,15 +121,15 @@
      as duas margens juntas erguiam o bloco JobApp/cadeado/título alto
      demais no centro da tela, deixando o teclado e o aviso de segurança
      espremidos embaixo. */
-  margin-top: clamp(8px, 2.5vh, 20px);
+  margin-top: clamp(8px, 2.5dvh, 20px);
 }
 
 .lockSeal {
-  width: 68px;
-  height: 68px;
+  width: clamp(52px, 8dvh, 68px);
+  height: clamp(52px, 8dvh, 68px);
   display: grid;
   place-items: center;
-  margin-bottom: 23px;
+  margin-bottom: clamp(12px, 2.8dvh, 23px);
   border: 1px solid rgb(var(--pin-accent-rgb) / 0.3);
   border-radius: 50%;
   color: var(--pin-accent);
@@ -140,7 +142,7 @@
   /* Fundação Visual (#142): removida a família Plus Jakarta Sans -- o
      protótipo (.pinIntro h1) nunca troca de família tipográfica, herda a
      pilha nativa de .page (linha 26-27 deste arquivo). */
-  font-size: 34px;
+  font-size: clamp(26px, 4.4dvh, 34px);
   font-weight: 620;
   line-height: 1.05;
   letter-spacing: -0.04em;
@@ -164,7 +166,7 @@
      abaixo) -- a distância que precisava crescer era especificamente até
      o teclado, não até o título. Topo ligeiramente menor (o bloco de
      cima já ficou mais compacto), base maior. */
-  margin: clamp(14px, 3vh, 22px) 0 clamp(26px, 5.5vh, 42px);
+  margin: clamp(14px, 3dvh, 22px) 0 clamp(20px, 5dvh, 42px);
 }
 
 .dots i {
@@ -202,14 +204,21 @@
      telas curtas (390×667 confirmado sem cortar/rolar). Column-gap
      inalterado: só a distância ENTRE as linhas devia crescer, as colunas
      continuam alinhadas. */
-  gap: clamp(16px, 3.2vh, 30px) 22px;
-  margin-bottom: clamp(16px, 3vh, 26px);
+  gap: clamp(12px, 3.2dvh, 30px) 22px;
+  margin-bottom: clamp(12px, 3dvh, 26px);
 }
 
+/* Tamanho contínuo (não um degrau de breakpoint): o antigo
+   `max-height: 700px` derrubava tudo de uma vez pro modo compacto (58px,
+   gap 12px) e, logo acima de 700, o layout cheio já não cabia -- no
+   iPhone pelo Safari (área visível ~700) o teclado ficava miúdo e
+   espremido com um vão enorme embaixo. Agora botões, gaps, selo e título
+   encolhem juntos e proporcionalmente; a partir de ~760px de altura vale
+   o tamanho cheio aprovado no #131 (68px). */
 .keypad > button,
 .keypad > span {
-  width: 68px;
-  height: 68px;
+  width: clamp(56px, 9dvh, 68px);
+  height: clamp(56px, 9dvh, 68px);
   justify-self: center;
 }
 
@@ -257,6 +266,27 @@
   color: #a69ca1;
 }
 
+/* "Cancelar" do Cofre: texto solto, sem o círculo das teclas -- como o
+   "Cancelar" do código de acesso do iOS. */
+.keypad > button[data-key="cancel"] {
+  border-color: transparent;
+  background: transparent;
+}
+
+.keypad > button[data-key="cancel"]:active {
+  transform: none;
+  border-color: transparent;
+  background: transparent;
+  opacity: 0.5;
+}
+
+.textKey {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #f5f1f3;
+}
+
 .privacy {
   display: flex;
   align-items: center;
@@ -276,49 +306,15 @@
   outline-offset: -3px;
 }
 
-/* 640 -> 700px (achado #131 v3, protocolo de validação): 390×667 (tela
-   curta de referência) tinha 640 como teto, mas 667 > 640 nunca disparava
-   essa compressão -- o teclado com o row-gap maior (pro pedido principal
-   desta correção) estourava a viewport sem rolagem nenhuma disponível.
-   700px cobre 667 com folga; confirmado sem overflow em
-   390×667/390×844/430×932 (scratchpad/visual-diff/pin-check.js). */
-@media (max-height: 700px) {
-  .content {
-    padding-top: 16px;
-    padding-bottom: 16px;
-  }
-
-  .intro {
-    margin-top: 12px;
-  }
-
+/* Só telas realmente baixas (paisagem, iPhone SE 1ª geração): o resto
+   já escala sozinho pelos clamp()/dvh acima. */
+@media (max-height: 620px) {
   .intro p {
     min-height: 0;
   }
 
-  .lockSeal {
-    width: 56px;
-    height: 56px;
-    margin-bottom: 14px;
-  }
-
-  .intro h1 {
-    font-size: 26px;
-  }
-
-  .dots {
-    margin: 14px 0 20px;
-  }
-
   .keypad {
-    gap: 12px 22px;
-    margin-bottom: 14px;
-  }
-
-  .keypad > button,
-  .keypad > span {
-    width: 58px;
-    height: 58px;
+    row-gap: 10px;
   }
 }
 

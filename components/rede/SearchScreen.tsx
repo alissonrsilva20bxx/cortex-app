@@ -1,14 +1,39 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Clock } from "lucide-react";
+import { Search, Clock, X } from "lucide-react";
 import { ScreenHeader } from "./ScreenHeader";
 import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { RECENT_SEARCHES } from "@/lib/mockRede";
 import { CATEGORIA_META, type FeedPost } from "@/lib/rede/feed";
 import type { PessoaResumo } from "@/lib/rede/perfis";
+
+/** Buscas recentes DE VERDADE, só neste aparelho (antes era uma lista fixa
+ * de exemplo -- "Camila Duarte", "box braids"... -- que toda conta via
+ * igual, como se fossem buscas dela). Grava o termo quando a pessoa abre
+ * um resultado, não a cada tecla. */
+const RECENTES_KEY = "jobapp-rede-buscas-recentes";
+const MAX_RECENTES = 6;
+
+function lerRecentes(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(RECENTES_KEY) ?? "[]");
+    return Array.isArray(v)
+      ? v.filter((t): t is string => typeof t === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function gravarRecentes(lista: string[]) {
+  try {
+    localStorage.setItem(RECENTES_KEY, JSON.stringify(lista));
+  } catch {
+    // Storage bloqueado: só não lembra as buscas.
+  }
+}
 
 interface Props {
   posts: FeedPost[];
@@ -29,6 +54,25 @@ export function SearchScreen({
   const [searching, setSearching] = useState(false);
   const [pessoas, setPessoas] = useState<PessoaResumo[]>([]);
   const q = query.trim().toLowerCase();
+  const [recentes, setRecentes] = useState<string[]>([]);
+  useEffect(() => setRecentes(lerRecentes()), []);
+
+  function lembrarBusca() {
+    const termo = query.trim();
+    if (!termo) return;
+    const lista = [
+      termo,
+      ...recentes.filter((t) => t.toLowerCase() !== termo.toLowerCase()),
+    ].slice(0, MAX_RECENTES);
+    setRecentes(lista);
+    gravarRecentes(lista);
+  }
+
+  function esquecerBusca(termo: string) {
+    const lista = recentes.filter((t) => t !== termo);
+    setRecentes(lista);
+    gravarRecentes(lista);
+  }
 
   useEffect(() => {
     if (q.length === 0) {
@@ -95,24 +139,55 @@ export function SearchScreen({
       </div>
 
       {q.length === 0 ? (
-        <section>
-          <p className="section-label mb-3">Buscas recentes</p>
-          <div className="space-y-2">
-            {RECENT_SEARCHES.map((term) => (
-              <GlassCard
-                key={term}
-                radius="md"
-                onClick={() => setQuery(term)}
-                className="flex items-center gap-3 px-3.5 py-3"
-              >
-                <Clock size={15} style={{ color: "var(--text-muted)" }} />
-                <span className="text-sm" style={{ color: "var(--text-2)" }}>
-                  {term}
-                </span>
-              </GlassCard>
-            ))}
-          </div>
-        </section>
+        recentes.length > 0 ? (
+          <section>
+            <p className="section-label mb-3">Buscas recentes</p>
+            <div className="space-y-2">
+              {recentes.map((term) => (
+                <GlassCard
+                  key={term}
+                  radius="md"
+                  className="flex items-center gap-1 pl-3.5"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setQuery(term)}
+                    className="flex flex-1 min-w-0 items-center gap-3 py-3 text-left"
+                  >
+                    <Clock size={15} style={{ color: "var(--text-muted)" }} />
+                    <span
+                      className="text-sm truncate"
+                      style={{ color: "var(--text-2)" }}
+                    >
+                      {term}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => esquecerBusca(term)}
+                    aria-label={`Remover “${term}” das buscas recentes`}
+                    className="flex items-center justify-center shrink-0"
+                    style={{
+                      width: 44,
+                      height: 44,
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    <X size={15} />
+                  </button>
+                </GlassCard>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <p
+            className="text-sm text-center py-12 px-6"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Digite o nome de uma colega ou um assunto, como
+            &ldquo;precificação&rdquo; ou &ldquo;agenda&rdquo;.
+          </p>
+        )
       ) : searching ? (
         <SkeletonList rows={4} />
       ) : (
@@ -125,7 +200,10 @@ export function SearchScreen({
                   <GlassCard
                     key={u.id}
                     radius="md"
-                    onClick={() => onOpenAutor(u.id)}
+                    onClick={() => {
+                      lembrarBusca();
+                      onOpenAutor(u.id);
+                    }}
                     className="flex items-center gap-3 px-3.5 py-3"
                   >
                     <Avatar
@@ -164,7 +242,10 @@ export function SearchScreen({
                   <GlassCard
                     key={p.id}
                     radius="md"
-                    onClick={() => onOpenPost(p)}
+                    onClick={() => {
+                      lembrarBusca();
+                      onOpenPost(p);
+                    }}
                     className="px-3.5 py-3"
                   >
                     <span

@@ -64,6 +64,9 @@ interface Props {
    * `ProfilePostsGrid`/`ProfilePhotoViewer` cuidam do resto (curtir/
    * comentar/compartilhar ficam só no feed, não duplicados aqui). */
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** Exclui de vez (já confirmado pelo "..." da grade/visualizador) --
+   * mesmo `deletePost` do menu "Publicação" do feed. */
+  onDeletePost: (postId: string) => void;
 }
 
 /**
@@ -129,6 +132,7 @@ export function MeuEspacoScreen({
   onOpenPerfilPublico,
   onChangeDefaultPrivacidade,
   onRenovarFoto,
+  onDeletePost,
 }: Props) {
   const [ferramentasOpen, setFerramentasOpen] = useState(false);
   const [liveLinksSheetOpen, setLiveLinksSheetOpen] = useState(false);
@@ -233,6 +237,7 @@ export function MeuEspacoScreen({
               posts={meusPosts}
               emptyMessage="Você ainda não publicou nada."
               onRenovarFoto={onRenovarFoto}
+              onDeletePost={onDeletePost}
             />
           </section>
         </>

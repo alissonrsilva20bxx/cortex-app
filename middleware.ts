@@ -103,7 +103,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // `pwa-icon` e `pwa-splash` são imagens geradas por rota (ícone do
+  // manifest/apple-touch-icon e telas de abertura do iOS). Fora daqui o
+  // navegador pedia o ícone sem sessão e recebia 307 pro /login -- o
+  // manifest ficava sem ícone válido e o "Adicionar à Tela de Início"
+  // caía num print genérico da página.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.json|pwa-icon|pwa-splash|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

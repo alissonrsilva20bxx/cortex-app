@@ -44,6 +44,12 @@ interface Props {
    * spinner, mesmo padrão do botão de enviar em `ChatThreadScreen`. */
   chatOpening?: boolean;
   onSendRequest?: () => void;
+  /** Esta pessoa me mandou um pedido de amizade ainda sem resposta. O
+   * perfil é onde a notificação "X quer ser sua amiga" leva -- então a
+   * resposta tem que estar aqui, não só escondida em Amigas › Solicitações. */
+  incomingRequest?: boolean;
+  onAcceptRequest?: () => Promise<void> | void;
+  onDeclineRequest?: () => Promise<void> | void;
   onBlock?: () => void;
   /** Renova a URL assinada de uma foto (miniatura ou principal) --
    * `ProfilePostsGrid`/`ProfilePhotoViewer` cuidam do resto (curtir/
@@ -75,11 +81,27 @@ export function PerfilPublicoScreen({
   onOpenChat,
   chatOpening = false,
   onSendRequest,
+  incomingRequest = false,
+  onAcceptRequest,
+  onDeclineRequest,
   onBlock,
   onRenovarFoto,
   onReportPost,
 }: Props) {
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
+  const [respondendo, setRespondendo] = useState(false);
+  const primeiroNome = nome.split(" ")[0] || nome;
+  const mostrarPedido = !isMe && !isFriend && incomingRequest;
+
+  async function responder(acao?: () => Promise<void> | void) {
+    if (!acao || respondendo) return;
+    setRespondendo(true);
+    try {
+      await acao();
+    } finally {
+      setRespondendo(false);
+    }
+  }
 
   return (
     <div className="pb-4">
@@ -127,6 +149,57 @@ export function PerfilPublicoScreen({
             <LiveLinksPreview links={liveLinks} />
           </div>
 
+          {mostrarPedido && (
+            <div
+              className="mx-4 mb-4 rounded-2xl p-4 text-center"
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border-color)",
+              }}
+              role="group"
+              aria-label="Pedido de amizade"
+            >
+              <p
+                className="text-sm font-semibold mb-3"
+                style={{ color: "var(--text)" }}
+              >
+                {primeiroNome} quer ser sua amiga
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => responder(onDeclineRequest)}
+                  disabled={respondendo}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-opacity active:opacity-70 disabled:opacity-60"
+                  style={{
+                    minHeight: 44,
+                    border: "1px solid var(--border-color)",
+                    color: "var(--text)",
+                  }}
+                >
+                  <X size={15} />
+                  Recusar
+                </button>
+                <button
+                  onClick={() => responder(onAcceptRequest)}
+                  disabled={respondendo}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-opacity active:opacity-70 disabled:opacity-60"
+                  style={{
+                    minHeight: 44,
+                    background: "var(--accent)",
+                    color: "#fff",
+                  }}
+                >
+                  {respondendo ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <Check size={15} />
+                  )}
+                  Aceitar
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col items-center text-center mb-6">
             {!isMe && (
               <div className="flex items-center gap-2">
@@ -152,7 +225,18 @@ export function PerfilPublicoScreen({
                     Conversar
                   </button>
                 )}
-                {isFriend ? null : requestSent ? (
+                {isFriend ? (
+                  <span
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold"
+                    style={{
+                      color: "var(--text-muted)",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <Check size={13} />
+                    Amigas
+                  </span>
+                ) : mostrarPedido ? null : requestSent ? (
                   <span
                     className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold"
                     style={{

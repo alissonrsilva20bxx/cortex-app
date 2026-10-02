@@ -600,7 +600,18 @@ export function buildMockAppSeed(opts?: {
       rede_livelinks: [],
       rede_wishlist: [],
       rede_clientes: [],
-      rede_amizades: [],
+      // Um pedido de amizade pendente (Marina → você) pra exercitar o
+      // fluxo de responder: card no perfil, aba Solicitações, banner do feed.
+      rede_amizades: [
+        {
+          id: "mock-amizade-marina",
+          solicitante_id: FRIEND_ID,
+          destinatario_id: uid,
+          status: "pendente",
+          criado_em: daysFromNow(-1),
+          respondido_em: null,
+        },
+      ],
       rede_conversas: [],
       rede_conversas_participantes: [],
       rede_mensagens: [],

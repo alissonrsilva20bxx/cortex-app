@@ -24,8 +24,9 @@ function blockDef(key: string): string {
 }
 
 describe("Feed — blocos fabricados continuam rotulados como demonstração", () => {
-  it("o bloco 'descobrir' (fixture local) está marcado demo: true", () => {
-    expect(blockDef("descobrir")).toMatch(/demo: true/);
+  it("o bloco 'descobrir' (fixture local) saiu do feed de vez -- sugestões fake no app real confundiam", () => {
+    expect(src).not.toMatch(/key: "descobrir"/);
+    expect(src).not.toMatch(/DISCOVER_PEOPLE/);
   });
 
   it("o bloco 'solicitacoes' (dado real, prop pendingRequestsCount) NÃO é demo", () => {
@@ -41,8 +42,8 @@ describe("Feed — blocos fabricados continuam rotulados como demonstração", (
     expect(src).not.toMatch(/WISHLIST_ITEMS/);
   });
 
-  it("o rótulo 'Demonstração' só renderiza quando item.block.demo é truthy", () => {
-    expect(src).toMatch(/\{item\.block\.demo && \(/);
-    expect(src).toMatch(/Demonstração — sugestão de exemplo/);
+  it("sem bloco fabricado, nenhum bloco é demo nem mostra o rótulo 'Demonstração'", () => {
+    expect(src).not.toMatch(/demo: true/);
+    expect(src).not.toMatch(/Demonstração/);
   });
 });

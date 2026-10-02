@@ -305,9 +305,12 @@ describe("CofreTab.tsx locked gate renders through a portal (fixes the visual-ju
     expect(src).not.toMatch(/setTimeout\(/);
   });
 
-  it("does not touch the shared TabPanel/animate-fade-up (out of this ticket's scope; the portal escapes it instead)", () => {
+  it("TabPanel no longer animates tab switches (iOS tab bars swap instantly); the portal still guards against any future transformed ancestor", () => {
+    // The fade-up was removed on purpose in the iOS-native polish: the
+    // portal remains the real fix for the containing-block jump, so the
+    // gate is correct whether or not TabPanel ever animates again.
     const tabPanelSrc = read("components/TabPanel.tsx");
-    expect(tabPanelSrc).toContain("animate-fade-up");
+    expect(tabPanelSrc).not.toContain("animate-fade-up");
   });
 
   it("still never uses scrollIntoView/scrollTo/autoFocus/.focus() (the jump was a CSS containing-block bug, not a focus-driven scroll)", () => {

@@ -345,6 +345,29 @@
   color-scheme: light;
 }
 
+/* Acentos claros demais pro modo claro: texto branco em cima deles
+   (segmento ativo, dia selecionado, FAB, aba ativa) ficava abaixo de 2.5:1
+   no Gold/Ocean/Emerald/Grafite. Mesmo tratamento que --success/--danger/
+   --warning já recebem abaixo -- e o mesmo que o iOS faz com as cores do
+   sistema (tom mais escuro no claro). Pink/Purple/Crimson/Midnight já
+   passam, ficam como estão. */
+[data-mode="light"][data-theme="gold"] {
+  --accent: #c27803;
+  --accent-rgb: 194 120 3;
+}
+[data-mode="light"][data-theme="ocean"] {
+  --accent: #009a9c;
+  --accent-rgb: 0 154 156;
+}
+[data-mode="light"][data-theme="emerald"] {
+  --accent: #059669;
+  --accent-rgb: 5 150 105;
+}
+[data-mode="light"][data-theme="grafite"] {
+  --accent: #71717a;
+  --accent-rgb: 113 113 122;
+}
+
 /* [data-mode="light"] .glass-card mora junto do resto de `.glass-card`,
    perto do final do arquivo (Fundação Visual #142) -- movido pra lá pra
    ficar ao lado do material que ele sobrescreve, em vez de separado por
@@ -430,7 +453,14 @@
    protótipo em família, não só em escala). */
 
 html {
-  scroll-behavior: smooth;
+  /* Sem `scroll-behavior: smooth` global: num app nativo a rolagem
+     programática (trocar de aba, abrir/voltar tela) é instantânea; só
+     anima onde o código pede `behavior: "smooth"` (tocar de novo na aba
+     ativa = volta suave pro topo). */
+  /* Sem "elástico" que puxa o fundo preto do html acima do topo ou abaixo
+     da BottomNav (a cara mais óbvia de página web no iOS) e sem
+     propagar o overscroll pro navegador (puxar-pra-recarregar do Chrome). */
+  overscroll-behavior-y: none;
   /* Fallback pra qualquer tira que 100vh deixe descoberta no rodapé (ver
      comentário no body abaixo) -- nunca deve aparecer, mas se aparecer,
      preto é bem menos visível que o cinza padrão do WKWebView. */
@@ -468,6 +498,56 @@ textarea,
 select {
   font: inherit;
 }
+
+/* Controles de interface não selecionam texto nem abrem o balão de
+   "copiar/consultar" do iOS ao segurar o dedo — só conteúdo (posts,
+   mensagens, campos) continua selecionável. */
+button,
+nav,
+[role="button"],
+[role="tab"],
+label {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+/* Feedback de toque estilo iOS: o botão "afunda" de leve enquanto o dedo
+   está nele (o highlight azul do WebKit já é transparente). Só em telas de
+   toque — no mouse o :active de 1 frame só pisca. */
+@media (hover: none) {
+  .press {
+    transition:
+      transform 0.18s cubic-bezier(0.32, 0.72, 0, 1),
+      opacity 0.18s ease;
+  }
+  .press:active {
+    transform: scale(0.96);
+    transition-duration: 0.06s;
+  }
+
+  /* Cartões tocáveis (o .glass-card que é botão/link) afundam bem de
+     leve — num cartão grande, 0.96 pareceria "pular". */
+  button.glass-card,
+  a.glass-card,
+  [role="button"].glass-card {
+    transition:
+      transform 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+      background 0.15s ease,
+      border-color 0.15s ease;
+  }
+  button.glass-card:active,
+  a.glass-card:active,
+  [role="button"].glass-card:active {
+    transform: scale(0.985);
+    transition-duration: 0.06s;
+  }
+}
 input,
 button,
 textarea,
@@ -482,10 +562,21 @@ select {
 
 /* ── Acessibilidade — foco de teclado ──────────────────────────────── */
 button:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Campo de texto casa com :focus-visible em QUALQUER foco, inclusive
+   toque -- o anel aparecia em volta de todo campo ao digitar, desde o
+   login. No iOS o campo focado só mostra o cursor; quem já desenha
+   estado de foco é o próprio container (ex.: :focus-within do login). */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline: none;
 }
 
 /* ── Legibilidade mínima ───────────────────────────────────────────
@@ -632,6 +723,46 @@ textarea:focus-visible {
 
 .animate-fade-up {
   animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Pilha de telas da Rede (lib/useStackNav.ts + lib/stackSnapshot.ts) ──
+   Camadas `fixed` com clones estáticos das telas, só durante push/pop/
+   arraste da borda. Ficam abaixo do FAB (z-40) e da BottomNav (z-50). */
+.stack-snapshot {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: transform;
+  contain: layout paint;
+}
+
+/* A tela de cima precisa ser opaca (cobre a de baixo enquanto desliza):
+   mesmo fundo do body, alinhado à rolagem por estilo inline. */
+.stack-snapshot--opaque {
+  background: var(--body-bg);
+  background-color: var(--bg);
+  background-repeat: no-repeat;
+}
+
+.stack-snapshot--top {
+  box-shadow: -14px 0 34px rgb(0 0 0 / 0.32);
+}
+
+[data-mode="light"] .stack-snapshot--top {
+  box-shadow: -10px 0 28px rgb(0 0 0 / 0.12);
+}
+
+.stack-snapshot-dim {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: #000;
+  will-change: opacity;
+}
+
+[data-mode="light"] .stack-snapshot-dim {
+  background: rgb(0 0 0 / 0.55);
 }
 
 /* ── Movimento reduzido ─────────────────────────────────────────────

@@ -49,33 +49,41 @@ describe("useScrollCompact — reset de aba também repõe a posição real de s
     expect(resetEffect).toMatch(/mountedRef\.current = true/);
   });
 
-  it("repõe a window/document pro topo quando esse foi o alvo mais recente conhecido", () => {
-    expect(resetEffect).toMatch(/target === window \|\| target === document/);
-    expect(resetEffect).toMatch(/window\.scrollTo\(/);
+  it("cada aba lembra a própria rolagem: repõe a posição salva da chave nova (topo se nunca visitada)", () => {
+    expect(resetEffect).toMatch(
+      /const saved = positionsRef\.current\.get\(resetKey\) \?\? 0/
+    );
+    expect(resetEffect).toMatch(/window\.scrollTo\(\{ top: saved/);
   });
 
-  it("repõe a window/document de forma instantânea, não animada", () => {
-    // globals.css liga scroll-behavior: smooth na página inteira — sem
-    // behavior: "instant" explícito, o reset de aba herdaria uma rolagem
-    // animada em vez de corrigir a posição na hora.
+  it("repõe a rolagem de forma instantânea, não animada", () => {
+    // Troca de aba não é o tipo de rolagem que anima — sem behavior
+    // "instant" explícito, qualquer scroll-behavior: smooth herdado (CSS
+    // de terceiros, preferência futura) animaria a correção.
     expect(resetEffect).toMatch(/behavior:\s*["']instant["']/);
   });
 
-  it("repõe o scrollTop de um elemento próprio (ex.: lista da Rede) quando é o alvo conhecido", () => {
-    expect(resetEffect).toMatch(/target instanceof HTMLElement/);
-    expect(resetEffect).toMatch(/target\.scrollTop = 0/);
+  it("passa a gravar posições sob a chave nova assim que ela vira ativa", () => {
+    expect(resetEffect).toMatch(/keyRef\.current = resetKey/);
   });
 });
 
-describe("useScrollCompact — rastreia o alvo real do scroll a cada evento", () => {
-  it("guarda e.target em scrollTargetRef antes de agendar o frame (pro reset saber o que corrigir)", () => {
+describe("useScrollCompact — grava a rolagem da aba ativa a cada evento", () => {
+  it("grava a posição do window ANTES do throttle por frame (a última posição nunca se perde)", () => {
     const body = extractHandleScrollBody(src);
-    const targetAssignIndex = body.indexOf(
-      "scrollTargetRef.current = e.target"
+    const saveIndex = body.indexOf(
+      "positionsRef.current.set(keyRef.current, scrollTop)"
     );
-    const frameScheduleIndex = body.indexOf("frame = requestAnimationFrame");
-    expect(targetAssignIndex).toBeGreaterThan(-1);
-    expect(frameScheduleIndex).toBeGreaterThan(-1);
-    expect(targetAssignIndex).toBeLessThan(frameScheduleIndex);
+    const throttleIndex = body.indexOf("if (frame !== null) return");
+    expect(saveIndex).toBeGreaterThan(-1);
+    expect(throttleIndex).toBeGreaterThan(-1);
+    expect(saveIndex).toBeLessThan(throttleIndex);
+  });
+
+  it("só grava rolagem do window/document — lista interna rola por conta própria", () => {
+    const body = extractHandleScrollBody(src);
+    expect(body).toMatch(
+      /if \(e\.target === window \|\| e\.target === document\) \{\s*positionsRef/
+    );
   });
 });

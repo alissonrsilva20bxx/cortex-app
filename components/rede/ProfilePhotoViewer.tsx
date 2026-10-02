@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { PhotoStage, prefereMovimentoReduzido } from "./FeedFotos";
-import { ReportMenuButton } from "./ReportMenuButton";
+import { OwnPostMenuButton, ReportMenuButton } from "./ReportMenuButton";
 import { resolveScrollBehavior } from "@/lib/rede/chatUi";
 import type { FeedPost } from "@/lib/rede/feed";
 
@@ -52,6 +52,8 @@ interface Props {
    * (#139) nunca exibe a opção, sem este componente precisar saber nada
    * sobre autoria. */
   onReportPost?: (postId: string) => void;
+  /** Post da própria pessoa: "..." com "Excluir publicação". */
+  onDeletePost?: (postId: string) => void;
 }
 
 export function ProfilePhotoViewer({
@@ -59,6 +61,7 @@ export function ProfilePhotoViewer({
   onClose,
   onRenovarFoto,
   onReportPost,
+  onDeletePost,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -166,6 +169,9 @@ export function ProfilePhotoViewer({
       >
         {onReportPost && (
           <ReportMenuButton onReport={() => onReportPost(post.id)} />
+        )}
+        {onDeletePost && (
+          <OwnPostMenuButton onDelete={() => onDeletePost(post.id)} />
         )}
         <button
           ref={closeButtonRef}
