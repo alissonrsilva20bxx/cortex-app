@@ -1,0 +1,33 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-01T21:10:00Z" },
+  "title": "Layouts do App — comparação",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 844, "title": "Atual — o seu layout hoje", "radius": 36 },
+    "A-Painel.dc.html": { "x": 470, "y": 0, "w": 390, "h": 844, "title": "A — Painel em grade", "radius": 36 },
+    "B-Agenda.dc.html": { "x": 940, "y": 0, "w": 390, "h": 844, "title": "B — Agenda primeiro", "radius": 36 },
+    "C-Carteira.dc.html": { "x": 1410, "y": 0, "w": 390, "h": 844, "title": "C — Carteira (estilo banco)", "radius": 36 },
+    "D-Editorial.dc.html": { "x": 1880, "y": 0, "w": 390, "h": 844, "title": "D — Editorial (só tipografia)", "radius": 36 },
+    "E-Social.dc.html": { "x": 2350, "y": 0, "w": 390, "h": 844, "title": "E — Social primeiro", "radius": 36 }
+  },
+  "order": [
+    "Main.dc.html",
+    "A-Painel.dc.html",
+    "B-Agenda.dc.html",
+    "C-Carteira.dc.html",
+    "D-Editorial.dc.html",
+    "E-Social.dc.html"
+  ],
+  "notes": {
+    "titulo": {
+      "x": 0,
+      "y": -260,
+      "text": "Tela Início: o seu layout atual × 5 alternativas",
+      "kind": "title1",
+      "maxW": 2740
+    }
+  },
+  "designSystems": []
+}
