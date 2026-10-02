@@ -469,14 +469,21 @@ export default function DevPreviewApp() {
 
       {!chatComposerFocused && (
         <>
-          <FAB
+          <BottomNav
             activeTab={activeTab}
-            financeiroSubTab={finInnerTab}
-            open={fabOpen}
-            onToggle={() => setFabOpen((v) => !v)}
-            onAction={handleFabAction}
+            onChange={handleTabChange}
+            holdOpen={fabOpen || tourOpen}
+            renderFab={(compact) => (
+              <FAB
+                activeTab={activeTab}
+                financeiroSubTab={finInnerTab}
+                open={fabOpen}
+                onToggle={() => setFabOpen((v) => !v)}
+                onAction={handleFabAction}
+                compact={compact}
+              />
+            )}
           />
-          <BottomNav activeTab={activeTab} onChange={handleTabChange} />
         </>
       )}
 

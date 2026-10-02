@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { Plus, Briefcase, TrendingUp, Upload } from "lucide-react";
 import { collidesWithAny, type Rect } from "@/lib/rectCollision";
 import type { TabId } from "@/lib/types";
+import {
+  BOTTOM_NAV_DURATION_MS,
+  BOTTOM_NAV_EASE,
+  BOTTOM_NAV_EDGE,
+  getBottomNavCompactStyle,
+} from "@/lib/bottomNavCompactStyle";
 
 /**
  * Evita que o FAB (fixo, z-50) obstrua uma ação real — achado da revisão
@@ -121,6 +127,11 @@ const FINANCEIRO_SHEET_ACTIONS: Record<string, SheetAction> = {
   },
 };
 
+/** A aba tem "+"? (Rede e Ajustes não têm -- aí a pílula ocupa a linha toda.) */
+export function tabTemFab(tab: TabId): boolean {
+  return tab === "financeiro" || Boolean(SHEET_ACTIONS[tab]);
+}
+
 interface Props {
   activeTab: TabId;
   /** Sub-aba ativa do Financeiro ("visao" | "entradas" | "saidas" | "metas")
@@ -130,6 +141,9 @@ interface Props {
   open: boolean;
   onToggle: () => void;
   onAction?: () => void;
+  /** Estado compacto da BottomNav -- o "+" mora ao lado da pílula e
+   * encolhe junto com ela (pílula 2, "Recolhe pra aba atual"). */
+  compact?: boolean;
 }
 
 export function FAB({
@@ -138,6 +152,7 @@ export function FAB({
   open,
   onToggle,
   onAction,
+  compact = false,
 }: Props) {
   const action =
     activeTab === "financeiro"
@@ -157,6 +172,8 @@ export function FAB({
   if (!action) return null;
 
   const { label, description, Icon } = action;
+  const navStyle = getBottomNavCompactStyle(compact);
+  const motion = `${BOTTOM_NAV_DURATION_MS}ms ${BOTTOM_NAV_EASE}`;
 
   function handleActionClick() {
     onToggle();
@@ -256,12 +273,15 @@ export function FAB({
         aria-expanded={open}
         aria-hidden={obstructed || undefined}
         tabIndex={obstructed ? -1 : undefined}
-        className="fixed z-50 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90"
+        className="fixed z-50 flex items-center justify-center rounded-full active:scale-90"
         style={{
-          width: "48px",
-          height: "48px",
-          bottom: "calc(82px + 14px + env(safe-area-inset-bottom, 0px))",
-          right: "20px",
+          // Mesma linha da pílula (BottomNav), alinhado pela base: encolhe
+          // e acomoda os mesmos px que ela, na mesma curva.
+          width: `${navStyle.fabSize}px`,
+          height: `${navStyle.fabSize}px`,
+          bottom: `calc(${18 - navStyle.translateY}px + env(safe-area-inset-bottom, 0px))`,
+          right: `${BOTTOM_NAV_EDGE}px`,
+          transition: `width ${motion}, height ${motion}, bottom ${motion}, opacity 300ms ease, transform 150ms ease`,
           background: "var(--accent)",
           // Fundação Visual (#142): elevação direcional como `.addButton` do
           // protótipo, não o halo difuso de --glow.
