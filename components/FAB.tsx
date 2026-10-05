@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { Plus, Briefcase, TrendingUp, Upload } from "lucide-react";
 import { collidesWithAny, type Rect } from "@/lib/rectCollision";
 import type { TabId } from "@/lib/types";
+import {
+  BOTTOM_NAV_DURATION_MS,
+  BOTTOM_NAV_EASE,
+  BOTTOM_NAV_EDGE,
+  getBottomNavCompactStyle,
+} from "@/lib/bottomNavCompactStyle";
 
 /**
  * Evita que o FAB (fixo, z-50) obstrua uma ação real — achado da revisão
@@ -121,6 +127,11 @@ const FINANCEIRO_SHEET_ACTIONS: Record<string, SheetAction> = {
   },
 };
 
+/** A aba tem "+"? (Rede e Ajustes não têm -- aí a pílula ocupa a linha toda.) */
+export function tabTemFab(tab: TabId): boolean {
+  return tab === "financeiro" || Boolean(SHEET_ACTIONS[tab]);
+}
+
 interface Props {
   activeTab: TabId;
   /** Sub-aba ativa do Financeiro ("visao" | "entradas" | "saidas" | "metas")
@@ -130,6 +141,9 @@ interface Props {
   open: boolean;
   onToggle: () => void;
   onAction?: () => void;
+  /** Estado compacto da BottomNav -- o "+" mora ao lado da pílula e
+   * encolhe junto com ela (pílula 2, "Recolhe pra aba atual"). */
+  compact?: boolean;
 }
 
 export function FAB({
@@ -138,6 +152,7 @@ export function FAB({
   open,
   onToggle,
   onAction,
+  compact = false,
 }: Props) {
   const action =
     activeTab === "financeiro"
@@ -157,6 +172,8 @@ export function FAB({
   if (!action) return null;
 
   const { label, description, Icon } = action;
+  const navStyle = getBottomNavCompactStyle(compact);
+  const motion = `${BOTTOM_NAV_DURATION_MS}ms ${BOTTOM_NAV_EASE}`;
 
   function handleActionClick() {
     onToggle();
@@ -167,13 +184,22 @@ export function FAB({
     <>
       {/* Backdrop -- Fundação Visual (#142): preto semi-opaco sem blur, como
           `.sheetBackdrop` do protótipo (ver components/ui/BottomSheet.tsx). */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40"
-          style={{ background: "rgba(0, 0, 0, 0.62)" }}
-          onClick={onToggle}
-        />
-      )}
+      {/* Fade de entrada/saída (antes surgia seco num frame), como o
+          véu do BottomSheet. */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-40"
+        style={{
+          background: "rgba(0, 0, 0, 0.62)",
+          opacity: open ? 1 : 0,
+          visibility: open ? "visible" : "hidden",
+          pointerEvents: open ? "auto" : "none",
+          transition: open
+            ? "opacity 300ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0s linear 0s"
+            : "opacity 300ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0s linear 300ms",
+        }}
+        onClick={onToggle}
+      />
 
       {/* Bottom sheet -- material igual ao de components/ui/BottomSheet.tsx:
           gradiente opaco sobre --bg do tema, sem blur; raio do topo usa
@@ -204,7 +230,7 @@ export function FAB({
         </p>
 
         <button
-          className="flex items-center gap-3 w-full px-4 py-4 rounded-2xl transition-opacity active:opacity-70"
+          className="press flex items-center gap-3 w-full px-4 py-4 rounded-2xl active:opacity-70"
           style={{
             background: "var(--surface)",
             border: "1px solid var(--border-color)",
@@ -242,24 +268,40 @@ export function FAB({
       <button
         ref={fabRef}
         onClick={onToggle}
+        aria-label={open ? "Fechar" : "Criar novo"}
+        data-tour="fab"
+        aria-expanded={open}
         aria-hidden={obstructed || undefined}
         tabIndex={obstructed ? -1 : undefined}
-        className="fixed z-50 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90"
+        className="fixed z-50 flex items-center justify-center rounded-full active:scale-90"
         style={{
-          width: "48px",
-          height: "48px",
-          bottom: "calc(82px + 14px + env(safe-area-inset-bottom, 0px))",
-          right: "20px",
+          // Mesma linha da pílula (BottomNav), alinhado pela base: encolhe
+          // e acomoda os mesmos px que ela, na mesma curva.
+          width: `${navStyle.fabSize}px`,
+          height: `${navStyle.fabSize}px`,
+          bottom: `calc(${18 - navStyle.translateY}px + env(safe-area-inset-bottom, 0px))`,
+          right: `${BOTTOM_NAV_EDGE}px`,
+          transition: `width ${motion}, height ${motion}, bottom ${motion}, opacity 300ms ease, transform 150ms ease`,
           background: "var(--accent)",
           // Fundação Visual (#142): elevação direcional como `.addButton` do
           // protótipo, não o halo difuso de --glow.
           boxShadow: "0 10px 26px rgb(var(--accent-rgb) / 0.25)",
-          transform: open ? "rotate(45deg)" : "rotate(0deg)",
           opacity: obstructed ? 0.28 : 1,
           pointerEvents: obstructed ? "none" : "auto",
         }}
       >
-        <Plus size={22} color="white" strokeWidth={2.5} />
+        {/* A rotação mora no ícone, não no botão: um `transform` inline no
+            botão anulava o `active:scale-90` (estilo inline vence classe) e
+            o toque no FAB não dava feedback nenhum. */}
+        <Plus
+          size={22}
+          color="white"
+          strokeWidth={2.5}
+          style={{
+            transform: open ? "rotate(45deg)" : "rotate(0deg)",
+            transition: "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)",
+          }}
+        />
       </button>
     </>
   );

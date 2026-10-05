@@ -59,8 +59,9 @@ describe("FeedScreen — linha fixa de Amigas é incondicional (fora do items.ma
   });
 
   it("a linha fixa não é envolvida por nenhuma guarda de tamanho (items/posts/visiblePosts/discover) — a tag de abertura <ContextualBlock> vem logo depois da SegmentedControl fechar, sem condicional entre as duas", () => {
-    const openTagIdx = feedScreenSrc.indexOf(
-      "<ContextualBlock\n        icon={<Users2"
+    // Indentação livre: o feed inteiro fica dentro do <PullToRefresh>.
+    const openTagIdx = feedScreenSrc.search(
+      /<ContextualBlock\n\s*icon=\{<Users2/
     );
     const segmentedControlCloseIdx = feedScreenSrc.lastIndexOf(
       "/>",
@@ -88,7 +89,7 @@ describe("FeedScreen — linha fixa de Amigas é incondicional (fora do items.ma
 describe("Rede — onOpenAmigas navega pra AmigasScreen de verdade (não placeholder)", () => {
   it('RedeTab liga onOpenAmigas a um push real de tela ({ type: "amigas" })', () => {
     expect(redeTabSrc).toMatch(
-      /onOpenAmigas=\{\(\) => push\(\{ type: "amigas" \}\)\}/
+      /onOpenAmigas=\{\(\) => \{\s*revalidarSocial\(\);\s*push\(\{ type: "amigas" \}\);\s*\}\}/
     );
   });
 

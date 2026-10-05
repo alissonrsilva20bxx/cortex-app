@@ -57,10 +57,24 @@ describe("PinScreen — teclado T9 circular aprovado (#138)", () => {
     expect(cssSrc).not.toMatch(/#e34468|#ff2d78/i);
   });
 
-  it("título e selo batem em pixel com o protótipo aprovado (34px/-0.04em, selo 68px/23px de margem)", () => {
-    expect(cssSrc).toContain("font-size: 34px");
+  it("título e selo batem em pixel com o protótipo aprovado (34px/-0.04em, selo 68px/23px de margem) em telas altas", () => {
+    // Escalam pela altura (dvh) em telas baixas, mas o teto continua sendo
+    // o tamanho aprovado.
+    expect(cssSrc).toMatch(/font-size: clamp\(\d+px, [\d.]+dvh, 34px\)/);
     expect(cssSrc).toContain("letter-spacing: -0.04em");
-    expect(cssSrc).toContain("margin-bottom: 23px");
+    expect(cssSrc).toMatch(/width: clamp\(\d+px, [\d.]+dvh, 68px\)/);
+    expect(cssSrc).toMatch(/margin-bottom: clamp\(\d+px, [\d.]+dvh, 23px\)/);
+  });
+
+  it("sem degrau de breakpoint em 700px: tamanho do teclado é contínuo (dvh)", () => {
+    expect(cssSrc).not.toContain("@media (max-height: 700px)");
+    const keyRule = cssSrc.match(
+      /\.keypad > button,\s*\.keypad > span \{([\s\S]*?)\n\}/
+    );
+    expect(keyRule).not.toBeNull();
+    expect(keyRule![1]).toMatch(/width: clamp\(56px, 9dvh, 68px\)/);
+    // vh no Safari com barra de endereço mede a viewport grande -> estoura.
+    expect(cssSrc).not.toMatch(/[\d.]vh\b/);
   });
 });
 
@@ -84,8 +98,26 @@ describe("PinScreen — distingue PIN geral e PIN do Cofre (ponto crítico da #1
     expect(tsxSrc).toContain("Seu espaço permanece protegido neste aparelho.");
   });
 
-  it("segue sem nenhum botão de cancelar (decisão deliberada da Fase 3/#126, não regredida)", () => {
-    expect(tsxSrc).not.toMatch(/cancelar/i);
+  // A Fase 3/#126 tirou o cancelar de propósito; o usuário reabriu
+  // (2026-10-01: "quando entra em cofre não tem opção de voltar"). Volta
+  // só como saída opcional: a tecla apagar vira "Cancelar" com 0 dígitos e
+  // SÓ quando o chamador passa `onCancel` (o Cofre). O PIN geral do app não
+  // passa, então continua sem saída -- ali não há pra onde voltar.
+  it("'Cancelar' só existe como troca da tecla apagar, com 0 dígitos e onCancel presente", () => {
+    expect(tsxSrc).toMatch(
+      /const isCancel = isDelete && digits\.length === 0 && !!onCancel;/
+    );
+    expect(tsxSrc).toMatch(/digits\.length === 0 && onCancel\)/);
+  });
+
+  it("o PIN geral do app não passa onCancel (sem saída); o do Cofre passa", () => {
+    const pageSrc = readFileSync(join(ROOT, "app", "page.tsx"), "utf-8");
+    const cofreSrc = readFileSync(
+      join(ROOT, "components", "cofre", "CofreTab.tsx"),
+      "utf-8"
+    );
+    expect(pageSrc).not.toMatch(/onCancel=/);
+    expect(cofreSrc).toMatch(/onCancel=\{onExit\}/);
   });
 });
 

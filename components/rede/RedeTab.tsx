@@ -117,9 +117,14 @@ import {
   type Notificacao,
 } from "@/lib/rede/notificacoes";
 import * as redeCache from "@/lib/rede/redeCache";
+import {
+  processarFotoParaAvatar,
+  FotoInvalidaError,
+} from "@/lib/rede/imagemComposer";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Database } from "@/lib/database.types";
 import type { Usuario } from "@/lib/types";
+import { useStackNav } from "@/lib/useStackNav";
 
 // useLayoutEffect avisa "does nothing on the server" no SSR de um
 // componente client — cai pra useEffect nesse lado (nunca roda no servidor
@@ -173,6 +178,20 @@ function avatarPathFromUrl(url: string | null | undefined): string | null {
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
+/** Resolve quando a imagem terminou de baixar (ou falhou, ou estourou o
+ * tempo) -- nunca rejeita. */
+function precarregarImagem(url: string, ms = 6000): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const t = setTimeout(resolve, ms);
+    img.onload = img.onerror = () => {
+      clearTimeout(t);
+      resolve();
+    };
+    img.src = url;
+  });
+}
+
 type RedeScreen =
   | { type: "feed" }
   | { type: "busca" }
@@ -190,11 +209,23 @@ interface Props {
   /** Se a aba Rede está visível agora. Só restaura a rolagem da Rede
    * quando `true` — nunca mexe na rolagem de outra aba (req 2). */
   active?: boolean;
+  /** Incrementa a cada toque na aba Rede já ativa: com subtela aberta,
+   * volta pra raiz (Feed); já no Feed, rola suave pro topo. */
+  reselectSignal?: number;
   /** Simula o teclado abrindo — repassado até a página, que esconde a BottomNav. */
   onChatFocusChange?: (focused: boolean) => void;
+  /** Foto de perfil salva na Rede (null = perfil sem foto), pra o Início
+   * mostrar a mesma. */
+  onFotoPerfilChange?: (url: string | null) => void;
 }
 
-export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
+export function RedeTab({
+  usuario,
+  active = true,
+  reselectSignal,
+  onChatFocusChange,
+  onFotoPerfilChange,
+}: Props) {
   const toast = useToast();
 
   // ── Semente do cache (síncrona, 1x por conta) ──
@@ -276,6 +307,32 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     };
   }, []);
 
+  // ── Revalidação social (Amigas + Notificações + Conversas) ──
+  // Antes só buscava ao montar e ao reconectar: uma solicitação de amizade
+  // (ou mensagem) que chegava com o app aberto nunca aparecia até recarregar
+  // a página -- "a amiga me adicionou e eu não tenho como aceitar". Agora
+  // também revalida ao voltar pra aba Rede, ao app voltar pro primeiro plano
+  // e ao abrir Notificações/Amigas. No máximo 1x a cada 15s, em 2º plano
+  // (mesma reconciliação sem skeleton do `reconexaoKey`).
+  const [socialKey, setSocialKey] = useState(0);
+  const ultimaRevalidacaoRef = useRef(Date.now());
+  const revalidarSocial = useCallback(() => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) return;
+    const agora = Date.now();
+    if (agora - ultimaRevalidacaoRef.current < 15_000) return;
+    ultimaRevalidacaoRef.current = agora;
+    setSocialKey((k) => k + 1);
+  }, []);
+  useEffect(() => {
+    if (!active) return;
+    revalidarSocial();
+    function onVisible() {
+      if (document.visibilityState === "visible") revalidarSocial();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [active, revalidarSocial]);
+
   // ── Perfil real + LiveLinks ──
   const [perfil, setPerfil] = useState<Perfil | null>(
     () => semente.perfil?.perfil ?? null
@@ -287,6 +344,20 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [avatarOptionsOpen, setAvatarOptionsOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  // Prévia local (blob:) da foto nova enquanto o upload roda -- só em
+  // memória, nunca vai pro perfil/cache persistido.
+  const [avatarPrevia, setAvatarPrevia] = useState<string | null>(null);
+  const fotoPropria = avatarPrevia ?? perfil?.avatar_url ?? null;
+  // Só a foto já salva (nunca a prévia blob:, que é revogada) sobe pro
+  // Início; perfil ainda não carregado não avisa nada.
+  const fotoPerfilSalva = perfil ? (perfil.avatar_url ?? null) : undefined;
+  const onFotoPerfilChangeRef = useRef(onFotoPerfilChange);
+  onFotoPerfilChangeRef.current = onFotoPerfilChange;
+  useEffect(() => {
+    if (fotoPerfilSalva !== undefined) {
+      onFotoPerfilChangeRef.current?.(fotoPerfilSalva);
+    }
+  }, [fotoPerfilSalva]);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
   // Perfis reais de outras autoras, buscados sob demanda ao abrir o perfil
   // público de alguém a partir de um post/comentário real (ver openAutor).
@@ -357,11 +428,22 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   }, [usuario.id, reconexaoKey]);
 
   // ── Navegação: pilha local, sem 2ª barra de navegação (o Feed é a base) ──
-  const [stack, setStack] = useState<RedeScreen[]>([{ type: "feed" }]);
-  const screen = stack[stack.length - 1];
-  const push = (s: RedeScreen) => setStack((prev) => [...prev, s]);
-  const pop = () =>
-    setStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
+  // Transições estilo iOS (push/pop deslizando, arrastar da borda pra
+  // voltar) e rolagem lembrada por nível -- ver lib/useStackNav.ts.
+  const { stack, screen, pageRef, push, pop, popToRoot } =
+    useStackNav<RedeScreen>({ type: "feed" }, active);
+
+  // Tocar de novo na aba Rede já ativa (gesto nativo do iOS): numa subtela,
+  // volta pra raiz; já no Feed, rola suave pro topo. O valor inicial do
+  // sinal não é um toque.
+  const ultimoReselect = useRef(reselectSignal);
+  useEffect(() => {
+    if (reselectSignal === ultimoReselect.current) return;
+    ultimoReselect.current = reselectSignal;
+    if (stack.length > 1) popToRoot();
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reselectSignal]);
 
   // ── Feed real (paginado, issue do escopo de fotos -- listarFeed nunca
   // buscava mais que 1 página do feed inteiro) ──
@@ -448,10 +530,32 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     });
   }
 
+  // ── Puxar pra atualizar (estilo Instagram) ──
+  // Bump em `feedReloadKey` re-roda o effect do feed abaixo (mesma
+  // reconciliação em 2º plano da reconexão, sem skeleton). A promise
+  // devolvida pro PullToRefresh resolve quando essa busca termina.
+  const [feedReloadKey, setFeedReloadKey] = useState(0);
+  const feedRefreshDoneRef = useRef<(() => void) | null>(null);
+  const atualizarFeedPuxando = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      feedRefreshDoneRef.current?.();
+      feedRefreshDoneRef.current = resolve;
+      setFeedReloadKey((k) => k + 1);
+      // Solicitações/notificações/conversas junto, sem o throttle de 15s.
+      setSocialKey((k) => k + 1);
+    });
+  }, []);
+
   useEffect(() => {
     let ativo = true;
     const ep = redeCache.epocaAtual();
     const temSemente = semente.feed !== null;
+    const puxando = feedRefreshDoneRef.current !== null;
+    const terminarPuxada = () => {
+      const done = feedRefreshDoneRef.current;
+      feedRefreshDoneRef.current = null;
+      done?.();
+    };
     listarFeed(supabase)
       .then((data) => {
         if (!ativo || !epocaValida(ep)) return;
@@ -492,6 +596,9 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
         if (!ativo || !epocaValida(ep)) return;
         // Falha de rede com feed cacheado em tela: mantém o conteúdo
         // navegável, não vira erro duro (req 4).
+        if (temSemente && puxando) {
+          toast.error("Não foi possível atualizar o feed.");
+        }
         if (temSemente) {
           setFeedLoading(false);
           return;
@@ -499,12 +606,15 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
         toast.error("Não foi possível carregar o feed.");
         setFeedError(true);
         setFeedLoading(false);
+      })
+      .finally(() => {
+        if (ativo) terminarPuxada();
       });
     return () => {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, reconexaoKey]);
+  }, [usuario.id, reconexaoKey, feedReloadKey]);
 
   async function loadMorePosts() {
     if (feedLoadingMore || !feedHasMore || posts.length === 0) return;
@@ -564,7 +674,11 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     if (posts.length === 0) return; // conteúdo ainda não pronto
     const y = redeCache.scrollLembrado();
     scrollRestaurado.current = true;
-    if (y != null) window.scrollTo(0, y);
+    // Adiado 1 frame (ainda antes do próximo paint): a troca de aba repõe
+    // a rolagem lembrada por aba no efeito passivo da BottomNav
+    // (useScrollCompact), que roda DEPOIS deste layout effect -- sem o
+    // rAF, a 1ª visita à Rede na sessão voltaria pro topo por cima daqui.
+    if (y != null) requestAnimationFrame(() => window.scrollTo(0, y));
   }, [active, screen.type, posts.length]);
 
   // ── Amigas real -- buscado sob demanda ao entrar na tela (não no mount,
@@ -627,7 +741,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, reconexaoKey]);
+  }, [usuario.id, reconexaoKey, socialKey]);
 
   // ── Chat real ──
   const [conversations, setConversations] = useState<ConversaResumo[]>(
@@ -689,7 +803,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, conversationsReloadKey, reconexaoKey]);
+  }, [usuario.id, conversationsReloadKey, reconexaoKey, socialKey]);
 
   function retryLoadConversations() {
     setConversationsLoading(true);
@@ -865,7 +979,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       ativo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuario.id, notificacoesReloadKey, reconexaoKey]);
+  }, [usuario.id, notificacoesReloadKey, reconexaoKey, socialKey]);
 
   function retryLoadNotificacoes() {
     setNotificacoesLoading(true);
@@ -975,6 +1089,20 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
         : p
     );
 
+  // Push nativo pra autora (curtida/comentário), fire-and-forget como nas
+  // mensagens; o servidor confere o estado real e ignora o próprio post.
+  function notificarPost(
+    body:
+      | { tipo: "curtida"; postId: string }
+      | { tipo: "comentario"; postId: string; comentarioId: string }
+  ) {
+    fetch("/api/rede/posts/notificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch((e) => console.error("[RedeTab notificar post]", e));
+  }
+
   async function toggleLike(id: string) {
     // Marca a curtida como pendente: um `listarFeed` que já estava em voo
     // não pode desfazer esse like ao resolver depois (req 6). Ver
@@ -982,7 +1110,8 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     likesPendentes.current.add(id);
     aplicarPosts(alternarCurtidaLocal(id));
     try {
-      await alternarCurtida(supabase, { postId: id });
+      const { curtido } = await alternarCurtida(supabase, { postId: id });
+      if (curtido) notificarPost({ tipo: "curtida", postId: id });
     } catch (e) {
       console.error("[RedeTab curtida]", e);
       // Reverte a atualização otimista se a chamada real falhar.
@@ -995,7 +1124,12 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
 
   async function addComment(postId: string, texto: string) {
     try {
-      await criarComentario(supabase, { postId, texto });
+      const comentario = await criarComentario(supabase, { postId, texto });
+      notificarPost({
+        tipo: "comentario",
+        postId,
+        comentarioId: comentario.id,
+      });
       const atualizados = await listarComentarios(supabase, postId);
       setComments(atualizados);
       aplicarPosts((prev) =>
@@ -1187,9 +1321,19 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
   }
 
   // ── Amigas ──
+  // Push nativo pra outra ponta (pedido novo / pedido aceito). Mesmo esquema
+  // das mensagens: fire-and-forget, o servidor confere o estado real.
+  function notificarAmizade(amizadeId: string) {
+    fetch("/api/rede/amizades/notificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amizadeId }),
+    }).catch((e) => console.error("[RedeTab notificar amizade]", e));
+  }
   async function acceptRequest(req: SolicitacaoAmizade) {
     try {
       await aceitarPedidoAmizade(supabase, { amizadeId: req.id });
+      notificarAmizade(req.id);
       setRequests((prev) => prev.filter((r) => r.id !== req.id));
       setFriends((prev) => [...prev, req.pessoa]);
       toast.success("Agora vocês são amigas!");
@@ -1208,9 +1352,28 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
     }
   }
   async function sendRequest(userId: string) {
+    // A outra pessoa já pediu: "Adicionar" é aceitar o pedido dela.
+    const pedidoDela = requests.find((r) => r.pessoa.id === userId);
+    if (pedidoDela) {
+      await acceptRequest(pedidoDela);
+      return;
+    }
     try {
-      await enviarPedidoAmizade(supabase, { destinatarioId: userId });
-      setSentRequests((prev) => [...prev, userId]);
+      const amizade = await enviarPedidoAmizade(supabase, {
+        destinatarioId: userId,
+      });
+      notificarAmizade(amizade.id);
+      if (amizade.status === "aceita") {
+        // Havia um pedido dela que a lista ainda não mostrava (aceite
+        // automático no serviço): recarrega Amigas/Solicitações.
+        setRequests((prev) => prev.filter((r) => r.pessoa.id !== userId));
+        setSocialKey((k) => k + 1);
+        toast.success("Agora vocês são amigas!");
+        return;
+      }
+      setSentRequests((prev) =>
+        prev.includes(userId) ? prev : [...prev, userId]
+      );
       toast.success("Solicitação enviada!");
     } catch (e) {
       console.error("[RedeTab enviar pedido]", e);
@@ -1574,17 +1737,40 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       toast.error("Selecione uma imagem.");
       return;
     }
-    if (file.size > AVATAR_MAX_BYTES) {
-      toast.error("A imagem deve ter até 5MB.");
-      return;
-    }
     setAvatarUploading(true);
+    let previa: string | null = null;
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      // Recorte quadrado 512px/<=80KB no aparelho: antes subia o original
+      // (até 5MB da câmera) e a foto demorava pra subir e pra aparecer.
+      // Formato que o canvas não lê (ex.: HEIC no Mac) cai no original.
+      let envio: Blob = file;
+      try {
+        envio = await processarFotoParaAvatar(file);
+      } catch (err) {
+        if (!(err instanceof FotoInvalidaError)) throw err;
+        if (file.size > AVATAR_MAX_BYTES) {
+          toast.error("A imagem deve ter até 5MB.");
+          return;
+        }
+      }
+      previa = URL.createObjectURL(envio);
+      setAvatarPrevia(previa);
+
+      // A compressão sai em WebP ou JPEG (ver processarFotoParaAvatar).
+      const ext =
+        envio === file
+          ? file.name.split(".").pop() || "jpg"
+          : envio.type === "image/webp"
+            ? "webp"
+            : "jpg";
       const path = `${usuario.id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("avatares")
-        .upload(path, file, { contentType: file.type });
+        .upload(path, envio, {
+          contentType: envio.type || file.type,
+          // Path é único por upload: pode cachear pra sempre.
+          cacheControl: "31536000",
+        });
       if (uploadError) throw uploadError;
 
       const {
@@ -1594,6 +1780,9 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       const updated = await atualizarPerfil(supabase, {
         avatarUrl: publicUrl,
       });
+      // Baixa a URL pública antes de trocar a prévia por ela -- sem isso o
+      // círculo piscava vazio até a imagem remota chegar.
+      await precarregarImagem(publicUrl);
       sincronizarPerfilNoCache(updated);
       if (oldPath) {
         supabase.storage
@@ -1606,6 +1795,8 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       console.error("[RedeTab upload avatar]", e);
       toast.error("Não foi possível enviar a foto.");
     } finally {
+      setAvatarPrevia(null);
+      if (previa) URL.revokeObjectURL(previa);
       setAvatarUploading(false);
     }
   }
@@ -1697,7 +1888,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       setWishlistFormOpen(false);
       setEditingWishlist(null);
       toast.success("Desejo compartilhado no Feed!");
-      setStack([{ type: "feed" }]);
+      popToRoot({ toTop: true });
     } catch (e) {
       console.error("[RedeTab compartilhar desejo]", e);
       toast.error("Não foi possível compartilhar no Feed.");
@@ -1773,7 +1964,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
         handle: undefined,
         cor: perfil?.cor_avatar,
         bio: perfil?.bio ?? "",
-        fotoUrl: perfil?.avatar_url ?? null,
+        fotoUrl: fotoPropria,
         isMe: true,
       };
     }
@@ -1811,236 +2002,264 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
 
   return (
     <div className="pb-4">
-      {screen.type === "feed" && (
-        <FeedScreen
-          usuario={usuario}
-          usuarioFotoUrl={perfil?.avatar_url ?? null}
-          posts={posts}
-          friends={friends.map((f) => f.id)}
-          wishlistItems={wishlistItems}
-          pendingRequestsCount={requests.length}
-          unreadChats={unreadChats}
-          unreadNotifs={unreadNotifs}
-          loading={feedLoading}
-          error={feedError}
-          hasMore={feedHasMore}
-          loadingMore={feedLoadingMore}
-          segmento={segmento}
-          onSegmentoChange={trocarSegmento}
-          onLoadMore={loadMorePosts}
-          onOpenSearch={() => push({ type: "busca" })}
-          onOpenNotifs={() => setNotifSheetOpen(true)}
-          onOpenChat={() => push({ type: "chatList" })}
-          onOpenMeuEspaco={() => push({ type: "meuEspaco" })}
-          onOpenAmigas={() => push({ type: "amigas" })}
-          onOpenWishlist={() => push({ type: "wishlist" })}
-          onOpenComposer={() => setComposerOpen(true)}
-          onOpenAutor={openAutor}
-          {...postActions}
-        />
-      )}
+      {/* Só as telas da pilha: durante uma transição este bloco é clonado e
+          escondido (sheets ficam fora, sempre vivos). */}
+      {/* Numa subtela (perfil, chat, amigas...) arrastar pro lado é
+          "voltar" (useStackNav), não trocar de aba. */}
+      <div ref={pageRef} data-no-tab-swipe={stack.length > 1 ? "" : undefined}>
+        {screen.type === "feed" && (
+          <FeedScreen
+            usuario={usuario}
+            usuarioFotoUrl={fotoPropria}
+            posts={posts}
+            friends={friends.map((f) => f.id)}
+            wishlistItems={wishlistItems}
+            pendingRequestsCount={requests.length}
+            unreadChats={unreadChats}
+            unreadNotifs={unreadNotifs}
+            loading={feedLoading}
+            error={feedError}
+            hasMore={feedHasMore}
+            loadingMore={feedLoadingMore}
+            segmento={segmento}
+            onSegmentoChange={trocarSegmento}
+            onLoadMore={loadMorePosts}
+            onRefresh={atualizarFeedPuxando}
+            onOpenSearch={() => push({ type: "busca" })}
+            onOpenNotifs={() => {
+              revalidarSocial();
+              setNotifSheetOpen(true);
+            }}
+            onOpenChat={() => push({ type: "chatList" })}
+            onOpenMeuEspaco={() => push({ type: "meuEspaco" })}
+            onOpenAmigas={() => {
+              revalidarSocial();
+              push({ type: "amigas" });
+            }}
+            onOpenWishlist={() => push({ type: "wishlist" })}
+            onOpenComposer={() => setComposerOpen(true)}
+            onOpenAutor={openAutor}
+            {...postActions}
+          />
+        )}
 
-      {screen.type === "busca" && (
-        <SearchScreen
-          posts={posts}
-          onBack={pop}
-          onOpenAutor={openAutor}
-          onOpenPost={(p) => setCommentsPostId(p.id)}
-          onSearchPessoas={(q) => buscarPessoas(supabase, q)}
-        />
-      )}
+        {screen.type === "busca" && (
+          <SearchScreen
+            posts={posts}
+            onBack={pop}
+            onOpenAutor={openAutor}
+            onOpenPost={(p) => setCommentsPostId(p.id)}
+            onSearchPessoas={(q) => buscarPessoas(supabase, q)}
+          />
+        )}
 
-      {screen.type === "amigas" && (
-        <AmigasScreen
-          loading={amigasLoading}
-          friends={friends}
-          requests={requests}
-          sugestoes={sugestoes}
-          sentRequests={sentRequests}
-          onBack={pop}
-          onAccept={acceptRequest}
-          onDecline={declineRequest}
-          onSendRequest={sendRequest}
-          onRemoveFriend={removeFriend}
-          onBlock={blockUser}
-          onOpenChat={openChatWithUser}
-          onOpenProfile={openAutor}
-        />
-      )}
+        {screen.type === "amigas" && (
+          <AmigasScreen
+            loading={amigasLoading}
+            friends={friends}
+            requests={requests}
+            sugestoes={sugestoes}
+            sentRequests={sentRequests}
+            onBack={pop}
+            onAccept={acceptRequest}
+            onDecline={declineRequest}
+            onSendRequest={sendRequest}
+            onRemoveFriend={removeFriend}
+            onBlock={blockUser}
+            onOpenChat={openChatWithUser}
+            onOpenProfile={openAutor}
+          />
+        )}
 
-      {screen.type === "chatList" && (
-        <ChatListScreen
-          loading={conversationsLoading}
-          error={conversationsError}
-          offline={!online}
-          conversations={conversations}
-          onBack={pop}
-          onOpenThread={openChatThread}
-          onRetryLoad={retryLoadConversations}
-        />
-      )}
+        {screen.type === "chatList" && (
+          <ChatListScreen
+            loading={conversationsLoading}
+            error={conversationsError}
+            offline={!online}
+            conversations={conversations}
+            onBack={pop}
+            onOpenThread={openChatThread}
+            onRetryLoad={retryLoadConversations}
+          />
+        )}
 
-      {screen.type === "chatThread" &&
-        (() => {
-          const convo = conversations.find(
-            (c) => c.id === screen.conversationId
-          );
-          if (!convo) return null;
-          return (
-            <ChatThreadScreen
-              conversation={convo}
-              messages={messages[convo.id] ?? []}
-              loading={threadLoading}
-              error={threadError}
-              offline={!online}
-              onBack={pop}
-              onOpenAutor={openAutor}
-              onOpenMenu={() => setChatMenuOpen(true)}
-              onSend={(texto) => sendMessage(convo.id, texto)}
-              onRetry={(messageId) => retrySend(convo.id, messageId)}
-              onRetryLoad={retryLoadThread}
-              onComposerFocusChange={onChatFocusChange}
-              hasMoreMessages={hasMoreMessages[convo.id] ?? false}
-              loadingMoreMessages={loadingMoreMessages}
-              onLoadMoreMessages={loadMoreMessages}
-            />
-          );
-        })()}
+        {screen.type === "chatThread" &&
+          (() => {
+            const convo = conversations.find(
+              (c) => c.id === screen.conversationId
+            );
+            if (!convo) return null;
+            return (
+              <ChatThreadScreen
+                conversation={convo}
+                messages={messages[convo.id] ?? []}
+                loading={threadLoading}
+                error={threadError}
+                offline={!online}
+                onBack={pop}
+                onOpenAutor={openAutor}
+                onOpenMenu={() => setChatMenuOpen(true)}
+                onSend={(texto) => sendMessage(convo.id, texto)}
+                onRetry={(messageId) => retrySend(convo.id, messageId)}
+                onRetryLoad={retryLoadThread}
+                onComposerFocusChange={onChatFocusChange}
+                hasMoreMessages={hasMoreMessages[convo.id] ?? false}
+                loadingMoreMessages={loadingMoreMessages}
+                onLoadMoreMessages={loadMoreMessages}
+              />
+            );
+          })()}
 
-      {screen.type === "meuEspaco" && (
-        <MeuEspacoScreen
-          nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
-          bio={perfil?.bio ?? ""}
-          cor={perfil?.cor_avatar ?? "var(--accent)"}
-          fotoUrl={perfil?.avatar_url ?? null}
-          meusPosts={posts.filter((p) => p.autorId === usuario.id)}
-          liveLinks={liveLinks}
-          clientesCount={clientes.length}
-          friendsCount={friends.length}
-          defaultPrivacidade={defaultPrivacidade}
-          loading={perfil === null && !perfilError}
-          error={perfilError}
-          onBack={pop}
-          onMoveLiveLink={moveLiveLink}
-          onEditLiveLink={(link) => {
-            setEditingLiveLink(link);
-            setLiveLinkFormOpen(true);
-          }}
-          onDeleteLiveLink={deleteLiveLink}
-          onAddLiveLink={() => {
-            setEditingLiveLink(null);
-            setLiveLinkFormOpen(true);
-          }}
-          onEditProfile={() => setProfileEditOpen(true)}
-          onEditAvatar={() => {
-            if (perfil?.avatar_url) setAvatarOptionsOpen(true);
-            else avatarFileInputRef.current?.click();
-          }}
-          onShareProfile={shareProfile}
-          onPublish={() => setComposerOpen(true)}
-          onOpenWishlist={() => push({ type: "wishlist" })}
-          onOpenClientes={() => push({ type: "clientes" })}
-          onOpenBloqueados={openBloqueados}
-          onOpenPerfilPublico={() =>
-            push({ type: "perfilPublico", userId: usuario.id })
-          }
-          onChangeDefaultPrivacidade={setDefaultPrivacidade}
-          {...postActions}
-        />
-      )}
+        {screen.type === "meuEspaco" && (
+          <MeuEspacoScreen
+            nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
+            bio={perfil?.bio ?? ""}
+            cor={perfil?.cor_avatar ?? "var(--accent)"}
+            fotoUrl={fotoPropria}
+            meusPosts={posts.filter((p) => p.autorId === usuario.id)}
+            liveLinks={liveLinks}
+            clientesCount={clientes.length}
+            friendsCount={friends.length}
+            defaultPrivacidade={defaultPrivacidade}
+            loading={perfil === null && !perfilError}
+            error={perfilError}
+            onBack={pop}
+            onMoveLiveLink={moveLiveLink}
+            onEditLiveLink={(link) => {
+              setEditingLiveLink(link);
+              setLiveLinkFormOpen(true);
+            }}
+            onDeleteLiveLink={deleteLiveLink}
+            onAddLiveLink={() => {
+              setEditingLiveLink(null);
+              setLiveLinkFormOpen(true);
+            }}
+            onEditProfile={() => setProfileEditOpen(true)}
+            onEditAvatar={() => {
+              if (perfil?.avatar_url) setAvatarOptionsOpen(true);
+              else avatarFileInputRef.current?.click();
+            }}
+            onShareProfile={shareProfile}
+            onPublish={() => setComposerOpen(true)}
+            onOpenWishlist={() => push({ type: "wishlist" })}
+            onOpenClientes={() => push({ type: "clientes" })}
+            onOpenBloqueados={openBloqueados}
+            onOpenPerfilPublico={() =>
+              push({ type: "perfilPublico", userId: usuario.id })
+            }
+            onChangeDefaultPrivacidade={setDefaultPrivacidade}
+            onDeletePost={deletePost}
+            {...postActions}
+          />
+        )}
 
-      {screen.type === "perfilPublico" &&
-        (() => {
-          const profile = buildProfile(screen.userId);
-          const isFriend = profile.isMe
-            ? false
-            : friends.some((f) => f.id === screen.userId);
-          const wishlistPublico = profile.isMe
-            ? wishlistItems.filter((w) => w.privacidade === "comunidade")
-            : [];
-          // LiveLinks de outras pessoas ainda não têm de onde vir --
-          // nenhuma ticket do mapa expõe LiveLinks de terceiros, só o
-          // próprio perfil (ticket 09). Fora do escopo por enquanto.
-          const livelinksExibidos = profile.isMe ? liveLinks : [];
-          return (
-            <PerfilPublicoScreen
-              nome={profile.nome}
-              handle={profile.handle}
-              cor={profile.cor}
-              fotoUrl={profile.fotoUrl}
-              bio={profile.bio}
-              isMe={profile.isMe}
-              isFriend={isFriend}
-              requestSent={sentRequests.includes(screen.userId)}
-              liveLinks={livelinksExibidos}
-              wishlistPublico={wishlistPublico}
-              posts={posts.filter((p) => p.autorId === screen.userId)}
-              loading={!profile.isMe && otherProfileLoading}
-              error={!profile.isMe && otherProfileError}
-              onBack={pop}
-              onOpenChat={() => openChatWithUser(screen.userId)}
-              chatOpening={openingChatUserIds.has(screen.userId)}
-              onSendRequest={() => sendRequest(screen.userId)}
-              onBlock={() => {
-                blockUser(screen.userId);
-                pop();
-              }}
-              // Mesmo gatilho que o "..." do PostCard já usa pra abrir a
-              // confirmação real de denúncia (ticket #140) -- não duplica
-              // serviço/feedback, só abre um passo antes (o "..." da
-              // grade/visualizador do perfil já sabe que não é o dono,
-              // pula direto pro "Motivo da denúncia" sem passar pelo menu
-              // "Publicação" completo, que teria Editar/Excluir).
-              onReportPost={(postId) =>
-                setReportTarget({ tipo: "post", id: postId })
-              }
-              {...postActions}
-            />
-          );
-        })()}
+        {screen.type === "perfilPublico" &&
+          (() => {
+            const profile = buildProfile(screen.userId);
+            const isFriend = profile.isMe
+              ? false
+              : friends.some((f) => f.id === screen.userId);
+            const pedidoRecebido = profile.isMe
+              ? undefined
+              : requests.find((r) => r.pessoa.id === screen.userId);
+            const wishlistPublico = profile.isMe
+              ? wishlistItems.filter((w) => w.privacidade === "comunidade")
+              : [];
+            // LiveLinks de outras pessoas ainda não têm de onde vir --
+            // nenhuma ticket do mapa expõe LiveLinks de terceiros, só o
+            // próprio perfil (ticket 09). Fora do escopo por enquanto.
+            const livelinksExibidos = profile.isMe ? liveLinks : [];
+            return (
+              <PerfilPublicoScreen
+                nome={profile.nome}
+                handle={profile.handle}
+                cor={profile.cor}
+                fotoUrl={profile.fotoUrl}
+                bio={profile.bio}
+                isMe={profile.isMe}
+                isFriend={isFriend}
+                requestSent={sentRequests.includes(screen.userId)}
+                liveLinks={livelinksExibidos}
+                wishlistPublico={wishlistPublico}
+                posts={posts.filter((p) => p.autorId === screen.userId)}
+                loading={!profile.isMe && otherProfileLoading}
+                error={!profile.isMe && otherProfileError}
+                onBack={pop}
+                onOpenChat={() => openChatWithUser(screen.userId)}
+                chatOpening={openingChatUserIds.has(screen.userId)}
+                onSendRequest={() => sendRequest(screen.userId)}
+                incomingRequest={!!pedidoRecebido}
+                onAcceptRequest={
+                  pedidoRecebido
+                    ? () => acceptRequest(pedidoRecebido)
+                    : undefined
+                }
+                onDeclineRequest={
+                  pedidoRecebido
+                    ? () => declineRequest(pedidoRecebido.id)
+                    : undefined
+                }
+                onBlock={() => {
+                  blockUser(screen.userId);
+                  pop();
+                }}
+                // Mesmo gatilho que o "..." do PostCard já usa pra abrir a
+                // confirmação real de denúncia (ticket #140) -- não duplica
+                // serviço/feedback, só abre um passo antes (o "..." da
+                // grade/visualizador do perfil já sabe que não é o dono,
+                // pula direto pro "Motivo da denúncia" sem passar pelo menu
+                // "Publicação" completo, que teria Editar/Excluir).
+                onReportPost={(postId) =>
+                  setReportTarget({ tipo: "post", id: postId })
+                }
+                {...postActions}
+              />
+            );
+          })()}
 
-      {screen.type === "wishlist" && (
-        <WishlistScreen
-          items={wishlistItems}
-          onBack={pop}
-          onAddNew={() => {
-            setEditingWishlist(null);
-            setWishlistFormOpen(true);
-          }}
-          onOpenItem={(item) => {
-            setEditingWishlist(item);
-            setWishlistFormOpen(true);
-          }}
-        />
-      )}
+        {screen.type === "wishlist" && (
+          <WishlistScreen
+            items={wishlistItems}
+            onBack={pop}
+            onAddNew={() => {
+              setEditingWishlist(null);
+              setWishlistFormOpen(true);
+            }}
+            onOpenItem={(item) => {
+              setEditingWishlist(item);
+              setWishlistFormOpen(true);
+            }}
+          />
+        )}
 
-      {screen.type === "clientes" && (
-        <ClientesScreen
-          clientes={clientes}
-          onBack={pop}
-          onAddNew={() => {
-            setEditingCliente(null);
-            setClienteFormOpen(true);
-          }}
-          onOpenCliente={setClienteDetail}
-        />
-      )}
+        {screen.type === "clientes" && (
+          <ClientesScreen
+            clientes={clientes}
+            onBack={pop}
+            onAddNew={() => {
+              setEditingCliente(null);
+              setClienteFormOpen(true);
+            }}
+            onOpenCliente={setClienteDetail}
+          />
+        )}
 
-      {screen.type === "bloqueados" && (
-        <BlockedUsersScreen
-          items={bloqueados}
-          loading={bloqueadosLoading}
-          error={bloqueadosError}
-          onBack={pop}
-          onUnblock={unblockUser}
-        />
-      )}
+        {screen.type === "bloqueados" && (
+          <BlockedUsersScreen
+            items={bloqueados}
+            loading={bloqueadosLoading}
+            error={bloqueadosError}
+            onBack={pop}
+            onUnblock={unblockUser}
+          />
+        )}
+      </div>
 
       {/* ── Sheets globais ── */}
       <PostComposer
         open={composerOpen}
         usuarioNome={usuario.nome}
-        usuarioFotoUrl={perfil?.avatar_url ?? null}
+        usuarioFotoUrl={fotoPropria}
         editingPost={editingPost}
         onClose={() => {
           setComposerOpen(false);
@@ -2053,7 +2272,7 @@ export function RedeTab({ usuario, active = true, onChatFocusChange }: Props) {
       <CommentsSheet
         postId={commentsPostId}
         usuarioNome={usuario.nome}
-        usuarioFotoUrl={perfil?.avatar_url ?? null}
+        usuarioFotoUrl={fotoPropria}
         comments={comments}
         loading={commentsLoading}
         onClose={() => setCommentsPostId(null)}

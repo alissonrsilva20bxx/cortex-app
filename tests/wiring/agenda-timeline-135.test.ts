@@ -139,9 +139,9 @@ describe("Resumo e Anotações viraram sheets (composição aprovada) preservand
     );
   });
 
-  it("botão Anotações abre um BottomSheet com o NotasSection real (mesmo autosave de antes)", () => {
+  it("botão Bloco de notas abre um BottomSheet com o NotasSection real (mesmo autosave de antes)", () => {
     expect(jobsTabSrc).toMatch(
-      /<BottomSheet[\s\S]*?title="Anotações"[\s\S]*?<NotasSection userId=\{userId\} \/>/
+      /<BottomSheet[\s\S]*?title="Bloco de notas"[\s\S]*?<NotasSection userId=\{userId\} \/>/
     );
   });
 

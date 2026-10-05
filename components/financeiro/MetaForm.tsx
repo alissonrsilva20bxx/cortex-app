@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import type { PeriodoMeta } from "@/lib/types";
 
 interface MetaValues {
@@ -104,15 +105,13 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
       {/* Fundação Visual (#142): mesmo material de components/ui/BottomSheet.tsx
           -- backdrop preto semi-opaco sem blur, painel opaco sem blur,
           raio do topo --radius-sheet (26px). */}
-      {open && (
-        <div
-          className="fixed inset-0 z-50"
-          style={{ background: "rgba(0, 0, 0, 0.62)" }}
-          onClick={onClose}
-        />
-      )}
+      <SheetBackdrop open={open} onClose={onClose} className="z-50" />
 
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Editar Metas"
+        aria-hidden={!open || undefined}
         className="fixed left-0 right-0 z-50 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: 0,

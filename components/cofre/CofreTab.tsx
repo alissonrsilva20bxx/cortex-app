@@ -91,9 +91,19 @@ interface Props {
    * no componente pai). Sair da aba invalida o desbloqueio do Cofre —
    * ver o efeito logo abaixo. */
   active: boolean;
+  /** "Cancelar" no PIN do Cofre: volta pra aba de onde a pessoa veio. O
+   * PinScreen cobre a tela inteira (inclusive a barra de abas), então sem
+   * isto não havia como sair do Cofre sem digitar o PIN. */
+  onExit?: () => void;
 }
 
-export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
+export function CofreTab({
+  userId,
+  refreshTrigger,
+  pinHash,
+  active,
+  onExit,
+}: Props) {
   /**
    * Semente do cache SWR (`lib/cofre/cofreCache.ts`), síncrona, 1x por
    * conta -- mesmo padrão de `RedeTab` (`sementeRef`). Cobre o remount que
@@ -123,6 +133,9 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
   // Só nasce `true` em cache miss de verdade (semente nula) -- com cache,
   // o efeito abaixo vira revalidação em 2º plano, sem spinner.
   const [loading, setLoading] = useState(() => semente.files === null);
+  /** Falhou a busca e não há nada em cache pra mostrar (1ª vez offline) --
+   * a mensagem diz isso em vez de "Cofre vazio". */
+  const [semConexao, setSemConexao] = useState(false);
 
   /**
    * Gate próprio do Cofre — corrige o defeito confirmado manualmente:
@@ -277,8 +290,11 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
           .list(`${userId}/${cat}`, {
             sortBy: { column: "created_at", order: "desc" },
           })
-          .then(({ data }) =>
-            (data ?? []).map((f) => ({
+          .then(({ data, error }) => {
+            // Sem rede o storage devolve `{ error }` sem lançar -- tratar
+            // como lista vazia gravava "Cofre vazio" por cima do cache.
+            if (error) throw error;
+            return (data ?? []).map((f) => ({
               name: f.name,
               path: `${userId}/${cat}/${f.name}`,
               categoria: cat,
@@ -286,8 +302,8 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
               createdAt:
                 f.created_at ?? f.updated_at ?? new Date().toISOString(),
               mimeType: f.metadata?.mimetype,
-            }))
-          )
+            }));
+          })
       )
     )
       .then((results) => {
@@ -303,6 +319,7 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
         cofreCache.escrever(userId, all, ep);
         setFiles(all);
         setLoading(false);
+        setSemConexao(false);
       })
       .catch((e) => {
         if (!ativo || cofreCache.epocaAtual() !== ep) return;
@@ -310,6 +327,7 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
         // Falha na revalidação NÃO apaga o conteúdo já cacheado em tela --
         // só encerra o carregamento (relevante no cache miss: sem isso o
         // spinner ficaria preso pra sempre numa falha de rede).
+        if (cofreCache.ler(userId) === null) setSemConexao(true);
         setLoading(false);
       });
 
@@ -333,6 +351,7 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
         pinHash={pinHash}
         context="vault"
         onUnlock={() => setUnlocked(true)}
+        onCancel={onExit}
       />,
       document.body
     );
@@ -353,11 +372,13 @@ export function CofreTab({ userId, refreshTrigger, pinHash, active }: Props) {
         : true
     );
 
-  const emptyMessage = query.trim()
-    ? `Nenhum arquivo encontrado para "${query.trim()}".`
-    : filter === "todos"
-      ? "Cofre vazio. Toque no + para enviar."
-      : `Nenhum arquivo em "${CATS.find((c) => c.id === filter)?.label}".`;
+  const emptyMessage = semConexao
+    ? "Sem conexão. Seus arquivos aparecem aqui quando a internet voltar."
+    : query.trim()
+      ? `Nenhum arquivo encontrado para "${query.trim()}".`
+      : filter === "todos"
+        ? "Cofre vazio. Toque no + para enviar."
+        : `Nenhum arquivo em "${CATS.find((c) => c.id === filter)?.label}".`;
 
   return (
     <div className="pb-4">

@@ -98,7 +98,7 @@ describe("§7-P1-2 — Notificações push são reais (isPushSupported/Notificac
 describe("§7-P1-3 — Instalar app (InstallSheet real, condicional a !isStandalone())", () => {
   it("importa isStandalone de lib/platform e InstallSheet real", () => {
     expect(src).toMatch(
-      /import\s*\{\s*isStandalone\s*\}\s*from\s*"@\/lib\/platform"/
+      /import\s*\{[^}]*\bisStandalone\b[^}]*\}\s*from\s*"@\/lib\/platform"/
     );
     expect(src).toMatch(
       /import\s*\{\s*InstallSheet\s*\}\s*from\s*"@\/components\/install\/InstallSheet"/
@@ -113,5 +113,19 @@ describe("§7-P1-4 — Exportar dados usa exportarDadosCSV real", () => {
       /import\s*\{\s*exportarDadosCSV\s*\}\s*from\s*"@\/lib\/exportarDados"/
     );
     expect(src).toMatch(/await exportarDadosCSV\(userId\)/);
+  });
+});
+
+describe("Notificações no iPhone fora do app instalado", () => {
+  // Safari numa aba comum não tem PushManager: antes a linha sumia sem
+  // explicação. Agora aparece apontando pra instalação.
+  it("mostra a linha 'Instale o app para ativar' em vez de sumir", () => {
+    expect(src).toMatch(
+      /\} else if \(isIOS\(\) && !isStandalone\(\)\) \{\s*setPushNeedsInstall\(true\);/
+    );
+    expect(src).toContain('detail="Instale o app para ativar"');
+    expect(src).toMatch(
+      /detail="Instale o app para ativar"\s*onClick=\{\(\) => setInstallSheetOpen\(true\)\}/
+    );
   });
 });

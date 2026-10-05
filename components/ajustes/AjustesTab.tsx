@@ -22,6 +22,7 @@ import {
   Palette,
   Home,
   Database,
+  Compass,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
@@ -35,7 +36,7 @@ import { InstallSheet } from "@/components/install/InstallSheet";
 import { computeAssinatura } from "@/lib/assinatura";
 import { formatBRL, totalEarnings } from "@/lib/finance";
 import { exportarDadosCSV } from "@/lib/exportarDados";
-import { isStandalone } from "@/lib/platform";
+import { isIOS, isStandalone } from "@/lib/platform";
 import {
   isPushSupported,
   isPushSubscribed,
@@ -78,6 +79,8 @@ interface Props {
    * uma sub-página, o botão de voltar existente (closeSettingsPage) já
    * volta pra raiz primeiro. */
   onClose: () => void;
+  /** Reabre o tour guiado do app (lib/appTour.ts). */
+  onOpenTour?: () => void;
 }
 
 /** Um grupo de ajustes (rótulo + card único) -- a aparência do laboratório
@@ -188,6 +191,7 @@ export function AjustesTab({
   onCardStylesChange,
   onChartPrefsChange,
   onClose,
+  onOpenTour,
 }: Props) {
   const { theme, setTheme, mode, setMode } = useTheme();
   const [pinEnabled, setPinEnabled] = useState(false);
@@ -202,6 +206,10 @@ export function AjustesTab({
     status: AssinaturaStatus;
   } | null>(null);
   const [pushSupported, setPushSupported] = useState(false);
+  // iPhone numa aba do Safari: não existe PushManager (a Apple só libera
+  // push pro app instalado na tela de início). Em vez de sumir com a opção,
+  // mostra a linha apontando pra instalação.
+  const [pushNeedsInstall, setPushNeedsInstall] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState<string | null>(null);
@@ -236,6 +244,8 @@ export function AjustesTab({
     if (isPushSupported()) {
       setPushSupported(true);
       isPushSubscribed().then(setPushEnabled);
+    } else if (isIOS() && !isStandalone()) {
+      setPushNeedsInstall(true);
     }
     setStandalone(isStandalone());
   }, [userId, setTheme]);
@@ -481,7 +491,7 @@ export function AjustesTab({
                 title="Tela inicial"
                 detail="Cards e gráficos"
                 onClick={() => openSettingsPage("home")}
-                last={!pushSupported}
+                last={!pushSupported && !pushNeedsInstall}
               />
               {pushSupported ? (
                 <SettingsMenuRow
@@ -491,20 +501,39 @@ export function AjustesTab({
                   onClick={() => openSettingsPage("notifications")}
                   last
                 />
+              ) : pushNeedsInstall ? (
+                <SettingsMenuRow
+                  icon={<Bell size={17} />}
+                  title="Notificações"
+                  detail="Instale o app para ativar"
+                  onClick={() => setInstallSheetOpen(true)}
+                  last
+                />
               ) : null}
             </GlassCard>
           </SettingsGroup>
 
-          {!standalone ? (
+          {onOpenTour || !standalone ? (
             <SettingsGroup title="Aplicativo">
               <GlassCard radius="md" className="overflow-hidden p-0">
-                <SettingsMenuRow
-                  icon={<Smartphone size={17} />}
-                  title="Instalar JobApp"
-                  detail="Acesso rápido e funcionamento offline"
-                  onClick={() => openSettingsPage("install")}
-                  last
-                />
+                {onOpenTour ? (
+                  <SettingsMenuRow
+                    icon={<Compass size={17} />}
+                    title="Ver tour do app"
+                    detail="Onde fica cada coisa, passo a passo"
+                    onClick={onOpenTour}
+                    last={standalone}
+                  />
+                ) : null}
+                {!standalone ? (
+                  <SettingsMenuRow
+                    icon={<Smartphone size={17} />}
+                    title="Instalar JobApp"
+                    detail="Acesso rápido e funcionamento offline"
+                    onClick={() => openSettingsPage("install")}
+                    last
+                  />
+                ) : null}
               </GlassCard>
             </SettingsGroup>
           ) : null}
@@ -892,7 +921,9 @@ export function AjustesTab({
                   className="mt-0.5 font-medium"
                   style={{ fontSize: "12px", color: "var(--text-muted)" }}
                 >
-                  Abre mais rápido e funciona offline
+                  {pushNeedsInstall
+                    ? "Abre mais rápido, funciona offline e libera as notificações"
+                    : "Abre mais rápido e funciona offline"}
                 </p>
               </div>
             </GlassCard>

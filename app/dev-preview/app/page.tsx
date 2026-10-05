@@ -20,10 +20,13 @@ import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { AppTour } from "@/components/onboarding/AppTour";
+import type { RedeAcessoTour } from "@/lib/appTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
 import { supabase, __setMockSupabaseClient } from "@/lib/supabase";
+import { useTabSwipe } from "@/lib/useTabSwipe";
 import { createMockSupabaseClient } from "@/lib/mockSupabase";
 import { buildMockAppSeed, MOCK_APP_USUARIO } from "@/lib/mockAppData";
 import {
@@ -105,6 +108,7 @@ export default function DevPreviewApp() {
   }, []);
 
   const [activeTab, setActiveTab] = useState<TabId>("home");
+  const [redeReselect, setRedeReselect] = useState(0);
   const [fabOpen, setFabOpen] = useState(false);
 
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -160,6 +164,12 @@ export default function DevPreviewApp() {
   // (welcome/goal/job/aha) a aparecerem; `onOpenJobForm` reaproveita o
   // `JobForm` já montado abaixo.
   const [onboardingPreview, setOnboardingPreview] = useState(false);
+  // Tour guiado (espelha app/page.tsx); `__previewTour()` abre direto.
+  const [tourOpen, setTourOpen] = useState(false);
+  const [redeAcesso, setRedeAcesso] = useState<RedeAcessoTour>("pendente");
+  // Foto do perfil da Rede: o Início mostra a mesma (cai na da conta Google
+  // quando a Rede não tem foto ou não está liberada).
+  const [fotoRede, setFotoRede] = useState<string | null>(null);
   useEffect(() => {
     const w = window as unknown as Record<string, () => void>;
     w.__previewLock = () => {
@@ -168,9 +178,14 @@ export default function DevPreviewApp() {
     };
     w.__previewUnlock = () => setLocked(false);
     w.__previewOnboarding = () => setOnboardingPreview(true);
+    w.__previewTour = () => {
+      setActiveTab("home");
+      setTourOpen(true);
+    };
     return () => {
       delete w.__previewLock;
       delete w.__previewUnlock;
+      delete w.__previewTour;
       delete w.__previewOnboarding;
     };
   }, []);
@@ -238,8 +253,15 @@ export default function DevPreviewApp() {
   }
 
   function handleTabChange(tab: TabId) {
-    setActiveTab(tab);
     setFabOpen(false);
+    // Mesmo gesto da rota real (app/page.tsx): tocar de novo na aba ativa
+    // volta a Rede pra raiz ou rola a aba pro topo.
+    if (tab === activeTab) {
+      if (tab === "rede") setRedeReselect((n) => n + 1);
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setActiveTab(tab);
   }
 
   function handleFabAction() {
@@ -263,6 +285,26 @@ export default function DevPreviewApp() {
     );
   }
 
+  // Espelha app/page.tsx: "Cancelar" do PIN do Cofre volta pra aba
+  // anterior, e arrastar pro lado troca de aba.
+  const abaAntesDoCofre = useRef<TabId>("home");
+  useEffect(() => {
+    if (activeTab !== "cofre") abaAntesDoCofre.current = activeTab;
+  }, [activeTab]);
+  const mainRef = useRef<HTMLElement>(null);
+  useTabSwipe({
+    containerRef: mainRef,
+    activeTab,
+    enabled:
+      !locked &&
+      !onboardingPreview &&
+      !fabOpen &&
+      !tourOpen &&
+      !chatComposerFocused &&
+      activeTab !== "ajustes",
+    onChange: handleTabChange,
+  });
+
   if (locked && pinHash) {
     return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
   }
@@ -281,7 +323,10 @@ export default function DevPreviewApp() {
             onOpenJobForm={() => setJobFormOpen(true)}
             onMetaSaved={() => {}}
             onPinSaved={(h) => setPinHash(h)}
-            onComplete={() => setOnboardingPreview(false)}
+            onComplete={() => {
+              setOnboardingPreview(false);
+              setTourOpen(true);
+            }}
           />
         </main>
         <JobForm
@@ -302,23 +347,27 @@ export default function DevPreviewApp() {
     <div className="relative flex flex-col min-h-screen">
       <main
         className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
+        ref={mainRef}
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
         <TabPanel tab="home" activeTab={activeTab}>
           <GreetingHeader
             usuario={usuario}
             onOpenAjustes={() => handleTabChange("ajustes")}
+            fotoUrl={fotoRede}
           />
           {/* Grid+gap explícito, espelha app/page.tsx (achado #131). */}
-          <div className="mt-6 grid gap-4">
-            <HeroCard
-              jobs={jobs}
-              metas={metas}
-              onGoToFinanceiro={() => {
-                handleTabChange("financeiro");
-                setFinanceiroFocusTab("visao");
-              }}
-            />
+          <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
+            <div data-tour="home-hero">
+              <HeroCard
+                jobs={jobs}
+                metas={metas}
+                onGoToFinanceiro={() => {
+                  handleTabChange("financeiro");
+                  setFinanceiroFocusTab("visao");
+                }}
+              />
+            </div>
             {homeCards.nextJob && <NextJobCard jobs={jobs} />}
             {(homeCards.objetivos ?? true) && (
               <ObjetivosCard
@@ -368,6 +417,7 @@ export default function DevPreviewApp() {
             refreshTrigger={cofreRefreshKey}
             pinHash={pinHash}
             active={activeTab === "cofre"}
+            onExit={() => handleTabChange(abaAntesDoCofre.current)}
           />
         </TabPanel>
 
@@ -392,7 +442,10 @@ export default function DevPreviewApp() {
           )}
           <RedeGatedTab
             usuario={usuario}
+            reselectSignal={redeReselect}
             onChatFocusChange={setChatComposerFocused}
+            onAcessoChange={setRedeAcesso}
+            onFotoPerfilChange={setFotoRede}
           />
         </TabPanel>
 
@@ -406,21 +459,42 @@ export default function DevPreviewApp() {
             onCardStylesChange={() => {}}
             onChartPrefsChange={setChartPrefs}
             onClose={() => handleTabChange("home")}
+            onOpenTour={() => {
+              handleTabChange("home");
+              setTourOpen(true);
+            }}
           />
         </TabPanel>
       </main>
 
       {!chatComposerFocused && (
         <>
-          <FAB
+          <BottomNav
             activeTab={activeTab}
-            financeiroSubTab={finInnerTab}
-            open={fabOpen}
-            onToggle={() => setFabOpen((v) => !v)}
-            onAction={handleFabAction}
+            onChange={handleTabChange}
+            holdOpen={fabOpen || tourOpen}
+            renderFab={(compact) => (
+              <FAB
+                activeTab={activeTab}
+                financeiroSubTab={finInnerTab}
+                open={fabOpen}
+                onToggle={() => setFabOpen((v) => !v)}
+                onAction={handleFabAction}
+                compact={compact}
+              />
+            )}
           />
-          <BottomNav activeTab={activeTab} onChange={handleTabChange} />
         </>
+      )}
+
+      {tourOpen && (
+        <AppTour
+          userId={usuario.id}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onClose={() => setTourOpen(false)}
+          redeAcesso={redeAcesso}
+        />
       )}
 
       {dataLoaded && <RecapSheet jobs={jobs} />}
