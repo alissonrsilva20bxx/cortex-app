@@ -73,7 +73,9 @@ describe("J02 — /dev-preview/app e app/page.tsx montam a Início real, na orde
     });
 
     it(`${pagina}: o card principal e a grade de 2 colunas`, () => {
-      expect(painel).toMatch(/<div className="grid grid-cols-2 gap-\[10px\] \[&>:last-child:nth-child\(even\)\]:col-span-2">/);
+      expect(painel).toMatch(
+        /<div className="grid grid-cols-2 gap-\[10px\] \[&>:last-child:nth-child\(even\)\]:col-span-2">/
+      );
       expect(painel).toMatch(
         /<div data-tour="home-hero" className="col-span-2">\s*<HeroCard/
       );
@@ -110,13 +112,18 @@ describe("J02 — os dois títulos de seção do mockup", () => {
   });
 });
 
-describe("J02 — nada dos valores ilustrativos do mockup no código de produção", () => {
-  const producao = [
-    "app/page.tsx",
-    ...readdirSync(join(ROOT, "components", "home")).map(
-      (f) => `components/home/${f}`
-    ),
-  ];
+/** Os arquivos que o J02 escreve: as duas páginas e components/home/*. */
+const ARQUIVOS_J02 = [
+  ...PAGINAS,
+  ...readdirSync(join(ROOT, "components", "home")).map(
+    (f) => `components/home/${f}`
+  ),
+];
+
+describe("J02 — nada dos valores ilustrativos do mockup no código (app, laboratório e components/home)", () => {
+  // Revisão da PR #169: o laboratório também entra na varredura -- é um
+  // dos arquivos que este ticket edita.
+  const producao = ARQUIVOS_J02;
   // Nomes, valores e datas que só existem no mockup.
   const DO_MOCKUP = [
     "3.500",
@@ -134,6 +141,97 @@ describe("J02 — nada dos valores ilustrativos do mockup no código de produç�
     it(`${arquivo} não traz nenhum valor do mockup`, () => {
       const src = read(arquivo);
       for (const v of DO_MOCKUP) expect(src, v).not.toContain(v);
+    });
+  }
+});
+
+/** Fonte sem comentários: um número num comentário não é cálculo. */
+function semComentarios(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+}
+
+describe("J02 — 'não mude cálculo': todo número vem da conta que já existia", () => {
+  // Revisão da PR #169: trocar `p.meta` por `3500` no HeroCard passava em
+  // todos os casos. Estas guardas amarram cada valor exibido ao campo que
+  // o produz, em vez de só conferir o texto em volta.
+  const COM_DINHEIRO = [
+    "components/home/HeroCard.tsx",
+    "components/home/FaltaMetaCard.tsx",
+    "components/home/SemanaSection.tsx",
+    "components/home/ProximosAtendimentos.tsx",
+  ];
+  const ARG_PERMITIDO =
+    /^(p\.(earned|meta|remaining|projectedMonthEnd)|job\.valor)$/;
+
+  for (const arquivo of COM_DINHEIRO) {
+    it(`${arquivo}: todo formatBRL(...) recebe um campo de monthProjection ou o valor do atendimento`, () => {
+      const src = semComentarios(read(arquivo));
+      const args = [...src.matchAll(/formatBRL\(\s*([^()]*?)\s*\)/g)].map(
+        (m) => m[1]
+      );
+      expect(args.length).toBeGreaterThan(0);
+      for (const a of args) expect(a, `formatBRL(${a})`).toMatch(ARG_PERMITIDO);
+    });
+  }
+
+  for (const arquivo of [
+    "components/home/HeroCard.tsx",
+    "components/home/FaltaMetaCard.tsx",
+  ]) {
+    it(`${arquivo}: calcula só com monthProjection(jobs, metas), uma vez, de lib/finance`, () => {
+      const src = semComentarios(read(arquivo));
+      expect(src).toMatch(
+        /^import \{[^}]*\bmonthProjection\b[^}]*\} from "@\/lib\/finance";$/m
+      );
+      expect(src.match(/monthProjection\(/g)).toHaveLength(1);
+      expect(src).toContain("const p = monthProjection(jobs, metas);");
+      // Nenhuma reconstrução local da conta.
+      expect(src).not.toMatch(/monthEarnings|monthMeta|reduce\(/);
+    });
+  }
+
+  it("HeroCard: percentual e barra vêm de p.pct e p.barFraction", () => {
+    const src = semComentarios(read("components/home/HeroCard.tsx"));
+    expect(src).toContain("{Math.round(p.pct)}% da meta");
+    expect(src).toContain("`${Math.round(p.barFraction * 100)}%`");
+    expect(src).toMatch(/\{p\.pct !== null && \(/);
+  });
+
+  it("FaltaMetaCard: mostra p.remaining e some sem meta", () => {
+    const src = semComentarios(read("components/home/FaltaMetaCard.tsx"));
+    expect(src).toContain(
+      "if (p.meta === null || p.remaining === null) return null;"
+    );
+    expect(src).toContain("{formatBRL(p.remaining)}");
+  });
+
+  it("ObjetivosCard: a contagem sai do campo binário `concluido`", () => {
+    const src = semComentarios(read("components/home/ObjetivosCard.tsx"));
+    expect(src).toContain("const total = objetivos.length;");
+    expect(src).toContain(
+      "const feitos = objetivos.filter((o) => o.concluido).length;"
+    );
+    expect(src).toContain("{feitos} de {total}");
+  });
+
+  for (const arquivo of ARQUIVOS_J02.filter((f) =>
+    f.startsWith("components/")
+  )) {
+    it(`${arquivo}: nenhum valor de dinheiro escrito à mão`, () => {
+      const src = semComentarios(read(arquivo));
+      // Milhar com ponto (3.500) ou número de 4+ dígitos fora de CSS.
+      expect(src).not.toMatch(/\b\d{1,3}(\.\d{3})+\b/);
+      expect(src).not.toMatch(/\b\d{4,}\b/);
+    });
+  }
+});
+
+describe("J02 — cor sempre do tema, nunca o rosa fixo do protótipo (#ff2d78, decisão da Fase 1/#124)", () => {
+  // Revisão da PR #169: a guarda existia só pro card principal; vale pra
+  // tudo que o J02 escreve.
+  for (const arquivo of ARQUIVOS_J02) {
+    it(`${arquivo} não usa #ff2d78 nem #ff376e`, () => {
+      expect(read(arquivo)).not.toMatch(/#ff2d78|#ff376e/i);
     });
   }
 });
