@@ -2,16 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import {
-  FileText,
-  Image,
-  File,
-  ExternalLink,
-  Shield,
-  Search,
-  Lock,
-  LockKeyhole,
-} from "lucide-react";
+import { Shield, Search, LockKeyhole, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { FilterChips } from "@/components/ui/FilterChips";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -23,6 +14,17 @@ import {
 } from "./lockGate";
 import * as cofreCache from "@/lib/cofre/cofreCache";
 import type { CofreFile } from "@/lib/cofre/cofreCache";
+import {
+  formatTamanho,
+  recentes,
+  totalUsado,
+  ultimoEnvio,
+} from "./cofreResumo";
+import {
+  ListaArquivos,
+  SecaoCofre,
+  TODOS_OS_ARQUIVOS_ID,
+} from "./CofreArquivos";
 
 type Categoria =
   | "todos"
@@ -48,37 +50,25 @@ const CAT_RGB: Record<string, string> = {
   pessoal: "192 132 252",
 };
 const catRgb = (cat: string) => CAT_RGB[cat] ?? "var(--accent-rgb)";
+const rotuloCategoria = (cat: string) =>
+  CATS.find((c) => c.id === cat)?.label ?? cat;
 
-/**
- * Título de seção — 13px/semibold/-0.035em, cor plena, mesmo tratamento
- * já usado pros títulos de card de Início/Agenda/Financeiro (não
- * `.section-label`, o eyebrow uppercase cuja causa-raiz foi corrigida em
- * T2). "Arquivos recentes" encabeça seu próprio `GlassCard`, mesma
- * proeminência de "Metas Financeiras"/"Objetivos" no Financeiro/Início.
- */
-const sectionTitleStyle = {
-  fontSize: "13px",
-  letterSpacing: "-0.035em",
-  color: "var(--text)",
+/** Cada número da fileira do card "Protegido": valor grande em cima, rótulo embaixo. */
+const STAT_STYLE = {
+  padding: "10px",
+  borderRadius: "14px",
+  background: "var(--hero-bg-2)",
+  fontSize: "17px",
+  fontWeight: 800,
+  lineHeight: 1.2,
 } as const;
-
-function FileIcon({ mime }: { mime?: string }) {
-  const style = { color: "var(--accent)" };
-  if (mime?.startsWith("image/"))
-    return <Image size={18} style={style} aria-hidden="true" />;
-  if (mime?.includes("pdf") || mime?.includes("document"))
-    return <FileText size={18} style={style} aria-hidden="true" />;
-  return <File size={18} style={style} aria-hidden="true" />;
-}
-
-function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+const STAT_LABEL_STYLE = {
+  display: "block",
+  marginTop: "2px",
+  fontSize: "10px",
+  fontWeight: 500,
+  color: "var(--hero-text-muted)",
+} as const;
 
 interface Props {
   userId: string;
@@ -95,6 +85,10 @@ interface Props {
    * PinScreen cobre a tela inteira (inclusive a barra de abas), então sem
    * isto não havia como sair do Cofre sem digitar o PIN. */
   onExit?: () => void;
+  /** Abre o UploadSheet da página (o mesmo do "+"), que fica fora da trava
+   * do Cofre. Opcional: sem ele o botão "Enviar" fica desabilitado — ver o
+   * comentário do botão. */
+  onEnviar?: () => void;
 }
 
 export function CofreTab({
@@ -103,6 +97,7 @@ export function CofreTab({
   pinHash,
   active,
   onExit,
+  onEnviar,
 }: Props) {
   /**
    * Semente do cache SWR (`lib/cofre/cofreCache.ts`), síncrona, 1x por
@@ -130,6 +125,8 @@ export function CofreTab({
   const [files, setFiles] = useState<CofreFile[]>(() => semente.files ?? []);
   const [filter, setFilter] = useState<Categoria>("todos");
   const [query, setQuery] = useState("");
+  /** Campo de busca aberto pelo botão do cabeçalho (J05). */
+  const [buscaAberta, setBuscaAberta] = useState(false);
   // Só nasce `true` em cache miss de verdade (semente nula) -- com cache,
   // o efeito abaixo vira revalidação em 2º plano, sem spinner.
   const [loading, setLoading] = useState(() => semente.files === null);
@@ -380,148 +377,191 @@ export function CofreTab({
         ? "Cofre vazio. Toque no + para enviar."
         : `Nenhum arquivo em "${CATS.find((c) => c.id === filter)?.label}".`;
 
+  const buscaVisivel = buscaAberta || query.trim().length > 0;
+  const usado = totalUsado(files);
+  const ultimo = ultimoEnvio(files);
+  const listaRecentes = recentes(filtered);
+
   return (
     <div className="pb-4">
-      {/* Cabeçalho — "Cofre", 22px/semibold/-0.055em + ícone de escudo à
-          direita, literal do laboratório (ScreenTitle,
-          LaunchScreens.tsx:316-318/677-704). Ícone decorativo (sem
-          onClick no laboratório também). */}
-      <div className="flex h-10 items-center justify-between mb-1">
-        <h1
-          className="font-semibold"
+      <div className="flex flex-col" style={{ gap: "16px" }}>
+        {/* Cabeçalho (J05) — "Cofre" grande e em negrito forte, como o
+            mockup (24px/800), com o botão de busca à direita. A busca é a
+            mesma de antes (filtro local por nome, sem rede); o botão só
+            mostra/esconde o campo. O cadeado do mockup não entra: seria
+            uma ação nova ("travar agora") que o app não tem. */}
+        <div className="flex items-center" style={{ gap: "10px" }}>
+          <h1
+            className="flex-1"
+            style={{
+              fontSize: "24px",
+              fontWeight: 800,
+              letterSpacing: "-0.5px",
+              color: "var(--text)",
+            }}
+          >
+            Cofre
+          </h1>
+          <button
+            type="button"
+            onClick={() => setBuscaAberta((v) => !v)}
+            aria-label="Buscar arquivos"
+            aria-expanded={buscaVisivel}
+            className="flex items-center justify-center rounded-full active:opacity-70"
+            style={{
+              width: "44px",
+              height: "44px",
+              background: "var(--card-solid)",
+              color: "var(--text)",
+            }}
+          >
+            <Search size={18} />
+          </button>
+        </div>
+
+        {/* Busca — o mesmo filtro client-side de antes, sobre o array
+            `files` já buscado. Fica aberta enquanto houver texto. */}
+        {buscaVisivel && (
+          <GlassCard
+            radius="md"
+            className="flex items-center gap-3 px-3"
+            style={{ height: "44px" }}
+          >
+            <Search size={16} style={{ color: "var(--text-muted)" }} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar arquivos"
+              className="w-full bg-transparent text-sm outline-none"
+              style={{ color: "var(--text)" }}
+            />
+          </GlassCard>
+        )}
+
+        {/* Card "Protegido" (J05) — no visual do mockup: fundo e sombra dos
+            tokens `--hero-*` da fundação (J01), orbe na cor do tema, título,
+            linha de proteção e a fileira de 3 números. A geometria do orbe
+            (72px, escudo 34px, título 23px, cadeado 16px) é a aprovada no
+            #137 e continua fixada por `cofre-visual.test.ts`; o mockup usa
+            um quadrado menor, mas aquele teste não pode ser editado.
+            A linha de proteção é a mesma de antes (PIN do Cofre ou trava do
+            app), não a frase de "trava ativa" do mockup: sem PIN configurado
+            a trava do app não está ativa, e a frase do mockup seria falsa.
+            Os 3 números são todos reais: contagem de `files.length`, soma
+            dos tamanhos do storage e data do envio mais recente (traço com
+            o Cofre vazio). Nenhuma cota ou porcentagem: não existe cota. */}
+        {!loading && (
+          <GlassCard
+            radius="lg"
+            className="p-0"
+            style={{ border: "none", borderRadius: "26px" }}
+          >
+            {/* O fundo do hero mora neste div, não no GlassCard: no modo
+                claro, `.glass-card` (globals.css, compartilhado) força o
+                próprio fundo e sombra com `!important`, o que deixava o card
+                branco com o título branco por cima. O GlassCard continua
+                sendo a moldura do card (fixada pelos testes do #137). */}
+            <div
+              className="flex flex-col p-5"
+              style={{
+                gap: "14px",
+                background: "var(--hero-bg)",
+                borderRadius: "26px",
+                boxShadow: "0 14px 30px var(--hero-shadow)",
+                color: "#fff",
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className="grid place-items-center rounded-full shrink-0"
+                  style={{
+                    width: "72px",
+                    height: "72px",
+                    background: "rgb(var(--accent-rgb))",
+                    color: "var(--text)",
+                  }}
+                >
+                  <Shield size={34} />
+                </div>
+                <div className="min-w-0">
+                  <h2
+                    style={{
+                      fontSize: "23px",
+                      fontWeight: 800,
+                      letterSpacing: "-0.03em",
+                    }}
+                  >
+                    Protegido
+                  </h2>
+                  <span
+                    className="mt-1 flex items-center gap-1.5"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--hero-text-muted)",
+                    }}
+                  >
+                    <LockKeyhole size={16} className="shrink-0" />
+                    {pinHash
+                      ? "Acesso protegido pelo seu PIN"
+                      : "Acesso protegido pela trava do app"}
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-3" style={{ gap: "8px" }}>
+                <p className="tabular-nums" style={STAT_STYLE}>
+                  {files.length}{" "}
+                  <span style={STAT_LABEL_STYLE}>
+                    {files.length === 1
+                      ? "arquivo armazenado"
+                      : "arquivos armazenados"}
+                  </span>
+                </p>
+                <p className="tabular-nums" style={STAT_STYLE}>
+                  {formatTamanho(usado)}{" "}
+                  <span style={STAT_LABEL_STYLE}>usado</span>
+                </p>
+                <p className="tabular-nums" style={STAT_STYLE}>
+                  {ultimo ?? "—"} <span style={STAT_LABEL_STYLE}>último</span>
+                </p>
+              </div>
+            </div>
+          </GlassCard>
+        )}
+
+        {/* "Enviar" em destaque (J05). Abre o mesmo UploadSheet do "+",
+            que mora na página, FORA da trava do Cofre. Não dá pra abrir um
+            UploadSheet daqui de dentro: o seletor de arquivo do sistema tira
+            o foco da janela, o Cofre trava na hora (proteção, sem período de
+            graça) e o sheet sumiria junto com o conteúdo. Por isso o botão
+            depende de `onEnviar` vir da página; sem ele, fica desabilitado
+            com o rótulo certo em vez de virar um envio que se perde. */}
+        <button
+          type="button"
+          onClick={onEnviar}
+          disabled={!onEnviar}
+          className="flex items-center justify-center gap-2 rounded-2xl font-bold active:opacity-80 disabled:opacity-50"
           style={{
-            fontSize: "22px",
-            letterSpacing: "-0.055em",
+            minHeight: "44px",
+            padding: "12px 16px",
+            fontSize: "14px",
+            background: "var(--accent)",
             color: "var(--text)",
           }}
         >
-          Cofre
-        </h1>
-        <div
-          className="flex items-center gap-3"
-          style={{ color: "var(--text-2)" }}
-        >
-          <Shield size={18} />
-        </div>
-      </div>
+          <Upload size={18} />
+          Enviar
+        </button>
 
-      {/* Postura honesta (§5.3): proteção real, sem prometer o que não faz. */}
-      <div className="flex items-start gap-2 mb-4">
-        <Lock
-          size={11}
-          className="shrink-0 mt-0.5"
-          style={{ color: "var(--text-muted)" }}
+        {/* Chips de categoria — as 4 categorias reais do app mais "Todos"
+            (o mockup mostra 3, mas existe dado em "Pessoal"). 44px de alvo
+            de toque (achado P1-6; ver components/ui/FilterChips.tsx). */}
+        <FilterChips
+          options={CATS}
+          value={filter}
+          onChange={setFilter}
+          minTouchTarget
         />
-        <p
-          className="text-[11px] leading-snug"
-          style={{ color: "var(--text-muted)" }}
-        >
-          {pinHash
-            ? "Só você acessa seus arquivos: guardados na sua conta, PIN pedido toda vez que você entra no Cofre."
-            : "Só você acessa seus arquivos: guardados na sua conta, protegidos pela trava do app."}
-        </p>
-      </div>
 
-      {/* Busca — literal do laboratório (VaultScreen, LaunchScreens.tsx:353-361).
-          Filtro client-side sobre o array `files` já buscado, sem
-          chamada de rede nova por tecla digitada. */}
-      {/* Fundação Visual (#142): style só com o `height` genuinamente
-          próprio deste card de busca — o resto (background/borda/sombra)
-          vem do material neutro compartilhado de `.glass-card`
-          (globals.css), mesma correção já feita em Início (achado #131)
-          pro `SOLID_SURFACE_STYLE` com `border: var(--border-color)`
-          tingido por tema. */}
-      <GlassCard
-        radius="md"
-        className="flex items-center gap-3 px-3"
-        style={{ height: "44px" }}
-      >
-        <Search size={16} style={{ color: "var(--text-muted)" }} />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar arquivos"
-          className="w-full bg-transparent text-sm outline-none"
-          style={{ color: "var(--text)" }}
-        />
-      </GlassCard>
-
-      {/* Filter chips — 44px de alvo de toque (achado P1-6; ver
-          components/ui/FilterChips.tsx). */}
-      <FilterChips
-        className="mt-3"
-        options={CATS}
-        value={filter}
-        onChange={setFilter}
-        minTouchTarget
-      />
-
-      {/* Card "Protegido" — alinhado ao visual aprovado (/dev-preview/ios,
-          ticket #137): orbe + título "Protegido" + contagem real de
-          arquivos + linha de proteção. Layout/geometria vêm do protótipo
-          (IosPrototypeApp.module.css `.protectedCard`/`.shieldOrb`: orbe
-          de 72px, ícone 34px, título 23px); cor vem de `var(--accent)`,
-          nunca do rosa fixo do protótipo (mesma regra já aplicada em
-          Início/#134). Contagem 100% real (`files.length`, já buscado) —
-          nunca o "12 arquivos" fixo do laboratório. Sem MB total: o
-          protótipo aprovado não mostra essa métrica (decisão registrada
-          na ticket #137, não é omissão). Mensagem da última linha reaproveita
-          a mesma distinção PIN-vs-trava-do-app já usada no aviso do topo
-          desta tela — nenhuma regra nova. Mostrado sempre que não estiver
-          carregando (mesmo com 0 arquivos): o dado é real, "0 arquivos
-          armazenados" não é fictício, e é a mesma posição estrutural fixa
-          do protótipo. */}
-      {!loading && (
-        <GlassCard radius="md" className="flex items-center gap-4 mt-4 p-4">
-          <div
-            className="grid place-items-center rounded-full shrink-0"
-            style={{
-              width: "72px",
-              height: "72px",
-              background: "rgb(var(--accent-rgb) / 0.15)",
-              border: "1px solid rgb(var(--accent-rgb) / 0.25)",
-            }}
-          >
-            <Shield size={34} style={{ color: "var(--accent)" }} />
-          </div>
-          <div>
-            <h2
-              className="font-semibold"
-              style={{
-                fontSize: "23px",
-                letterSpacing: "-0.03em",
-                color: "var(--text)",
-              }}
-            >
-              Protegido
-            </h2>
-            <p
-              className="mt-1 mb-2 tabular-nums"
-              style={{ fontSize: "13px", color: "var(--text-muted)" }}
-            >
-              {files.length}{" "}
-              {files.length === 1
-                ? "arquivo armazenado"
-                : "arquivos armazenados"}
-            </p>
-            <span
-              className="flex items-center gap-1.5"
-              style={{ fontSize: "11px", color: "var(--text-muted)" }}
-            >
-              <LockKeyhole size={16} />
-              {pinHash
-                ? "Acesso protegido pelo seu PIN"
-                : "Acesso protegido pela trava do app"}
-            </span>
-          </div>
-        </GlassCard>
-      )}
-
-      {/* Lista — "Arquivos recentes" literal do laboratório. */}
-      <h2 className="font-semibold mt-4" style={sectionTitleStyle}>
-        Arquivos recentes
-      </h2>
-      <GlassCard radius="md" className="mt-2 overflow-hidden p-0">
         {loading ? (
           <div className="flex justify-center py-12">
             <div
@@ -530,72 +570,39 @@ export function CofreTab({
             />
           </div>
         ) : filtered.length === 0 ? (
-          <p
-            className="text-sm text-center py-12 px-4"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {emptyMessage}
-          </p>
-        ) : (
-          filtered.map((f, i) => (
-            <button
-              key={f.path}
-              onClick={() => openFile(f.path)}
-              className="grid w-full grid-cols-[38px_1fr_16px] items-center gap-3 px-3 text-left transition-all active:opacity-70"
+          <SecaoCofre titulo="Recentes">
+            <p
+              className="text-sm text-center py-10 px-4"
               style={{
-                minHeight: "44px",
-                paddingTop: "10px",
-                paddingBottom: "10px",
-                borderTop: i ? "1px solid var(--border-color)" : "none",
+                color: "var(--text-muted)",
+                background: "var(--card-solid)",
+                borderRadius: "20px",
               }}
             >
-              <div
-                className="grid place-items-center rounded-lg shrink-0"
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  background: "var(--surface-2)",
-                }}
-              >
-                <FileIcon mime={f.mimeType} />
-              </div>
-
-              <div className="min-w-0">
-                <p
-                  className="text-sm font-semibold truncate"
-                  style={{ color: "var(--text)" }}
-                >
-                  {f.name}
-                </p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span
-                    className="text-[10px] font-bold px-1.5 py-px rounded-full"
-                    style={{
-                      background: `rgb(${catRgb(f.categoria)} / 0.1)`,
-                      color: `rgb(${catRgb(f.categoria)})`,
-                      border: `1px solid rgb(${catRgb(f.categoria)} / 0.2)`,
-                    }}
-                  >
-                    {CATS.find((c) => c.id === f.categoria)?.label}
-                  </span>
-                  <span
-                    className="text-[11px]"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {formatSize(f.size)} · {formatDate(f.createdAt)}
-                  </span>
-                </div>
-              </div>
-
-              <ExternalLink
-                size={14}
-                className="shrink-0"
-                style={{ color: "var(--text-muted)" }}
+              {emptyMessage}
+            </p>
+          </SecaoCofre>
+        ) : (
+          <>
+            <SecaoCofre titulo="Recentes" verTudo>
+              <ListaArquivos
+                files={listaRecentes}
+                onOpen={openFile}
+                rotuloCategoria={rotuloCategoria}
+                corCategoria={catRgb}
               />
-            </button>
-          ))
+            </SecaoCofre>
+            <SecaoCofre titulo="Todos os arquivos" id={TODOS_OS_ARQUIVOS_ID}>
+              <ListaArquivos
+                files={filtered}
+                onOpen={openFile}
+                rotuloCategoria={rotuloCategoria}
+                corCategoria={catRgb}
+              />
+            </SecaoCofre>
+          </>
         )}
-      </GlassCard>
+      </div>
     </div>
   );
 }
