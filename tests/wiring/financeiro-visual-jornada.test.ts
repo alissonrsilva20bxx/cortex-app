@@ -147,6 +147,16 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     }
   });
 
+  it("FinanceiroHeroCard: cada valor exibido recebe o seu total, não outro total real", () => {
+    // Revisão da PR #171: a guarda acima só prova que o slot recebe UM total
+    // pronto. Trocar o saldo grande por totalEntradaMes (ou "Entrou" por
+    // totalDespMes) passava verde. Mesmo molde da meta: a expressão exata
+    // por slot.
+    expect(hero).toContain("{formatBRL(saldo)}");
+    expect(hero).toContain("Entrou {formatBRL(totalEntradaMes)}");
+    expect(hero).toContain("Saiu {formatBRL(totalDespMes)}");
+  });
+
   it("FinanceiroHeroCard: saldo e totais chegam como props, sem reconstruir a conta", () => {
     // O único calcEarnings/monthExpenses do arquivo é o do mês anterior
     // (variação, #136); o mês corrente vem pronto do FinanceiroTab.
