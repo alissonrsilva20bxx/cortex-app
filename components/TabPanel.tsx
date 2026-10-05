@@ -10,6 +10,10 @@ import type { TabId } from "@/lib/types";
  * tab bar do iOS a aba nova simplesmente aparece (a animação fica pra
  * navegação em profundidade — push/pop dentro da aba). O fade-up que
  * existia aqui fazia toda troca de aba parecer uma página web recarregando.
+ *
+ * `tab-panel` dá o ritmo vertical da casca (Jornada J01): o espaço entre o
+ * cabeçalho da aba e a primeira seção vem do token `--space-header` (ver
+ * styles/globals.css), não de margem solta dentro de cada tela.
  */
 interface Props {
   tab: TabId;
@@ -21,6 +25,7 @@ export function TabPanel({ tab, activeTab, children }: Props) {
   return (
     <div
       data-tab-panel={tab}
+      className="tab-panel"
       style={{ display: activeTab === tab ? "block" : "none" }}
     >
       {children}

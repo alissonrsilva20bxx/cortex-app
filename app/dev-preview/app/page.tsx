@@ -314,7 +314,10 @@ export default function DevPreviewApp() {
       <div className="relative flex flex-col min-h-screen">
         <main
           className="flex-1 overflow-y-auto no-scrollbar px-4"
-          style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
+          style={{
+            paddingTop:
+              "calc(var(--space-shell-top) + env(safe-area-inset-top, 0px))",
+          }}
         >
           <OnboardingFlow
             usuario={usuario}
@@ -348,7 +351,10 @@ export default function DevPreviewApp() {
       <main
         className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
         ref={mainRef}
-        style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
+        style={{
+          paddingTop:
+            "calc(var(--space-shell-top) + env(safe-area-inset-top, 0px))",
+        }}
       >
         <TabPanel tab="home" activeTab={activeTab}>
           <GreetingHeader
@@ -357,7 +363,7 @@ export default function DevPreviewApp() {
             fotoUrl={fotoRede}
           />
           {/* Grid+gap explícito, espelha app/page.tsx (achado #131). */}
-          <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-[var(--space-section)]">
             <div data-tour="home-hero">
               <HeroCard
                 jobs={jobs}

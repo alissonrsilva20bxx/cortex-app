@@ -466,7 +466,10 @@ export default function Page() {
       <main
         className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
         ref={mainRef}
-        style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
+        style={{
+          paddingTop:
+            "calc(var(--space-shell-top) + env(safe-area-inset-top, 0px))",
+        }}
       >
         {isNewUser && usuario && (
           <OnboardingFlow
@@ -515,7 +518,7 @@ export default function Page() {
                   depender de seletor de irmão nem de nenhum filho ficar
                   "colapsado" (maxHeight/overflow) pra não contar como
                   "não-oculto" -- por construção, não por reparo pontual. */}
-              <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-[var(--space-section)]">
                 {/* Card-herói: a projeção viva das metas (o coração) */}
                 <div data-tour="home-hero">
                   <HeroCard
