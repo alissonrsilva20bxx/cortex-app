@@ -127,6 +127,23 @@ const FINANCEIRO_SHEET_ACTIONS: Record<string, SheetAction> = {
   },
 };
 
+/**
+ * Nome acessível do "+" por aba (Jornada J01) -- exatamente o do mockup
+ * aprovado (docs/jornada/referencias/5-telas-8-temas-claro-escuro.html,
+ * `aria-label` do `.plus` de cada tela). É o nome do botão em si; o sheet
+ * que ele abre continua com o rótulo da ação real (SHEET_ACTIONS /
+ * FINANCEIRO_SHEET_ACTIONS acima), que no Financeiro muda por sub-aba.
+ * O mockup também tem "Postar" na Rede, mas a Rede não tem "+" no app (a
+ * pílula 2 ocupa a linha toda) -- fica de fora até alguém decidir mexer
+ * na pílula.
+ */
+const FAB_ARIA_LABELS: Partial<Record<TabId, string>> = {
+  home: "Novo",
+  jobs: "Novo atendimento",
+  financeiro: "Novo lançamento",
+  cofre: "Enviar arquivo",
+};
+
 /** A aba tem "+"? (Rede e Ajustes não têm -- aí a pílula ocupa a linha toda.) */
 export function tabTemFab(tab: TabId): boolean {
   return tab === "financeiro" || Boolean(SHEET_ACTIONS[tab]);
@@ -268,7 +285,9 @@ export function FAB({
       <button
         ref={fabRef}
         onClick={onToggle}
-        aria-label={open ? "Fechar" : "Criar novo"}
+        aria-label={
+          open ? "Fechar" : (FAB_ARIA_LABELS[activeTab] ?? "Criar novo")
+        }
         data-tour="fab"
         aria-expanded={open}
         aria-hidden={obstructed || undefined}
