@@ -6,9 +6,9 @@ import { join } from "node:path";
  * Jornada J01 — fundação visual das 5 telas novas. Mesmo padrão de teste
  * de fiação do resto do projeto (sem Testing Library, vitest em "node"):
  * lê o fonte como texto. Aqui a pergunta é se cada token novo de
- * styles/globals.css tem valor nos DOIS modos em CADA um dos 8 temas --
+ * styles/globals.css é declarado nos DOIS modos em CADA um dos 8 temas --
  * um token que só existe no escuro some no claro sem erro nenhum, e o
- * texto que dependia dele vira a cor herdada.
+ * texto que dependia dele vira a cor herdada (ou a do grafite).
  */
 
 const ROOT = join(__dirname, "..", "..");
@@ -88,53 +88,75 @@ function topLevelBlocks(source: string) {
 
 const blocks = topLevelBlocks(css);
 
-/** Valor efetivo do token num tema/modo, pela mesma regra de cascata do
- * navegador: `:root` e um seletor de atributo têm a mesma especificidade,
- * então entre eles vence o bloco que vem depois; [data-mode][data-theme]
- * vence os dois. */
-function resolve(token: string, theme: string, mode: "dark" | "light") {
-  const applies = (sel: string) => {
-    if (sel === ":root") return 1;
-    if (sel === `[data-theme="${theme}"]`) return 1;
-    if (mode === "light" && sel === `[data-mode="light"]`) return 1;
-    if (
-      mode === "light" &&
-      sel === `[data-mode="light"][data-theme="${theme}"]`
-    )
-      return 2;
-    return -1;
-  };
-  let best: { spec: number; value: string } | null = null;
-  for (const b of blocks) {
-    const value = b.decls.get(token);
-    if (value === undefined) continue;
-    const spec = Math.max(...b.selectors.map(applies));
-    if (spec < 0) continue;
-    if (!best || spec >= best.spec) best = { spec, value };
-  }
-  return best?.value;
+/**
+ * Onde um token está DECLARADO -- não o valor que sobra depois da cascata.
+ * Checar só o valor resolvido deixava passar o pior caso: o bloco escuro do
+ * grafite é `:root, [data-theme="grafite"]`, então o `:root` dele responde
+ * por qualquer tema e modo sem valor próprio. Apagar o claro inteiro ou um
+ * tema inteiro continuava "tendo valor" (achado da revisão da PR #168).
+ *
+ * Por isso, aqui só contam:
+ *  - escuro do tema X: um bloco cujos seletores incluem `[data-theme="X"]`,
+ *    ou um bloco que é SÓ `:root` (token igual nos 8 temas, declarado uma
+ *    vez de propósito);
+ *  - claro do tema X: um bloco que é SÓ `[data-mode="light"]` (igual nos 8
+ *    temas) ou `[data-mode="light"][data-theme="X"]`.
+ * O `:root` grudado no grafite nunca conta pros outros temas.
+ */
+function declaredIn(token: string, accept: (selectors: string[]) => boolean) {
+  return blocks
+    .filter((b) => b.decls.has(token) && accept(b.selectors))
+    .map((b) => b.decls.get(token)!);
 }
 
-describe("J01 — tokens novos existem e têm valor nos dois modos, nos 8 temas", () => {
+const onlyRoot = (sels: string[]) => sels.length === 1 && sels[0] === ":root";
+
+function darkDecl(token: string, theme: string) {
+  return declaredIn(
+    token,
+    (sels) => onlyRoot(sels) || sels.includes(`[data-theme="${theme}"]`)
+  );
+}
+
+function lightDecl(token: string, theme: string) {
+  return declaredIn(
+    token,
+    (sels) =>
+      sels.length === 1 &&
+      (sels[0] === `[data-mode="light"]` ||
+        sels[0] === `[data-mode="light"][data-theme="${theme}"]`)
+  );
+}
+
+describe("J01 — cada token novo é declarado no escuro e no claro de cada um dos 8 temas", () => {
   for (const token of NEW_COLOR_TOKENS) {
-    it(`${token} definido em escuro e claro para cada tema`, () => {
-      for (const theme of THEMES) {
-        expect(resolve(token, theme, "dark"), `${theme}/escuro`).toBeTruthy();
-        expect(resolve(token, theme, "light"), `${theme}/claro`).toBeTruthy();
-      }
-    });
+    for (const theme of THEMES) {
+      it(`${token} · ${theme} · escuro`, () => {
+        expect(darkDecl(token, theme).length).toBeGreaterThan(0);
+      });
+      it(`${token} · ${theme} · claro`, () => {
+        expect(lightDecl(token, theme).length).toBeGreaterThan(0);
+      });
+    }
   }
 
-  it("o acento muda de tom no claro onde o mockup muda (--accent-tint de pink-neon)", () => {
-    expect(resolve("--accent-tint", "pink-neon", "dark")).not.toBe(
-      resolve("--accent-tint", "pink-neon", "light")
+  it("o claro não é cópia do escuro: o acento suave muda de tom (--accent-tint de pink-neon)", () => {
+    const dark = declaredIn("--accent-tint", (sels) =>
+      sels.includes(`[data-theme="pink-neon"]`)
     );
+    const light = declaredIn("--accent-tint", (sels) =>
+      sels.includes(`[data-mode="light"][data-theme="pink-neon"]`)
+    );
+    expect(dark).toHaveLength(1);
+    expect(light).toHaveLength(1);
+    expect(dark[0]).not.toBe(light[0]);
   });
 
-  it("os tokens de espaçamento da casca existem no :root compartilhado", () => {
+  it("os tokens de espaçamento da casca são declarados num :root compartilhado, em px", () => {
     for (const token of SPACING_TOKENS) {
-      expect(resolve(token, "grafite", "dark"), token).toMatch(/^\d+px$/);
-      expect(resolve(token, "grafite", "light"), token).toMatch(/^\d+px$/);
+      const decl = declaredIn(token, onlyRoot);
+      expect(decl, token).toHaveLength(1);
+      expect(decl[0], token).toMatch(/^\d+px$/);
     }
   });
 

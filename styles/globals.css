@@ -403,10 +403,15 @@
   --radius-sheet: 26px;
   --radius-pill: 999px;
 
-  /* Ritmo vertical da casca (Jornada J01) -- extraído do mockup das 5
-     telas: conteúdo começa 24px abaixo do topo seguro, 16px de margem
-     lateral, 16px entre o cabeçalho da aba e a primeira seção, 16px entre
-     seções. Aplicado no <main> e no TabPanel, nunca dentro das telas. */
+  /* Ritmo vertical da casca (Jornada J01). Do mockup das 5 telas vêm o
+     topo (24px abaixo do topo seguro; a Rede usa 22px) e a margem lateral
+     (16px; a Rede vai de borda a borda). Os dois espaços entre blocos são
+     ESCOLHA DE CASCA, não medida do mockup -- lá eles variam por tela:
+     cabeçalho -> 1ª seção = Início 18px, Agenda/Cofre 16px, Financeiro
+     12px, Rede 14px; entre seções = 12px (Início/Financeiro), 16px
+     (Agenda/Cofre), 14px (Rede). A casca usa 16px nos dois; o ajuste fino
+     por tela é de J02-J06. Aplicado no <main> e no TabPanel, nunca dentro
+     das telas. */
   --space-shell-top: 24px;
   --space-shell-x: 16px;
   --space-header: 16px;
