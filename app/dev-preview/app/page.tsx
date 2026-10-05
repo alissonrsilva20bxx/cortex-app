@@ -8,6 +8,10 @@ import { GreetingHeader } from "@/components/home/GreetingHeader";
 import { HeroCard } from "@/components/home/HeroCard";
 import { NextJobCard } from "@/components/home/NextJobCard";
 import { ObjetivosCard } from "@/components/home/ObjetivosCard";
+import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
+import { CofreCard } from "@/components/home/CofreCard";
+import { SemanaSection } from "@/components/home/SemanaSection";
+import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
 import { JobsTab } from "@/components/jobs/JobsTab";
 import { JobForm } from "@/components/jobs/JobForm";
 import { FinanceiroTab } from "@/components/financeiro/FinanceiroTab";
@@ -361,11 +365,44 @@ export default function DevPreviewApp() {
             usuario={usuario}
             onOpenAjustes={() => handleTabChange("ajustes")}
             fotoUrl={fotoRede}
+            onNovo={() => {
+              setEditingJob(null);
+              setJobFormOpen(true);
+            }}
           />
-          {/* Grid+gap explícito, espelha app/page.tsx (achado #131). */}
+          {/* Início no visual novo (Jornada J02, mockup
+              5-telas-8-temas-claro-escuro.html): card principal, a grade de cards
+              pequenos (Próximo, Objetivos, Falta pra meta, Cofre), "Esta semana" e
+              "Próximos atendimentos". Stack explícito com `grid`+`gap` (achado
+              #131: nada de `space-y-*`, que depende de seletor de irmão). */}
           <div className="grid grid-cols-[minmax(0,1fr)] gap-[var(--space-section)]">
-            <div data-tour="home-hero">
-              <HeroCard
+            {/* Grade de 2 colunas do mockup; o card principal ocupa as duas. Com
+    quantidade ímpar de cards pequenos (um deles desligado em Ajustes,
+    sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
+    um buraco. */}
+            <div className="grid grid-cols-2 gap-[10px] [&>:last-child:nth-child(even)]:col-span-2">
+              {/* `data-tour` do tour guiado (lib/appTour.ts); ocupa as 2 colunas. */}
+              <div data-tour="home-hero" className="col-span-2">
+                <HeroCard
+                  jobs={jobs}
+                  metas={metas}
+                  onGoToFinanceiro={() => {
+                    handleTabChange("financeiro");
+                    setFinanceiroFocusTab("visao");
+                  }}
+                />
+              </div>
+              {homeCards.nextJob && <NextJobCard jobs={jobs} />}
+              {(homeCards.objetivos ?? true) && (
+                <ObjetivosCard
+                  objetivos={objetivos}
+                  onGoToMetas={() => {
+                    handleTabChange("financeiro");
+                    setFinanceiroFocusTab("metas");
+                  }}
+                />
+              )}
+              <FaltaMetaCard
                 jobs={jobs}
                 metas={metas}
                 onGoToFinanceiro={() => {
@@ -373,18 +410,20 @@ export default function DevPreviewApp() {
                   setFinanceiroFocusTab("visao");
                 }}
               />
-            </div>
-            {homeCards.nextJob && <NextJobCard jobs={jobs} />}
-            {(homeCards.objetivos ?? true) && (
-              <ObjetivosCard
-                objetivos={objetivos}
-                onToggle={handleToggleObjetivo}
-                onGoToMetas={() => {
-                  handleTabChange("financeiro");
-                  setFinanceiroFocusTab("metas");
-                }}
+              <CofreCard
+                protegido={Boolean(pinHash)}
+                onOpenCofre={() => handleTabChange("cofre")}
               />
-            )}
+            </div>
+
+            <SemanaSection
+              jobs={jobs}
+              onGoToAgenda={() => handleTabChange("jobs")}
+            />
+            <ProximosAtendimentos jobs={jobs} />
+
+            {/* Convite de instalação — dispensável, nunca compete com o
+                card principal pela atenção (por isso vem por último). */}
             <InstallBanner />
           </div>
         </TabPanel>
