@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Início — carteira</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#d6105c}a:hover{color:#a30c47}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #f4f4f6; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #111114; box-sizing: border-box">
+<div style="padding: 24px 16px 130px; display: flex; flex-direction: column; gap: 18px">
+
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="width: 40px; height: 40px; border-radius: 50%; background: #111114; color: #ffffff; font-weight: 800; display: flex; align-items: center; justify-content: center">M</div>
+<div style="flex-grow: 1; font-size: 16px; font-weight: 700">Olá, Miguel</div>
+<button aria-label="Esconder valores" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #ffffff; color: #111114; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+<button aria-label="Notificações" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #ffffff; color: #111114; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></button>
+</div>
+
+<section style="background: #111114; color: #ffffff; border-radius: 26px; padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 14px 30px rgba(17,17,20,0.25)">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 12px; color: #b8b8c0; font-weight: 600">Construído em setembro</span>
+<span style="font-size: 11px; font-weight: 700; color: #111114; background: {{accent}}; padding: 3px 9px; border-radius: 999px">12%</span>
+</div>
+<div style="font-size: 40px; font-weight: 800; letter-spacing: -1.5px">R$ 430,00</div>
+<div style="height: 6px; border-radius: 3px; background: #2c2c33; overflow: hidden"><div style="width: 12%; height: 6px; background: {{accent}}"></div></div>
+<div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px">
+<span style="color: #b8b8c0">Meta R$ 3.500 · faltam R$ 3.070</span>
+<a href="#" style="color: #ffffff; font-weight: 700; text-decoration: none">Evolução ›</a>
+</div>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<button style="border: 0; background: transparent; color: #111114; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; font-weight: 600"><span style="width: 56px; height: 56px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #d6105c"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18M12 13v5M9.5 15.5h5"></path></svg></span>Atendimento</button>
+<button style="border: 0; background: transparent; color: #111114; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; font-weight: 600"><span style="width: 56px; height: 56px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #d6105c"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></span>Receita</button>
+<button style="border: 0; background: transparent; color: #111114; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; font-weight: 600"><span style="width: 56px; height: 56px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #d6105c"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"></path></svg></span>Despesa</button>
+<button style="border: 0; background: transparent; color: #111114; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; font-weight: 600"><span style="width: 56px; height: 56px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #d6105c"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg></span>Cofre</button>
+</div>
+
+<section style="background: #ffffff; border-radius: 20px; padding: 6px 16px">
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #ececf0; text-decoration: none; color: #111114">
+<span style="width: 40px; height: 40px; border-radius: 12px; background: #fde3ec; color: #d6105c; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg></span>
+<div style="flex-grow: 1"><div style="font-size: 14px; font-weight: 700">Renata Ferreira</div><div style="font-size: 11px; color: #6b6b74">Sex 25 · 14h00 · em 2 dias</div></div>
+<span style="font-size: 14px; font-weight: 800">R$ 180</span>
+</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; text-decoration: none; color: #111114">
+<span style="width: 40px; height: 40px; border-radius: 12px; background: #f4f4f6; color: #111114; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span>
+<div style="flex-grow: 1"><div style="font-size: 14px; font-weight: 700">Objetivos</div><div style="font-size: 11px; color: #6b6b74">1 de 4 concluídos</div></div>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b74" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</a>
+</section>
+</div>
+
+<nav style="position: absolute; left: 50px; right: 50px; bottom: 26px; height: 60px; border-radius: 30px; background: #111114; box-shadow: 0 10px 24px rgba(0,0,0,0.25); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; justify-items: center; color: #8a8a93">
+<button aria-label="Início" style="width: 44px; height: 44px; border-radius: 50%; border: 0; background: {{accent}}; color: #111114; display: flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg></button>
+<button aria-label="Agenda" style="width: 44px; height: 44px; border: 0; background: transparent; color: inherit; display: flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg></button>
+<button aria-label="Financeiro" style="width: 44px; height: 44px; border: 0; background: transparent; color: inherit; display: flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7H5a2 2 0 0 1 0-4h13v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h15V7"></path><path d="M16 14h.01"></path></svg></button>
+<button aria-label="Cofre" style="width: 44px; height: 44px; border: 0; background: transparent; color: inherit; display: flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg></button>
+<button aria-label="Rede" style="width: 44px; height: 44px; border: 0; background: transparent; color: inherit; display: flex; align-items: center; justify-content: center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg></button>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#ff2d78","options":["#ff2d78","#9b5cf6","#10b981","#f59e0b"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#ff2d78' };
+  }
+}
+</script>
+</body>
+</html>
