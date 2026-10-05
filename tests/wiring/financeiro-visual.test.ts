@@ -158,8 +158,15 @@ describe("VisaoTab.tsx (issue #136) — Movimentações recentes, 100% real, nev
 
   it("rows are non-interactive (<div>, not <button>) — no invented 'edit generic movement' flow the real app can't fulfill", () => {
     expect(src).not.toMatch(/onClick=\{.*openSheet|onClick=\{\(\) => onEdit/);
-    const rowMatch = src.match(/movements\.map\(\(m, i\) => \(\s*\r?\n\s*<div/);
-    expect(rowMatch).not.toBeNull();
+    // Jornada J04 (#154): a lista virou duas no mockup ("Recentes" e "Mais
+    // lançamentos", as mesmas movimentações divididas); a regra vale pras
+    // duas -- cada linha é <div>.
+    for (const lista of ["recentes", "mais"]) {
+      const rowMatch = src.match(
+        new RegExp(`${lista}\\.map\\(\\(m, i\\) => \\(\\s*\\r?\\n\\s*<div`)
+      );
+      expect(rowMatch, lista).not.toBeNull();
+    }
   });
 
   it("does not use .section-label (eyebrow-caps root cause fixed in T2)", () => {
