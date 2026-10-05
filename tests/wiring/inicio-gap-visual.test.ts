@@ -44,13 +44,15 @@ describe("§2-P0-1 — HeroCard clicável (navega a Financeiro) e calculado de j
   });
 });
 
-describe("§2-P0-2 — NextJobCard expande/recolhe ao tocar, nunca navega nem abre formulário", () => {
+describe("§2-P0-2 — NextJobCard só mostra o próximo atendimento, nunca navega nem abre formulário", () => {
   const src = read("components/home/NextJobCard.tsx");
 
-  it("onClick alterna o estado local `expanded`, não abre formulário nem navega", () => {
-    expect(src).toMatch(
-      /onClick=\{job \? \(\) => setExpanded\(\(v\) => !v\) : undefined\}/
-    );
+  it("não tem toque nenhum: nem expande nem navega", () => {
+    // Jornada J02 (#152): o "Próximo" virou card pequeno da grade do mockup da Jornada;
+    // o detalhe que o expandir mostrava (local, modalidade) está na lista
+    // "Esta semana" logo abaixo, então o card deixou de expandir.
+    expect(src).not.toMatch(/onClick=/);
+    expect(src).not.toMatch(/setExpanded/);
   });
 
   it("não importa nem referencia JobForm/onEditJob/router (não é um atalho de navegação disfarçado)", () => {
@@ -63,10 +65,12 @@ describe("§2-P0-2 — NextJobCard expande/recolhe ao tocar, nunca navega nem ab
 describe("§2-P0-3 — ObjetivosCard é binário (concluido/não-concluido), grava via update real", () => {
   const src = read("components/home/ObjetivosCard.tsx");
 
-  it("toggle chama onToggle(id, !concluido) — nunca um valor percentual inventado", () => {
-    expect(src).toMatch(
-      /onClick=\{\(\) => onToggle\(obj\.id, !obj\.concluido\)\}/
-    );
+  it("conta concluídos pelo campo binário `concluido` — nunca um valor percentual inventado", () => {
+    // Jornada J02 (#152): no mockup da Jornada, a Início só resume ("1 de 4" + um traço
+    // por objetivo). Marcar objetivo continua em Financeiro › Metas, que
+    // grava pelo mesmo handleToggleObjetivo (teste abaixo).
+    expect(src).toMatch(/objetivos\.filter\(\(o\) => o\.concluido\)\.length/);
+    expect(src).toMatch(/obj\.concluido\s*\?/);
     // Nenhum objetivo individual é renderizado com uma barra/valor percentual
     // (a menção a "percentual" no comentário de topo documenta a decisão de
     // NÃO fazer isso — não é código de UI).
@@ -79,7 +83,7 @@ describe("§2-P0-3 — ObjetivosCard é binário (concluido/não-concluido), gra
       /async function handleToggleObjetivo\(id: string, concluido: boolean\) \{\s*\r?\n\s*await supabase\.from\("objetivos"\)\.update\(\{ concluido \}\)\.eq\("id", id\);/
     );
     expect(page).toMatch(
-      /<ObjetivosCard[\s\S]*?onToggle=\{handleToggleObjetivo\}/
+      /<FinanceiroTab[\s\S]*?onToggleObjetivo=\{handleToggleObjetivo\}/
     );
   });
 });

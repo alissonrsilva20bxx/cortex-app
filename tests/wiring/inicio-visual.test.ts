@@ -63,29 +63,35 @@ describe("/dev-preview/app renders the T2 Início components", () => {
 });
 
 describe("the Início component files on disk carry the T2 visual rewrite", () => {
-  it("HeroCard.tsx keeps the real progress ring (not decorative)", () => {
+  it("HeroCard.tsx keeps a real progress indicator (not decorative)", () => {
+    // Jornada J02 (#152): o mockup aprovado da Jornada troca o anel por uma barra. O
+    // que este teste guarda continua igual: a largura vem da fração real
+    // de monthProjection, não de um valor fixo.
     const src = read("components/home/HeroCard.tsx");
-    expect(src).toContain("RING_CIRCUMFERENCE");
-    expect(src).toContain("strokeDashoffset");
+    expect(src).toMatch(
+      /width:\s*`\$\{Math\.round\(p\.barFraction \* 100\)\}%`/
+    );
   });
 
-  it("GreetingHeader.tsx uses the approved iOS prototype's greeting scale (30px/28px title, weight 760), not the old lab scale (17px) or the original 27px one", () => {
-    // Fundação Visual (redesign #122, ticket #142): a escala de 17px/600
-    // era uma decisão do laboratório anterior ao protótipo iOS aprovado,
-    // nunca revisitada -- o protótipo (`.greetingHeader h1`) usa
-    // 30px/760/-0.035em (28px <390px). Ver docs/visual/IOS_VISUAL_SYSTEM.md.
+  it("GreetingHeader.tsx uses the Jornada mockup's compact header (Olá, 17px/800 title, 12px date, Novo button)", () => {
+    // Jornada J02 (#152): a escala 30px/760 do protótipo iOS (#122/#142) foi
+    // substituída pelo cabeçalho compacto do mockup aprovado da Jornada
+    // (5-telas-8-temas-claro-escuro.html, tela Início). Decisão da
+    // coordenação: o mockup da Jornada vence o visual anterior.
     const src = read("components/home/GreetingHeader.tsx");
-    expect(src).toContain("text-[28px]");
-    expect(src).toContain("min-[390px]:text-[30px]");
-    expect(src).toContain("fontWeight: 760");
-    expect(src).not.toContain('fontSize: "27px"');
-    expect(src).not.toContain('fontSize: "17px"');
+    expect(src).toContain("Olá, {firstName}");
+    expect(src).toContain('fontSize: "17px"');
+    expect(src).toContain('fontSize: "12px"');
+    expect(src).toMatch(/onClick=\{onNovo\}[\s\S]{0,600}Novo/);
+    expect(src).not.toContain("min-[390px]:text-[30px]");
   });
 
-  it("NextJobCard.tsx has the day/month date badge from the lab, not the old inline date text", () => {
+  it("NextJobCard.tsx shows the hour and '<name> · <short day>' (Jornada mockup), not the old date badge", () => {
+    // Jornada J02 (#152): o "Próximo" virou um card pequeno da grade, com o horário em
+    // destaque e "<nome> · <dia curto>", como no mockup aprovado.
     const src = read("components/home/NextJobCard.tsx");
-    expect(src).toContain("formatDayBadge");
-    expect(src).toContain("dayBadge");
+    expect(src).toContain("{formatHora(job.hora)}");
+    expect(src).toMatch(/\{job\.clienteNome\} · \{rotuloDiaCurto\(job\.data\)/);
   });
 });
 
@@ -109,41 +115,78 @@ describe("the Início component files carry the #131 visual-review correction (r
     }
   });
 
-  it("HeroCard.tsx restores the approved title/metric/icon (achado #131)", () => {
+  it("HeroCard.tsx uses the Jornada mockup's title, meta pill and metric", () => {
+    // Jornada J02 (#152): "Sua projeção" + avião + 48px (#131) deram lugar ao card do
+    // mockup aprovado da Jornada: "Faturamento · <mês>", a pílula
+    // "<n>% da meta" e o valor do mês em destaque.
     const src = read("components/home/HeroCard.tsx");
-    expect(src).toContain("Sua projeção");
-    expect(src).toMatch(/<Plane\b/);
-    expect(src).not.toMatch(/<Target\b/);
-    expect(src).toContain('fontSize: "48px"');
+    expect(src).toContain("Faturamento · {p.monthLabel}");
+    expect(src).toContain("{Math.round(p.pct)}% da meta");
+    expect(src).toContain("{formatBRL(p.earned)}");
+    expect(src).toContain('fontSize: "36px"');
   });
 
-  it("HeroCard/NextJobCard/ObjetivosCard share one card-title style, not 3 divergent inline copies", () => {
+  it("the Início cards share one card surface (InicioCard), not a divergent copy per file", () => {
+    // Jornada J02 (#152): o título de card de 20px (.card-title, #131) não existe no
+    // mockup da Jornada -- lá os cards pequenos têm rótulo de 11px. O que
+    // este teste guarda continua: uma superfície só, não uma por arquivo.
     for (const file of [
       "components/home/HeroCard.tsx",
       "components/home/NextJobCard.tsx",
       "components/home/ObjetivosCard.tsx",
+      "components/home/FaltaMetaCard.tsx",
+      "components/home/CofreCard.tsx",
+      "components/home/SemanaSection.tsx",
+      "components/home/ProximosAtendimentos.tsx",
     ]) {
-      expect(read(file)).toMatch(/className="card-title"/);
+      const src = read(file);
+      expect(src, file).toMatch(/from "\.\/InicioCard"/);
+      expect(src, file).not.toMatch(/background:\s*"var\(--card-solid\)"/);
     }
-    expect(read("styles/globals.css")).toContain(".card-title {");
+    expect(read("components/home/InicioCard.tsx")).toContain(
+      'background: tom === "cofre" ? "var(--hero-bg)" : "var(--card-solid)"'
+    );
   });
 
-  it("NextJobCard.tsx wraps the summary row in an inner block (bloco interno) using --card-border, not a magic value", () => {
-    const src = read("components/home/NextJobCard.tsx");
-    expect(src).toMatch(/border:\s*"1px solid var\(--card-border\)"/);
+  it("the Início lists divide rows with --card-border, not a magic value", () => {
+    // Jornada J02 (#152): o bloco interno do NextJobCard saiu junto com o card antigo;
+    // as linhas novas ("Esta semana", "Próximos atendimentos") seguem a
+    // mesma regra de borda neutra.
+    for (const file of [
+      "components/home/SemanaSection.tsx",
+      "components/home/ProximosAtendimentos.tsx",
+    ]) {
+      expect(read(file), file).toMatch(
+        /borderBottom:\s*"1px solid var\(--card-border\)"/
+      );
+    }
   });
 
-  it("NextJobCard.tsx prices the atendimento in --warning, not --accent (achado #131)", () => {
-    const src = read("components/home/NextJobCard.tsx");
-    expect(src).toMatch(/color:\s*"var\(--warning\)"/);
+  it("Início prices atendimentos with the shared formatBRL, never a local formatter", () => {
+    // Jornada J02 (#152): o preço saiu do card "Próximo" (o mockup não mostra valor ali)
+    // e foi pra "Esta semana" (em --accent-deep, como no mockup) e
+    // "Próximos atendimentos". A moeda continua a do app, de lib/finance.
+    for (const file of [
+      "components/home/SemanaSection.tsx",
+      "components/home/ProximosAtendimentos.tsx",
+    ]) {
+      const src = read(file);
+      expect(src, file).toMatch(
+        /import \{ formatBRL \} from "@\/lib\/finance"/
+      );
+      expect(src, file).toContain("{formatBRL(job.valor)}");
+      expect(src, file).not.toMatch(/new Intl\.NumberFormat/);
+    }
   });
 
-  it("NextJobCard.tsx gets getDaysUntil/countdownLabel/formatDayBadge from the tested lib module, not a local reimplementation", () => {
+  it("NextJobCard.tsx gets its date logic from the tested inicioAgenda module, not a local reimplementation", () => {
+    // Jornada J02 (#152): mesma regra de antes (lógica de data num módulo testado), agora
+    // com as funções da grade e das listas novas.
     const src = read("components/home/NextJobCard.tsx");
     expect(src).toMatch(
-      /import\s*\{[^}]*getDaysUntil[^}]*countdownLabel[^}]*formatDayBadge[^}]*\}\s*from\s*"@\/lib\/proximoAtendimento"/
+      /import\s*\{[^}]*proximoAtendimento[^}]*\}\s*from\s*"\.\/inicioAgenda"/
     );
-    expect(src).not.toMatch(/^function getDaysUntil/m);
+    expect(src).not.toMatch(/^function getProximoJob/m);
   });
 
   it("GreetingHeader.tsx doesn't force capitalize on every word of the date anymore", () => {

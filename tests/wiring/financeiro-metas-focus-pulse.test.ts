@@ -34,13 +34,15 @@ const pageSrc = read("app/page.tsx");
 const financeiroTabSrc = read("components/financeiro/FinanceiroTab.tsx");
 
 describe('ObjetivosCard — botão "Ver todos" (estado não-vazio) dispara onGoToMetas', () => {
-  it('o botão "Ver todos" usa onClick={onGoToMetas}, não um placeholder', () => {
+  it('o card com a contagem ("<n> de <total>") usa onClick={onGoToMetas}, não um placeholder', () => {
+    // Jornada J02 (#152): o botão "Ver todos" virou o próprio card de
+    // Objetivos da grade do mockup -- tocar nele leva às Metas.
     // Janela de 600 (não 400): achado #131 acrescentou `data-fab-avoid` +
     // comentário curto no botão (ver FAB.tsx) — mais alguns chars entre o
     // onClick e o texto, ainda bem dentro de "é o mesmo elemento", não de
     // "achou um onGoToMetas qualquer em outro lugar do arquivo".
     expect(objetivosCardSrc).toMatch(
-      /onClick=\{onGoToMetas\}[\s\S]{0,600}Ver todos/
+      /onClick=\{onGoToMetas\}[\s\S]{0,600}\{feitos\} de \{total\}/
     );
   });
 
@@ -81,13 +83,12 @@ describe("app/page.tsx — onGoToMetas dispara o pulso completo (troca de aba + 
   });
 });
 
-describe('HeroCard — botão "Ver minha evolução" (CTA aprovado, #134) dispara onGoToFinanceiro', () => {
-  it("o CTA de largura total usa onClick={onGoToFinanceiro}, não um placeholder", () => {
-    // Janela de 600 (não 400) pelo mesmo motivo do teste equivalente de
-    // ObjetivosCard acima — achado #131 acrescentou `data-fab-avoid`.
-    expect(heroCardSrc).toMatch(
-      /onClick=\{onGoToFinanceiro\}[\s\S]{0,600}Ver minha evolução/
-    );
+describe("HeroCard — o card principal inteiro dispara onGoToFinanceiro", () => {
+  it("o card (InicioCard) usa onClick={onGoToFinanceiro}, não um placeholder", () => {
+    // Jornada J02 (#152): o mockup da Jornada não tem o botão "Ver minha
+    // evolução" (#134); o card inteiro é o toque, com o mesmo destino.
+    expect(heroCardSrc).toMatch(/<InicioCard\s+onClick=\{onGoToFinanceiro\}/);
+    expect(heroCardSrc).not.toContain("Ver minha evolução");
   });
 
   it("o GlassCard do card-herói não é mais clicável (evita <button> aninhado dentro do <button> do CTA) — só o CTA explícito navega", () => {
@@ -96,20 +97,12 @@ describe('HeroCard — botão "Ver minha evolução" (CTA aprovado, #134) dispar
     );
   });
 
-  it("cor do CTA é temática (var(--accent)), nunca o rosa fixo do protótipo (#ff2d78, decisão da Fase 1/#124)", () => {
-    // Âncora no <button ... real (com onClick), não nos <button> soltos que
-    // aparecem dentro do comentário JSDoc acima dele no arquivo.
-    const ctaMatch = heroCardSrc.match(
-      /<button\s+onClick=\{onGoToFinanceiro\}[\s\S]*?<\/button>/
-    );
-    expect(ctaMatch).not.toBeNull();
-    // Achado #131: virou um gradiente (medido do `.primaryButton` do
-    // protótipo) em vez de fundo sólido — ainda 100% var(--accent), nunca
-    // o hex fixo do protótipo.
-    expect(ctaMatch![0]).toMatch(
-      /background:\s*\n?\s*"linear-gradient\([^"]*var\(--accent\)/
-    );
-    expect(ctaMatch![0]).not.toMatch(/#ff2d78|#ff376e/i);
+  it("cores do card principal são temáticas (var(--accent)/--accent-tint), nunca o rosa fixo do protótipo (#ff2d78, decisão da Fase 1/#124)", () => {
+    // Jornada J02 (#152): sem o CTA, a regra vale pra barra e a pílula do
+    // card -- sempre tokens do tema, nunca hex fixo.
+    expect(heroCardSrc).toMatch(/background:\s*"var\(--accent\)"/);
+    expect(heroCardSrc).toMatch(/background:\s*"var\(--accent-tint\)"/);
+    expect(heroCardSrc).not.toMatch(/#ff2d78|#ff376e/i);
   });
 });
 
