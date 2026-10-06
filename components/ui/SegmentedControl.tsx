@@ -64,9 +64,11 @@ export function SegmentedControl<T extends string>({
         // Fundação Visual (#142): sem glow no estado ativo -- o
         // `.segmented .segmentActive` do protótipo é só
         // fundo+peso, nenhuma sombra (ver IOS_VISUAL_SYSTEM.md).
+        // #175: o texto do segmento ativo usa --on-accent (branco ou
+        // escuro, conforme o acento do tema) pra passar 4,5:1.
         const cores = {
-          background: active ? "var(--accent)" : "transparent",
-          color: active ? "#fff" : "var(--text-muted)",
+          background: active ? "var(--accent-fill)" : "transparent",
+          color: active ? "var(--on-accent)" : "var(--text-muted)",
         };
 
         if (!minTouchTarget) {

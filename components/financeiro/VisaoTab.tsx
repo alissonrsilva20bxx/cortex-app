@@ -91,7 +91,8 @@ function Valor({ m, tamanho }: { m: Movement; tamanho: string }) {
       className="font-extrabold tabular-nums shrink-0"
       style={{
         fontSize: tamanho,
-        color: m.positive ? "var(--success)" : "var(--danger)",
+        // #175: verde/vermelho de texto pequeno, com 4,5:1 nos 8 temas.
+        color: m.positive ? "var(--success-text)" : "var(--danger-text)",
       }}
     >
       {m.positive ? "+" : "-"}

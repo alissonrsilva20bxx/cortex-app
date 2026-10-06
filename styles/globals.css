@@ -1027,3 +1027,44 @@ select:focus-visible,
 .tab-panel > * + * {
   margin-top: var(--space-header);
 }
+
+/* ── Contraste de texto pequeno (#175) ────────────────────────────
+   Texto colorido pequeno (abaixo de 18,66px em negrito) precisa de 4,5:1
+   (WCAG AA) contra o fundo de verdade. A paleta dos 8 temas não muda: só
+   o TEXTO que vai em cima dela, e o mínimo necessário, calculado tema a
+   tema e modo a modo (docs/jornada/prints/175/).
+
+   --on-accent   texto sobre o acento sólido (botão Novo, segmento ativo,
+                 pílula "em N dias"). Branco onde o branco passa; texto
+                 escuro onde o acento é claro demais pro branco.
+   --accent-fill fundo sólido de acento por baixo de --on-accent. Igual ao
+                 --accent em todo tema, menos o midnight: ali nem branco
+                 (4,47) nem escuro (4,29) passam sobre #6366f1, e 2% de
+                 preto no fundo basta pro branco passar -- diferença
+                 imperceptível, a mesma cor do tema.
+   --success-text / --danger-text
+                 verde e vermelho de TEXTO pequeno (selos, valores com
+                 sinal). Misturados com --text: no claro escurecem, no
+                 escuro clareiam, mantendo o matiz. Fundos, barras e
+                 ícones continuam com --success/--danger. */
+:root {
+  --on-accent: #fff;
+  --accent-fill: var(--accent);
+  --success-text: color-mix(in srgb, var(--success) 72%, var(--text));
+  --danger-text: color-mix(in srgb, var(--danger) 78%, var(--text));
+}
+[data-theme="grafite"],
+[data-theme="pink-neon"],
+[data-theme="purple"],
+[data-theme="ocean"],
+[data-theme="gold"],
+[data-theme="emerald"] {
+  --on-accent: #0f0f0f;
+}
+/* No claro, o acento do grafite (#71717a) já passa com branco (4,83). */
+[data-mode="light"][data-theme="grafite"] {
+  --on-accent: #fff;
+}
+[data-theme="midnight"] {
+  --accent-fill: color-mix(in srgb, var(--accent) 98%, #000);
+}

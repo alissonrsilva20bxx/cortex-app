@@ -62,8 +62,9 @@ export function AgendaProximoCard({ job, onOpen }: Props) {
               fontSize: "11px",
               fontWeight: 700,
               padding: "3px 9px",
-              background: "var(--accent)",
-              color: "var(--text)",
+              // #175: --text sobre o acento ficava abaixo de 4,5:1.
+              background: "var(--accent-fill)",
+              color: "var(--on-accent)",
             }}
           >
             {countdown}

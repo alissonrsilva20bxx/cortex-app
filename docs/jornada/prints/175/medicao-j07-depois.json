@@ -1,0 +1,3032 @@
+{
+ "geradoEm": "2026-10-06T04:14:46.473Z",
+ "url": "http://localhost:3000/dev-preview/app",
+ "matriz": [
+  {
+   "print": "j07-inicio-390-claro-pink-neon.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-claro-pink-neon.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-pink-neon.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-claro-pink-neon.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-claro-pink-neon.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-390-escuro-pink-neon.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-escuro-pink-neon.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-escuro-pink-neon.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-escuro-pink-neon.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-escuro-pink-neon.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-430-claro-pink-neon.png",
+   "aba": "inicio",
+   "width": 430,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 33,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-430-claro-pink-neon.png",
+   "aba": "agenda",
+   "width": 430,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 28,
+   "menoresQue44": [],
+   "textosMedidos": 23,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-430-claro-pink-neon.png",
+   "aba": "financeiro",
+   "width": 430,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 26,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-430-claro-pink-neon.png",
+   "aba": "cofre",
+   "width": 430,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 20,
+   "menoresQue44": [],
+   "textosMedidos": 25,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-430-claro-pink-neon.png",
+   "aba": "rede",
+   "width": 430,
+   "mode": "light",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-430-escuro-pink-neon.png",
+   "aba": "inicio",
+   "width": 430,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 33,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-430-escuro-pink-neon.png",
+   "aba": "agenda",
+   "width": 430,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 28,
+   "menoresQue44": [],
+   "textosMedidos": 23,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-430-escuro-pink-neon.png",
+   "aba": "financeiro",
+   "width": 430,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 26,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-430-escuro-pink-neon.png",
+   "aba": "cofre",
+   "width": 430,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 20,
+   "menoresQue44": [],
+   "textosMedidos": 25,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-430-escuro-pink-neon.png",
+   "aba": "rede",
+   "width": 430,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-390-claro-purple.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "light",
+   "theme": "purple",
+   "tema": {
+    "theme": "purple",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-claro-purple.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "light",
+   "theme": "purple",
+   "tema": {
+    "theme": "purple",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-purple.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "light",
+   "theme": "purple",
+   "tema": {
+    "theme": "purple",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-claro-purple.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "light",
+   "theme": "purple",
+   "tema": {
+    "theme": "purple",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-claro-purple.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "light",
+   "theme": "purple",
+   "tema": {
+    "theme": "purple",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-390-claro-ocean.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "light",
+   "theme": "ocean",
+   "tema": {
+    "theme": "ocean",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-claro-ocean.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "light",
+   "theme": "ocean",
+   "tema": {
+    "theme": "ocean",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-ocean.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "light",
+   "theme": "ocean",
+   "tema": {
+    "theme": "ocean",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-claro-ocean.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "light",
+   "theme": "ocean",
+   "tema": {
+    "theme": "ocean",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-claro-ocean.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "light",
+   "theme": "ocean",
+   "tema": {
+    "theme": "ocean",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-390-claro-midnight.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "light",
+   "theme": "midnight",
+   "tema": {
+    "theme": "midnight",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-claro-midnight.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "light",
+   "theme": "midnight",
+   "tema": {
+    "theme": "midnight",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-midnight.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "light",
+   "theme": "midnight",
+   "tema": {
+    "theme": "midnight",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-claro-midnight.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "light",
+   "theme": "midnight",
+   "tema": {
+    "theme": "midnight",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-claro-midnight.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "light",
+   "theme": "midnight",
+   "tema": {
+    "theme": "midnight",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-390-claro-grafite.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "light",
+   "theme": "grafite",
+   "tema": {
+    "theme": "grafite",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-claro-grafite.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "light",
+   "theme": "grafite",
+   "tema": {
+    "theme": "grafite",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-grafite.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "light",
+   "theme": "grafite",
+   "tema": {
+    "theme": "grafite",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-claro-grafite.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "light",
+   "theme": "grafite",
+   "tema": {
+    "theme": "grafite",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-claro-grafite.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "light",
+   "theme": "grafite",
+   "tema": {
+    "theme": "grafite",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-390-claro-gold.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "light",
+   "theme": "gold",
+   "tema": {
+    "theme": "gold",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-claro-gold.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "light",
+   "theme": "gold",
+   "tema": {
+    "theme": "gold",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-gold.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "light",
+   "theme": "gold",
+   "tema": {
+    "theme": "gold",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-claro-gold.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "light",
+   "theme": "gold",
+   "tema": {
+    "theme": "gold",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-claro-gold.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "light",
+   "theme": "gold",
+   "tema": {
+    "theme": "gold",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-390-claro-emerald.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "light",
+   "theme": "emerald",
+   "tema": {
+    "theme": "emerald",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-claro-emerald.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "light",
+   "theme": "emerald",
+   "tema": {
+    "theme": "emerald",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-emerald.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "light",
+   "theme": "emerald",
+   "tema": {
+    "theme": "emerald",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-claro-emerald.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "light",
+   "theme": "emerald",
+   "tema": {
+    "theme": "emerald",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-claro-emerald.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "light",
+   "theme": "emerald",
+   "tema": {
+    "theme": "emerald",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-inicio-390-claro-crimson.png",
+   "aba": "inicio",
+   "width": 390,
+   "mode": "light",
+   "theme": "crimson",
+   "tema": {
+    "theme": "crimson",
+    "mode": "light",
+    "painel": "home"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 12,
+   "menoresQue44": [],
+   "textosMedidos": 28,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-agenda-390-claro-crimson.png",
+   "aba": "agenda",
+   "width": 390,
+   "mode": "light",
+   "theme": "crimson",
+   "tema": {
+    "theme": "crimson",
+    "mode": "light",
+    "painel": "jobs"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 27,
+   "menoresQue44": [],
+   "textosMedidos": 19,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-crimson.png",
+   "aba": "financeiro",
+   "width": 390,
+   "mode": "light",
+   "theme": "crimson",
+   "tema": {
+    "theme": "crimson",
+    "mode": "light",
+    "painel": "financeiro"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 14,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-cofre-390-claro-crimson.png",
+   "aba": "cofre",
+   "width": 390,
+   "mode": "light",
+   "theme": "crimson",
+   "tema": {
+    "theme": "crimson",
+    "mode": "light",
+    "painel": "cofre"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 18,
+   "menoresQue44": [],
+   "textosMedidos": 22,
+   "abaixoDoMinimo": []
+  },
+  {
+   "print": "j07-rede-390-claro-crimson.png",
+   "aba": "rede",
+   "width": 390,
+   "mode": "light",
+   "theme": "crimson",
+   "tema": {
+    "theme": "crimson",
+    "mode": "light",
+    "painel": "rede"
+   },
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": [],
+   "alvosVisiveis": 16,
+   "menoresQue44": [],
+   "textosMedidos": 13,
+   "abaixoDoMinimo": []
+  }
+ ],
+ "pilula": [
+  {
+   "aba": "inicio",
+   "mode": "light",
+   "rolavelPx": 314,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 288,
+     "maisVisivel": true,
+     "maisRotulo": "Novo",
+     "maisAoLado": true
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 92,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 63,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 57,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 257,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 279,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 284,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     }
+    ]
+   }
+  },
+  {
+   "aba": "agenda",
+   "mode": "light",
+   "rolavelPx": 420,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 288,
+     "maisVisivel": true,
+     "maisRotulo": "Novo atendimento",
+     "maisAoLado": true
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 84,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 63,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 56,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 248,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 277,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 283,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 287,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     }
+    ]
+   }
+  },
+  {
+   "aba": "financeiro",
+   "mode": "light",
+   "rolavelPx": 753,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 288,
+     "maisVisivel": true,
+     "maisRotulo": "Novo lançamento",
+     "maisAoLado": true
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 61,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 56,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 248,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 273,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 281,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 287,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     }
+    ]
+   }
+  },
+  {
+   "aba": "cofre",
+   "mode": "light",
+   "rolavelPx": 455,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 288,
+     "maisVisivel": true,
+     "maisRotulo": "Enviar arquivo",
+     "maisAoLado": true
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 67,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 56,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 247,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 273,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 283,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 287,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     }
+    ]
+   }
+  },
+  {
+   "aba": "rede",
+   "mode": "light",
+   "rolavelPx": 2726,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 358,
+     "maisVisivel": false,
+     "maisRotulo": null,
+     "maisAoLado": null
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 67,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 60,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 57,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 120,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 200,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 300,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 450,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 700,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 317,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 60,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 347,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 120,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 353,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 200,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 357,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 300,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 358,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 450,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 358,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 700,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 358,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     }
+    ]
+   }
+  },
+  {
+   "aba": "inicio",
+   "mode": "dark",
+   "rolavelPx": 314,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 288,
+     "maisVisivel": true,
+     "maisRotulo": "Novo",
+     "maisAoLado": true
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 104,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 71,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 59,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 54,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 314,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 248,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 273,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 283,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 287,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 0,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo",
+      "maisAoLado": true
+     }
+    ]
+   }
+  },
+  {
+   "aba": "agenda",
+   "mode": "dark",
+   "rolavelPx": 420,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 288,
+     "maisVisivel": true,
+     "maisRotulo": "Novo atendimento",
+     "maisAoLado": true
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 92,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 67,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 57,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 420,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 257,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 273,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 283,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 287,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 60,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo atendimento",
+      "maisAoLado": true
+     }
+    ]
+   }
+  },
+  {
+   "aba": "financeiro",
+   "mode": "dark",
+   "rolavelPx": 753,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 288,
+     "maisVisivel": true,
+     "maisRotulo": "Novo lançamento",
+     "maisAoLado": true
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 67,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 57,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 248,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 273,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 283,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 287,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Novo lançamento",
+      "maisAoLado": true
+     }
+    ]
+   }
+  },
+  {
+   "aba": "cofre",
+   "mode": "dark",
+   "rolavelPx": 455,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 288,
+     "maisVisivel": true,
+     "maisRotulo": "Enviar arquivo",
+     "maisAoLado": true
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 63,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 56,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 455,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 256,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 60,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 277,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 120,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 284,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 200,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 300,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 450,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     },
+     {
+      "t": 700,
+      "scrollY": 95,
+      "compacta": false,
+      "largura": 288,
+      "maisVisivel": true,
+      "maisRotulo": "Enviar arquivo",
+      "maisAoLado": true
+     }
+    ]
+   }
+  },
+  {
+   "aba": "rede",
+   "mode": "dark",
+   "rolavelPx": 2726,
+   "recolheu": true,
+   "voltou": true,
+   "amostras": {
+    "inicio": {
+     "scrollY": 0,
+     "compacta": false,
+     "largura": 358,
+     "maisVisivel": false,
+     "maisRotulo": null,
+     "maisAoLado": null
+    },
+    "descendo": [
+     {
+      "t": 0,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 63,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 60,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 55,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 120,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 53,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 200,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 300,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 450,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 700,
+      "scrollY": 600,
+      "compacta": true,
+      "largura": 52,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     }
+    ],
+    "subindo": [
+     {
+      "t": 0,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 317,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 60,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 343,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 120,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 353,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 200,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 358,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 300,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 358,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 450,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 358,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     },
+     {
+      "t": 700,
+      "scrollY": 240,
+      "compacta": false,
+      "largura": 358,
+      "maisVisivel": false,
+      "maisRotulo": null,
+      "maisAoLado": null
+     }
+    ]
+   }
+  }
+ ],
+ "trocaDeAba": [
+  {
+   "de": null,
+   "para": "inicio",
+   "scrollYDepois": 0,
+   "scrollYEsperado": 0,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 37,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "inicio",
+   "para": "agenda",
+   "scrollYDepois": 0,
+   "scrollYEsperado": 0,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 38,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "agenda",
+   "para": "financeiro",
+   "scrollYDepois": 0,
+   "scrollYEsperado": 0,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 37,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "financeiro",
+   "para": "cofre",
+   "scrollYDepois": 0,
+   "scrollYEsperado": 0,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 37,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "cofre",
+   "para": "rede",
+   "scrollYDepois": 0,
+   "scrollYEsperado": 0,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 37,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "rede",
+   "para": "inicio",
+   "scrollYDepois": 300,
+   "scrollYEsperado": 300,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 37,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "inicio",
+   "para": "agenda",
+   "scrollYDepois": 300,
+   "scrollYEsperado": 300,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 38,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "agenda",
+   "para": "financeiro",
+   "scrollYDepois": 300,
+   "scrollYEsperado": 300,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 38,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "financeiro",
+   "para": "cofre",
+   "scrollYDepois": 300,
+   "scrollYEsperado": 300,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 38,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  },
+  {
+   "de": "cofre",
+   "para": "rede",
+   "scrollYDepois": 300,
+   "scrollYEsperado": 300,
+   "rolagemGuardada": true,
+   "quadrosAmostrados": 38,
+   "quadrosSemPainelOuVazios": 0,
+   "layoutShift": 0
+  }
+ ],
+ "vazio": [
+  {
+   "print": "j07-inicio-390-claro-pink-neon-vazio.png",
+   "aba": "inicio",
+   "mode": "light",
+   "alturaPainel": 667,
+   "caracteres": 327,
+   "trecho": "M Olá, Miguel Terça, 6 de outubro Novo Faturamento · outubro R$ 0 Registre seu primeiro atendimento e veja sua projeção começar. Próximo Nenhum atendimento agendado ainda. Objetivos Adicionar objetivo Esta semana Agenda › TER 06 Dia livre QUA 07 Dia livre QUI 08 Dia livre SEX 09 Dia livre SÁB 10 Dia",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-agenda-390-claro-pink-neon-vazio.png",
+   "aba": "agenda",
+   "mode": "light",
+   "alturaPainel": 883,
+   "caracteres": 410,
+   "trecho": "Agenda Próximo atendimento Nenhum atendimento agendado ainda. Toque no + para registrar. Novo Bloquear Resumo Anotações 4–10 de out D 4 S 5 T 6 Q 7 Q 8 S 9 S 10 Terça-feira, 6 de outubro Nenhum atendimento Todos Agendado Confirmado Concluído Cancelado Nenhum compromisso neste dia Toque no + para adi",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-financeiro-390-claro-pink-neon-vazio.png",
+   "aba": "financeiro",
+   "mode": "light",
+   "alturaPainel": 834,
+   "caracteres": 247,
+   "trecho": "Financeiro Outubro de 2026 Novo Saldo do mês R$ 0 Entrou R$ 0 Saiu R$ 0 Entradas R$ 0 Saídas R$ 0 Meta 0% R$ 0 de R$ 3.000 Resumo financeiro Semana Mês Ano S1 S2 S3 S4 S5 S6 S7 S8 Visão Entradas Saídas Metas Recentes Nenhuma movimentação ainda.",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-cofre-390-claro-pink-neon-vazio.png",
+   "aba": "cofre",
+   "mode": "light",
+   "alturaPainel": 544,
+   "caracteres": 198,
+   "trecho": "Cofre Protegido Acesso protegido pela trava do app 0 arquivos armazenados 0 B usado — último Enviar Todos Comprovantes Conversas Documentos Pessoal Recentes Cofre vazio. Toque no + para enviar.",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-rede-390-claro-pink-neon-vazio.png",
+   "aba": "rede",
+   "mode": "light",
+   "alturaPainel": 560,
+   "caracteres": 479,
+   "trecho": "Sessão de teste local indisponível. Sessão de teste local indisponível — não foi possível contatar o Supabase local. Solicitar beta e resgatar código vão mostrar esse mesmo estado até o Supabase local estar de pé — o resto do fluxo (abrir o sheet de código, validações de campo vazio, foco, 44px) con",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-inicio-390-escuro-pink-neon-vazio.png",
+   "aba": "inicio",
+   "mode": "dark",
+   "alturaPainel": 667,
+   "caracteres": 327,
+   "trecho": "M Olá, Miguel Terça, 6 de outubro Novo Faturamento · outubro R$ 0 Registre seu primeiro atendimento e veja sua projeção começar. Próximo Nenhum atendimento agendado ainda. Objetivos Adicionar objetivo Esta semana Agenda › TER 06 Dia livre QUA 07 Dia livre QUI 08 Dia livre SEX 09 Dia livre SÁB 10 Dia",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-agenda-390-escuro-pink-neon-vazio.png",
+   "aba": "agenda",
+   "mode": "dark",
+   "alturaPainel": 883,
+   "caracteres": 410,
+   "trecho": "Agenda Próximo atendimento Nenhum atendimento agendado ainda. Toque no + para registrar. Novo Bloquear Resumo Anotações 4–10 de out D 4 S 5 T 6 Q 7 Q 8 S 9 S 10 Terça-feira, 6 de outubro Nenhum atendimento Todos Agendado Confirmado Concluído Cancelado Nenhum compromisso neste dia Toque no + para adi",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-financeiro-390-escuro-pink-neon-vazio.png",
+   "aba": "financeiro",
+   "mode": "dark",
+   "alturaPainel": 834,
+   "caracteres": 247,
+   "trecho": "Financeiro Outubro de 2026 Novo Saldo do mês R$ 0 Entrou R$ 0 Saiu R$ 0 Entradas R$ 0 Saídas R$ 0 Meta 0% R$ 0 de R$ 3.000 Resumo financeiro Semana Mês Ano S1 S2 S3 S4 S5 S6 S7 S8 Visão Entradas Saídas Metas Recentes Nenhuma movimentação ainda.",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-cofre-390-escuro-pink-neon-vazio.png",
+   "aba": "cofre",
+   "mode": "dark",
+   "alturaPainel": 544,
+   "caracteres": 198,
+   "trecho": "Cofre Protegido Acesso protegido pela trava do app 0 arquivos armazenados 0 B usado — último Enviar Todos Comprovantes Conversas Documentos Pessoal Recentes Cofre vazio. Toque no + para enviar.",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  },
+  {
+   "print": "j07-rede-390-escuro-pink-neon-vazio.png",
+   "aba": "rede",
+   "mode": "dark",
+   "alturaPainel": 560,
+   "caracteres": 479,
+   "trecho": "Sessão de teste local indisponível. Sessão de teste local indisponível — não foi possível contatar o Supabase local. Solicitar beta e resgatar código vão mostrar esse mesmo estado até o Supabase local estar de pé — o resto do fluxo (abrir o sheet de código, validações de campo vazio, foco, 44px) con",
+   "transbordoPx": 0,
+   "bodyTransbordoPx": 0,
+   "elementosForaDaBorda": []
+  }
+ ],
+ "teclado": [
+  {
+   "formulario": "agenda-novo-atendimento",
+   "width": 390,
+   "alturaTeclado": 336,
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 177,
+     "base": 225,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "date",
+     "topo": 265,
+     "base": 316,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "time",
+     "topo": 265,
+     "base": 316,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "0,00",
+     "topo": 356,
+     "base": 404,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 526,
+     "base": 575,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": false,
+     "focado": true
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 691,
+     "base": 785,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": false,
+     "focado": true
+    }
+   ]
+  },
+  {
+   "formulario": "agenda-novo-atendimento",
+   "width": 430,
+   "alturaTeclado": 336,
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 186,
+     "base": 234,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "date",
+     "topo": 274,
+     "base": 325,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "time",
+     "topo": 274,
+     "base": 325,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "0,00",
+     "topo": 365,
+     "base": 413,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 535,
+     "base": 584,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 712,
+     "base": 806,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": false,
+     "focado": true
+    }
+   ]
+  },
+  {
+   "formulario": "financeiro-novo-lancamento",
+   "width": 390,
+   "alturaTeclado": 336,
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 490,
+     "base": 536,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": false,
+     "focado": true
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 548,
+     "base": 596,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": false,
+     "focado": true
+    },
+    {
+     "campo": "date",
+     "topo": 548,
+     "base": 596,
+     "alturaUtil": 508,
+     "dialogoTopo": 51,
+     "visivel": false,
+     "focado": true
+    }
+   ]
+  },
+  {
+   "formulario": "financeiro-novo-lancamento",
+   "width": 430,
+   "alturaTeclado": 336,
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 499,
+     "base": 545,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": true,
+     "focado": true
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 557,
+     "base": 605,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": false,
+     "focado": true
+    },
+    {
+     "campo": "date",
+     "topo": 557,
+     "base": 605,
+     "alturaUtil": 596,
+     "dialogoTopo": 60,
+     "visivel": false,
+     "focado": true
+    }
+   ]
+  }
+ ],
+ "errosDePagina": [
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "erros": []
+  },
+  {
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "erros": []
+  },
+  {
+   "width": 430,
+   "mode": "light",
+   "theme": "pink-neon",
+   "erros": []
+  },
+  {
+   "width": 430,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "erros": []
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "purple",
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "ocean",
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "midnight",
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "grafite",
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "gold",
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "emerald",
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "crimson",
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "vazio": true,
+   "erros": []
+  },
+  {
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "vazio": true,
+   "erros": []
+  }
+ ]
+}

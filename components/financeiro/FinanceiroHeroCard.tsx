@@ -103,7 +103,11 @@ export function FinanceiroHeroCard({
                 style={{
                   fontSize: "11px",
                   padding: "3px 9px",
-                  color: variacaoPct >= 0 ? "var(--success)" : "var(--danger)",
+                  // #175: verde/vermelho de texto pequeno.
+                  color:
+                    variacaoPct >= 0
+                      ? "var(--success-text)"
+                      : "var(--danger-text)",
                   background:
                     variacaoPct >= 0
                       ? "var(--success-tint)"

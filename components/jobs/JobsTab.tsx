@@ -693,7 +693,11 @@ export function JobsTab({
                         ? "rgb(var(--accent-rgb) / 0.18)"
                         : "var(--surface)",
                       border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-                      color: active ? "var(--accent)" : "var(--text-muted)",
+                      // #175: mesmo ajuste do FilterChips -- --accent sobre o
+                      // próprio tom ficava abaixo de 4,5:1.
+                      color: active
+                        ? "var(--accent-deep-2)"
+                        : "var(--text-muted)",
                       boxShadow: active ? "var(--glow-sm)" : "none",
                     }}
                   >
