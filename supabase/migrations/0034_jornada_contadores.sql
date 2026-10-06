@@ -254,11 +254,19 @@ as $$
     and private.rede_users_unblocked(alvo);
 $$;
 
-revoke all on function public.jornada_so_contadores(jsonb) from public;
-revoke all on function public.jornada_estagio_de(integer) from public;
-revoke all on function private.jornada_selos_no_perfil(uuid) from public;
-revoke all on function private.jornada_estagio_no_perfil(uuid) from public;
-revoke all on function public.jornada_estagio_publico(uuid) from public;
+-- O Supabase concede EXECUTE em toda função nova a anon/authenticated
+-- explicitamente (default privileges), não via PUBLIC: por isso o revoke
+-- nomeia as roles (mesmo furo corrigido na 0032).
+revoke all on function public.jornada_so_contadores(jsonb)
+  from public, anon, authenticated, service_role;
+revoke all on function public.jornada_estagio_de(integer)
+  from public, anon, authenticated, service_role;
+revoke all on function private.jornada_selos_no_perfil(uuid)
+  from public, anon, authenticated, service_role;
+revoke all on function private.jornada_estagio_no_perfil(uuid)
+  from public, anon, authenticated, service_role;
+revoke all on function public.jornada_estagio_publico(uuid)
+  from public, anon, authenticated, service_role;
 grant execute on function public.jornada_so_contadores(jsonb)
   to authenticated, service_role;
 grant execute on function public.jornada_estagio_de(integer)
