@@ -261,6 +261,15 @@ describe("montar duas vezes (StrictMode) não registra nem carrega duas vezes", 
     expect(s.registrar).toHaveBeenCalledTimes(1);
   });
 
+  it("abrir a Jornada (selo Primeiros passos) registra UMA vez por abertura do app", async () => {
+    const s = servidorFalso();
+    const l = loja(s.transporte);
+    await Promise.all([l.registrarAbertura(), l.registrarAbertura()]);
+    await l.registrarAbertura();
+    expect(s.registrar).toHaveBeenCalledTimes(1);
+    expect(s.registrar.mock.calls[0][0].acao).toBe("abrir_jornada");
+  });
+
   it("toda montagem recebe a mesma loja da conta", () => {
     expect(lojaDaUsuaria("u9")).toBe(lojaDaUsuaria("u9"));
   });

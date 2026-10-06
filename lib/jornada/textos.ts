@@ -13,6 +13,7 @@
 
 import type {
   Acao,
+  AcaoDaDica,
   ErroJornada,
   MarcoDinheiro,
   Pilar,
@@ -107,9 +108,14 @@ export const ROTULO_ACAO: Record<Acao, string> = {
   guardar_meta: "Dinheiro guardado na sua meta",
   comprovante_cofre: "Comprovante seguro no Cofre",
   descanso: "Dia de descanso garantido",
+  atendimento: "Dia ativo",
+  abrir_jornada: "Você abriu sua Jornada",
+};
+
+/** "Isso me ajudou" / "Isso me protegeu": creditadas pelo servidor à autora. */
+export const ROTULO_DICA: Record<AcaoDaDica, string> = {
   dica_ajudou: "Sua dica ajudou alguém hoje",
   dica_protegeu: "Sua dica protegeu alguém",
-  atendimento: "Dia ativo",
 };
 
 /** Passou do limite do dia: registra, sem Glow. */
