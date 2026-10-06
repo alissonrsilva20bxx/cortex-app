@@ -2013,6 +2013,7 @@ export function RedeTab({
             usuarioFotoUrl={fotoPropria}
             posts={posts}
             friends={friends.map((f) => f.id)}
+            amigas={friends}
             wishlistItems={wishlistItems}
             pendingRequestsCount={requests.length}
             unreadChats={unreadChats}
