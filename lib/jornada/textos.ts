@@ -515,7 +515,13 @@ interface ContagemAcao {
   muitos: string;
 }
 
-const CONTAGEM_ACAO: Partial<Record<Acao, ContagemAcao>> = {
+/**
+ * Chaves de contador de período que viram linha no resumo. São as chaves
+ * que `jornada_periodos.contadores` guarda (J10 `jornada_somar_periodo`):
+ * as ações da §3 mais as duas de dica, que o servidor credita sozinho.
+ * `atendimento` e `abrir_jornada` ficam de fora de propósito.
+ */
+const CONTAGEM_ACAO: Record<string, ContagemAcao> = {
   despesa: { um: "despesa lançada", muitos: "despesas lançadas" },
   receita: { um: "entrada lançada", muitos: "entradas lançadas" },
   planejar: { um: "dia planejado", muitos: "dias planejados" },
@@ -538,11 +544,11 @@ const CONTAGEM_ACAO: Partial<Record<Acao, ContagemAcao>> = {
   },
 };
 
-/** As ações que aparecem no resumo, na ordem em que aparecem. */
-export const ACOES_DO_RESUMO = Object.keys(CONTAGEM_ACAO) as Acao[];
+/** As chaves que aparecem no resumo, na ordem em que aparecem. */
+export const ACOES_DO_RESUMO = Object.keys(CONTAGEM_ACAO);
 
-/** "4 despesas lançadas" — null quando a ação não entra no resumo. */
-export function resumoAcao(acao: Acao, n: number): string | null {
+/** "4 despesas lançadas" — null quando a chave não entra no resumo. */
+export function resumoAcao(acao: string, n: number): string | null {
   const texto = CONTAGEM_ACAO[acao];
   if (!texto || n <= 0) return null;
   return `${numero(n)} ${n === 1 ? texto.um : texto.muitos}`;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TIPOS_PERIODO, type TipoPeriodo } from "@/lib/jornada/estado";
 import { RESUMO_ABA } from "@/lib/jornada/textos";
 import { useJornada } from "@/components/jornada/useJornada";
+import { doEstado } from "./leitura";
 import { ResumoPeriodo } from "./ResumoPeriodo";
 
 /**
@@ -22,7 +23,7 @@ export function JornadaResumos({ userId }: Props) {
   const [aba, setAba] = useState<TipoPeriodo>("semana");
 
   if (!estado) return null;
-  const { atual, fechado } = estado.periodos[aba];
+  const { atual, fechado } = doEstado(estado, aba);
 
   return (
     <div className="flex flex-col gap-3" data-jornada-resumos>

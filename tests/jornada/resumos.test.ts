@@ -8,6 +8,7 @@ import {
   chaveDeGuardou,
   chaveDoRitmo,
   contador,
+  doEstado,
   periodoVazio,
 } from "../../components/jornada/resumos/leitura";
 import {
@@ -54,18 +55,17 @@ function periodo(contadores: Record<string, number>): Periodo {
   return { inicio: "2026-10-05", contadores };
 }
 
+/** Monta um estado na forma que o servidor manda (J10): corrente + ultimoFechado. */
 function estadoCom(
   tipo: TipoPeriodo,
-  atual: Periodo | null,
+  atual: Periodo,
   fechado: Periodo | null = null
 ): EstadoJornada {
-  const vazio = { atual: null, fechado: null };
+  const vazio = periodo({});
   return {
     periodos: {
-      semana: vazio,
-      mes: vazio,
-      ano: vazio,
-      [tipo]: { atual, fechado },
+      corrente: { semana: vazio, mes: vazio, ano: vazio, [tipo]: atual },
+      ultimoFechado: fechado ? { [tipo]: fechado } : {},
     },
   } as unknown as EstadoJornada;
 }
@@ -179,10 +179,18 @@ describe("J14 — período vazio não quebra e não cobra", () => {
     expect(periodoVazio(periodo({ glow: 5 }), "mes")).toBe(false);
   });
 
-  it("o estado monta os três tipos sem explodir", () => {
+  it("o estado na forma do servidor: corrente sempre existe, fechado é opcional", () => {
     const e = estadoCom("semana", periodo({ glow: 45, dias_fortes: 2 }));
-    expect(e.periodos.semana.atual?.contadores.glow).toBe(45);
-    expect(e.periodos.mes.atual).toBeNull();
+    expect(doEstado(e, "semana").atual.contadores.glow).toBe(45);
+    expect(doEstado(e, "semana").fechado).toBeNull();
+    // os outros tipos existem e estão vazios -- nunca indefinidos
+    expect(doEstado(e, "mes").atual.contadores).toEqual({});
+    expect(periodoVazio(doEstado(e, "ano").atual, "ano")).toBe(true);
+  });
+
+  it("o último fechado chega quando existe", () => {
+    const e = estadoCom("mes", periodo({ glow: 10 }), periodo({ glow: 80 }));
+    expect(doEstado(e, "mes").fechado?.contadores.glow).toBe(80);
   });
 });
 

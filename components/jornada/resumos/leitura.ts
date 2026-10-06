@@ -26,7 +26,7 @@ export function chaveDeGuardou(tipo: TipoPeriodo): string {
 /** As ações do período com contagem maior que zero, na ordem do resumo. */
 export function acoesFeitas(
   periodo: Periodo | null
-): { acao: (typeof ACOES_DO_RESUMO)[number]; n: number }[] {
+): { acao: string; n: number }[] {
   return ACOES_DO_RESUMO.map((acao) => ({
     acao,
     n: contador(periodo, acao),
@@ -50,10 +50,17 @@ export function periodoVazio(
   );
 }
 
-/** O par (corrente, anterior fechado) de um tipo de período. */
+/**
+ * O par (corrente, último fechado) de um tipo de período, na forma que o
+ * servidor manda (J10): `corrente` sempre existe; `ultimoFechado` só depois
+ * que um período daquele tipo virou.
+ */
 export function doEstado(
   estado: EstadoJornada,
   tipo: TipoPeriodo
-): { atual: Periodo | null; fechado: Periodo | null } {
-  return estado.periodos[tipo];
+): { atual: Periodo; fechado: Periodo | null } {
+  return {
+    atual: estado.periodos.corrente[tipo],
+    fechado: estado.periodos.ultimoFechado[tipo] ?? null,
+  };
 }
