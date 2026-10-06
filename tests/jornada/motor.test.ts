@@ -23,11 +23,20 @@ import {
  *     chama a RPC de verdade como uma usuária de teste. Sem as variáveis
  *     SUPABASE_TEST_* (ver tests/rede/support/env.ts), ou com o Supabase
  *     local desligado, a suíte é pulada.
+ *
+ *     Por que não PGlite aqui: o PGlite NÃO é dependência do projeto (nem
+ *     tests/rede o usa; não há @electric-sql/pglite em node_modules) e o
+ *     ticket proíbe instalar pacote. O mesmo comportamento (e mais) é
+ *     exercitado por tests/jornada/motor-pglite.mjs, fora do `npm test`,
+ *     que baixa o PGlite no cache do npx sem tocar o package.json.
  */
 
 const raiz = path.resolve(__dirname, "../..");
+// CRLF -> LF: num checkout Windows (core.autocrlf) os arquivos chegam com
+// \r\n, e os recortes por ")\nreturns" etc. passariam a pegar o corpo
+// inteiro. Mesmo padrão de tests/jornada/contrato.test.ts.
 const ler = (arquivo: string) =>
-  readFileSync(path.join(raiz, arquivo), "utf-8");
+  readFileSync(path.join(raiz, arquivo), "utf-8").replace(/\r\n/g, "\n");
 
 const spec = ler("docs/jornada/spec-sua-jornada.md");
 const sql0034 = ler("supabase/migrations/0034_jornada_contadores.sql");
