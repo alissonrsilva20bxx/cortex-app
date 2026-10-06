@@ -256,6 +256,8 @@ export function FinanceiroHeroCard({
           {chartType !== "area" && (
             <SegmentedControl
               size="sm"
+              // #174: Semana/Mês/Ano com alvo de toque de 44px.
+              minTouchTarget
               options={PERIOD_OPTS}
               value={chartPeriod}
               onChange={setChartPeriod}
