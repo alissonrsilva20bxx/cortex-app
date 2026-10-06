@@ -1,0 +1,1402 @@
+{
+ "base": "http://localhost:3102/dev-preview/app",
+ "quando": "2026-10-06T22:04:03.403Z",
+ "matriz": [
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "resumos": true,
+   "sufixo": "390-claro-pink-neon",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    },
+    "resumos": {
+     "semana": {
+      "contraste": {
+       "textosMedidos": 10,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Esta semana 45 Glow nesta semana 2 dias fortes O que você construiu 4 despesas lançadas Na semana passada: 80 Glow Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "mes": {
+      "contraste": {
+       "textosMedidos": 9,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este mês 45 Glow neste mês 2 dias fortes O que você construiu 4 despesas lançadas Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "ano": {
+      "contraste": {
+       "textosMedidos": 9,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este ano 45 Glow neste ano 2 dias fortes O que você construiu 4 despesas lançadas Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     }
+    }
+   },
+   "erros": []
+  },
+  {
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "resumos": true,
+   "sufixo": "390-escuro-pink-neon",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": [
+       {
+        "texto": "305",
+        "contraste": 1,
+        "minimo": 3,
+        "corCss": "rgb(255, 255, 255)",
+        "fundo": "rgb(255,255,255)",
+        "tamanho": 34
+       }
+      ]
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    },
+    "resumos": {
+     "semana": {
+      "contraste": {
+       "textosMedidos": 10,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Esta semana 45 Glow nesta semana 2 dias fortes O que você construiu 4 despesas lançadas Na semana passada: 80 Glow Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "mes": {
+      "contraste": {
+       "textosMedidos": 9,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este mês 45 Glow neste mês 2 dias fortes O que você construiu 4 despesas lançadas Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "ano": {
+      "contraste": {
+       "textosMedidos": 9,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este ano 45 Glow neste ano 2 dias fortes O que você construiu 4 despesas lançadas Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     }
+    }
+   },
+   "erros": []
+  },
+  {
+   "width": 430,
+   "mode": "light",
+   "theme": "pink-neon",
+   "resumos": true,
+   "sufixo": "430-claro-pink-neon",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 72,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 6,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    },
+    "resumos": {
+     "semana": {
+      "contraste": {
+       "textosMedidos": 10,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Esta semana 45 Glow nesta semana 2 dias fortes O que você construiu 4 despesas lançadas Na semana passada: 80 Glow Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "mes": {
+      "contraste": {
+       "textosMedidos": 9,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este mês 45 Glow neste mês 2 dias fortes O que você construiu 4 despesas lançadas Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "ano": {
+      "contraste": {
+       "textosMedidos": 9,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este ano 45 Glow neste ano 2 dias fortes O que você construiu 4 despesas lançadas Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     }
+    }
+   },
+   "erros": []
+  },
+  {
+   "width": 430,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "resumos": true,
+   "sufixo": "430-escuro-pink-neon",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 72,
+      "abaixoDoMinimo": [
+       {
+        "texto": "305",
+        "contraste": 1,
+        "minimo": 3,
+        "corCss": "rgb(255, 255, 255)",
+        "fundo": "rgb(255,255,255)",
+        "tamanho": 34
+       }
+      ]
+     },
+     "toque": {
+      "alvosVisiveis": 6,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    },
+    "resumos": {
+     "semana": {
+      "contraste": {
+       "textosMedidos": 10,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Esta semana 45 Glow nesta semana 2 dias fortes O que você construiu 4 despesas lançadas Na semana passada: 80 Glow Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "mes": {
+      "contraste": {
+       "textosMedidos": 9,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este mês 45 Glow neste mês 2 dias fortes O que você construiu 4 despesas lançadas Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "ano": {
+      "contraste": {
+       "textosMedidos": 9,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este ano 45 Glow neste ano 2 dias fortes O que você construiu 4 despesas lançadas Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     }
+    }
+   },
+   "erros": []
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "purple",
+   "resumos": false,
+   "sufixo": "390-claro-purple",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    }
+   },
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "ocean",
+   "resumos": false,
+   "sufixo": "390-claro-ocean",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    }
+   },
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "midnight",
+   "resumos": false,
+   "sufixo": "390-claro-midnight",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    }
+   },
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "grafite",
+   "resumos": false,
+   "sufixo": "390-claro-grafite",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    }
+   },
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "gold",
+   "resumos": false,
+   "sufixo": "390-claro-gold",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    }
+   },
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "emerald",
+   "resumos": false,
+   "sufixo": "390-claro-emerald",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    }
+   },
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "crimson",
+   "resumos": false,
+   "sufixo": "390-claro-crimson",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Em movimento 305 Glow · 95 Glow até Organizada 2 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 84,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 8,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    }
+   },
+   "erros": [
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "Hydration failed because the initial UI does not match what was rendered on the server.",
+    "There was an error while hydrating. Because the error happened outside of a Suspense boundary, the entire root will switch to client rendering."
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "light",
+   "theme": "pink-neon",
+   "resumos": true,
+   "nova": true,
+   "sufixo": "390-claro-pink-neon-conta-nova",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Começando 0 Glow · 100 Glow até Em movimento 0 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 60,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 6,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    },
+    "resumos": {
+     "semana": {
+      "contraste": {
+       "textosMedidos": 6,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Esta semana Nada por aqui nesta semana. Tudo bem. Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "mes": {
+      "contraste": {
+       "textosMedidos": 6,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este mês Nada por aqui neste mês. Tudo bem. Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "ano": {
+      "contraste": {
+       "textosMedidos": 6,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este ano Nada por aqui neste ano. Tudo bem. Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     }
+    }
+   },
+   "erros": []
+  },
+  {
+   "width": 390,
+   "mode": "dark",
+   "theme": "pink-neon",
+   "resumos": true,
+   "nova": true,
+   "sufixo": "390-escuro-pink-neon-conta-nova",
+   "superficies": {
+    "card": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 6,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     },
+     "texto": "Sua Jornada Começando 0 Glow · 100 Glow até Em movimento 0 dias fortes nesta semana Capítulo de outubro · 0 de 3 missões"
+    },
+    "tela": {
+     "transbordoPx": 0,
+     "contraste": {
+      "textosMedidos": 60,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 6,
+      "menoresQue44": [
+       {
+        "nome": "Voltar",
+        "w": 40,
+        "h": 40
+       },
+       {
+        "nome": "BUTTON",
+        "w": 48,
+        "h": 28
+       }
+      ]
+     },
+     "secoes": [
+      "Capítulo de outubro",
+      "Sua coleção",
+      "Seu dinheiro",
+      "Seus 4 pilares",
+      "Esta semana",
+      "Selos",
+      "Ajustes da Jornada"
+     ],
+     "foco": "Voltar"
+    },
+    "resumos": {
+     "semana": {
+      "contraste": {
+       "textosMedidos": 6,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Esta semana Nada por aqui nesta semana. Tudo bem. Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "mes": {
+      "contraste": {
+       "textosMedidos": 6,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este mês Nada por aqui neste mês. Tudo bem. Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     },
+     "ano": {
+      "contraste": {
+       "textosMedidos": 6,
+       "abaixoDoMinimo": []
+      },
+      "toque": {
+       "alvosVisiveis": 3,
+       "menoresQue44": []
+      },
+      "texto": "Semana Mês Ano Este ano Nada por aqui neste ano. Tudo bem. Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+     }
+    }
+   },
+   "erros": []
+  }
+ ],
+ "comemoracao": {
+  "390-claro-pink-neon": {
+   "vistos": [
+    "+15 Glow Dinheiro guardado na sua meta",
+    "+15 Glow Dinheiro guardado na sua meta SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow",
+    "SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow",
+    "VOCÊ SUBIU DE ESTÁGIO Em movimento",
+    "Meta concluída +100 Glow"
+   ],
+   "osciladores": 63,
+   "filaNoDisco": [],
+   "camadaVazia": true,
+   "prints": [
+    "j16-comemoracao-390-claro-pink-neon-pequena-0000ms.png",
+    "j16-comemoracao-390-claro-pink-neon-pequena-0600ms.png",
+    "j16-comemoracao-390-claro-pink-neon-selo-0150ms.png",
+    "j16-comemoracao-390-claro-pink-neon-selo-0450ms.png",
+    "j16-comemoracao-390-claro-pink-neon-selo-1300ms.png",
+    "j16-comemoracao-390-claro-pink-neon-estagio-0100ms.png",
+    "j16-comemoracao-390-claro-pink-neon-estagio-1150ms.png",
+    "j16-comemoracao-390-claro-pink-neon-estagio-2700ms.png",
+    "j16-comemoracao-390-claro-pink-neon-meta-2700ms.png"
+   ],
+   "medidas": {
+    "pequena": {
+     "contraste": {
+      "textosMedidos": 4,
+      "abaixoDoMinimo": [
+       {
+        "texto": "Selo novo",
+        "contraste": 1.01,
+        "minimo": 4.5,
+        "corCss": "rgb(255, 45, 120)",
+        "fundo": "rgb(255,47,122)",
+        "tamanho": 11
+       },
+       {
+        "texto": "+20 Glow",
+        "contraste": 1.47,
+        "minimo": 4.5,
+        "corCss": "rgb(255, 45, 120)",
+        "fundo": "rgb(255,255,255)",
+        "tamanho": 13
+       }
+      ]
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     }
+    },
+    "selo": {
+     "contraste": {
+      "textosMedidos": 4,
+      "abaixoDoMinimo": [
+       {
+        "texto": "Selo novo",
+        "contraste": 2.95,
+        "minimo": 4.5,
+        "corCss": "rgb(255, 45, 120)",
+        "fundo": "rgb(255,227,237)",
+        "tamanho": 11
+       },
+       {
+        "texto": "+20 Glow",
+        "contraste": 2.84,
+        "minimo": 4.5,
+        "corCss": "rgb(255, 45, 120)",
+        "fundo": "rgb(255,221,233)",
+        "tamanho": 13
+       }
+      ]
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     }
+    },
+    "estagio": {
+     "contraste": {
+      "textosMedidos": 1,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     }
+    },
+    "meta": {
+     "contraste": {
+      "textosMedidos": 1,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     }
+    }
+   },
+   "duracaoMs": 12903,
+   "erros": [],
+   "transbordoPx": 0
+  },
+  "390-escuro-pink-neon": {
+   "vistos": [
+    "+15 Glow Dinheiro guardado na sua meta",
+    "+15 Glow Dinheiro guardado na sua meta SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow",
+    "SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow",
+    "VOCÊ SUBIU DE ESTÁGIO Em movimento",
+    "Meta concluída +100 Glow"
+   ],
+   "osciladores": 63,
+   "filaNoDisco": [],
+   "camadaVazia": true,
+   "prints": [
+    "j16-comemoracao-390-escuro-pink-neon-pequena-0000ms.png",
+    "j16-comemoracao-390-escuro-pink-neon-pequena-0600ms.png",
+    "j16-comemoracao-390-escuro-pink-neon-selo-0150ms.png",
+    "j16-comemoracao-390-escuro-pink-neon-selo-0450ms.png",
+    "j16-comemoracao-390-escuro-pink-neon-selo-1300ms.png",
+    "j16-comemoracao-390-escuro-pink-neon-estagio-0100ms.png",
+    "j16-comemoracao-390-escuro-pink-neon-estagio-1150ms.png",
+    "j16-comemoracao-390-escuro-pink-neon-estagio-2700ms.png",
+    "j16-comemoracao-390-escuro-pink-neon-meta-2700ms.png"
+   ],
+   "medidas": {
+    "pequena": {
+     "contraste": {
+      "textosMedidos": 4,
+      "abaixoDoMinimo": [
+       {
+        "texto": "Selo novo",
+        "contraste": 1,
+        "minimo": 4.5,
+        "corCss": "rgb(255, 45, 120)",
+        "fundo": "rgb(255,45,120)",
+        "tamanho": 11
+       },
+       {
+        "texto": "+20 Glow",
+        "contraste": 2.45,
+        "minimo": 4.5,
+        "corCss": "rgb(255, 45, 120)",
+        "fundo": "rgb(37,18,28)",
+        "tamanho": 13
+       }
+      ]
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     }
+    },
+    "selo": {
+     "contraste": {
+      "textosMedidos": 4,
+      "abaixoDoMinimo": [
+       {
+        "texto": "Selo novo",
+        "contraste": 4.24,
+        "minimo": 4.5,
+        "corCss": "rgb(255, 45, 120)",
+        "fundo": "rgb(68,22,41)",
+        "tamanho": 11
+       },
+       {
+        "texto": "+20 Glow",
+        "contraste": 4.14,
+        "minimo": 4.5,
+        "corCss": "rgb(255, 45, 120)",
+        "fundo": "rgb(72,22,42)",
+        "tamanho": 13
+       }
+      ]
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     }
+    },
+    "estagio": {
+     "contraste": {
+      "textosMedidos": 1,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     }
+    },
+    "meta": {
+     "contraste": {
+      "textosMedidos": 1,
+      "abaixoDoMinimo": []
+     },
+     "toque": {
+      "alvosVisiveis": 1,
+      "menoresQue44": []
+     }
+    }
+   },
+   "duracaoMs": 12921,
+   "erros": [],
+   "transbordoPx": 0
+  },
+  "430-claro-pink-neon": {
+   "vistos": [
+    "+15 Glow Dinheiro guardado na sua meta",
+    "+15 Glow Dinheiro guardado na sua meta SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow",
+    "SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow",
+    "VOCÊ SUBIU DE ESTÁGIO Em movimento",
+    "Meta concluída +100 Glow"
+   ],
+   "osciladores": 63,
+   "filaNoDisco": [],
+   "camadaVazia": true,
+   "prints": [],
+   "medidas": {},
+   "duracaoMs": 11205,
+   "erros": [],
+   "transbordoPx": 0
+  },
+  "430-escuro-pink-neon": {
+   "vistos": [
+    "+15 Glow Dinheiro guardado na sua meta",
+    "+15 Glow Dinheiro guardado na sua meta SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow",
+    "SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow",
+    "VOCÊ SUBIU DE ESTÁGIO Em movimento",
+    "Meta concluída +100 Glow"
+   ],
+   "osciladores": 63,
+   "filaNoDisco": [],
+   "camadaVazia": true,
+   "prints": [],
+   "medidas": {},
+   "duracaoMs": 11177,
+   "erros": [],
+   "transbordoPx": 0
+  },
+  "selo-430-claro": {
+   "contraste": {
+    "textosMedidos": 4,
+    "abaixoDoMinimo": [
+     {
+      "texto": "Selo novo",
+      "contraste": 1,
+      "minimo": 4.5,
+      "corCss": "rgb(255, 45, 120)",
+      "fundo": "rgb(255,45,120)",
+      "tamanho": 11
+     },
+     {
+      "texto": "+20 Glow",
+      "contraste": 2.84,
+      "minimo": 4.5,
+      "corCss": "rgb(255, 45, 120)",
+      "fundo": "rgb(255,221,233)",
+      "tamanho": 13
+     }
+    ]
+   },
+   "toque": {
+    "alvosVisiveis": 1,
+    "menoresQue44": []
+   }
+  },
+  "selo-430-escuro": {
+   "contraste": {
+    "textosMedidos": 4,
+    "abaixoDoMinimo": [
+     {
+      "texto": "Selo novo",
+      "contraste": 1,
+      "minimo": 4.5,
+      "corCss": "rgb(255, 45, 120)",
+      "fundo": "rgb(255,45,120)",
+      "tamanho": 11
+     },
+     {
+      "texto": "+20 Glow",
+      "contraste": 4.14,
+      "minimo": 4.5,
+      "corCss": "rgb(255, 45, 120)",
+      "fundo": "rgb(72,22,42)",
+      "tamanho": 13
+     }
+    ]
+   },
+   "toque": {
+    "alvosVisiveis": 1,
+    "menoresQue44": []
+   }
+  }
+ },
+ "smoke": {
+  "discreto": {
+   "vistos": [
+    "Dinheiro guardado na sua meta",
+    "Rumo à meta",
+    "Em movimento",
+    "Meta concluída"
+   ],
+   "osciladores": 0,
+   "formaGrande": 0,
+   "canvasPintado": false
+  },
+  "atendimento": {
+   "naHora": {
+    "vistos": [
+     "Dia ativo"
+    ],
+    "filaNoDisco": [
+     "selo(adiada)"
+    ]
+   },
+   "proximaAbertura": {
+    "vistos": [
+     "SELO NOVO Mês a mês Um mês inteiro na sua Jornada. +20 Glow"
+    ]
+   }
+  },
+  "redeCaida": {
+   "toast": true,
+   "naLista": true,
+   "pendentes": [
+    "despesa"
+   ],
+   "erros": []
+  },
+  "recapEComemoracao": [
+   {
+    "ms": 300,
+    "recapVisivel": true,
+    "comemorando": true,
+    "porCima": "comemoracao"
+   },
+   {
+    "ms": 1300,
+    "recapVisivel": true,
+    "comemorando": true,
+    "porCima": "comemoracao"
+   },
+   {
+    "ms": 2500,
+    "recapVisivel": true,
+    "comemorando": true,
+    "porCima": "comemoracao"
+   }
+  ]
+ },
+ "saltos": {
+  "390": {
+   "rolagemDoInicio": {
+    "antes": {
+     "main": 0,
+     "janela": 167
+    },
+    "depois": {
+     "main": 0,
+     "janela": 167
+    },
+    "preservada": true
+   },
+   "clsAoAbrirTela": 0,
+   "clsTotal": 0,
+   "resumoNaoPula": true,
+   "alturasDoResumo": [
+    281,
+    281,
+    309
+   ]
+  },
+  "430": {
+   "rolagemDoInicio": {
+    "antes": {
+     "main": 0,
+     "janela": 123
+    },
+    "depois": {
+     "main": 0,
+     "janela": 123
+    },
+    "preservada": true
+   },
+   "clsAoAbrirTela": 0,
+   "clsTotal": 0,
+   "resumoNaoPula": true,
+   "alturasDoResumo": [
+    281,
+    281,
+    309
+   ]
+  }
+ }
+}
