@@ -396,6 +396,8 @@ export function FinanceiroTab({
 
           <SegmentedControl
             className="mb-5"
+            // #174: abas internas com alvo de toque de 44px.
+            minTouchTarget
             options={TABS}
             value={tab}
             onChange={changeTab}

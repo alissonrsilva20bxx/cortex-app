@@ -1,0 +1,582 @@
+{
+ "fase": "antes",
+ "financeiro": {
+  "claro": {
+   "periodo": {
+    "trilho": {
+     "w": 155.1,
+     "h": 28.5,
+     "fundo": "rgba(0, 0, 0, 0.08)",
+     "padding": "2px"
+    },
+    "botoes": [
+     {
+      "texto": "Semana",
+      "botao": {
+       "w": 60.7,
+       "h": 24.5
+      },
+      "pilula": {
+       "w": 60.7,
+       "h": 24.5,
+       "fundo": "rgb(255, 45, 120)",
+       "cor": "rgb(255, 255, 255)",
+       "fonte": "11px",
+       "raio": "8px"
+      }
+     },
+     {
+      "texto": "Mês",
+      "botao": {
+       "w": 41.3,
+       "h": 24.5
+      },
+      "pilula": {
+       "w": 41.3,
+       "h": 24.5,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(15, 15, 15, 0.69)",
+       "fonte": "11px",
+       "raio": "8px"
+      }
+     },
+     {
+      "texto": "Ano",
+      "botao": {
+       "w": 41.1,
+       "h": 24.5
+      },
+      "pilula": {
+       "w": 41.1,
+       "h": 24.5,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(15, 15, 15, 0.69)",
+       "fonte": "11px",
+       "raio": "8px"
+      }
+     }
+    ]
+   },
+   "abas": {
+    "trilho": {
+     "w": 358,
+     "h": 40,
+     "fundo": "rgba(0, 0, 0, 0.04)",
+     "padding": "4px"
+    },
+    "botoes": [
+     {
+      "texto": "Visão",
+      "botao": {
+       "w": 84.5,
+       "h": 32
+      },
+      "pilula": {
+       "w": 84.5,
+       "h": 32,
+       "fundo": "rgb(255, 45, 120)",
+       "cor": "rgb(255, 255, 255)",
+       "fonte": "12px",
+       "raio": "12px"
+      }
+     },
+     {
+      "texto": "Entradas",
+      "botao": {
+       "w": 84.5,
+       "h": 32
+      },
+      "pilula": {
+       "w": 84.5,
+       "h": 32,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(15, 15, 15, 0.69)",
+       "fonte": "12px",
+       "raio": "12px"
+      }
+     },
+     {
+      "texto": "Saídas",
+      "botao": {
+       "w": 84.5,
+       "h": 32
+      },
+      "pilula": {
+       "w": 84.5,
+       "h": 32,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(15, 15, 15, 0.69)",
+       "fonte": "12px",
+       "raio": "12px"
+      }
+     },
+     {
+      "texto": "Metas",
+      "botao": {
+       "w": 84.5,
+       "h": 32
+      },
+      "pilula": {
+       "w": 84.5,
+       "h": 32,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(15, 15, 15, 0.69)",
+       "fonte": "12px",
+       "raio": "12px"
+      }
+     }
+    ]
+   },
+   "seletoresMenoresQue44": [
+    {
+     "nome": "Semana",
+     "w": 61,
+     "h": 25
+    },
+    {
+     "nome": "Mês",
+     "w": 41,
+     "h": 25
+    },
+    {
+     "nome": "Ano",
+     "w": 41,
+     "h": 25
+    },
+    {
+     "nome": "Visão",
+     "w": 85,
+     "h": 32
+    },
+    {
+     "nome": "Entradas",
+     "w": 85,
+     "h": 32
+    },
+    {
+     "nome": "Saídas",
+     "w": 85,
+     "h": 32
+    },
+    {
+     "nome": "Metas",
+     "w": 85,
+     "h": 32
+    }
+   ]
+  },
+  "escuro": {
+   "periodo": {
+    "trilho": {
+     "w": 155.1,
+     "h": 28.5,
+     "fundo": "rgba(255, 45, 120, 0.086)",
+     "padding": "2px"
+    },
+    "botoes": [
+     {
+      "texto": "Semana",
+      "botao": {
+       "w": 60.7,
+       "h": 24.5
+      },
+      "pilula": {
+       "w": 60.7,
+       "h": 24.5,
+       "fundo": "rgb(255, 45, 120)",
+       "cor": "rgb(255, 255, 255)",
+       "fonte": "11px",
+       "raio": "8px"
+      }
+     },
+     {
+      "texto": "Mês",
+      "botao": {
+       "w": 41.3,
+       "h": 24.5
+      },
+      "pilula": {
+       "w": 41.3,
+       "h": 24.5,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(250, 238, 245, 0.6)",
+       "fonte": "11px",
+       "raio": "8px"
+      }
+     },
+     {
+      "texto": "Ano",
+      "botao": {
+       "w": 41.1,
+       "h": 24.5
+      },
+      "pilula": {
+       "w": 41.1,
+       "h": 24.5,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(250, 238, 245, 0.6)",
+       "fonte": "11px",
+       "raio": "8px"
+      }
+     }
+    ]
+   },
+   "abas": {
+    "trilho": {
+     "w": 358,
+     "h": 40,
+     "fundo": "rgba(255, 45, 120, 0.05)",
+     "padding": "4px"
+    },
+    "botoes": [
+     {
+      "texto": "Visão",
+      "botao": {
+       "w": 84.5,
+       "h": 32
+      },
+      "pilula": {
+       "w": 84.5,
+       "h": 32,
+       "fundo": "rgb(255, 45, 120)",
+       "cor": "rgb(255, 255, 255)",
+       "fonte": "12px",
+       "raio": "12px"
+      }
+     },
+     {
+      "texto": "Entradas",
+      "botao": {
+       "w": 84.5,
+       "h": 32
+      },
+      "pilula": {
+       "w": 84.5,
+       "h": 32,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(250, 238, 245, 0.6)",
+       "fonte": "12px",
+       "raio": "12px"
+      }
+     },
+     {
+      "texto": "Saídas",
+      "botao": {
+       "w": 84.5,
+       "h": 32
+      },
+      "pilula": {
+       "w": 84.5,
+       "h": 32,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(250, 238, 245, 0.6)",
+       "fonte": "12px",
+       "raio": "12px"
+      }
+     },
+     {
+      "texto": "Metas",
+      "botao": {
+       "w": 84.5,
+       "h": 32
+      },
+      "pilula": {
+       "w": 84.5,
+       "h": 32,
+       "fundo": "rgba(0, 0, 0, 0)",
+       "cor": "rgba(250, 238, 245, 0.6)",
+       "fonte": "12px",
+       "raio": "12px"
+      }
+     }
+    ]
+   },
+   "seletoresMenoresQue44": [
+    {
+     "nome": "Semana",
+     "w": 61,
+     "h": 25
+    },
+    {
+     "nome": "Mês",
+     "w": 41,
+     "h": 25
+    },
+    {
+     "nome": "Ano",
+     "w": 41,
+     "h": 25
+    },
+    {
+     "nome": "Visão",
+     "w": 85,
+     "h": 32
+    },
+    {
+     "nome": "Entradas",
+     "w": 85,
+     "h": 32
+    },
+    {
+     "nome": "Saídas",
+     "w": 85,
+     "h": 32
+    },
+    {
+     "nome": "Metas",
+     "w": 85,
+     "h": 32
+    }
+   ]
+  }
+ },
+ "outros": {
+  "agendaResumo": {
+   "trilho": {
+    "w": 155.1,
+    "h": 28.5,
+    "fundo": "rgba(0, 0, 0, 0.08)",
+    "padding": "2px"
+   },
+   "botoes": [
+    {
+     "texto": "Semana",
+     "botao": {
+      "w": 60.7,
+      "h": 24.5
+     },
+     "pilula": {
+      "w": 60.7,
+      "h": 24.5,
+      "fundo": "rgb(255, 45, 120)",
+      "cor": "rgb(255, 255, 255)",
+      "fonte": "11px",
+      "raio": "8px"
+     }
+    },
+    {
+     "texto": "Mês",
+     "botao": {
+      "w": 41.3,
+      "h": 24.5
+     },
+     "pilula": {
+      "w": 41.3,
+      "h": 24.5,
+      "fundo": "rgba(0, 0, 0, 0)",
+      "cor": "rgba(15, 15, 15, 0.69)",
+      "fonte": "11px",
+      "raio": "8px"
+     }
+    },
+    {
+     "texto": "Ano",
+     "botao": {
+      "w": 41.1,
+      "h": 24.5
+     },
+     "pilula": {
+      "w": 41.1,
+      "h": 24.5,
+      "fundo": "rgba(0, 0, 0, 0)",
+      "cor": "rgba(15, 15, 15, 0.69)",
+      "fonte": "11px",
+      "raio": "8px"
+     }
+    }
+   ]
+  },
+  "ajustesModo": {
+   "trilho": {
+    "w": 324,
+    "h": 40,
+    "fundo": "rgba(0, 0, 0, 0.04)",
+    "padding": "4px"
+   },
+   "botoes": [
+    {
+     "texto": "Escuro",
+     "botao": {
+      "w": 156,
+      "h": 32
+     },
+     "pilula": {
+      "w": 156,
+      "h": 32,
+      "fundo": "rgb(255, 45, 120)",
+      "cor": "rgb(255, 255, 255)",
+      "fonte": "12px",
+      "raio": "12px"
+     }
+    },
+    {
+     "texto": "Claro",
+     "botao": {
+      "w": 156,
+      "h": 32
+     },
+     "pilula": {
+      "w": 156,
+      "h": 32,
+      "fundo": "rgba(0, 0, 0, 0)",
+      "cor": "rgba(15, 15, 15, 0.69)",
+      "fonte": "12px",
+      "raio": "12px"
+     }
+    }
+   ]
+  },
+  "ajustesGraficos": [
+   {
+    "trilho": {
+     "w": 324,
+     "h": 28.5
+    },
+    "botoes": [
+     {
+      "texto": "Barras",
+      "w": 158,
+      "h": 24.5,
+      "fundo": "rgb(255, 45, 120)"
+     },
+     {
+      "texto": "Área",
+      "w": 158,
+      "h": 24.5,
+      "fundo": "rgba(0, 0, 0, 0)"
+     }
+    ]
+   },
+   {
+    "trilho": {
+     "w": 324,
+     "h": 28.5
+    },
+    "botoes": [
+     {
+      "texto": "Barras",
+      "w": 158,
+      "h": 24.5,
+      "fundo": "rgb(255, 45, 120)"
+     },
+     {
+      "texto": "Pizza",
+      "w": 158,
+      "h": 24.5,
+      "fundo": "rgba(0, 0, 0, 0)"
+     }
+    ]
+   }
+  ],
+  "amigas": {
+   "trilho": {
+    "w": 358,
+    "h": 40,
+    "fundo": "rgba(0, 0, 0, 0.04)",
+    "padding": "4px"
+   },
+   "botoes": [
+    {
+     "texto": "Minhas amigas",
+     "botao": {
+      "w": 114,
+      "h": 32
+     },
+     "pilula": {
+      "w": 114,
+      "h": 32,
+      "fundo": "rgba(0, 0, 0, 0)",
+      "cor": "rgba(15, 15, 15, 0.69)",
+      "fonte": "12px",
+      "raio": "12px"
+     }
+    },
+    {
+     "texto": "Solicitações (1)",
+     "botao": {
+      "w": 114,
+      "h": 32
+     },
+     "pilula": {
+      "w": 114,
+      "h": 32,
+      "fundo": "rgb(255, 45, 120)",
+      "cor": "rgb(255, 255, 255)",
+      "fonte": "12px",
+      "raio": "12px"
+     }
+    },
+    {
+     "texto": "Descobrir",
+     "botao": {
+      "w": 114,
+      "h": 32
+     },
+     "pilula": {
+      "w": 114,
+      "h": 32,
+      "fundo": "rgba(0, 0, 0, 0)",
+      "cor": "rgba(15, 15, 15, 0.69)",
+      "fonte": "12px",
+      "raio": "12px"
+     }
+    }
+   ]
+  },
+  "meuEspacoPrivacidade": {
+   "trilho": {
+    "w": 348,
+    "h": 28.5,
+    "fundo": "rgba(0, 0, 0, 0.08)",
+    "padding": "2px"
+   },
+   "botoes": [
+    {
+     "texto": "Privado",
+     "botao": {
+      "w": 112,
+      "h": 24.5
+     },
+     "pilula": {
+      "w": 112,
+      "h": 24.5,
+      "fundo": "rgba(0, 0, 0, 0)",
+      "cor": "rgba(15, 15, 15, 0.69)",
+      "fonte": "11px",
+      "raio": "8px"
+     }
+    },
+    {
+     "texto": "Amigas",
+     "botao": {
+      "w": 112,
+      "h": 24.5
+     },
+     "pilula": {
+      "w": 112,
+      "h": 24.5,
+      "fundo": "rgb(255, 45, 120)",
+      "cor": "rgb(255, 255, 255)",
+      "fonte": "11px",
+      "raio": "8px"
+     }
+    },
+    {
+     "texto": "Comunidade",
+     "botao": {
+      "w": 112,
+      "h": 24.5
+     },
+     "pilula": {
+      "w": 112,
+      "h": 24.5,
+      "fundo": "rgba(0, 0, 0, 0)",
+      "cor": "rgba(15, 15, 15, 0.69)",
+      "fonte": "11px",
+      "raio": "8px"
+     }
+    }
+   ]
+  }
+ }
+}
