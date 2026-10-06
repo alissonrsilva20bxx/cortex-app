@@ -362,19 +362,24 @@ r = await aplica(I, "atendimento", D1); // 1ª chamada: selo Mês a mês I
 espera(r.fila[0].tipo === "pequena" && r.fila[0].adiada === false && r.fila.some((f) => f.tipo === "selo" && f.adiada === true),
   "atendimento: a pequena vem na hora; o selo vem adiada pra próxima abertura");
 
-// ---------------------------------------------------------------- meta_concluida (o servidor confere)
+// ---------------------------------------------------------------- meta: o servidor decide sozinho
 const J = "14141414-0000-4000-8000-000000000014";
 await db.exec(`insert into auth.users (id, email) values ('${J}', 'j@x');
   insert into public.rede_perfis (user_id, nome_exibicao, cor_avatar) values ('${J}', 'J', 'rosa');
   insert into public.rede_wishlist_items (id, user_id, nome, cor, valor_alvo, valor_atual)
     values ('11111111-0000-4000-8000-000000000014', '${J}', 'X', 'rosa', 200, 50);`);
-r = await aplica(J, "meta_concluida", D1);
-espera(!r.fila.some((f) => f.tipo === "meta") && !r.fila.some((f) => f.tipo === "pequena"), "meta_concluida com meta não cheia: nada (o pedido não decide)");
+await como("authenticated", J, async () => {
+  const x = await reg("meta_concluida", chave(), "Europe/Lisbon", 60);
+  espera(!x.ok && /não permitida/.test(x.erro), `meta_concluida não é ação do cliente (${x.erro ?? "aceitou!"})`);
+  const ab = await reg("abrir_jornada", chave(), "Europe/Lisbon", 60);
+  espera(ab.ok && ab.rows[0].r.comemoracoes.some((c) => c.selo === "primeiros_passos") && ab.rows[0].r.estado.selos.primeiros_passos === 1,
+    "abrir_jornada pela RPC: o selo Primeiros passos é alcançável");
+});
+r = await aplica(J, "guardar_meta", D1);
+espera(!r.fila.some((f) => f.tipo === "meta"), "guardar com a meta não cheia: sem +100");
 await db.exec(`update public.rede_wishlist_items set valor_atual = 200 where user_id = '${J}'`);
-r = await aplica(J, "meta_concluida", D1);
-espera(r.fila.filter((f) => f.tipo === "meta").length === 1 && r.fila.find((f) => f.tipo === "meta").glow === 100, "meta_concluida com a meta cheia de verdade: +100");
-r = await aplica(J, "meta_concluida", "2026-10-07");
-espera(!r.fila.some((f) => f.tipo === "meta"), "meta_concluida de novo: não premia duas vezes");
+r = await aplica(J, "guardar_meta", "2026-10-07");
+espera(r.fila.filter((f) => f.tipo === "meta").length === 1, "guardar com a meta cheia de verdade: +100 uma vez");
 
 // ---------------------------------------------------------------- nada de diário
 const tempo = await db.query(`

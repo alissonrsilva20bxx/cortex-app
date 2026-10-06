@@ -18,6 +18,9 @@ import type {
  * - `erro`: código do último problema (texto em `lib/jornada/textos.ts`).
  * - `registrar(acao)`: registra uma ação e devolve as comemorações que o
  *   servidor mandou. Nunca lança; sem rede, o pedido é guardado e reenviado.
+ * - `registrarAbertura()`: chame ao abrir a tela "Sua Jornada" (selo
+ *   Primeiros passos). Conta uma vez por abertura do app; é a ÚNICA chamada
+ *   segura de fazer num efeito.
  * - `fila` / `proximaComemoracao`: comemorações pendentes, na ordem do
  *   servidor. Persistem entre aberturas do app.
  * - `consumirComemoracao(id)`: tira uma da fila depois de tocada.
@@ -33,6 +36,7 @@ export interface UsoJornada {
   fila: Comemoracao[];
   proximaComemoracao: Comemoracao | null;
   registrar: (acao: Acao) => Promise<Comemoracao[]>;
+  registrarAbertura: () => Promise<Comemoracao[]>;
   consumirComemoracao: (id: string) => void;
   recarregar: () => Promise<void>;
 }
@@ -60,6 +64,7 @@ export function useJornada(userId: string): UsoJornada {
   }, [loja]);
 
   const registrar = useCallback((acao: Acao) => loja.registrar(acao), [loja]);
+  const registrarAbertura = useCallback(() => loja.registrarAbertura(), [loja]);
   const consumirComemoracao = useCallback(
     (id: string) => loja.consumir(id),
     [loja]
@@ -73,6 +78,7 @@ export function useJornada(userId: string): UsoJornada {
     fila: retrato.fila,
     proximaComemoracao: retrato.fila[0] ?? null,
     registrar,
+    registrarAbertura,
     consumirComemoracao,
     recarregar,
   };

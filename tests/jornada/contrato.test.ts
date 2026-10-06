@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
   ACOES,
+  ACOES_DA_DICA,
   MARCOS_DINHEIRO,
   PILARES,
   SELOS,
@@ -160,15 +161,23 @@ describe("pilares = spec §1.3", () => {
 describe("ações = spec §3 = migration 0034 (J09)", () => {
   const migration = read("supabase/migrations/0034_jornada_contadores.sql");
 
+  // As 9 da §3 = as que o cliente registra (menos abrir_jornada, que não é
+  // da tabela §3: é o contador do selo Primeiros passos, §5) + as 2 de dica,
+  // que o servidor credita à autora.
+  const daSpec3 = [
+    ...ACOES.filter((a) => a !== "abrir_jornada"),
+    ...ACOES_DA_DICA,
+  ];
+
   it("o mesmo número de ações da tabela da §3 (9)", () => {
     const daSpec = linhasDaSecao(3).filter(
       (c) => c.length === 4 && c[0] !== "Ação"
     );
     expect(daSpec).toHaveLength(9);
-    expect(ACOES).toHaveLength(daSpec.length);
+    expect(daSpec3).toHaveLength(daSpec.length);
   });
 
-  it("cada ação do cliente é uma chave de ação da J09", () => {
+  it("cada ação da §3 é uma chave de ação da J09", () => {
     const bloco = migration.match(
       /Chaves de ação da §3[^\n]*\n((?:--[^\n]*\n)+)/
     );
@@ -176,6 +185,6 @@ describe("ações = spec §3 = migration 0034 (J09)", () => {
     const daMigration = [...bloco![1].matchAll(/'([a-z_]+)'/g)].map(
       (m) => m[1]
     );
-    expect([...ACOES].sort()).toEqual([...daMigration].sort());
+    expect([...daSpec3].sort()).toEqual([...daMigration].sort());
   });
 });

@@ -4,6 +4,13 @@ import path from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import {
+  ACOES,
+  ACOES_DA_DICA,
+  TIPOS_COMEMORACAO,
+  TIPOS_MISSAO,
+} from "../../lib/jornada/estado";
+
 /**
  * J10 (#160): o motor da Jornada no servidor.
  *
@@ -105,14 +112,12 @@ describe("J10 contrato: números do motor = spec", () => {
     for (const [acao, esperado] of daSpec) {
       expect(doSql.get(acao), acao).toEqual(esperado);
     }
-    // Além das 9 da spec, só abrir_jornada ("Primeiros passos") e
-    // meta_concluida (faz conferir as metas), as duas com 0 Glow.
+    // Além das 9 da spec, só abrir_jornada (0 Glow, contador do selo
+    // "Primeiros passos", §5).
     expect([...doSql.keys()].filter((k) => !daSpec.has(k))).toEqual([
       "abrir_jornada",
-      "meta_concluida",
     ]);
     expect(doSql.get("abrir_jornada")?.glow).toBe(0);
-    expect(doSql.get("meta_concluida")?.glow).toBe(0);
   });
 
   it("§3: prêmios de uma vez (meta +100, marco +50, capítulo +40, selo 20/30/50)", () => {
@@ -267,9 +272,8 @@ describe("J10 contrato: ordem da fila", () => {
     }
   });
 
-  it("os tipos do cliente (servidor.ts) listam a mesma ordem", () => {
-    const linha = servidor.match(/tipo:((?:\s*\|?\s*"[a-z]+")+);/);
-    expect(linha?.[1].match(/[a-z]+/g)).toEqual(ORDEM);
+  it("o cliente (TIPOS_COMEMORACAO de estado.ts) tem a mesma ordem", () => {
+    expect([...TIPOS_COMEMORACAO]).toEqual(ORDEM);
   });
 
   it("o estágio é calculado depois de TODO o Glow da chamada", () => {
@@ -289,12 +293,7 @@ describe("J10 contrato: ordem da fila", () => {
   });
 
   it("as missões usam os nomes de tipo da J11", () => {
-    const tiposTs = (
-      servidor
-        .slice(servidor.indexOf("export type TipoMissaoServidor"))
-        .split(";")[0]
-        .match(/"[a-z_]+"/g) ?? []
-    ).map((t) => t.slice(1, -1));
+    const tiposTs: string[] = [...TIPOS_MISSAO];
     const missoes = corpoDaFuncao(sql0035, "private.jornada_missoes");
     const doSql = [...missoes.matchAll(/\('[a-z_]+', '([a-z_]+)'\)/g)].map(
       (m) => m[1]
@@ -367,8 +366,58 @@ describe("J10 contrato: segurança das funções", () => {
     expect(permitidas).not.toContain("dica_");
   });
 
-  it("lib/jornada/servidor.ts não carrega regra nenhuma (só tipos e chamada)", () => {
+  it("o servidor aceita EXATAMENTE as ações que o cliente oferece (ACOES)", () => {
+    const corpo = corpoDaFuncao(sql0035, "public.jornada_registrar");
+    const inicio = corpo.indexOf("not in (");
+    const permitidas = [
+      ...corpo
+        .slice(inicio, corpo.indexOf(") then", inicio))
+        .matchAll(/'([a-z_]+)'/g),
+    ].map((m) => m[1]);
+    expect([...permitidas].sort()).toEqual([...ACOES].sort());
+    // Toda ação oferecida tem regra no motor; as de dica também (autora).
+    const regra = corpoDaFuncao(sql0035, "private.jornada_regra");
+    for (const a of [...ACOES, ...ACOES_DA_DICA]) {
+      expect(regra, a).toContain(`('${a}',`);
+    }
+    // "Primeiros passos" (§5) conta a ação que o cliente consegue enviar.
+    expect(ACOES).toContain("abrir_jornada");
+    expect(corpoDaFuncao(sql0035, "private.jornada_selos_def")).toMatch(
+      /\('primeiros_passos',\s*'organizar',\s*'abrir_jornada'/
+    );
+  });
+
+  it("todo selo é alcançável: a fonte dele é uma ação do cliente, da dica ou um contador do motor", () => {
+    const def = corpoDaFuncao(sql0035, "private.jornada_selos_def");
+    const fontes = [
+      ...def.matchAll(/\('[a-z_]+',\s*'[a-z]+',\s*'([a-z_]+)'/g),
+    ].map((m) => m[1]);
+    expect(fontes).toHaveLength(11);
+    const motor = corpoDaFuncao(sql0035, "private.jornada_aplicar");
+    const total = corpoDaFuncao(sql0035, "private.jornada_total");
+    for (const f of fontes) {
+      const alcancavel =
+        (ACOES as readonly string[]).includes(f) ||
+        (ACOES_DA_DICA as readonly string[]).includes(f) ||
+        // dias_<acao> por dia (planejar, descanso), sempre de uma ação do cliente
+        (f.startsWith("dias_") &&
+          (ACOES as readonly string[]).includes(f.replace("dias_", ""))) ||
+        motor.includes(`'${f}'`) ||
+        total.includes(`when '${f}'`);
+      expect(alcancavel, f).toBe(true);
+    }
+  });
+
+  it("lib/jornada/servidor.ts não carrega regra nenhuma nem redeclara o contrato", () => {
     expect(servidor).not.toMatch(/\b(?:1200|1500|3000)\b/);
+    // Uma fonte só: os tipos vêm de estado.ts, nada é redeclarado aqui.
+    expect(servidor).toMatch(/from "\.\/estado"/);
+    expect(servidor).not.toMatch(/export (type|interface) /);
+    // E o cliente chama as RPCs só por aqui.
+    const cliente = ler("lib/jornada/cliente.ts");
+    expect(cliente).toMatch(/from "\.\/servidor"/);
+    expect(cliente).not.toContain('"jornada_registrar"');
+    expect(cliente).not.toContain('"jornada_estado"');
     expect(servidor).not.toMatch(/limite\s*[:=]/);
     expect(servidor).toContain('chamar(client, "jornada_registrar"');
     expect(servidor).toContain('chamar(client, "jornada_estado"');

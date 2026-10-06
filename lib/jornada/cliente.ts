@@ -21,6 +21,7 @@
 
 import { supabase } from "@/lib/supabase";
 import * as cache from "./cache";
+import { lerEstadoDoServidor, registrarNoServidor } from "./servidor";
 import {
   ehComemoracao,
   ehEstadoJornada,
@@ -52,51 +53,15 @@ export function fusoDaUsuaria(agora: Date = new Date()): {
 // ─────────────────────── transporte (Supabase / J10) ───────────────────
 
 /**
- * As RPCs da J10. É o único trecho do app que sabe os nomes e o formato do
- * servidor; se a J10 mudar o contrato, só isto muda.
- *
- *  - `jornada_estado(p_fuso, p_deslocamento_min)` → EstadoJornada
- *  - `jornada_registrar(p_acao, p_chave, p_fuso, p_deslocamento_min)`
- *      → { estado: EstadoJornada, comemoracoes: Comemoracao[] }
- *
- * A usuária é sempre a do `auth.uid()` no servidor; nenhum id vai daqui.
+ * As RPCs da J10, pela porta única `servidor.ts` (o único arquivo que sabe
+ * os nomes e os parâmetros delas). Mesma forma dos dois lados: os tipos de
+ * `estado.ts`. A usuária é sempre a do `auth.uid()` no servidor; nenhum id
+ * vai daqui.
  */
-/**
- * As RPCs da J10 ainda não existem em `lib/database.types.ts` (gerado do
- * banco), então o `rpc` tipado recusa o nome. Chamada sem tipo só aqui; a
- * resposta é conferida pela loja (`ehEstadoJornada`, `ehComemoracao`) antes
- * de ser usada. Quando a J10 regenerar os tipos, esta conversão pode sair.
- */
-type RpcSemTipo = (
-  funcao: string,
-  args: Record<string, unknown>
-) => PromiseLike<{ data: unknown; error: unknown }>;
-
-async function chamarRpc(
-  funcao: string,
-  args: Record<string, unknown>
-): Promise<unknown> {
-  const rpc = supabase.rpc as unknown as RpcSemTipo;
-  const { data, error } = await rpc.call(supabase, funcao, args);
-  if (error) throw error;
-  return data;
-}
-
 export const transporteSupabase: TransporteJornada = {
-  async lerEstado(fuso, deslocamentoMin) {
-    return (await chamarRpc("jornada_estado", {
-      p_fuso: fuso,
-      p_deslocamento_min: deslocamentoMin,
-    })) as EstadoJornada;
-  },
-  async registrar(pedido) {
-    return (await chamarRpc("jornada_registrar", {
-      p_acao: pedido.acao,
-      p_chave: pedido.chave,
-      p_fuso: pedido.fuso,
-      p_deslocamento_min: pedido.deslocamentoMin,
-    })) as RespostaRegistro;
-  },
+  lerEstado: (fuso, deslocamentoMin) =>
+    lerEstadoDoServidor(supabase, fuso, deslocamentoMin),
+  registrar: (pedido) => registrarNoServidor(supabase, pedido),
 };
 
 // ─────────────────────────────── a loja ──────────────────────────────────
@@ -117,6 +82,13 @@ export interface LojaJornada {
   retrato(): RetratoJornada;
   carregar(): Promise<void>;
   registrar(acao: Acao): Promise<Comemoracao[]>;
+  /**
+   * Abriu a tela "Sua Jornada" (selo Primeiros passos, §5). Conta UMA vez
+   * por abertura do app: a chave é fixa nesta loja, então montar duas vezes
+   * (StrictMode) ou chamar de novo não registra de novo -- pode ser chamada
+   * num efeito.
+   */
+  registrarAbertura(): Promise<Comemoracao[]>;
   consumir(id: string): void;
   enviarPendentes(): Promise<void>;
 }
@@ -161,6 +133,8 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
   let envio: Promise<void> | null = null;
   /** Chaves sendo enviadas agora: o mesmo pedido nunca vai duas vezes ao mesmo tempo. */
   const emVoo = new Set<string>();
+  /** Chave da abertura desta sessão; null até a 1ª `registrarAbertura`. */
+  let chaveAbertura: string | null = null;
   let ultimo: RetratoJornada | null = null;
 
   function montarRetrato(): RetratoJornada {
@@ -230,6 +204,22 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
     }
   }
 
+  async function registrarComChave(
+    acao: Acao,
+    chave: string
+  ): Promise<Comemoracao[]> {
+    const { fuso: f, deslocamentoMin } = fuso();
+    const pedido: PedidoRegistro = { acao, chave, fuso: f, deslocamentoMin };
+    // Guarda ANTES de mandar: se o app fechar no meio, o pedido não se perde.
+    cache.atualizar(userId, (r) => ({
+      ...r,
+      pendentes: [...r.pendentes, pedido],
+    }));
+    avisar();
+    const novas = await enviar(pedido);
+    return novas ?? [];
+  }
+
   const loja: LojaJornada = {
     assinar(ouvinte) {
       ouvintes.add(ouvinte);
@@ -265,22 +255,14 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
       return carregamento;
     },
 
-    async registrar(acao) {
-      const { fuso: f, deslocamentoMin } = fuso();
-      const pedido: PedidoRegistro = {
-        acao,
-        chave: gerarChave(),
-        fuso: f,
-        deslocamentoMin,
-      };
-      // Guarda ANTES de mandar: se o app fechar no meio, o pedido não se perde.
-      cache.atualizar(userId, (r) => ({
-        ...r,
-        pendentes: [...r.pendentes, pedido],
-      }));
-      avisar();
-      const novas = await enviar(pedido);
-      return novas ?? [];
+    registrar(acao) {
+      return registrarComChave(acao, gerarChave());
+    },
+
+    registrarAbertura() {
+      if (chaveAbertura !== null) return Promise.resolve([]);
+      chaveAbertura = gerarChave();
+      return registrarComChave("abrir_jornada", chaveAbertura);
     },
 
     consumir(id) {

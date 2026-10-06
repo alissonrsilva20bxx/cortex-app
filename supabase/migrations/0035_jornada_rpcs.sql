@@ -104,9 +104,8 @@ create policy "jornada_metas_premiadas: owner select"
 -- §3: Glow, limite por dia e pilar de cada ação.
 --   por_dia  o contador de período e o de vida inteira contam DIAS (no
 --            máximo 1 por dia): "Planejar 6 dias", "dias de descanso".
--- 'atendimento', 'abrir_jornada' e 'meta_concluida' dão 0 Glow: atendimento
--- só marca o dia como ativo (decisão de produto, §3); abrir alimenta
--- "Primeiros passos"; meta_concluida só faz conferir as metas (§7).
+-- 'atendimento' e 'abrir_jornada' dão 0 Glow: atendimento só marca o dia
+-- como ativo (decisão de produto, §3); abrir alimenta "Primeiros passos".
 create or replace function private.jornada_regra(p_acao text)
 returns table (glow integer, limite integer, pilar text, por_dia boolean)
 language sql
@@ -124,8 +123,7 @@ as $$
     ('dica_ajudou',       5, 5, 'conectar',  false),
     ('dica_protegeu',     5, 5, 'conectar',  false),
     ('atendimento',       0, 1, null,        true),
-    ('abrir_jornada',     0, 1, null,        true),
-    ('meta_concluida',    0, 1, null,        false)
+    ('abrir_jornada',     0, 1, null,        true)
   ) as r(acao, glow, limite, pilar, por_dia)
   where r.acao = p_acao;
 $$;
@@ -721,7 +719,7 @@ begin
   -- 5c: meta concluída e marcos de dinheiro (§7), fora do limite do dia.
   -- Os valores vêm da Wishlist dela (dinheiro de verdade), nunca do pedido:
   -- cada item que já bateu o alvo e ainda não foi premiado dá +100, uma vez.
-  if p_acao in ('guardar_meta', 'meta_concluida') then
+  if p_acao = 'guardar_meta' then
     for v_item in
       select w.id from public.rede_wishlist_items w
       where w.user_id = p_user and w.valor_alvo > 0 and w.valor_atual >= w.valor_alvo
@@ -935,11 +933,12 @@ $$;
 -- A RPC central (cliente)
 -- ------------------------------------------------------------
 -- Contrato da J11 (#187): jornada_registrar(p_acao, p_chave, p_fuso,
--- p_deslocamento_min) -> { estado, comemoracoes }. Ações que o CLIENTE pode
--- registrar: "Isso me ajudou/protegeu" não está aqui (quem clica é outra
--- pessoa e o Glow é da autora, ver jornada_creditar_dica). 'meta_concluida'
--- é aceita, mas não dá nada por si: só faz o servidor conferir as metas na
--- Wishlist (quem decide se concluiu é o dinheiro de verdade, nunca o pedido).
+-- p_deslocamento_min) -> { estado, comemoracoes }. As ações aceitas são
+-- EXATAMENTE `ACOES` de lib/jornada/estado.ts (o teste de contrato trava as
+-- duas listas juntas). "Isso me ajudou/protegeu" não está aqui: quem clica é
+-- outra pessoa e o Glow é da autora (ver jornada_creditar_dica). Meta
+-- concluída também não: é prêmio que o servidor decide sozinho, conferindo
+-- a Wishlist a cada guardar_meta (§3, §7).
 create or replace function public.jornada_registrar(
   p_acao text,
   p_chave text,
@@ -961,7 +960,7 @@ begin
   end if;
   if p_acao is null or p_acao not in (
     'despesa', 'receita', 'planejar', 'guardar_meta', 'comprovante_cofre',
-    'descanso', 'atendimento', 'abrir_jornada', 'meta_concluida'
+    'descanso', 'atendimento', 'abrir_jornada'
   ) then
     raise exception 'jornada: ação não permitida' using errcode = '22023';
   end if;

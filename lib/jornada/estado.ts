@@ -18,10 +18,13 @@ export const PILARES = [
 export type Pilar = (typeof PILARES)[number];
 
 /**
- * As 9 ações que o app registra (spec, §3). As chaves batem com as da J09
- * (`jornada_acoes.acao`, migration 0034). `atendimento` existe e não dá
- * Glow (decisão 1). Concluir uma meta NÃO é ação do cliente: é prêmio de uma
- * vez que o servidor decide sozinho a partir das metas dela (§3, §7).
+ * As ações que o CLIENTE registra -- exatamente as que `jornada_registrar`
+ * (J10, migration 0035) aceita; o teste de contrato trava as duas listas.
+ * São as da §3 menos as duas de dica (ver `ACOES_DA_DICA`), mais
+ * `abrir_jornada`: abrir a tela "Sua Jornada" é o contador do selo
+ * "Primeiros passos" (§5) e não dá Glow. `atendimento` existe e não dá Glow
+ * (decisão 1). Concluir uma meta NÃO é ação do cliente: é prêmio de uma vez
+ * que o servidor decide sozinho a partir das metas dela (§3, §7).
  */
 export const ACOES = [
   "despesa",
@@ -30,11 +33,20 @@ export const ACOES = [
   "guardar_meta",
   "comprovante_cofre",
   "descanso",
-  "dica_ajudou",
-  "dica_protegeu",
   "atendimento",
+  "abrir_jornada",
 ] as const;
 export type Acao = (typeof ACOES)[number];
+
+/**
+ * "Isso me ajudou" e "Isso me protegeu" (§3) são ações da spec, mas NÃO do
+ * cliente: quem clica é outra pessoa e o Glow é da autora da dica. O
+ * servidor credita a autora (`private.jornada_creditar_dica`, J10) e recusa
+ * essas chaves em `jornada_registrar`. Ficam aqui só pra nomear os
+ * contadores (`ajudou`, `protegeu`) e os textos.
+ */
+export const ACOES_DA_DICA = ["dica_ajudou", "dica_protegeu"] as const;
+export type AcaoDaDica = (typeof ACOES_DA_DICA)[number];
 
 /** Os 11 selos (spec, §5), com as chaves da J09 (`jornada_selos.selo`). */
 export const SELOS = [
@@ -118,6 +130,26 @@ export interface EstadoJornada {
   ajudou: number;
   protegeu: number;
   preferencias: Preferencias;
+  /** Glow total em que começou o estágio atual (início da barra). */
+  glowInicioEstagio?: number;
+  /** Hoje no fuso dela, AAAA-MM-DD. */
+  hoje?: string;
+  /** Itens destravados por estágio (`moldura_estagio_N`, `icone_…`, `tema_…`). */
+  destravados?: string[];
+  /** Agregados do período corrente e do último fechado (resumos, J14). */
+  periodos?: {
+    corrente: Record<TipoPeriodo, Periodo>;
+    ultimoFechado: Partial<Record<TipoPeriodo, Periodo>>;
+  };
+}
+
+export type TipoPeriodo = "semana" | "mes" | "ano";
+
+/** Só números agregados ("despesa": 12, "dias_fortes": 4…), nunca um diário. */
+export interface Periodo {
+  /** Primeiro dia do período (segunda-feira, dia 1, 1º de janeiro), AAAA-MM-DD. */
+  inicio: string;
+  contadores: Record<string, number>;
 }
 
 /**
@@ -150,6 +182,11 @@ export interface Comemoracao {
   capitulo?: MesDaColecao;
   /** Comemoração grande que o servidor pediu pra deixar pra próxima abertura. */
   adiada?: boolean;
+  /** Pilar que recebeu o Glow (pequena e selo). */
+  pilar?: Pilar | null;
+  /** No tipo "estagio": o estágio anterior e os itens destravados agora. */
+  de?: number;
+  itens?: string[];
 }
 
 /** O que o cliente manda a cada registro de ação. */
@@ -166,6 +203,8 @@ export interface PedidoRegistro {
 export interface RespostaRegistro {
   estado: EstadoJornada;
   comemoracoes: Comemoracao[];
+  /** A mesma chave já tinha chegado: nada contou de novo. */
+  duplicada?: boolean;
 }
 
 /**
