@@ -59,7 +59,7 @@ export function JornadaCard({ userId, onAbrir }: Props) {
   const Icone =
     ICONE_DO_ESTAGIO[Math.min(estado.estagio, ICONE_DO_ESTAGIO.length - 1)];
   const capitulo = estado.capitulo;
-  const ritmoCompleto = contadorDaSemana(estado, "semana_firme") > 0;
+  const ritmoCompleto = contadorDaSemana(estado, "firme") > 0;
 
   return (
     <InicioCard

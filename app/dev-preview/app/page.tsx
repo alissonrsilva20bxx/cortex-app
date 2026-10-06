@@ -14,6 +14,7 @@ import { SemanaSection } from "@/components/home/SemanaSection";
 import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
 import { JornadaCard } from "@/components/home/JornadaCard";
 import { JornadaScreen } from "@/components/jornada/JornadaScreen";
+import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
 import { usarTransporteDeLaboratorio } from "@/lib/jornada/cliente";
 import {
   criarTransporteJornadaLaboratorio,
@@ -586,6 +587,7 @@ export default function DevPreviewApp() {
           onVoltar={() => setJornadaAberta(false)}
         />
       )}
+      <ComemoracaoHost userId={usuario.id} />
 
       <JobForm
         open={jobFormOpen}
