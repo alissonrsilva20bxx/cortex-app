@@ -66,6 +66,12 @@ export interface HomeCardConfig {
   nextJob: boolean;
   financeSummary: boolean;
   objetivos?: boolean;
+  /**
+   * Bloco da Agenda na Início ("Esta semana" + "Próximos atendimentos").
+   * Opcional de propósito: quem já tem `jobapp-home-cards` gravado não tem
+   * essa chave, e `?? true` mantém a Agenda visível pra essas pessoas.
+   */
+  agenda?: boolean;
 }
 
 export type CardStyle = "compact" | "standard";

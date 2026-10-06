@@ -74,6 +74,7 @@ const DEFAULT_HOME_CARDS: HomeCardConfig = {
   nextJob: true,
   financeSummary: true,
   objetivos: true,
+  agenda: true,
 };
 const DEFAULT_CARD_STYLES: CardStyleConfig = {
   nextJob: "standard",
@@ -563,11 +564,18 @@ export default function Page() {
                   />
                 </div>
 
-                <SemanaSection
-                  jobs={jobs}
-                  onGoToAgenda={() => handleTabChange("jobs")}
-                />
-                <ProximosAtendimentos jobs={jobs} />
+                {/* Bloco da Agenda: removível em Ajustes › Tela inicial
+                    (#181). `?? true` mantém visível pra quem já tinha
+                    preferência salva antes dessa chave existir. */}
+                {(homeCards.agenda ?? true) && (
+                  <>
+                    <SemanaSection
+                      jobs={jobs}
+                      onGoToAgenda={() => handleTabChange("jobs")}
+                    />
+                    <ProximosAtendimentos jobs={jobs} />
+                  </>
+                )}
 
                 {/* Convite de instalação — dispensável, nunca compete com o
                     card principal pela atenção (por isso vem por último). */}
