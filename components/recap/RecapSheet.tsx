@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { formatBRL, monthEarnings, monthConcludedCount } from "@/lib/finance";
 import type { Job } from "@/lib/types";
+import { usePausarComemoracao } from "@/components/jornada/celebracao/pausa";
 
 /**
  * Recap do mês fechado (§7.3): "Você construiu R$ X em <mês> — no seu
@@ -32,6 +33,8 @@ interface Props {
 export function RecapSheet({ jobs }: Props) {
   const [recap, setRecap] = useState<Recap | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  // Recap primeiro, comemoração da Jornada depois (#196).
+  usePausarComemoracao("recap", !!recap && !dismissed);
 
   useEffect(() => {
     const now = new Date();

@@ -185,12 +185,15 @@ export const SELO: Record<SeloId, TextoSelo> = {
   },
   mes_a_mes: {
     nome: "Mês a mês",
-    descricao: "Um mês inteiro na sua Jornada.",
+    // Spec §5: "meses na Jornada", I = 1 -- conta o mês em que ela está,
+    // não um mês completo (#199).
+    descricao: "Seu primeiro mês na Jornada.",
     unidade: "meses na sua Jornada",
   },
   um_ano: {
     nome: "Um ano",
-    descricao: "Um ano inteiro cuidando de você.",
+    // Spec §5: "um ano na Jornada" = 12 meses na Jornada (#199).
+    descricao: "Um ano na sua Jornada.",
     unidade: "",
   },
 };
