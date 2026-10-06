@@ -1,0 +1,581 @@
+/*
+ * Comemoração da Jornada (J13). Portado do protótipo aprovado
+ * (docs/jornada/referencias/prototipo-sua-jornada.html: .toast, #ovBadge,
+ * #ovStage, canvas#fx), com os tokens do app no lugar dos --t-* do
+ * protótipo. Nenhum token global é criado ou alterado aqui.
+ */
+
+.raiz {
+  --c-acc: var(--accent);
+  --c-deep: color-mix(in srgb, var(--accent) 62%, #1a0b14);
+  --c-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+  --c-card: var(--card-solid, var(--bg));
+  --c-ink: var(--text);
+  --c-mut: var(--text-muted);
+  --ease: cubic-bezier(0.3, 0.8, 0.25, 1);
+  --spring: cubic-bezier(0.2, 1.4, 0.4, 1);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ───────────── aviso (o .toast do protótipo) ───────────── */
+
+.aviso {
+  position: absolute;
+  left: 50%;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  z-index: 4;
+  transform: translate(-50%, -150%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 18px 7px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-card) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.18);
+  transition: transform 0.55s var(--spring);
+  white-space: nowrap;
+  max-width: calc(100% - 32px);
+  color: var(--c-ink);
+}
+
+.aviso.on {
+  transform: translate(-50%, 0);
+}
+
+.avisoIcone {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--c-acc);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.aviso.on .avisoIcone svg {
+  animation: spinpop 0.8s var(--spring);
+}
+
+.aviso.neutro .avisoIcone {
+  background: var(--surface-2);
+  color: var(--c-ink);
+}
+
+@keyframes spinpop {
+  0% {
+    transform: scale(0.2) rotate(-120deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.avisoTexto {
+  min-width: 0;
+}
+
+.avisoTexto b {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.avisoTexto span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--c-mut);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ───────────── camada (o .ov do protótipo) ───────────── */
+
+.camada {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.camada.on {
+  opacity: 1;
+}
+
+/* ───────────── selo (o #ovBadge do protótipo) ───────────── */
+
+.escurece {
+  position: absolute;
+  inset: 0;
+  background: rgb(10 8 14 / 0.55);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.cartao {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(300px, calc(100% - 40px));
+  transform: translate(-50%, -50%);
+  background: var(--c-card);
+  color: var(--c-ink);
+  border-radius: 30px;
+  padding: 32px 22px 26px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.camada.on .cartao {
+  animation: cardin 0.45s var(--spring);
+}
+
+.cartao.treme {
+  animation: shake 0.32s !important;
+}
+
+@keyframes cardin {
+  0% {
+    transform: translate(-50%, -40%) scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(-50%, -50%);
+  }
+  20% {
+    transform: translate(calc(-50% - 4px), calc(-50% + 3px));
+  }
+  40% {
+    transform: translate(calc(-50% + 4px), calc(-50% - 2px));
+  }
+  60% {
+    transform: translate(calc(-50% - 2px), calc(-50% + 1px));
+  }
+  80% {
+    transform: translate(calc(-50% + 1px), -50%);
+  }
+}
+
+.raios {
+  position: absolute;
+  left: 50%;
+  top: 92px;
+  width: 420px;
+  height: 420px;
+  margin: -210px 0 0 -210px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--c-acc) 20%, transparent) 0deg 9deg,
+    transparent 9deg 18deg
+  );
+  -webkit-mask: radial-gradient(circle, #000 15%, transparent 62%);
+  mask: radial-gradient(circle, #000 15%, transparent 62%);
+  animation: spin 14s linear infinite;
+  opacity: 0;
+  transition: opacity 0.5s 0.3s;
+}
+
+.camada.on .raios {
+  opacity: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.medalhaCaixa {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  margin-bottom: 12px;
+}
+
+.medalha {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  overflow: hidden;
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--c-acc) 55%, #fff),
+    var(--c-acc) 45%,
+    var(--c-deep)
+  );
+  box-shadow:
+    0 14px 30px color-mix(in srgb, var(--c-acc) 45%, transparent),
+    inset 0 0 0 5px rgb(255 255 255 / 0.35),
+    inset 0 0 0 9px rgb(255 255 255 / 0.12);
+  opacity: 0;
+}
+
+.medalha.dourada {
+  background: radial-gradient(circle at 35% 30%, #fff2c4, #f2c45a 45%, #b07a1e);
+}
+
+.medalha::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgb(255 255 255 / 0.7) 50%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+}
+
+.go .medalha {
+  animation: stamp 0.56s cubic-bezier(0.5, 0, 0.3, 1) forwards;
+}
+
+.go .medalha::after {
+  animation: shine1 1s 0.7s forwards;
+}
+
+.pronto .medalha {
+  opacity: 1;
+}
+
+@keyframes shine1 {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes stamp {
+  0% {
+    transform: scale(2.7) rotate(-28deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(0.9) rotate(4deg);
+    opacity: 1;
+  }
+  78% {
+    transform: scale(1.07) rotate(-2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+.onda {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid var(--c-acc);
+  opacity: 0;
+}
+
+.go .onda {
+  animation: ripple 0.9s 0.3s ease-out;
+}
+
+.go .onda.o2 {
+  animation-delay: 0.45s;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+.chamada {
+  position: relative;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-acc);
+}
+
+.nomeSelo {
+  position: relative;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.descricao {
+  position: relative;
+  font-size: 13px;
+  color: var(--c-mut);
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.glow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--c-acc);
+  background: var(--c-soft);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.surge {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.35s,
+    transform 0.35s var(--ease);
+}
+
+.go .surge,
+.pronto .surge {
+  opacity: 1;
+  transform: none;
+}
+
+.go .s1 {
+  transition-delay: 0.55s;
+}
+.go .s2 {
+  transition-delay: 0.65s;
+}
+.go .s3 {
+  transition-delay: 0.75s;
+}
+.go .s4 {
+  transition-delay: 0.9s;
+}
+
+/* ───────────── palco (o #ovStage do protótipo) ───────────── */
+
+.palco {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      90% 55% at 50% 30%,
+      color-mix(in srgb, var(--c-acc) 60%, transparent),
+      transparent 72%
+    ),
+    #0c0910;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 26px;
+  text-align: center;
+  gap: 8px;
+}
+
+.palcoChamada {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.7);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.anel {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  margin: 10px 0 14px;
+}
+
+.anel > svg {
+  position: absolute;
+  inset: 0;
+}
+
+.anelFundo {
+  stroke: rgb(255 255 255 / 0.12);
+}
+
+.anelFrente {
+  stroke: url(#jornadaAnelGrad);
+  transition: stroke-dashoffset 1s cubic-bezier(0.6, 0, 0.3, 1);
+}
+
+.anelIcone {
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(255 255 255 / 0.06);
+  color: #fff;
+  transition: background 0.3s;
+}
+
+.p3 .anelIcone {
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--c-acc) 55%, #fff),
+    var(--c-acc) 50%,
+    var(--c-deep)
+  );
+  animation: spop 0.6s var(--spring);
+  box-shadow: 0 0 50px var(--c-acc);
+}
+
+@keyframes spop {
+  0% {
+    transform: scale(0.6);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.anel .onda {
+  border-color: #fff;
+}
+
+.p3 .anel .onda {
+  animation: ripple 1s ease-out;
+}
+
+.p3 .anel .onda.o2 {
+  animation: ripple 1s 0.15s ease-out;
+}
+
+.nomeGrande {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  line-height: 1.05;
+  min-height: 44px;
+}
+
+.nomeGrande.menor {
+  font-size: 30px;
+  letter-spacing: -0.8px;
+}
+
+.palavra {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.letra {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(24px) scale(0.6);
+}
+
+.p3 .letra {
+  animation: letter 0.5s var(--spring) forwards;
+}
+
+@keyframes letter {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.palcoApoio {
+  font-size: 14px;
+  color: rgb(255 255 255 / 0.72);
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.palcoGlow {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  font-size: 14px;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateX(-16px);
+  transition:
+    opacity 0.35s,
+    transform 0.45s var(--spring);
+}
+
+.p1 .palcoChamada,
+.p3 .palcoApoio {
+  opacity: 1;
+}
+
+.p4 .palcoGlow {
+  opacity: 1;
+  transform: none;
+}
+
+/* ───────────── movimento reduzido (o @media do protótipo) ───────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .raiz *,
+  .raiz *::before,
+  .raiz *::after {
+    animation-duration: 0.01s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01s !important;
+    transition-delay: 0s !important;
+  }
+}

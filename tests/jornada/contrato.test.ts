@@ -91,8 +91,11 @@ describe("nenhum valor de Glow, limite ou corte de estágio no cliente", () => {
   // números por extenso (romanos, plural) e fica fora só desta regra. As
   // telas têm tamanho de ícone e classes de layout: a regra delas é a de
   // baixo, focada em Glow.
+  // `som.ts` (J13) sintetiza os sons do protótipo: frequências em Hz e
+  // tempos em segundos, nenhum Glow. Mora em `lib/jornada/` porque a #163
+  // pede; a guarda "não calcula Glow" dele está em celebracao.test.ts.
   const SEM_NUMEROS = arquivos("lib/jornada").filter(
-    (f) => f !== "lib/jornada/textos.ts"
+    (f) => f !== "lib/jornada/textos.ts" && f !== "lib/jornada/som.ts"
   );
 
   it.each(SEM_NUMEROS)("%s não tem número maior que 1 no código", (arquivo) => {
