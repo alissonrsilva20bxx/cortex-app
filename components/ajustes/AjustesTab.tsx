@@ -56,6 +56,7 @@ const DEFAULT_HOME_CARDS: HomeCardConfig = {
   nextJob: true,
   financeSummary: true,
   objetivos: true,
+  agenda: true,
 };
 const DEFAULT_CARD_STYLES: CardStyleConfig = {
   nextJob: "standard",
@@ -382,6 +383,11 @@ export function AjustesTab({
       key: "objetivos",
       label: "Objetivos Pessoais",
       desc: "Metas de vida e afazeres",
+    },
+    {
+      key: "agenda",
+      label: "Agenda",
+      desc: "Esta semana e proximos atendimentos",
     },
   ];
 
