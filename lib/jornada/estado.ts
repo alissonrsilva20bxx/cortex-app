@@ -114,12 +114,40 @@ export interface Preferencias {
   mostrarNoPerfil: boolean;
 }
 
-/** O estado inteiro da Jornada, como o servidor manda. */
+/** Os tipos de período (spec §8; J09 `jornada_periodos.tipo`). */
+export const TIPOS_PERIODO = ["semana", "mes", "ano"] as const;
+export type TipoPeriodo = (typeof TIPOS_PERIODO)[number];
+
+/**
+ * Agregado de um período (J09 `jornada_periodos`): o primeiro dia (no fuso
+ * dela; a semana começa na segunda) e um mapa chave → número ("despesa": 12,
+ * "dias_fortes": 4, "glow": 85...). EXATAMENTE estes dois campos: nunca uma
+ * lista de dias nem nada que reconstrua o dia a dia (decisão 16). O teste de
+ * contrato trava esta forma, e a validação recusa campo a mais.
+ */
+export interface Periodo {
+  /** "AAAA-MM-DD". */
+  inicio: string;
+  contadores: Record<string, number>;
+}
+
+/**
+ * Os agregados como o servidor manda (`jornada_estado`, J10): o período
+ * corrente de cada tipo e o último fechado, quando já houver um.
+ */
+export interface Periodos {
+  corrente: Record<TipoPeriodo, Periodo>;
+  ultimoFechado: Partial<Record<TipoPeriodo, Periodo>>;
+}
+
+/** O estado inteiro da Jornada, como o servidor manda (`jornada_estado`, J10). */
 export interface EstadoJornada {
   glowTotal: number;
   glowPorPilar: Record<Pilar, number>;
   /** 0 Começando, 1 Em movimento, 2 Organizada, 3 Prosperando, 4 Icônica, 5 Icônica II… */
   estagio: number;
+  /** Glow total em que o estágio atual começou (o servidor calcula). */
+  glowInicioEstagio: number;
   /** Glow total em que começa o próximo estágio (o servidor calcula). */
   glowProximoEstagio: number;
   selos: Partial<Record<SeloId, NivelSelo>>;
@@ -130,26 +158,12 @@ export interface EstadoJornada {
   ajudou: number;
   protegeu: number;
   preferencias: Preferencias;
-  /** Glow total em que começou o estágio atual (início da barra). */
-  glowInicioEstagio?: number;
   /** Hoje no fuso dela, AAAA-MM-DD. */
   hoje?: string;
   /** Itens destravados por estágio (`moldura_estagio_N`, `icone_…`, `tema_…`). */
   destravados?: string[];
-  /** Agregados do período corrente e do último fechado (resumos, J14). */
-  periodos?: {
-    corrente: Record<TipoPeriodo, Periodo>;
-    ultimoFechado: Partial<Record<TipoPeriodo, Periodo>>;
-  };
-}
-
-export type TipoPeriodo = "semana" | "mes" | "ano";
-
-/** Só números agregados ("despesa": 12, "dias_fortes": 4…), nunca um diário. */
-export interface Periodo {
-  /** Primeiro dia do período (segunda-feira, dia 1, 1º de janeiro), AAAA-MM-DD. */
-  inicio: string;
-  contadores: Record<string, number>;
+  /** Agregados da semana, do mês e do ano (J09 `jornada_periodos`). */
+  periodos: Periodos;
 }
 
 /**
@@ -214,6 +228,8 @@ export interface RespostaRegistro {
 export interface TransporteJornada {
   lerEstado(fuso: string, deslocamentoMin: number): Promise<EstadoJornada>;
   registrar(pedido: PedidoRegistro): Promise<RespostaRegistro>;
+  /** Grava só as preferências mandadas; devolve as preferências como ficaram. */
+  salvarPreferencias(parcial: Partial<Preferencias>): Promise<Preferencias>;
 }
 
 /** Códigos de erro (o texto de cada um está em `textos.ts`). */
@@ -229,27 +245,74 @@ function ehObjeto(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x !== null && !Array.isArray(x);
 }
 
+function ehMes(x: unknown): x is MesDaColecao {
+  return ehObjeto(x) && ehNumero(x.ano) && ehNumero(x.mes);
+}
+
+export function ehPreferencias(x: unknown): x is Preferencias {
+  return (
+    ehObjeto(x) &&
+    typeof x.somLigado === "boolean" &&
+    typeof x.modoDiscreto === "boolean" &&
+    typeof x.mostrarNoPerfil === "boolean"
+  );
+}
+
+function temSoAsChaves(x: Record<string, unknown>, chaves: string[]): boolean {
+  return Object.keys(x).every((k) => chaves.includes(k));
+}
+
+/** Exatamente `inicio` (data) e `contadores` (só números). */
+function ehPeriodo(x: unknown): x is Periodo {
+  return (
+    ehObjeto(x) &&
+    temSoAsChaves(x, ["inicio", "contadores"]) &&
+    typeof x.inicio === "string" &&
+    /^\d+-\d+-\d+$/.test(x.inicio) &&
+    ehObjeto(x.contadores) &&
+    Object.values(x.contadores).every(ehNumero)
+  );
+}
+
+function ehPeriodos(x: unknown): x is Periodos {
+  if (!ehObjeto(x) || !temSoAsChaves(x, ["corrente", "ultimoFechado"])) {
+    return false;
+  }
+  const { corrente, ultimoFechado } = x;
+  return (
+    ehObjeto(corrente) &&
+    temSoAsChaves(corrente, [...TIPOS_PERIODO]) &&
+    TIPOS_PERIODO.every((t) => ehPeriodo(corrente[t])) &&
+    ehObjeto(ultimoFechado) &&
+    temSoAsChaves(ultimoFechado, [...TIPOS_PERIODO]) &&
+    Object.values(ultimoFechado).every(ehPeriodo)
+  );
+}
+
 /** Confere uma resposta do servidor ou do disco antes de confiar nela. */
 export function ehEstadoJornada(x: unknown): x is EstadoJornada {
   if (!ehObjeto(x)) return false;
   const p = x.glowPorPilar;
-  const pr = x.preferencias;
   return (
     ehNumero(x.glowTotal) &&
     ehNumero(x.estagio) &&
+    ehNumero(x.glowInicioEstagio) &&
     ehNumero(x.glowProximoEstagio) &&
     ehObjeto(p) &&
     PILARES.every((k) => ehNumero(p[k])) &&
     ehObjeto(x.selos) &&
     (x.capitulo === null || ehObjeto(x.capitulo)) &&
     Array.isArray(x.colecao) &&
+    x.colecao.every(ehMes) &&
     Array.isArray(x.marcos) &&
     ehNumero(x.ajudou) &&
     ehNumero(x.protegeu) &&
-    ehObjeto(pr) &&
-    typeof pr.somLigado === "boolean" &&
-    typeof pr.modoDiscreto === "boolean" &&
-    typeof pr.mostrarNoPerfil === "boolean"
+    ehPreferencias(x.preferencias) &&
+    (x.hoje === undefined || typeof x.hoje === "string") &&
+    (x.destravados === undefined ||
+      (Array.isArray(x.destravados) &&
+        x.destravados.every((d) => typeof d === "string"))) &&
+    ehPeriodos(x.periodos)
   );
 }
 

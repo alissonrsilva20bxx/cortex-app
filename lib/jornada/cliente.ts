@@ -21,15 +21,21 @@
 
 import { supabase } from "@/lib/supabase";
 import * as cache from "./cache";
-import { lerEstadoDoServidor, registrarNoServidor } from "./servidor";
+import {
+  lerEstadoDoServidor,
+  registrarNoServidor,
+  salvarPreferenciasNoServidor,
+} from "./servidor";
 import {
   ehComemoracao,
   ehEstadoJornada,
+  ehPreferencias,
   type Acao,
   type Comemoracao,
   type ErroJornada,
   type EstadoJornada,
   type PedidoRegistro,
+  type Preferencias,
   type RespostaRegistro,
   type TransporteJornada,
 } from "./estado";
@@ -56,12 +62,15 @@ export function fusoDaUsuaria(agora: Date = new Date()): {
  * As RPCs da J10, pela porta única `servidor.ts` (o único arquivo que sabe
  * os nomes e os parâmetros delas). Mesma forma dos dois lados: os tipos de
  * `estado.ts`. A usuária é sempre a do `auth.uid()` no servidor; nenhum id
- * vai daqui.
+ * vai daqui. Preferências: a linha dela em `jornada_preferencias` (RLS:
+ * a dona lê, cria e altera a própria).
  */
 export const transporteSupabase: TransporteJornada = {
   lerEstado: (fuso, deslocamentoMin) =>
     lerEstadoDoServidor(supabase, fuso, deslocamentoMin),
   registrar: (pedido) => registrarNoServidor(supabase, pedido),
+  salvarPreferencias: (parcial) =>
+    salvarPreferenciasNoServidor(supabase, parcial),
 };
 
 // ─────────────────────────────── a loja ──────────────────────────────────
@@ -90,6 +99,8 @@ export interface LojaJornada {
    */
   registrarAbertura(): Promise<Comemoracao[]>;
   consumir(id: string): void;
+  /** Grava preferências. Muda na tela na hora; se o servidor recusar, volta. */
+  salvarPreferencias(parcial: Partial<Preferencias>): Promise<boolean>;
   enviarPendentes(): Promise<void>;
 }
 
@@ -273,6 +284,34 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
       avisar();
     },
 
+    async salvarPreferencias(parcial) {
+      const antes = cache.ler(userId).estado?.preferencias ?? null;
+      const trocar = (preferencias: Preferencias | null) =>
+        cache.atualizar(userId, (r) =>
+          r.estado && preferencias
+            ? { ...r, estado: { ...r.estado, preferencias } }
+            : r
+        );
+      // Na hora, pra a chave responder ao toque (o Modo discreto é "1 toque").
+      if (antes) trocar({ ...antes, ...parcial });
+      avisar();
+      const ep = cache.epocaAtual();
+      try {
+        const salvas = await transporte.salvarPreferencias(parcial);
+        if (!ehPreferencias(salvas)) throw new Error("resposta");
+        if (cache.epocaAtual() === ep) trocar(salvas);
+        erro = null;
+        return true;
+      } catch {
+        // Não gravou: volta ao que estava, pra a tela não mentir.
+        if (cache.epocaAtual() === ep) trocar(antes);
+        erro = "sem-conexao";
+        return false;
+      } finally {
+        avisar();
+      }
+    },
+
     enviarPendentes() {
       if (envio) return envio; // montar duas vezes: um envio só
       envio = (async () => {
@@ -295,6 +334,21 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
 
 const lojas = new Map<string, LojaJornada>();
 
+/** Transporte do laboratório (`/dev-preview/app`); `null` = o Supabase real. */
+let transporteDoLaboratorio: TransporteJornada | null = null;
+
+/**
+ * SÓ pro laboratório (`/dev-preview/app`), que não tem servidor: troca o
+ * transporte de todas as lojas por um falso (ver `lib/mockJornada.ts`) e
+ * esquece as lojas já criadas. O app de verdade nunca chama isto.
+ */
+export function usarTransporteDeLaboratorio(
+  transporte: TransporteJornada | null
+): void {
+  transporteDoLaboratorio = transporte;
+  lojas.clear();
+}
+
 /**
  * A loja da conta. Todas as telas e todas as montagens (inclusive a dupla do
  * StrictMode) recebem a MESMA loja, então compartilham estado, fila e as
@@ -305,7 +359,10 @@ export function lojaDaUsuaria(userId: string): LojaJornada {
   let loja = lojas.get(userId);
   if (!loja) {
     lojas.clear(); // outra conta: a loja anterior não serve mais
-    loja = criarLojaJornada({ userId });
+    loja = criarLojaJornada({
+      userId,
+      transporte: transporteDoLaboratorio ?? undefined,
+    });
     lojas.set(userId, loja);
   }
   return loja;

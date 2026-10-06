@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import * as textos from "../../lib/jornada/textos";
 import {
   CURRENCY,
   LOCALE,
@@ -60,14 +61,47 @@ function literais(codigo: string): string[] {
   return out;
 }
 
+/**
+ * Lista de classes CSS (`"flex items-center gap-2"`, `"w-full sm:px-4"`):
+ * todos os pedaços minúsculos, sem acento, e pelo menos um com `-`, `:` ou
+ * `[`, como toda classe utilitária. Não é texto de interface. Frase de
+ * verdade ("dias fortes", "último dia") não passa por aqui.
+ */
+function ehListaDeClasses(s: string): boolean {
+  const pedacos = s.trim().split(/\s+/).filter(Boolean);
+  return (
+    pedacos.length > 0 &&
+    pedacos.every((p) => /^[a-z0-9!:_\-[\]/.%&>()#=,]+$/.test(p)) &&
+    pedacos.some((p) => /[-:[]/.test(p))
+  );
+}
+
 /** Parece texto de interface: tem letra acentuada, ou duas palavras separadas por espaço. */
 function pareceTextoVisivel(s: string): boolean {
   const semInterpolacao = s.replace(/\$\{[^}]*\}/g, " ");
+  if (ehListaDeClasses(semInterpolacao)) return false;
   return (
     /[À-ÿ]/.test(semInterpolacao) ||
     /[A-Za-zÀ-ÿ]{2,}\s+[A-Za-zÀ-ÿ]{2,}/.test(semInterpolacao)
   );
 }
+
+describe("o detector de texto de interface", () => {
+  it.each([
+    "flex items-center gap-2",
+    "w-full rounded-2xl active:opacity-70",
+    "grid grid-cols-[minmax(0,1fr)] gap-[var(--space-section)]",
+  ])("classe CSS não é texto: %s", (classe) => {
+    expect(pareceTextoVisivel(classe)).toBe(false);
+  });
+
+  it.each(["dias fortes", "último dia", "Sua Jornada", "Sem conexão agora"])(
+    "frase é texto: %s",
+    (frase) => {
+      expect(pareceTextoVisivel(frase)).toBe(true);
+    }
+  );
+});
 
 describe("nenhum texto visível nem moeda fora de lib/jornada/textos.ts", () => {
   it("a varredura encontra os arquivos da Jornada", () => {
@@ -144,5 +178,51 @@ describe("textos.ts cobre tudo o que as telas vão mostrar", () => {
   it("o número de Glow vem de fora (o texto só escreve)", () => {
     expect(glowGanho(15)).toBe("+15 Glow");
     expect(glowGanho(1200)).toBe("+1.200 Glow");
+  });
+});
+
+describe("nenhum texto vazio em textos.ts", () => {
+  /** Todo texto de um valor exportado (string direto ou dentro de objeto). */
+  function textosDe(valor: unknown, caminho: string): [string, string][] {
+    if (typeof valor === "string") return [[caminho, valor]];
+    if (valor && typeof valor === "object" && !Array.isArray(valor)) {
+      return Object.entries(valor).flatMap(([k, v]) =>
+        textosDe(v, `${caminho}.${k}`)
+      );
+    }
+    return [];
+  }
+
+  const todos = Object.entries(textos).flatMap(([nome, valor]) =>
+    textosDe(valor, nome)
+  );
+
+  it("a varredura encontra os textos e os blocos de textos", () => {
+    const nomes = todos.map(([c]) => c);
+    expect(nomes).toEqual(
+      expect.arrayContaining([
+        "CARREGANDO",
+        "SECAO.pilares",
+        "SELO.planejadora.nome",
+      ])
+    );
+  });
+
+  it.each(todos.filter(([c]) => !/\.unidade$/.test(c)))(
+    "%s não é vazio",
+    (_caminho, texto) => {
+      expect(texto.trim()).not.toBe("");
+    }
+  );
+
+  it("unidade vazia só nos selos de nível único (Primeiros passos, Em casa, Um ano)", () => {
+    const vazias = todos
+      .filter(([c, t]) => /\.unidade$/.test(c) && t === "")
+      .map(([c]) => c);
+    expect(vazias).toEqual([
+      "SELO.primeiros_passos.unidade",
+      "SELO.em_casa.unidade",
+      "SELO.um_ano.unidade",
+    ]);
   });
 });
