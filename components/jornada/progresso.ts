@@ -29,7 +29,16 @@ export function faltaProProximo(estado: EstadoJornada): number {
 
 /** Contador da semana corrente (J09 `jornada_periodos`), 0 se não houver. */
 export function contadorDaSemana(estado: EstadoJornada, chave: string): number {
-  return estado.periodos.semana.atual?.contadores[chave] ?? 0;
+  return estado.periodos.corrente.semana.contadores[chave] ?? 0;
+}
+
+/**
+ * O dia de hoje no fuso dela, como o servidor mandou (`hoje`, AAAA-MM-DD);
+ * sem ele, o dia do aparelho.
+ */
+export function hojeDoEstado(estado: EstadoJornada, aparelho: Date): Date {
+  const m = estado.hoje?.match(/^(\d+)-(\d+)-(\d+)$/);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : aparelho;
 }
 
 /** Missões já cumpridas no capítulo. */
@@ -63,8 +72,10 @@ function indice(m: MesDaColecao): number {
 
 /**
  * Os meses da coleção, do mais antigo ao atual: os fechados (com enfeite),
- * os que ficaram em branco desde o início dela (tracejados, sem culpa) e o
- * mês corrente ainda em aberto. Conta nova: só o mês corrente.
+ * os que ficaram em branco depois do primeiro fechado (tracejados, sem
+ * culpa) e o mês corrente ainda em aberto. Conta nova: só o mês corrente.
+ * O servidor não manda o mês em que a Jornada começou, então os meses em
+ * branco antes do primeiro enfeite não aparecem.
  */
 export function mesesDaColecao(
   estado: EstadoJornada,
@@ -74,10 +85,7 @@ export function mesesDaColecao(
     ? { ano: estado.capitulo.ano, mes: estado.capitulo.mes }
     : { ano: hoje.getFullYear(), mes: hoje.getMonth() + 1 };
   const fechados = new Set(estado.colecao.map(indice));
-  const primeiro = Math.min(
-    estado.inicio ? indice(estado.inicio) : indice(atual),
-    ...estado.colecao.map(indice)
-  );
+  const primeiro = Math.min(indice(atual), ...estado.colecao.map(indice));
   const meses: MesNaColecao[] = [];
   for (let i = primeiro; i <= indice(atual); i++) {
     const mes: MesDaColecao = {

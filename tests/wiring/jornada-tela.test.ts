@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   contadorDaSemana,
   diasRestantes,
+  hojeDoEstado,
   faltaProProximo,
   fracaoDoEstagio,
   mesesDaColecao,
@@ -114,9 +115,9 @@ describe("card e tela usam o useJornada de verdade", () => {
     "%s não importa o cliente da Jornada nem o Supabase",
     (arquivo) => {
       const imports = importsDe(read(arquivo));
-      expect(imports.filter((i) => /jornada\/cliente|supabase/i.test(i))).toEqual(
-        []
-      );
+      expect(
+        imports.filter((i) => /jornada\/cliente|supabase/i.test(i))
+      ).toEqual([]);
     }
   );
 
@@ -185,6 +186,14 @@ describe("estados discretos: a Jornada nunca bloqueia o Início", () => {
     expect(src).toMatch(/role="dialog"/);
   });
 
+  it("abrir a tela conta pro selo Primeiros passos, num efeito (J10)", () => {
+    const src = soCodigo(read(TELA));
+    expect(src).toMatch(
+      /useEffect\(\(\) => \{\s*void registrarAbertura\(\);\s*\}, \[registrarAbertura\]\)/
+    );
+    expect(soCodigo(read(CARD))).not.toMatch(/registrar/);
+  });
+
   it("o Modo discreto grava pela preferência do hook", () => {
     expect(soCodigo(read(TELA))).toMatch(/salvarPreferencias\(parcial\)/);
     expect(soCodigo(read("components/jornada/JornadaAjustes.tsx"))).toMatch(
@@ -207,10 +216,9 @@ describe("as leituras do estado (progresso.ts)", () => {
     expect(missoesFeitas(e.capitulo!)).toBe(0);
   });
 
-  it("exemplo: coleção com mês em branco, mês fechado e o mês atual", () => {
+  it("exemplo: coleção com mês fechado, mês em branco e o mês atual", () => {
     const e = estadoJornadaExemplo(hoje);
     expect(mesesDaColecao(e, hoje)).toEqual([
-      { ano: 2026, mes: 7, situacao: "branco" },
       { ano: 2026, mes: 8, situacao: "fechado" },
       { ano: 2026, mes: 9, situacao: "branco" },
       { ano: 2026, mes: 10, situacao: "atual" },
@@ -225,6 +233,15 @@ describe("as leituras do estado (progresso.ts)", () => {
     expect(mesesDaColecao(e, hoje)).toEqual([
       { ano: 2026, mes: 10, situacao: "atual" },
     ]);
+  });
+
+  it("hoje é o dia que o servidor mandou (fuso dela); sem ele, o do aparelho", () => {
+    const e = estadoJornadaExemplo(hoje);
+    const aparelho = new Date(2026, 9, 16, 0, 30);
+    expect(hojeDoEstado({ ...e, hoje: "2026-10-15" }, aparelho)).toEqual(
+      new Date(2026, 9, 15)
+    );
+    expect(hojeDoEstado({ ...e, hoje: undefined }, aparelho)).toBe(aparelho);
   });
 
   it("dias que faltam no capítulo: 0 no último dia e fora do mês", () => {

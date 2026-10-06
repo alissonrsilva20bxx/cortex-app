@@ -16,6 +16,7 @@ import { JornadaDinheiro } from "./JornadaDinheiro";
 import { JornadaEstagio } from "./JornadaEstagio";
 import { JornadaPilares } from "./JornadaPilares";
 import { JornadaSelos } from "./JornadaSelos";
+import { hojeDoEstado } from "./progresso";
 
 interface Props {
   userId: string;
@@ -34,8 +35,9 @@ interface Props {
  * perfil público.
  */
 export function JornadaScreen({ userId, onVoltar }: Props) {
-  const { estado, carregando, erro, salvarPreferencias } = useJornada(userId);
-  const [hoje] = useState(() => new Date());
+  const { estado, carregando, erro, salvarPreferencias, registrarAbertura } =
+    useJornada(userId);
+  const [aparelho] = useState(() => new Date());
   const voltarRef = useRef<HTMLButtonElement>(null);
   // Guardado num ref: quem abre pode passar uma função nova a cada render
   // sem tirar o foco do "Voltar" de novo.
@@ -51,7 +53,14 @@ export function JornadaScreen({ userId, onVoltar }: Props) {
     return () => window.removeEventListener("keydown", aoTeclar);
   }, []);
 
+  // Abrir a tela conta pro selo Primeiros passos (J10). É a única chamada
+  // que o hook deixa fazer num efeito: conta uma vez por abertura do app.
+  useEffect(() => {
+    void registrarAbertura();
+  }, [registrarAbertura]);
+
   const discreto = estado?.preferencias.modoDiscreto ?? false;
+  const hoje = estado ? hojeDoEstado(estado, aparelho) : aparelho;
 
   return (
     <div

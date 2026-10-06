@@ -5,23 +5,19 @@ import { MARCOS_DINHEIRO, type EstadoJornada } from "@/lib/jornada/estado";
 import {
   MARCOS_DO_TOTAL,
   SECAO,
-  contagemMetas,
   money,
   textoMarco,
 } from "@/lib/jornada/textos";
 import { JornadaSecao } from "./JornadaPecas";
 
 /**
- * Seu dinheiro: quantas metas ela concluiu e os marcos do total guardado
+ * Seu dinheiro: os marcos do total guardado
  * (€ 500, € 1.000, € 2.500, € 5.000; spec §7). O que acende é o que o
  * servidor mandou em `marcos`.
  */
 export function JornadaDinheiro({ estado }: { estado: EstadoJornada }) {
   return (
-    <JornadaSecao
-      titulo={SECAO.dinheiro}
-      chip={contagemMetas(estado.metasConcluidas)}
-    >
+    <JornadaSecao titulo={SECAO.dinheiro}>
       <p
         className="font-semibold"
         style={{ fontSize: "11px", color: "var(--text-muted)" }}
