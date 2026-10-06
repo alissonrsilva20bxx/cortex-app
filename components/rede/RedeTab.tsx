@@ -19,6 +19,7 @@ import {
   Camera,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { useJornada } from "@/components/jornada/useJornada";
 import { FeedScreen } from "./FeedScreen";
 import { SearchScreen } from "./SearchScreen";
 import { AmigasScreen } from "./AmigasScreen";
@@ -227,6 +228,7 @@ export function RedeTab({
   onFotoPerfilChange,
 }: Props) {
   const toast = useToast();
+  const { registrar } = useJornada(usuario.id);
 
   // ── Semente do cache (síncrona, 1x por conta) ──
   // Lida no 1º render pra que os inicializadores de estado abaixo já
@@ -1841,6 +1843,8 @@ export function RedeTab({
         setWishlistItems((prev) =>
           prev.map((w) => (w.id === atualizado.id ? atualizado : w))
         );
+        if (atualizado.valorAtual > existing.valorAtual)
+          void registrar("guardar_meta");
         toast.success("Desejo atualizado!");
       } else {
         const criado = await criarWishlistItem(supabase, {
@@ -1852,6 +1856,7 @@ export function RedeTab({
           privacidade: form.privacidade,
         });
         setWishlistItems((prev) => [criado, ...prev]);
+        if (criado.valorAtual > 0) void registrar("guardar_meta");
         toast.success("Desejo adicionado!");
       }
       setWishlistFormOpen(false);

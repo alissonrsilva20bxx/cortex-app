@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
+import { useJornada } from "@/components/jornada/useJornada";
 import type { Job, JobStatus, Modalidade } from "@/lib/types";
 
 interface FormState {
@@ -78,6 +79,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
   // #176: mantém o campo focado visível com o teclado aberto.
   const painelRef = useRef<HTMLDivElement>(null);
   useCampoVisivelComTeclado(painelRef, open);
+  const { registrar } = useJornada(userId);
 
   useEffect(() => {
     if (open) {
@@ -130,6 +132,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
 
     setSaving(false);
     if (err) return setError(err.message);
+    if (!job) void registrar("atendimento");
     onSaved();
     onClose();
   }

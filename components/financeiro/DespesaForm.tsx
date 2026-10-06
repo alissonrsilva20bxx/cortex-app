@@ -7,6 +7,7 @@ import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import { useToast } from "@/components/Toast";
 import { localKey } from "@/lib/finance";
 import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
+import { useJornada } from "@/components/jornada/useJornada";
 
 const CATEGORIAS = [
   { id: "alimentacao", label: "Alimentação", emoji: "🍽️" },
@@ -42,6 +43,7 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
   // #176: mantém o campo focado visível com o teclado aberto.
   const painelRef = useRef<HTMLDivElement>(null);
   useCampoVisivelComTeclado(painelRef, open);
+  const { registrar } = useJornada(userId);
 
   async function handleSave() {
     const v = parseFloat(valor.replace(",", "."));
@@ -62,6 +64,7 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
       toast.error("Erro ao salvar despesa.");
       return;
     }
+    void registrar("despesa");
     setDescricao("");
     setValor("");
     setCategoria("outros");

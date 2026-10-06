@@ -17,6 +17,9 @@ import { NextJobCard } from "@/components/home/NextJobCard";
 import { ObjetivosCard } from "@/components/home/ObjetivosCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { CofreCard } from "@/components/home/CofreCard";
+import { JornadaCard } from "@/components/home/JornadaCard";
+import { JornadaScreen } from "@/components/jornada/JornadaScreen";
+import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
 import { SemanaSection } from "@/components/home/SemanaSection";
 import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
 import { JobsTab } from "@/components/jobs/JobsTab";
@@ -162,6 +165,8 @@ export default function Page() {
   >(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
+  // "Sua Jornada" (J15): a tela abre pelo card do Início.
+  const [jornadaAberta, setJornadaAberta] = useState(false);
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
 
   // Some com a BottomNav quando o composer do chat da Rede está focado,
@@ -564,6 +569,16 @@ export default function Page() {
                   />
                 </div>
 
+                {/* Card "Sua Jornada" (J12), ligado no app pela J15: depois
+                    da grade e antes da Agenda, como no laboratório. Sem
+                    estado da Jornada ele não aparece (nunca trava o Início). */}
+                {usuario && (
+                  <JornadaCard
+                    userId={usuario.id}
+                    onAbrir={() => setJornadaAberta(true)}
+                  />
+                )}
+
                 {/* Bloco da Agenda: removível em Ajustes › Tela inicial
                     (#181). `?? true` mantém visível pra quem já tinha
                     preferência salva antes dessa chave existir. */}
@@ -686,6 +701,17 @@ export default function Page() {
       )}
 
       {!isNewUser && usuario && dataLoaded && <RecapSheet jobs={jobs} />}
+
+      {/* "Sua Jornada" (J15): a tela (J12) e o host de comemoração (J13),
+          só no app autenticado. Com o PIN travado esta árvore não monta,
+          então nada comemora por cima do PIN. */}
+      {usuario && jornadaAberta && (
+        <JornadaScreen
+          userId={usuario.id}
+          onVoltar={() => setJornadaAberta(false)}
+        />
+      )}
+      {usuario && <ComemoracaoHost userId={usuario.id} />}
 
       {usuario && (
         <>
