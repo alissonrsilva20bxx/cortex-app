@@ -3,12 +3,10 @@
 import { useState, useEffect } from "react";
 import {
   AlertCircle,
-  BarChart3,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   Clock3,
-  NotebookPen,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatBRL } from "@/lib/finance";
@@ -18,6 +16,19 @@ import { JobCard } from "./JobCard";
 import { JobDetailSheet } from "./JobDetailSheet";
 import { AgendaResumoSheet } from "./AgendaResumoSheet";
 import { NotasSection } from "./NotasSection";
+import { AgendaProximoCard } from "./AgendaProximoCard";
+import { AgendaAcoes } from "./AgendaAcoes";
+import { EstaSemanaSection, ProximasSemanasSection } from "./AgendaListas";
+import {
+  addDays,
+  atendimentosDaSemana,
+  atendimentosProximasSemanas,
+  buildWeekStrip,
+  formatHora,
+  proximoAtendimento,
+  startOfWeek,
+  toISODate,
+} from "./agendaSemana";
 import { STATUS_META } from "./status";
 import type { Job, JobStatus } from "@/lib/types";
 
@@ -33,9 +44,6 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "cancelado", label: "Cancelado" },
 ];
 
-/** D S T Q Q S S — domingo a sábado, mesma ordem/rótulos do laboratório. */
-const WEEKDAY_LETTERS = ["D", "S", "T", "Q", "Q", "S", "S"];
-
 /**
  * Lacuna entre dois atendimentos consecutivos só ganha uma nota de
  * "próximo atendimento" (issue #135, revisão pós-fechamento) se for
@@ -44,26 +52,6 @@ const WEEKDAY_LETTERS = ["D", "S", "T", "Q", "Q", "S", "S"];
  * atendimento (ver nota completa em `buildTimelineItems` abaixo).
  */
 const NEXT_JOB_NOTE_THRESHOLD_MIN = 60;
-
-function toISODate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function addDays(d: Date, n: number): Date {
-  const next = new Date(d);
-  next.setDate(next.getDate() + n);
-  return next;
-}
-
-function startOfWeek(d: Date): Date {
-  const start = new Date(d);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - start.getDay());
-  return start;
-}
 
 function formatWeekRangeLabel(start: Date): string {
   const end = addDays(start, 6);
@@ -86,12 +74,6 @@ function formatSelectedDateLabel(iso: string): string {
     month: "long",
   });
   return label.charAt(0).toUpperCase() + label.slice(1);
-}
-
-/** "15h30" — mesma convenção já usada em NextJobCard/lib/notificacoes.ts. */
-function formatHora(hora: string): string {
-  const [h, m] = hora.split(":");
-  return `${h}h${m}`;
 }
 
 function timeToMinutes(hora: string): number {
@@ -221,7 +203,13 @@ function buildTimelineItems(dayJobs: Job[]): TimelineItem[] {
 interface Props {
   userId: string;
   refreshTrigger: number;
-  onEditJob: (job: Job) => void;
+  /**
+   * Abre o JobForm real da página. Com um atendimento, edita; com `null`,
+   * abre em modo de criação, exatamente o que o "+" já faz
+   * (`setEditingJob(null)` + `setJobFormOpen(true)` em `app/page.tsx`).
+   * É o que o botão "Novo" (J03) usa, sem criar um segundo formulário.
+   */
+  onEditJob: (job: Job | null) => void;
   chartType?: "bar" | "donut";
 }
 
@@ -326,15 +314,23 @@ export function JobsTab({
   // de status ativo, pra o indicador do calendário ficar consistente com
   // a lista mostrada abaixo dele) + qual é hoje de verdade (indicação do
   // dia atual, distinta da seleção — contrato de paridade, seção Agenda).
+  const now = new Date();
   const today = toISODate(new Date());
-  const days = Array.from({ length: 7 }, (_, i) =>
-    toISODate(addDays(weekStart, i))
-  );
-  const datesWithJobs = new Set(filtered.map((j) => j.data));
+  const weekStrip = buildWeekStrip(weekStart, filtered);
+  const days = weekStrip.map((d) => d.iso);
   const selectedDayJobs = filtered.filter((j) => j.data === selectedDate);
   const isViewingToday = selectedDate === today;
   const timelineItems = buildTimelineItems(selectedDayJobs);
   const dayTotal = selectedDayJobs.reduce((s, j) => s + j.valor, 0);
+
+  // Card do próximo atendimento e as duas listas do mockup (J03). Usam
+  // todos os atendimentos (`jobs`), não o filtro de status do painel do
+  // dia: o filtro é do painel, e "Esta semana" já mostra o status de cada
+  // linha. A semana das listas é a semana real de hoje, não a semana
+  // navegada na tira.
+  const proximo = proximoAtendimento(jobs, now);
+  const daSemana = atendimentosDaSemana(jobs, now);
+  const proximasSemanas = atendimentosProximasSemanas(jobs, now);
 
   function selectDay(iso: string) {
     if (iso === selectedDate) return;
@@ -360,7 +356,7 @@ export function JobsTab({
   }
 
   return (
-    <div className="pb-4">
+    <div className="pb-4 flex flex-col" style={{ gap: "16px" }}>
       {/* Animação "catraca" — transportada do laboratório
           (AgendaScreen, LaunchScreens.tsx + styles/globals.css:578-638)
           de forma isolada via styled-jsx (escopada só a este componente,
@@ -434,123 +430,129 @@ export function JobsTab({
         }
       `}</style>
 
-      {/* Cabeçalho — "Agenda", 22px/semibold/-0.055em, como o laboratório
-          (ScreenTitle, LaunchScreens.tsx:677-704). O "+" do laboratório
-          não foi portado: a criação de atendimento já tem um gatilho real
-          (FAB contextual, fora do escopo de arquivos deste ticket) —
-          adicionar um segundo botão de criação aqui duplicaria a ação sem
-          estar de fato fiado a nada (JobsTab não recebe callback de
-          criação). Contador preservado do componente anterior (dado
-          real, não existe no laboratório). */}
-      <div className="flex items-baseline gap-2 mb-5">
-        <h1
-          className="font-semibold"
-          style={{
-            fontSize: "22px",
-            letterSpacing: "-0.055em",
-            color: "var(--text)",
-          }}
-        >
-          Agenda
-        </h1>
-        {!initialLoading && !blockingError && (
-          <span
-            className="text-xs font-bold tabular-nums px-2 py-px rounded-full"
-            style={{
-              background: "rgb(var(--accent-rgb) / 0.12)",
-              color: "var(--accent)",
-            }}
+      {/* Cabeçalho (J03) — "Agenda" grande e em negrito forte, ocupando a
+          largura, como o mockup aprovado (24px/800). O contador que havia
+          ao lado do título saiu: o mockup não tem, e a contagem do dia
+          continua no painel do dia logo abaixo. A busca e o sino do mockup
+          não entram: o ticket não pede e não há ação ligada a eles na
+          Agenda. */}
+      <h1
+        style={{
+          fontSize: "24px",
+          fontWeight: 800,
+          letterSpacing: "-0.5px",
+          color: "var(--text)",
+        }}
+      >
+        Agenda
+      </h1>
+
+      {/* Próximo atendimento em destaque (J03). Só depois da 1ª carga
+          bem-sucedida: antes disso "nenhum agendado" seria mentira. */}
+      {hasLoadedOnce && (
+        <AgendaProximoCard job={proximo} onOpen={setDetailJob} />
+      )}
+
+      {/* As 4 ações do mockup. "Novo" abre o mesmo JobForm do "+";
+          "Resumo" e "Anotações" abrem os sheets que já existiam (antes eram
+          os dois botões do fim da página); "Bloquear" não existe no app e
+          fica desabilitado (ver AgendaAcoes.tsx). */}
+      <AgendaAcoes
+        onNovo={() => onEditJob(null)}
+        onResumo={
+          !initialLoading && jobs.length > 0
+            ? () => setResumoOpen(true)
+            : undefined
+        }
+        onAnotacoes={() => setAnotacoesOpen(true)}
+      />
+
+      <div>
+        {/* Navegação de semana — sem equivalente no mockup, que mostra
+            uma semana fixa. Necessária no app real (ver `goToWeek`).
+            Setas 44×44px. */}
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={() => goToWeek(-1)}
+            aria-label="Semana anterior"
+            className="flex items-center justify-center active:opacity-70"
+            style={{ minWidth: "44px", minHeight: "44px" }}
           >
-            {filtered.length}
+            <ChevronLeft size={18} style={{ color: "var(--text-muted)" }} />
+          </button>
+          <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+            {formatWeekRangeLabel(weekStart)}
           </span>
-        )}
-      </div>
+          <button
+            onClick={() => goToWeek(1)}
+            aria-label="Próxima semana"
+            className="flex items-center justify-center active:opacity-70"
+            style={{ minWidth: "44px", minHeight: "44px" }}
+          >
+            <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
+          </button>
+        </div>
 
-      {/* Navegação de semana — sem equivalente no laboratório (ver
-          comentário de `goToWeek` acima). Setas 44×44px. */}
-      <div className="flex items-center justify-between mb-2">
-        <button
-          onClick={() => goToWeek(-1)}
-          aria-label="Semana anterior"
-          className="flex items-center justify-center active:opacity-70"
-          style={{ minWidth: "44px", minHeight: "44px" }}
-        >
-          <ChevronLeft size={18} style={{ color: "var(--text-muted)" }} />
-        </button>
-        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-          {formatWeekRangeLabel(weekStart)}
-        </span>
-        <button
-          onClick={() => goToWeek(1)}
-          aria-label="Próxima semana"
-          className="flex items-center justify-center active:opacity-70"
-          style={{ minWidth: "44px", minHeight: "44px" }}
-        >
-          <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
-        </button>
-      </div>
-
-      {/* Semana horizontal — grade de 7 dias, como o laboratório
-          (grid-cols-7, células 58px, raio 12px = var(--radius-sm), mais
-          perto do design system real que os 13px literais do laboratório).
-          Três marcas independentes por dia: selecionado (fundo cheio),
-          hoje-mas-não-selecionado (anel de contorno — indicação do dia
-          atual, contrato de paridade da Agenda, sem equivalente no
-          laboratório) e ponto de compromisso (dias com atendimento). */}
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((iso) => {
-          const d = new Date(iso + "T00:00:00");
-          const selected = iso === selectedDate;
-          const isToday = iso === today;
-          const hasJobs = datesWithJobs.has(iso);
-          return (
-            <button
-              key={iso}
-              onClick={() => selectDay(iso)}
-              aria-label={`Dia ${d.getDate()}${isToday ? " (hoje)" : ""}`}
-              aria-pressed={selected}
-              data-selected={selected}
-              className="agenda-ratchet-day flex flex-col items-center justify-center"
-              style={{
-                height: "58px",
-                borderRadius: "var(--radius-sm)",
-                background: selected ? "var(--accent)" : "transparent",
-                color: selected ? "white" : "var(--text-muted)",
-                boxShadow: selected ? "var(--glow-sm)" : "none",
-                border:
-                  isToday && !selected ? "1px solid var(--accent)" : "none",
-              }}
-            >
-              <span className="font-semibold" style={{ fontSize: "10px" }}>
-                {WEEKDAY_LETTERS[d.getDay()]}
-              </span>
-              <strong
-                className="agenda-ratchet-number font-semibold"
+        {/* Tira da semana (J03) — 7 pílulas de 58px sobre `--card-solid`,
+            letra do dia em cima e número embaixo, como o mockup. Três
+            marcas independentes por dia: selecionado (fundo cheio no
+            acento; nasce em hoje, igual ao mockup), hoje-mas-não-
+            selecionado (anel de contorno) e ponto de compromisso (dias com
+            atendimento). Hoje e dia com atendimento nunca usam a mesma
+            marca. As datas vêm de `buildWeekStrip`, que segue a semana
+            real, inclusive na virada do mês. */}
+        <div className="grid grid-cols-7" style={{ gap: "5px" }}>
+          {weekStrip.map(({ iso, letter, day, hasJobs }) => {
+            const selected = iso === selectedDate;
+            const isToday = iso === today;
+            return (
+              <button
+                key={iso}
+                onClick={() => selectDay(iso)}
+                aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}`}
+                aria-pressed={selected}
+                data-selected={selected}
+                className="agenda-ratchet-day flex flex-col items-center justify-center"
                 style={{
-                  fontSize: "15px",
-                  marginTop: "8px",
-                  color: isToday && !selected ? "var(--accent)" : undefined,
+                  height: "58px",
+                  borderRadius: "29px",
+                  background: selected ? "var(--accent)" : "var(--card-solid)",
+                  color: "var(--text)",
+                  boxShadow: selected ? "var(--glow-sm)" : "none",
+                  border:
+                    isToday && !selected ? "1px solid var(--accent)" : "none",
                 }}
               >
-                {d.getDate()}
-              </strong>
-              <span
-                className="rounded-full"
-                style={{
-                  marginTop: "4px",
-                  width: "4px",
-                  height: "4px",
-                  background: selected
-                    ? "white"
-                    : hasJobs
-                      ? "var(--accent)"
+                <span style={{ fontSize: "10px", fontWeight: 600 }}>
+                  {letter}
+                </span>
+                <strong
+                  className="agenda-ratchet-number"
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 800,
+                    color: isToday && !selected ? "var(--accent)" : undefined,
+                  }}
+                >
+                  {day}
+                </strong>
+                <span
+                  className="rounded-full"
+                  style={{
+                    marginTop: "2px",
+                    width: "4px",
+                    height: "4px",
+                    background: hasJobs
+                      ? selected
+                        ? "var(--text)"
+                        : "var(--accent)"
                       : "transparent",
-                  opacity: selected ? 1 : 0.6,
-                }}
-              />
-            </button>
-          );
-        })}
+                  }}
+                />
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Painel do dia selecionado — data por extenso + contagem real +
@@ -560,7 +562,7 @@ export function JobsTab({
       <div
         key={selectedDate}
         data-direction={ratchetDirection}
-        className="agenda-ratchet-panel mt-5"
+        className="agenda-ratchet-panel"
       >
         <div className="mb-2.5">
           <div
@@ -691,7 +693,11 @@ export function JobsTab({
                         ? "rgb(var(--accent-rgb) / 0.18)"
                         : "var(--surface)",
                       border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-                      color: active ? "var(--accent)" : "var(--text-muted)",
+                      // #175: mesmo ajuste do FilterChips -- --accent sobre o
+                      // próprio tom ficava abaixo de 4,5:1.
+                      color: active
+                        ? "var(--accent-deep-2)"
+                        : "var(--text-muted)",
                       boxShadow: active ? "var(--glow-sm)" : "none",
                     }}
                   >
@@ -847,58 +853,19 @@ export function JobsTab({
         )}
       </div>
 
-      {/* Resumo/Anotações — antes um card colapsável único no fim da
-          página (T3/#30); agora dois botões que abrem sheets, como
-          /dev-preview/ios (.profileActions). Decisão de #30 marcada
-          superseded pelo usuário (issue #122, Notes 2026-09-22).
-          "Resumo" só aparece se existir algum atendimento em toda a
-          história (mesmo gate que o card colapsável antigo já tinha,
-          preservado); "Anotações" sempre aparece (nunca teve esse gate).
-          Renomeado pra "Bloco de notas": com o mesmo nome das
-          "Observações" de cada atendimento, as duas pareciam a mesma
-          coisa em dois lugares. Este é o bloco GERAL da pessoa; o de um
-          atendimento continua dentro do atendimento. */}
-      <div
-        className="grid gap-2 mt-5"
-        style={{
-          gridTemplateColumns:
-            !initialLoading && jobs.length > 0 ? "1fr 1fr" : "1fr",
-        }}
-      >
-        {!initialLoading && jobs.length > 0 && (
-          <button
-            onClick={() => setResumoOpen(true)}
-            // Fundação Visual (#142): `glass-card` (globals.css) no lugar
-            // do `SOLID_SURFACE_STYLE` local — não é um <GlassCard>
-            // (não precisa da escala de raio semântica), mas é a mesma
-            // classe de material neutro, aplicável a qualquer elemento.
-            // Mesma correção já feita em Início (achado #131) pro
-            // `border: var(--border-color)` tingido por tema.
-            className="glass-card flex items-center justify-center gap-2 rounded-2xl font-bold"
-            style={{
-              minHeight: "44px",
-              fontSize: "13px",
-              color: "var(--text)",
-            }}
-          >
-            <BarChart3 size={16} style={{ color: "var(--text-muted)" }} />
-            Resumo
-          </button>
-        )}
-        <button
-          onClick={() => setAnotacoesOpen(true)}
-          // Fundação Visual (#142): mesma correção do botão "Resumo" acima.
-          className="glass-card flex items-center justify-center gap-2 rounded-2xl font-bold"
-          style={{
-            minHeight: "44px",
-            fontSize: "13px",
-            color: "var(--text)",
-          }}
-        >
-          <NotebookPen size={16} style={{ color: "var(--text-muted)" }} />
-          Bloco de notas
-        </button>
-      </div>
+      {/* "Esta semana" e "Próximas semanas" (J03), na ordem do mockup.
+          Só com dado confirmado: na 1ª carga ou com o painel de erro
+          cheio, uma lista vazia seria uma afirmação falsa. Tocar numa
+          linha abre o mesmo detalhe da timeline (JobDetailSheet). */}
+      {hasLoadedOnce && (
+        <>
+          <EstaSemanaSection jobs={daSemana} onOpen={setDetailJob} />
+          <ProximasSemanasSection
+            jobs={proximasSemanas}
+            onOpen={setDetailJob}
+          />
+        </>
+      )}
 
       <JobDetailSheet
         job={detailJob}

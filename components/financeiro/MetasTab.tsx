@@ -5,6 +5,7 @@ import { Plus, Check, Target } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { calcEarnings, formatBRL } from "@/lib/finance";
+import { progressoMeta } from "./progressoMeta";
 import { PERIODO_LABELS, OBJ_CATS } from "./constants";
 import type { Job, Meta, ReceitaAvulsa, Objetivo } from "@/lib/types";
 
@@ -86,7 +87,7 @@ export function MetasTab({
             )
             .map((meta) => {
               const current = calcEarnings(jobs, receitas, meta.periodo);
-              const pct = Math.min(100, (current / meta.valorAlvo) * 100);
+              const pct = progressoMeta(current, meta.valorAlvo);
               const done = pct >= 100;
               return (
                 <div key={meta.periodo}>

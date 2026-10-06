@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { UserPlus, MessageCircle, Gift, Users2 } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { useEffect, useMemo, useState } from "react";
+import { UserPlus, MessageCircle, Gift, Users2, Plus } from "lucide-react";
 import { RedeHeader } from "./RedeHeader";
 import { ContextualBlock } from "./ContextualBlock";
 import { PostCard } from "./PostCard";
@@ -11,10 +9,161 @@ import { Avatar } from "./Avatar";
 import { SkeletonList } from "./Skeleton";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import type { FeedPost } from "@/lib/rede/feed";
+import type { PessoaResumo } from "@/lib/rede/perfis";
 import type { WishlistItem } from "@/lib/rede/wishlist";
 import type { Usuario } from "@/lib/types";
 
 type Segmento = "paraVoce" | "amigas";
+
+const ABAS: { id: Segmento; label: string }[] = [
+  { id: "paraVoce", label: "Para você" },
+  { id: "amigas", label: "Amigas" },
+];
+
+/**
+ * Abas "Para você" / "Amigas" no visual do mockup da Jornada (J06): texto
+ * com sublinhado na aba ativa, sobre uma linha divisória. Mesmo valor e
+ * mesmo handler de antes (o filtro mora no RedeTab).
+ */
+function AbasFeed({
+  segmento,
+  onChange,
+}: {
+  segmento: Segmento;
+  onChange: (s: Segmento) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      className="flex mb-4"
+      style={{ gap: "22px", borderBottom: "1px solid var(--card-border)" }}
+    >
+      {ABAS.map((aba) => {
+        const ativa = aba.id === segmento;
+        return (
+          <button
+            key={aba.id}
+            type="button"
+            role="tab"
+            aria-selected={ativa}
+            onClick={() => onChange(aba.id)}
+            style={{
+              minHeight: "44px",
+              fontSize: "14px",
+              fontWeight: ativa ? 800 : 700,
+              color: ativa ? "var(--text)" : "var(--text-muted)",
+              borderBottom: ativa
+                ? "2px solid var(--accent-deep)"
+                : "2px solid transparent",
+              marginBottom: "-1px",
+            }}
+          >
+            {aba.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Fileira do topo do feed (mockup da Jornada, J06): "Postar" (abre o mesmo
+ * composer de antes) e as amigas de verdade, com foto ou inicial e o nome.
+ * Tocar numa amiga abre o perfil dela (onOpenAutor, o mesmo do feed).
+ * Rola na horizontal -- o gesto de trocar de aba já ignora scrollers
+ * horizontais (lib/useTabSwipe.ts).
+ */
+function FileiraAmigas({
+  amigas,
+  onPostar,
+  onOpenAmiga,
+}: {
+  amigas: PessoaResumo[];
+  onPostar: () => void;
+  onOpenAmiga: (id: string) => void;
+}) {
+  const item = "flex flex-col items-center shrink-0 font-semibold";
+  const rotulo = {
+    fontSize: "11px",
+    maxWidth: "64px",
+    color: "var(--text)",
+  } as const;
+  return (
+    <div
+      className="flex overflow-x-auto no-scrollbar mb-4"
+      style={{ gap: "14px" }}
+    >
+      <button
+        type="button"
+        onClick={onPostar}
+        className={item}
+        style={{ gap: "6px" }}
+      >
+        <span
+          className="grid place-items-center rounded-full"
+          style={{
+            width: "62px",
+            height: "62px",
+            background: "var(--surface-sub)",
+            border: "2px dashed var(--accent-deep)",
+            color: "var(--accent-deep)",
+          }}
+        >
+          <Plus size={22} strokeWidth={2.4} aria-hidden />
+        </span>
+        <span className="truncate" style={rotulo}>
+          Postar
+        </span>
+      </button>
+
+      {amigas.map((amiga) => (
+        <button
+          key={amiga.id}
+          type="button"
+          onClick={() => onOpenAmiga(amiga.id)}
+          className={item}
+          style={{ gap: "6px" }}
+        >
+          <span
+            className="rounded-full"
+            style={{
+              width: "62px",
+              height: "62px",
+              padding: "3px",
+              border: "2.5px solid var(--ring)",
+            }}
+          >
+            <span
+              className="grid place-items-center w-full h-full rounded-full overflow-hidden font-extrabold"
+              style={{
+                background: amiga.fotoUrl
+                  ? undefined
+                  : amiga.cor || "var(--accent)",
+                color: "#fff",
+                fontSize: "18px",
+              }}
+            >
+              {amiga.fotoUrl ? (
+                // URL do Storage é dinâmica por usuária (mesmo motivo do Avatar).
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={amiga.fotoUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                amiga.nome.charAt(0).toUpperCase()
+              )}
+            </span>
+          </span>
+          <span className="truncate" style={rotulo}>
+            {amiga.nome.split(" ")[0]}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 interface ContextualBlockDef {
   key: string;
@@ -29,6 +178,8 @@ interface Props {
   usuarioFotoUrl: string | null;
   posts: FeedPost[];
   friends: string[];
+  /** As mesmas amigas de `friends`, com nome e foto -- só pra fileira do topo. */
+  amigas: PessoaResumo[];
   wishlistItems: WishlistItem[];
   pendingRequestsCount: number;
   unreadChats: number;
@@ -67,6 +218,7 @@ export function FeedScreen({
   usuarioFotoUrl,
   posts,
   friends,
+  amigas,
   wishlistItems,
   pendingRequestsCount,
   unreadChats,
@@ -102,6 +254,13 @@ export function FeedScreen({
           ),
     [posts, segmento, friends, usuario.id]
   );
+
+  // A lista de amigas pode vir do cache local já na 1ª renderização do
+  // cliente; o servidor não tem esse cache. Mostrar a fileira só depois de
+  // montar evita somar uma diferença servidor x cliente à que já existe
+  // (#130, fora deste ticket).
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
 
   const wishlistPertoDaMeta = wishlistItems.find(
     (w) => w.estado !== "conquistado" && w.valorAtual / w.valorAlvo >= 0.7
@@ -171,31 +330,15 @@ export function FeedScreen({
           onOpenMeuEspaco={onOpenMeuEspaco}
         />
 
-        {/* Compositor — entrada estática, abre o composer completo em sheet */}
-        <GlassCard
-          as="button"
-          radius="lg"
-          onClick={onOpenComposer}
-          className="flex items-center gap-3 px-4 py-3.5 mb-4"
-        >
-          <Avatar nome={usuario.nome} fotoUrl={usuarioFotoUrl} size="md" />
-          <span
-            className="flex-1 text-sm text-left"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Compartilhe algo…
-          </span>
-        </GlassCard>
-
-        <SegmentedControl<Segmento>
-          className="mb-4"
-          value={segmento}
-          onChange={onSegmentoChange}
-          options={[
-            { id: "paraVoce", label: "Para você" },
-            { id: "amigas", label: "Amigas" },
-          ]}
+        {/* Jornada J06: a entrada do composer virou o "Postar" da fileira
+            de amigas (mesmo onOpenComposer), como no mockup. */}
+        <FileiraAmigas
+          amigas={montado ? amigas : []}
+          onPostar={onOpenComposer}
+          onOpenAmiga={onOpenAutor}
         />
+
+        <AbasFeed segmento={segmento} onChange={onSegmentoChange} />
 
         {/* Entrada fixa pra Amigas/Solicitações/Descobrir — como no protótipo
           (linha própria logo abaixo dos tabs, sempre visível). Achado T20/#127:

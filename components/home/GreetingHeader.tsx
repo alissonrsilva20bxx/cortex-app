@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Plus } from "lucide-react";
 import type { Usuario } from "@/lib/types";
 
 interface Props {
@@ -8,13 +9,9 @@ interface Props {
   onOpenAjustes: () => void;
   /** Foto do perfil da Rede, quando houver: o Início mostra a mesma. */
   fotoUrl?: string | null;
-}
-
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Bom dia";
-  if (h < 18) return "Boa tarde";
-  return "Boa noite";
+  /** Botão "Novo" do cabeçalho (Jornada J02): abre o mesmo formulário de
+   * atendimento que o "+" da Início abre. */
+  onNovo: () => void;
 }
 
 function getFirstName(nome: string): string {
@@ -33,56 +30,35 @@ function getFormattedDate(): string {
   // a primeira letra da frase (protótipo aprovado, /dev-preview/ios:
   // "Quinta-feira, 10 de setembro") -- feito no conteúdo, não via CSS,
   // pra também ficar certo se o texto for copiado/lido por leitor de tela.
-  return raw.charAt(0).toUpperCase() + raw.slice(1);
+  // Jornada J02: o mockup usa o dia da semana curto ("Quarta, 23 de
+  // setembro"), sem o "-feira" que o pt-BR por extenso traz.
+  const curto = raw.replace("-feira", "");
+  return curto.charAt(0).toUpperCase() + curto.slice(1);
 }
 
-export function GreetingHeader({ usuario, onOpenAjustes, fotoUrl }: Props) {
+/**
+ * Cabeçalho da Início no visual novo (Jornada J02, mockup
+ * `5-telas-8-temas-claro-escuro.html`, tela Início): avatar à esquerda,
+ * "Olá, <nome>" com a data por extenso embaixo, e o botão "Novo" à
+ * direita. Substitui a escala de saudação grande do protótipo iOS
+ * (#122/#142) -- o mockup aprovado da Jornada usa um cabeçalho compacto.
+ * O avatar continua sendo o único acesso a Ajustes (#122/#124).
+ */
+export function GreetingHeader({
+  usuario,
+  onOpenAjustes,
+  fotoUrl,
+  onNovo,
+}: Props) {
   // Foto da Rede tem prioridade; sem ela, a da conta (Google).
   const foto = fotoUrl || usuario.avatarUrl;
-  const greeting = useMemo(getGreeting, []);
   const date = useMemo(getFormattedDate, []);
   const firstName = getFirstName(usuario.nome);
 
   return (
-    <div className="flex items-start justify-between">
-      <div>
-        {/* Fundação Visual (redesign #122, ticket #142): escala corrigida
-            pra bater com `.greetingHeader h1/p` do protótipo aprovado
-            (30px/760/-0.035em título, 16px corpo/muted subtítulo; 28px
-            <390px) -- a escala anterior (17px/600 título, 10px subtítulo)
-            era uma decisão deliberada só do laboratório antigo, nunca
-            revisitada depois do protótipo iOS ser aprovado. Ver
-            docs/visual/IOS_VISUAL_SYSTEM.md, linha "Divergência real
-            confirmada". */}
-        <h1
-          className="leading-[1.12] text-[28px] min-[390px]:text-[30px]"
-          style={{
-            fontWeight: 760,
-            letterSpacing: "-0.035em",
-            color: "var(--text)",
-          }}
-        >
-          {greeting}, {firstName}
-        </h1>
-        <p
-          className="mt-[5px] leading-none text-base font-normal"
-          style={{
-            color: "var(--text-muted)",
-          }}
-        >
-          {date}
-        </p>
-      </div>
-
-      {/* Avatar — dado real (foto/inicial). 48×48, igual ao `.avatar` do
-          protótipo aprovado (achado da revisão visual #131: estava em
-          36px visual/44px de alvo de toque — o valor de 44px vinha de
-          WCAG 2.5.5, mas 48px já é maior que o mínimo, então o alvo de
-          toque real e a moldura voltam a ser o mesmo elemento, sem
-          precisar do padding extra de antes). Redesign iOS quase nativo
-          (#122/#124): agora é o único acesso a Ajustes, que saiu da
-          BottomNav — precisa ser um botão real (teclado/leitor de tela),
-          não mais decorativo. */}
+    <div className="flex items-center gap-3">
+      {/* Avatar -- dado real (foto/inicial). 44px: o mockup desenha 42px,
+          mas o alvo de toque mínimo do app é 44×44. */}
       <button
         type="button"
         onClick={onOpenAjustes}
@@ -90,25 +66,55 @@ export function GreetingHeader({ usuario, onOpenAjustes, fotoUrl }: Props) {
         data-tour="home-ajustes"
         className="relative flex items-center justify-center rounded-full shrink-0 overflow-hidden transition-opacity active:opacity-70"
         style={{
-          width: "48px",
-          height: "48px",
-          border: "1px solid var(--border-color)",
-          background: "var(--surface)",
+          width: "44px",
+          height: "44px",
+          background: "var(--accent-tint)",
         }}
       >
-        <span className="relative flex items-center justify-center w-full h-full">
-          {foto ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={foto} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <span
-              className="text-sm font-bold"
-              style={{ color: "var(--accent)" }}
-            >
-              {firstName.charAt(0).toUpperCase()}
-            </span>
-          )}
-        </span>
+        {foto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={foto} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <span
+            className="font-extrabold"
+            style={{ fontSize: "16px", color: "var(--accent-deep)" }}
+          >
+            {firstName.charAt(0).toUpperCase()}
+          </span>
+        )}
+      </button>
+
+      <div className="min-w-0 flex-grow">
+        <h1
+          className="truncate font-extrabold"
+          style={{ fontSize: "17px", lineHeight: 1.3, color: "var(--text)" }}
+        >
+          Olá, {firstName}
+        </h1>
+        <p
+          className="truncate"
+          style={{ fontSize: "12px", color: "var(--text-muted)" }}
+        >
+          {date}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onNovo}
+        data-fab-avoid
+        className="flex items-center gap-1.5 shrink-0 rounded-full font-bold transition-opacity active:opacity-80"
+        style={{
+          minHeight: "44px",
+          padding: "0 14px",
+          fontSize: "13px",
+          // #175: texto e fundo de acento com contraste de 4,5:1 nos 8 temas.
+          background: "var(--accent-fill)",
+          color: "var(--on-accent)",
+        }}
+      >
+        <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
+        Novo
       </button>
     </div>
   );

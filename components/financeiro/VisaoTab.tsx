@@ -1,9 +1,8 @@
 "use client";
 
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { formatBRL, formatShortDate } from "@/lib/finance";
+import { formatBRL } from "@/lib/finance";
 import type { Job, Despesa, ReceitaAvulsa } from "@/lib/types";
+import { FinCard } from "./FinCard";
 
 interface Movement {
   id: string;
@@ -64,99 +63,144 @@ interface Props {
   receitas: ReceitaAvulsa[];
 }
 
+/** Quantas movimentações ficam em "Recentes"; o resto vai pra "Mais lançamentos". */
+const QTD_RECENTES = 3;
+
+/**
+ * "22 SET" (maiúsculo) ou "22 set." -- dia + mês curto, sempre no fuso
+ * local: a data vem como "YYYY-MM-DD" e é lida com "T00:00:00", nunca via
+ * toISOString/UTC (bug já corrigido aqui uma vez, em Despesa/Receita).
+ */
+function rotuloData(data: string, maiusculo: boolean): string {
+  const d = new Date(`${data}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  const mes = d.toLocaleDateString("pt-BR", { month: "short" });
+  const dia = String(d.getDate()).padStart(2, "0");
+  return maiusculo
+    ? `${dia} ${mes.replace(".", "").toUpperCase()}`
+    : `${dia} ${mes}`;
+}
+
+/**
+ * Valor com sinal no texto: entrada x saída nunca depende só da cor
+ * (acessibilidade, regra do J04).
+ */
+function Valor({ m, tamanho }: { m: Movement; tamanho: string }) {
+  return (
+    <strong
+      className="font-extrabold tabular-nums shrink-0"
+      style={{
+        fontSize: tamanho,
+        // #175: verde/vermelho de texto pequeno, com 4,5:1 nos 8 temas.
+        color: m.positive ? "var(--success-text)" : "var(--danger-text)",
+      }}
+    >
+      {m.positive ? "+" : "-"}
+      {formatBRL(m.valor)}
+    </strong>
+  );
+}
+
+const divisor = (i: number, total: number) =>
+  i < total - 1 ? { borderBottom: "1px solid var(--card-border)" } : undefined;
+
+/**
+ * Sub-aba Visão no visual novo (Jornada J04, mockup
+ * `5-telas-8-temas-claro-escuro.html`): "Recentes" (as 3 movimentações
+ * mais novas) e "Mais lançamentos" (as seguintes). Mesmas movimentações de
+ * antes (`buildMovements`: atendimentos concluídos + receitas + despesas,
+ * por data, as 10 mais recentes). Linhas só de leitura.
+ */
 export function VisaoTab({ jobs, despesas, receitas }: Props) {
   const movements = buildMovements(jobs, despesas, receitas);
+  const recentes = movements.slice(0, QTD_RECENTES);
+  const mais = movements.slice(QTD_RECENTES);
 
-  // Fundação Visual (#142): sem `style` — material neutro compartilhado de
-  // `.glass-card` (globals.css), mesmo padrão já convergido em Início
-  // (achado #131, ver HeroCard.tsx) — o `SOLID_SURFACE_STYLE` local que
-  // existia aqui sobrescrevia com `border: var(--border-color)`, tingido
-  // por tema (contorno rosa nos temas de acento), a mesma causa-raiz já
-  // corrigida lá.
   return (
-    <GlassCard radius="md" className="p-4">
-      <p
-        className="font-semibold mb-1"
-        style={{
-          fontSize: "13px",
-          letterSpacing: "-0.035em",
-          color: "var(--text)",
-        }}
-      >
-        Movimentações recentes
-      </p>
-
-      {movements.length === 0 ? (
-        <p
-          className="text-sm text-center py-8"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Nenhuma movimentação ainda.
-        </p>
-      ) : (
-        <div className="mt-2">
-          {movements.map((m, i) => (
+    <div className="flex flex-col gap-3">
+      <h2 className="font-extrabold" style={{ fontSize: "15px" }}>
+        Recentes
+      </h2>
+      <FinCard style={{ padding: "4px 16px" }}>
+        {recentes.length === 0 ? (
+          <p
+            className="text-sm text-center py-8"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Nenhuma movimentação ainda.
+          </p>
+        ) : (
+          recentes.map((m, i) => (
             <div
               key={m.id}
-              className="flex items-center gap-3 py-3"
-              style={{
-                borderBottom:
-                  i === movements.length - 1
-                    ? "none"
-                    : "1px solid var(--border-color)",
-              }}
+              className="flex items-center gap-3"
+              style={{ padding: "11px 0", ...divisor(i, recentes.length) }}
             >
-              <div
-                className="shrink-0 grid place-items-center rounded-full"
+              <span
+                className="font-bold shrink-0"
                 style={{
-                  width: 39,
-                  height: 39,
-                  background: m.positive
-                    ? "rgb(var(--success-rgb) / 0.13)"
-                    : "rgb(var(--danger-rgb) / 0.12)",
-                  border: `1px solid ${
-                    m.positive
-                      ? "rgb(var(--success-rgb) / 0.25)"
-                      : "rgb(var(--danger-rgb) / 0.2)"
-                  }`,
+                  width: "48px",
+                  whiteSpace: "nowrap",
+                  fontSize: "11px",
+                  color: "var(--text-muted)",
                 }}
               >
-                {m.positive ? (
-                  <ArrowUpRight size={18} style={{ color: "var(--success)" }} />
-                ) : (
-                  <ArrowDownRight
-                    size={18}
-                    style={{ color: "var(--danger)" }}
-                  />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p
-                  className="font-semibold text-sm truncate"
-                  style={{ color: "var(--text)" }}
-                >
-                  {m.desc}
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {formatShortDate(m.data)}
-                </p>
-              </div>
-              <strong
-                className="text-sm tabular-nums shrink-0"
-                style={{
-                  color: m.positive ? "var(--success)" : "var(--danger)",
-                }}
+                {rotuloData(m.data, true)}
+              </span>
+              <p
+                className="flex-1 min-w-0 font-bold truncate"
+                style={{ fontSize: "13px" }}
               >
-                {m.positive ? "+" : "-"}
-                {formatBRL(m.valor)}
-              </strong>
+                {m.desc}
+              </p>
+              <Valor m={m} tamanho="13px" />
             </div>
-          ))}
-        </div>
+          ))
+        )}
+      </FinCard>
+
+      {mais.length > 0 && (
+        <>
+          <h2 className="font-extrabold mt-1.5" style={{ fontSize: "15px" }}>
+            Mais lançamentos
+          </h2>
+          <FinCard style={{ padding: "4px 16px" }}>
+            {mais.map((m, i) => (
+              <div
+                key={m.id}
+                className="flex items-center gap-3 py-3"
+                style={divisor(i, mais.length)}
+              >
+                <span
+                  className="grid place-items-center shrink-0 font-extrabold"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "var(--radius-sm)",
+                    background: "var(--accent-tint)",
+                    color: "var(--accent-deep)",
+                  }}
+                  aria-hidden
+                >
+                  {m.desc.charAt(0).toUpperCase()}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="font-bold truncate"
+                    style={{ fontSize: "14px" }}
+                  >
+                    {m.desc}
+                  </p>
+                  <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                    {rotuloData(m.data, false)}
+                  </p>
+                </div>
+                <Valor m={m} tamanho="14px" />
+              </div>
+            ))}
+          </FinCard>
+        </>
       )}
-    </GlassCard>
+    </div>
   );
 }
