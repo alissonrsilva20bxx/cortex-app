@@ -66,7 +66,10 @@ export function FilterChips<T extends string>({
                 ? "rgb(var(--accent-rgb) / 0.18)"
                 : "var(--surface)",
               border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-              color: active ? "var(--accent)" : "var(--text-muted)",
+              // #175: --accent sobre o próprio tom ficava abaixo de 4,5:1;
+              // --accent-deep-2 é o mesmo matiz, mais fundo (claro) ou mais
+              // claro (escuro).
+              color: active ? "var(--accent-deep-2)" : "var(--text-muted)",
               // Fundação Visual (#142): sem glow -- `.chipActive` do
               // protótipo é só cor sólida + borda, nenhuma sombra.
             }}

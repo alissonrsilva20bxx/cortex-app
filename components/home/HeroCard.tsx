@@ -64,7 +64,8 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
               fontSize: "11px",
               padding: "3px 9px",
               background: "var(--accent-tint)",
-              color: "var(--accent-deep)",
+              // #175: --accent-deep sobre --accent-tint ficava em 4,25.
+              color: "var(--accent-deep-2)",
             }}
           >
             {Math.round(p.pct)}% da meta

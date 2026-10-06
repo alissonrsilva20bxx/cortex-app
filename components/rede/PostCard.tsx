@@ -90,7 +90,10 @@ export function PostCard({
               className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
               style={{
                 background: `rgb(${cat.rgb} / 0.12)`,
-                color: `rgb(${cat.rgb})`,
+                // #175: a cor da categoria sobre ela mesma a 12% ficava
+                // abaixo de 4,5:1; misturada com --text, mantém o matiz e
+                // passa nos 8 temas, claro e escuro.
+                color: `color-mix(in srgb, rgb(${cat.rgb}) 62%, var(--text))`,
                 border: `1px solid rgb(${cat.rgb} / 0.25)`,
               }}
             >

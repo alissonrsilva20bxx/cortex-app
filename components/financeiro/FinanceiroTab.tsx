@@ -285,8 +285,9 @@ export function FinanceiroTab({
               minHeight: "44px",
               padding: "0 14px",
               fontSize: "13px",
-              background: "var(--accent)",
-              color: "#fff",
+              // #175: texto e fundo de acento com contraste de 4,5:1.
+              background: "var(--accent-fill)",
+              color: "var(--on-accent)",
             }}
           >
             <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
