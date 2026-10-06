@@ -1,60 +1,63 @@
 -- ============================================================
 -- JobApp Jornada - Migration 0034: armazenamento da "Sua Jornada"
 -- ============================================================
--- Ticket J09 (#159). Spec: docs/jornada/spec-sua-jornada.md (J08, #158).
+-- Ticket J09 (#159). Spec: docs/jornada/spec-sua-jornada.md (final, PR
+-- #186). Onde o ticket e a spec discordam, a spec vence (spec, topo). As
+-- referências "§N" abaixo são seções da spec.
 --
--- A REGRA QUE MANDA EM TUDO AQUI: só contadores e selos, nunca um diário.
--- Nenhuma tabela registra "em tal dia ela fez tal coisa". O público do app
--- são mulheres pra quem discrição é o produto: um histórico diário seria uma
--- linha do tempo do trabalho dela. Por isso:
---   - o limite diário de Glow (spec, decisão 4) funciona guardando, por
---     ação, SÓ a data do último ganho e quantas vezes naquela data; quando o
---     dia vira, o RPC sobrescreve -- não existe histórico acumulado;
---   - o capítulo do mês guarda SÓ o mês corrente (uma linha por usuária,
---     sobrescrita na virada); os meses fechados viram uma entrada na
---     coleção de enfeites, e mês não fechado não deixa rastro nenhum;
---   - nenhuma coluna de "quando" além dessas duas (data do último ganho
---     por ação e o mês do capítulo corrente).
+-- A REGRA QUE MANDA EM TUDO AQUI (§1.16, §8): só contadores, estado e
+-- conquistas. Nunca um diário. Nenhuma linha por ação com data e hora,
+-- nenhuma lista do que ela fez em cada dia, nenhum histórico de dias
+-- passados além dos agregados que a §8 permite:
+--   - o limite diário (§3) guarda, por ação, SÓ a data do dia corrente e
+--     quantas vezes deu Glow nele; na virada o servidor sobrescreve;
+--   - os períodos (semana, mês, ano) guardam o agregado do período
+--     corrente e UM retrato agregado do último período fechado de cada
+--     tipo; o retrato anterior é sobrescrito;
+--   - as únicas outras marcas de tempo são mês/ano (coleção, conquista de
+--     selo), nunca um dia.
 --
--- QUEM ESCREVE: os contadores (Glow, ações, selos, capítulo, coleção,
--- marcos) só são escritos pelo servidor -- as RPCs SECURITY DEFINER da J10.
--- A usuária só LÊ as próprias linhas: se o cliente pudesse escrever o
--- próprio Glow, dava pra mentir (J10, "Por que no servidor"). A única
--- tabela que ela escreve direto é a de preferências.
+-- QUEM ESCREVE (§8, "Onde a decisão acontece"): o servidor decide tudo. Os
+-- contadores só são escritos pelas RPCs SECURITY DEFINER da J10 (e pelo
+-- service_role). A usuária só LÊ as próprias linhas e escreve direto só as
+-- próprias preferências -- se o cliente pudesse escrever o próprio Glow,
+-- dava pra mentir (J10, "Por que no servidor").
 --
--- QUEM LÊ: só a dona. A única exceção é o opt-in de perfil público (spec,
--- decisão 11, desligado por padrão): estágio e selos ficam visíveis pra
--- membros da Rede, sem bloqueio entre as duas, numa política separada e
--- explícita em cada uma dessas duas tabelas. Total de Glow, pilares, ações,
--- capítulo, coleção e marcos nunca são legíveis por outra pessoa.
+-- QUEM LÊ: só a dona. A única exceção é o opt-in de perfil público (§1.11,
+-- desligado por padrão): os selos (política separada e explícita em
+-- jornada_selos) e o estágio (função separada e explícita,
+-- jornada_estagio_publico, porque o estágio não é guardado: é calculado do
+-- Glow total, §4, e o Glow total nunca é legível por outra pessoa). Só
+-- membros da Rede, nunca entre duas pessoas com bloqueio.
 --
 -- Aditiva: nenhuma tabela ou coluna existente é alterada.
 
 -- ------------------------------------------------------------
--- NÚMEROS PROPOSTOS -- AGUARDANDO APROVAÇÃO DO OPERADOR
+-- Validação usada pelas tabelas
 -- ------------------------------------------------------------
--- A spec aprovada (J08) tem as decisões, mas não os números. Os números
--- abaixo são uma PROPOSTA, tirada do protótipo aprovado em 02/10/2026
--- (docs/jornada/referencias/prototipo-sua-jornada.html, constantes ACTIONS,
--- BADGES, STAGES, GOALS/MILES, CH_SETS). A J08 diz: "os valores do
--- protótipo são a proposta, não a lei". Nada aqui é aplicado pelo banco:
--- quem usa estes números são as RPCs da J10, que só começa depois da
--- aprovação. O schema não depende de nenhum deles, exceto os marcos de
--- dinheiro (check de jornada_marcos) e os 3 níveis de selo.
--- Comentário no ponto de uso de cada número, em cada tabela abaixo.
+-- Os contadores de período são só números (usada no check de
+-- jornada_periodos, por isso vem antes das tabelas).
+create or replace function public.jornada_so_contadores(mapa jsonb)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select not exists (
+    select 1
+    from jsonb_each(mapa) as e(chave, valor)
+    where jsonb_typeof(e.valor) <> 'number'
+       or e.chave !~ '^[a-z][a-z0-9_]{0,47}$'
+  );
+$$;
 
 -- ------------------------------------------------------------
 -- Tabelas
 -- ------------------------------------------------------------
 
--- Total de Glow e Glow por pilar (spec, decisões 2 e 3). Uma linha por
--- usuária. Nunca diminui (spec, decisão 5: nada zera).
--- Proposta (estágios, spec decisão 5, protótipo STAGES): Começando a partir
--- de 0 Glow, Em movimento a partir de 100, Organizada a partir de 400,
--- Prosperando a partir de 1200, Icônica a partir de 3000; depois Icônica
--- II, III... a cada 1500 Glow (4500, 6000, ...). Nada zera.
--- Proposta (pilares): cada Glow ganho soma no total E no pilar da ação
--- (ver a tabela de ações em jornada_acoes).
+-- Glow total e Glow por pilar (§8: "4 números" + total). Uma linha por
+-- usuária. Nunca diminui (§1.5: nada zera). O estágio NÃO é guardado:
+-- sai de glow_total por public.jornada_estagio_de (abaixo).
 create table if not exists public.jornada_saldo (
   user_id uuid primary key references auth.users(id) on delete cascade,
   glow_total integer not null default 0 check (glow_total >= 0),
@@ -64,110 +67,79 @@ create table if not exists public.jornada_saldo (
   glow_conectar integer not null default 0 check (glow_conectar >= 0)
 );
 
--- Estágio atual (spec, decisão 5): 0 Começando, 1 Em movimento,
--- 2 Organizada, 3 Prosperando, 4 Icônica, 5 Icônica II, 6 Icônica III...
--- Tabela própria, separada do saldo, porque é o que o opt-in de perfil
--- público expõe -- e RLS é por linha, não por coluna: na mesma tabela do
--- saldo, liberar o estágio liberaria também o total de Glow e os pilares.
-create table if not exists public.jornada_estagio (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  nivel integer not null default 0 check (nivel >= 0)
-);
-
--- Contador por ação. `contagem_total` sobe sempre (mesmo acima do limite,
--- J10 passo 2). `data_ultimo_ganho` + `ganhos_no_dia` são o limite diário:
--- ao ganhar Glow, se `data_ultimo_ganho` é hoje (no fuso dela), soma 1; se
--- não, o RPC sobrescreve com hoje e 1. Nada mais é guardado por ação.
--- `acao` é a chave da ação definida na spec (ex.: 'atendimento',
--- 'despesa', 'meta_concluida'); a lista e os valores ficam nas RPCs.
--- Proposta (ações, protótipo ACTIONS; "limite diário" = quantas vezes por
--- dia a ação dá Glow, que é o que ganhos_no_dia conta):
---   Proposta: Glow de despesa = 5, pilar Organizar, limite diário = 3 vezes (15 Glow/dia)
---   Proposta: Glow de planejar o dia = 5, pilar Organizar, limite diário = 1 vez
---   Proposta: Glow de guardar numa meta = 15, pilar Prosperar, limite diário = 1 vez
---   Proposta: Glow de comprovante no Cofre = 10, pilar Proteger, limite diário = 3 vezes
---   Proposta: Glow de descanso = 10, pilar Proteger, limite diário = 1 vez
---   Proposta: Glow de "sua dica ajudou" = 5, pilar Conectar, limite diário = 5 vezes
---   Proposta: Glow de "sua dica protegeu" = 5, pilar Conectar, limite diário = 5 vezes
---   Proposta: Glow de atendimento = 0, limite diário = 1 vez (só marca o dia
---             como ativo, spec decisão 1)
---   Proposta: Glow de concluir uma meta = 100, pilar Prosperar, sem limite diário
--- Passou do limite: a ação conta em contagem_total, mas sem Glow, selo nem
--- missão (protótipo: "registra igual, só sem Glow").
--- Proposta: chaves de ação 'despesa', 'planejar', 'guardar_meta',
--- 'comprovante_cofre', 'descanso', 'dica_ajudou', 'dica_protegeu',
--- 'atendimento', 'meta_concluida'. "Isso me ajudou" e "Isso me protegeu"
--- (spec decisão 12) são as contagens totais de 'dica_ajudou' e
--- 'dica_protegeu', legíveis só pela autora (RLS abaixo).
+-- Por ação (§3): contador de vida inteira + o limite do dia corrente.
+--   contagem_total     sobe SEMPRE, mesmo acima do limite (§3: "a ação
+--                      registra normal (o contador sobe)").
+--   dia, ganhos_no_dia o limite diário: o dia corrente (no fuso dela, §2)
+--                      e quantas vezes a ação deu Glow nele. Na virada,
+--                      o RPC sobrescreve com o novo dia e 1. O dia anterior
+--                      não fica guardado (§8).
+-- Chaves de ação da §3 (a lista e os valores ficam nas RPCs da J10):
+-- 'despesa', 'receita', 'planejar', 'guardar_meta', 'comprovante_cofre',
+-- 'descanso', 'dica_ajudou', 'dica_protegeu', 'atendimento'.
 create table if not exists public.jornada_acoes (
   user_id uuid not null references auth.users(id) on delete cascade,
   acao text not null check (acao ~ '^[a-z][a-z0-9_]{0,47}$'),
   contagem_total integer not null default 0 check (contagem_total >= 0),
-  data_ultimo_ganho date,
+  dia date,
   ganhos_no_dia integer not null default 0 check (ganhos_no_dia >= 0),
   primary key (user_id, acao),
-  -- Sem data, não há ganho no dia; com data, houve pelo menos um.
+  -- Sem dia corrente, não há ganho no dia; com dia, houve pelo menos um.
   constraint jornada_acoes_limite_coerente check (
-    (data_ultimo_ganho is null and ganhos_no_dia = 0)
-    or (data_ultimo_ganho is not null and ganhos_no_dia >= 1)
+    (dia is null and ganhos_no_dia = 0)
+    or (dia is not null and ganhos_no_dia >= 1)
   )
 );
 
--- Selos e o nível atual de cada um (spec, decisão 6: I, II, III). Só o
--- nível de agora, nunca quando foi conquistado.
--- Proposta (selos, protótipo BADGES; Glow por nível: I = +20, II = +30,
--- III = +50, spec decisão 6). Patamar = contagem acumulada pra cada nível:
---   Proposta: 'primeiros_passos' (abriu a Jornada): nível I com 1
---   Proposta: 'planejadora' (dias planejados): I com 1, II com 10, III com 50
---   Proposta: 'mao_amiga' (dica ajudou alguém): I com 1, II com 25, III com 100
---   Proposta: 'semana_firme' (semanas com 3 dias fortes): I com 1, II com 4, III com 12
---   Proposta: 'rumo_a_meta' (vezes guardando dinheiro): I com 1, II com 10, III com 50
---   Proposta: 'tudo_guardado' (comprovantes no Cofre): I com 1, II com 20, III com 100
---   Proposta: 'descansar_conta' (descansos de propósito): I com 1, II com 8, III com 24
---   Proposta: 'guardia' (dica protegeu alguém): I com 5, II com 25, III com 100
---   Proposta: 'em_casa' (completou os 7 dias da Jornada de Começo): nível I com 1
---   Proposta: 'mes_a_mes' (meses na Jornada): I com 1, II com 3, III com 6
---   Proposta: 'um_ano' (um ano na Jornada): nível I com 1
--- O patamar sai das contagens de jornada_acoes; aqui fica só o nível atual.
+-- Contadores de vida inteira que não são uma ação (§8: "contadores de vida
+-- inteira ... por selo", os que alimentam a §5): semanas firmes, meses na
+-- Jornada, dias ativos (atendimento, §8), metas concluídas, passos da
+-- Jornada de Começo etc. Só o número, nunca quando.
+create table if not exists public.jornada_contadores (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  chave text not null check (chave ~ '^[a-z][a-z0-9_]{0,47}$'),
+  total integer not null default 0 check (total >= 0),
+  primary key (user_id, chave)
+);
+
+-- Períodos (§8): os agregados do período CORRENTE de cada tipo e UM retrato
+-- agregado do último período FECHADO de cada tipo -- no máximo 6 linhas por
+-- usuária (3 tipos x corrente/fechado), sempre sobrescritas. Alimentam as
+-- missões do mês (§6: "o progresso conta só o que aconteceu dentro do mês,
+-- pelos contadores do mês") e os resumos (§1.9). `contadores` é um mapa
+-- chave -> número ("despesa": 12, "dias_fortes": 4, "glow": 85...), nunca
+-- uma lista de dias. `inicio` é o primeiro dia do período (segunda-feira,
+-- dia 1 do mês, 1/jan), no fuso dela, pra o RPC saber quando virou.
+create table if not exists public.jornada_periodos (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  tipo text not null check (tipo in ('semana', 'mes', 'ano')),
+  fechado boolean not null,
+  inicio date not null,
+  contadores jsonb not null default '{}'::jsonb,
+  primary key (user_id, tipo, fechado),
+  -- Só número em cada chave: nenhuma data, lista ou texto livre.
+  constraint jornada_periodos_so_numeros check (
+    jsonb_typeof(contadores) = 'object'
+    and public.jornada_so_contadores(contadores)
+  )
+);
+
+-- Selos (§5): nível atual de cada um (1 a 3) e o mês/ano em que esse nível
+-- foi conquistado (§8: "quando ele foi conquistado (mês/ano, para a
+-- coleção)"). Nunca o dia.
 create table if not exists public.jornada_selos (
   user_id uuid not null references auth.users(id) on delete cascade,
   selo text not null check (selo ~ '^[a-z][a-z0-9_]{0,47}$'),
   nivel smallint not null check (nivel between 1 and 3),
+  conquistado_ano smallint not null check (conquistado_ano between 2000 and 2999),
+  conquistado_mes smallint not null check (conquistado_mes between 1 and 12),
   primary key (user_id, selo)
 );
 
--- Capítulo do mês CORRENTE (spec, decisão 7): uma linha por usuária,
--- sobrescrita na virada do mês. Progresso de cada uma das 3 missões e se o
--- capítulo fechou. O mês anterior não fica guardado aqui.
--- Proposta (capítulo do mês, protótipo CH_SETS e CH_PTS): fechar as 3
--- missões dá +40 Glow e o enfeite do mês. Os meses alternam 3 conjuntos de
--- missões (mês do ano módulo 3); missao_1..3 é o progresso, na ordem:
---   Proposta: jan, abr, jul, out: planejar 8 dias; guardar dinheiro em 3
---             semanas; tirar 2 descansos
---   Proposta: fev, mai, ago, nov: guardar 4 comprovantes no Cofre; lançar
---             10 despesas; ter 12 dias fortes
---   Proposta: mar, jun, set, dez: guardar dinheiro em 4 semanas; planejar 6
---             dias; sua dica ajudar 3 vezes
--- ATENÇÃO, A DECIDIR: "guardar dinheiro em N semanas" e o selo
--- 'semana_firme' precisam saber o que já aconteceu NA SEMANA CORRENTE, e
--- este schema ainda não guarda isso. Opções: (a) uma tabela da semana
--- corrente, uma linha por usuária, sobrescrita na virada (sem histórico);
--- ou (b) trocar essas missões e o selo por outros que só usam o que já
--- existe. "Dia forte" (algum registro no dia) dá pra contar uma vez por dia
--- com a ação sintética 'dia_ativo' em jornada_acoes, sem tabela nova.
-create table if not exists public.jornada_capitulo (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  ano smallint not null check (ano between 2000 and 2999),
-  mes smallint not null check (mes between 1 and 12),
-  missao_1 integer not null default 0 check (missao_1 >= 0),
-  missao_2 integer not null default 0 check (missao_2 >= 0),
-  missao_3 integer not null default 0 check (missao_3 >= 0),
-  fechado boolean not null default false
-);
-
--- Coleção de enfeites (spec, decisão 7): os meses em que o capítulo
--- fechou. Mês não fechado não tem linha -- "fica em branco e nada é
--- tirado".
+-- Coleção (§6, §8: "capítulos fechados (mês/ano -> enfeite)"): os meses em
+-- que o capítulo fechou. Mês não fechado não tem linha -- "fica em branco
+-- e nada é tirado". A linha do mês corrente também é o "já fechou", pra o
+-- RPC não dar o +40 duas vezes.
 create table if not exists public.jornada_colecao (
   user_id uuid not null references auth.users(id) on delete cascade,
   ano smallint not null check (ano between 2000 and 2999),
@@ -175,38 +147,67 @@ create table if not exists public.jornada_colecao (
   primary key (user_id, ano, mes)
 );
 
--- Marcos de dinheiro guardado já batidos (spec, decisão 8: 500, 1.000,
--- 2.500, 5.000). Só QUAIS marcos, nunca quando nem o valor guardado.
--- Proposta (dinheiro, protótipo GOAL_PTS e MILES, spec decisão 8): concluir
--- uma meta = +100 Glow (ação 'meta_concluida'); cada marco do total
--- guardado (somando todas as metas) = +50 Glow, uma vez por marco. Os
--- marcos 500/1000/2500/5000 já estão no check abaixo.
+-- Marcos de dinheiro alcançados (§7): quais dos 4. Cada um conta UMA vez na
+-- vida e nunca é retirado -- se o saldo cair e subir de novo, a linha já
+-- existe e não dá Glow outra vez. Nunca quando nem o valor guardado.
 create table if not exists public.jornada_marcos (
   user_id uuid not null references auth.users(id) on delete cascade,
   marco integer not null check (marco in (500, 1000, 2500, 5000)),
   primary key (user_id, marco)
 );
 
--- Preferências (spec, decisões 10 e 11). Som ligado por padrão; Modo
--- discreto desligado; perfil público DESLIGADO por padrão (opt-in).
+-- Itens destravados por estágio (§1.13, §4, §8): moldura, ícone, variação
+-- de tema. Nunca retirados.
+create table if not exists public.jornada_destravados (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  item text not null check (item ~ '^[a-z][a-z0-9_]{0,63}$'),
+  primary key (user_id, item)
+);
+
+-- Preferências (§1.10, §1.11, §1.15, §8): som ligado por padrão; Modo
+-- discreto desligado; estágio e selos no perfil público DESLIGADOS por
+-- padrão (opt-in); Jornada de Começo; e o fuso dela (§2), nome IANA
+-- (ex.: 'Europe/Lisbon'), validado pelas RPCs. Sem fuso, a J10 usa o
+-- deslocamento que o cliente mandar (J10, regras).
 create table if not exists public.jornada_preferencias (
   user_id uuid primary key references auth.users(id) on delete cascade,
   som_ligado boolean not null default true,
   modo_discreto boolean not null default false,
-  mostrar_no_perfil boolean not null default false
+  estagio_no_perfil boolean not null default false,
+  selos_no_perfil boolean not null default false,
+  jornada_comeco boolean not null default true,
+  fuso text check (fuso is null or fuso ~ '^[A-Za-z0-9_+\-]+(/[A-Za-z0-9_+\-]+)*$')
 );
 
 -- ------------------------------------------------------------
--- Opt-in de perfil público: helper
+-- Funções de apoio
 -- ------------------------------------------------------------
--- A política pública precisa saber se a DONA da linha ligou o opt-in. Uma
--- subquery direta em jornada_preferencias rodaria com os privilégios de
--- quem lê, e a RLS de preferências (só a dona) esconderia a linha alheia.
--- Este helper lê só o booleano, com search_path vazio, e não expõe mais
--- nada das preferências.
 create schema if not exists private;
 
-create or replace function private.jornada_mostra_no_perfil(alvo uuid)
+-- Estágio a partir do Glow total (§4): 0 Começando, 1 Em movimento,
+-- 2 Organizada, 3 Prosperando, 4 Icônica, 5 Icônica II, 6 Icônica III...
+-- (Icônica N a partir de 3000 + (N - 1) x 1500). Pura, usada pelas RPCs da
+-- J10 e pelo perfil público; é a única definição dos cortes no banco.
+create or replace function public.jornada_estagio_de(glow integer)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select case
+    when glow >= 3000 then 4 + (glow - 3000) / 1500
+    when glow >= 1200 then 3
+    when glow >= 400 then 2
+    when glow >= 100 then 1
+    else 0
+  end;
+$$;
+
+-- Opt-ins de perfil público da DONA de uma linha. Uma subquery direta em
+-- jornada_preferencias rodaria com os privilégios de quem lê, e a RLS de
+-- preferências (só a dona) esconderia a linha alheia. SECURITY DEFINER,
+-- search_path vazio, devolve só o booleano pedido.
+create or replace function private.jornada_selos_no_perfil(alvo uuid)
 returns boolean
 language sql
 stable
@@ -214,29 +215,72 @@ security definer
 set search_path = ''
 as $$
   select coalesce(
-    (
-      select p.mostrar_no_perfil
-      from public.jornada_preferencias p
-      where p.user_id = alvo
-    ),
+    (select p.selos_no_perfil from public.jornada_preferencias p where p.user_id = alvo),
     false
   );
 $$;
 
-revoke all on function private.jornada_mostra_no_perfil(uuid) from public;
-grant execute on function private.jornada_mostra_no_perfil(uuid)
+create or replace function private.jornada_estagio_no_perfil(alvo uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(
+    (select p.estagio_no_perfil from public.jornada_preferencias p where p.user_id = alvo),
+    false
+  );
+$$;
+
+-- A EXCEÇÃO do estágio, explícita e separada: o estágio de outra pessoa só
+-- se ela ligou o opt-in, quem pede é membro da Rede e não há bloqueio entre
+-- as duas (mesma regra do perfil da Rede, 0017). Devolve SÓ o número do
+-- estágio, nunca o Glow; null em qualquer outro caso (inclusive sem opt-in,
+-- pra não revelar se a pessoa usa a Jornada).
+create or replace function public.jornada_estagio_publico(alvo uuid)
+returns integer
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select public.jornada_estagio_de(s.glow_total)
+  from public.jornada_saldo s
+  where s.user_id = alvo
+    and auth.uid() is not null
+    and private.jornada_estagio_no_perfil(alvo)
+    and public.rede_is_member()
+    and private.rede_users_unblocked(alvo);
+$$;
+
+revoke all on function public.jornada_so_contadores(jsonb) from public;
+revoke all on function public.jornada_estagio_de(integer) from public;
+revoke all on function private.jornada_selos_no_perfil(uuid) from public;
+revoke all on function private.jornada_estagio_no_perfil(uuid) from public;
+revoke all on function public.jornada_estagio_publico(uuid) from public;
+grant execute on function public.jornada_so_contadores(jsonb)
+  to authenticated, service_role;
+grant execute on function public.jornada_estagio_de(integer)
+  to authenticated, service_role;
+grant execute on function private.jornada_selos_no_perfil(uuid)
+  to authenticated, service_role;
+grant execute on function private.jornada_estagio_no_perfil(uuid)
+  to service_role;
+grant execute on function public.jornada_estagio_publico(uuid)
   to authenticated, service_role;
 
 -- ------------------------------------------------------------
 -- RLS ligada em TODAS as tabelas novas
 -- ------------------------------------------------------------
 alter table public.jornada_saldo enable row level security;
-alter table public.jornada_estagio enable row level security;
 alter table public.jornada_acoes enable row level security;
+alter table public.jornada_contadores enable row level security;
+alter table public.jornada_periodos enable row level security;
 alter table public.jornada_selos enable row level security;
-alter table public.jornada_capitulo enable row level security;
 alter table public.jornada_colecao enable row level security;
 alter table public.jornada_marcos enable row level security;
+alter table public.jornada_destravados enable row level security;
 alter table public.jornada_preferencias enable row level security;
 
 -- Privilégios mínimos (mesmo padrão de 0006/0021): nada pra anon; leitura
@@ -245,24 +289,26 @@ alter table public.jornada_preferencias enable row level security;
 revoke all
   on table
     public.jornada_saldo,
-    public.jornada_estagio,
     public.jornada_acoes,
+    public.jornada_contadores,
+    public.jornada_periodos,
     public.jornada_selos,
-    public.jornada_capitulo,
     public.jornada_colecao,
     public.jornada_marcos,
+    public.jornada_destravados,
     public.jornada_preferencias
   from anon, authenticated, service_role;
 
 grant select
   on table
     public.jornada_saldo,
-    public.jornada_estagio,
     public.jornada_acoes,
+    public.jornada_contadores,
+    public.jornada_periodos,
     public.jornada_selos,
-    public.jornada_capitulo,
     public.jornada_colecao,
-    public.jornada_marcos
+    public.jornada_marcos,
+    public.jornada_destravados
   to authenticated;
 
 -- Preferências: a dona lê, cria e altera a própria linha.
@@ -273,12 +319,13 @@ grant select, insert, update
 grant select, insert, update, delete
   on table
     public.jornada_saldo,
-    public.jornada_estagio,
     public.jornada_acoes,
+    public.jornada_contadores,
+    public.jornada_periodos,
     public.jornada_selos,
-    public.jornada_capitulo,
     public.jornada_colecao,
     public.jornada_marcos,
+    public.jornada_destravados,
     public.jornada_preferencias
   to service_role;
 
@@ -286,106 +333,74 @@ grant select, insert, update, delete
 -- Políticas
 -- ------------------------------------------------------------
 -- Escritas pensando em alguém tentando ler a linha de outra pessoa: toda
--- leitura exige auth.uid() = user_id, salvo a exceção explícita do opt-in.
+-- leitura exige auth.uid() = user_id, salvo a exceção explícita dos selos.
 
 drop policy if exists "jornada_saldo: owner select" on public.jornada_saldo;
 create policy "jornada_saldo: owner select"
-  on public.jornada_saldo
-  for select
-  to authenticated
-  using (auth.uid() = user_id);
-
-drop policy if exists "jornada_estagio: owner select" on public.jornada_estagio;
-create policy "jornada_estagio: owner select"
-  on public.jornada_estagio
-  for select
-  to authenticated
+  on public.jornada_saldo for select to authenticated
   using (auth.uid() = user_id);
 
 drop policy if exists "jornada_acoes: owner select" on public.jornada_acoes;
 create policy "jornada_acoes: owner select"
-  on public.jornada_acoes
-  for select
-  to authenticated
+  on public.jornada_acoes for select to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "jornada_contadores: owner select" on public.jornada_contadores;
+create policy "jornada_contadores: owner select"
+  on public.jornada_contadores for select to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "jornada_periodos: owner select" on public.jornada_periodos;
+create policy "jornada_periodos: owner select"
+  on public.jornada_periodos for select to authenticated
   using (auth.uid() = user_id);
 
 drop policy if exists "jornada_selos: owner select" on public.jornada_selos;
 create policy "jornada_selos: owner select"
-  on public.jornada_selos
-  for select
-  to authenticated
-  using (auth.uid() = user_id);
-
-drop policy if exists "jornada_capitulo: owner select" on public.jornada_capitulo;
-create policy "jornada_capitulo: owner select"
-  on public.jornada_capitulo
-  for select
-  to authenticated
+  on public.jornada_selos for select to authenticated
   using (auth.uid() = user_id);
 
 drop policy if exists "jornada_colecao: owner select" on public.jornada_colecao;
 create policy "jornada_colecao: owner select"
-  on public.jornada_colecao
-  for select
-  to authenticated
+  on public.jornada_colecao for select to authenticated
   using (auth.uid() = user_id);
 
 drop policy if exists "jornada_marcos: owner select" on public.jornada_marcos;
 create policy "jornada_marcos: owner select"
-  on public.jornada_marcos
-  for select
-  to authenticated
+  on public.jornada_marcos for select to authenticated
   using (auth.uid() = user_id);
 
-drop policy if exists "jornada_preferencias: owner select"
-  on public.jornada_preferencias;
+drop policy if exists "jornada_destravados: owner select" on public.jornada_destravados;
+create policy "jornada_destravados: owner select"
+  on public.jornada_destravados for select to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "jornada_preferencias: owner select" on public.jornada_preferencias;
 create policy "jornada_preferencias: owner select"
-  on public.jornada_preferencias
-  for select
-  to authenticated
+  on public.jornada_preferencias for select to authenticated
   using (auth.uid() = user_id);
 
-drop policy if exists "jornada_preferencias: owner insert"
-  on public.jornada_preferencias;
+drop policy if exists "jornada_preferencias: owner insert" on public.jornada_preferencias;
 create policy "jornada_preferencias: owner insert"
-  on public.jornada_preferencias
-  for insert
-  to authenticated
+  on public.jornada_preferencias for insert to authenticated
   with check (auth.uid() = user_id);
 
-drop policy if exists "jornada_preferencias: owner update"
-  on public.jornada_preferencias;
+drop policy if exists "jornada_preferencias: owner update" on public.jornada_preferencias;
 create policy "jornada_preferencias: owner update"
-  on public.jornada_preferencias
-  for update
-  to authenticated
+  on public.jornada_preferencias for update to authenticated
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
--- A EXCEÇÃO, explícita e separada: estágio e selos de quem ligou o opt-in
--- de perfil público, visíveis só pra membros da Rede e nunca entre duas
--- pessoas com bloqueio (mesma regra do perfil da Rede, 0017). Nada além
--- dessas duas tabelas tem política pública.
-drop policy if exists "jornada_estagio: perfil publico opt-in"
-  on public.jornada_estagio;
-create policy "jornada_estagio: perfil publico opt-in"
-  on public.jornada_estagio
-  for select
-  to authenticated
-  using (
-    private.jornada_mostra_no_perfil(user_id)
-    and public.rede_is_member()
-    and private.rede_users_unblocked(user_id)
-  );
-
-drop policy if exists "jornada_selos: perfil publico opt-in"
-  on public.jornada_selos;
+-- A EXCEÇÃO dos selos, explícita e separada: os selos de quem ligou o
+-- opt-in de selos no perfil público, visíveis só pra membros da Rede e
+-- nunca entre duas pessoas com bloqueio (0017). O estágio tem a sua
+-- exceção na função jornada_estagio_publico, acima. Nenhuma outra tabela
+-- tem leitura pública.
+drop policy if exists "jornada_selos: perfil publico opt-in" on public.jornada_selos;
 create policy "jornada_selos: perfil publico opt-in"
-  on public.jornada_selos
-  for select
-  to authenticated
+  on public.jornada_selos for select to authenticated
   using (
-    private.jornada_mostra_no_perfil(user_id)
+    private.jornada_selos_no_perfil(user_id)
     and public.rede_is_member()
     and private.rede_users_unblocked(user_id)
   );
