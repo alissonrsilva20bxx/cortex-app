@@ -19,6 +19,7 @@ import type {
   Pilar,
   SeloId,
   TipoMissao,
+  TipoPeriodo,
 } from "./estado";
 
 // ─────────────────────────── idioma e moeda ───────────────────────────
@@ -453,3 +454,123 @@ export const MENSAGEM_ERRO: Record<ErroJornada, string> = {
     "Sem conexão. Sua Jornada se atualiza quando a internet voltar.",
   "resposta-invalida": "Não deu pra carregar sua Jornada agora. Tente de novo.",
 };
+
+/* ── Resumos de semana, mês e ano (J14, #164) ───────────────────────
+   Montados SÓ com os contadores que `jornada_periodos` guarda (spec §8):
+   `glow`, `dias_fortes`, as contagens por ação, e — por tipo de período —
+   `firme`/`guardou` na semana, `semanas_firmes`/`semanas_guardou` no mês e
+   no ano. Nada de diário: nenhum texto aqui pede "o que aconteceu no dia
+   tal". Período fraco não é falha; período vazio é só vazio. */
+
+export const RESUMO_TITULO: Record<TipoPeriodo, string> = {
+  semana: "Esta semana",
+  mes: "Este mês",
+  ano: "Este ano",
+};
+
+/** Aba/rótulo curto de cada período. */
+export const RESUMO_ABA: Record<TipoPeriodo, string> = {
+  semana: "Semana",
+  mes: "Mês",
+  ano: "Ano",
+};
+
+/** "45 Glow nesta semana" */
+export function resumoGlow(glow: number, tipo: TipoPeriodo): string {
+  const quando = { semana: "nesta semana", mes: "neste mês", ano: "neste ano" };
+  return `${numero(glow)} ${NOME_GLOW} ${quando[tipo]}`;
+}
+
+/** "2 dias fortes" / "1 dia forte" */
+export function resumoDiasFortes(dias: number): string {
+  return dias === 1 ? "1 dia forte" : `${numero(dias)} dias fortes`;
+}
+
+/** Ritmo: na semana é sim/não; no mês e no ano é contagem. */
+export function resumoRitmo(valor: number, tipo: TipoPeriodo): string | null {
+  if (valor <= 0) return null;
+  if (tipo === "semana") return "Semana firme";
+  return valor === 1 ? "1 semana firme" : `${numero(valor)} semanas firmes`;
+}
+
+/** Dinheiro guardado: na semana é sim/não; no mês e no ano é contagem. */
+export function resumoGuardou(valor: number, tipo: TipoPeriodo): string | null {
+  if (valor <= 0) return null;
+  if (tipo === "semana") return "Você guardou dinheiro";
+  return valor === 1
+    ? "1 semana guardando dinheiro"
+    : `${numero(valor)} semanas guardando dinheiro`;
+}
+
+/** Título da lista de ações do período. */
+export const RESUMO_FEITOS = "O que você construiu";
+
+/**
+ * Rótulo de contagem de cada ação no resumo (singular/plural). Só as ações
+ * que entram no resumo: atendimento fica de fora de propósito (decisão 1:
+ * volume de trabalho não é conquista).
+ */
+interface ContagemAcao {
+  um: string;
+  muitos: string;
+}
+
+/**
+ * Chaves de contador de período que viram linha no resumo. São as chaves
+ * que `jornada_periodos.contadores` guarda (J10 `jornada_somar_periodo`):
+ * as ações da §3 mais as duas de dica, que o servidor credita sozinho.
+ * `atendimento` e `abrir_jornada` ficam de fora de propósito.
+ */
+const CONTAGEM_ACAO: Record<string, ContagemAcao> = {
+  despesa: { um: "despesa lançada", muitos: "despesas lançadas" },
+  receita: { um: "entrada lançada", muitos: "entradas lançadas" },
+  planejar: { um: "dia planejado", muitos: "dias planejados" },
+  guardar_meta: {
+    um: "vez guardando dinheiro",
+    muitos: "vezes guardando dinheiro",
+  },
+  comprovante_cofre: {
+    um: "comprovante no Cofre",
+    muitos: "comprovantes no Cofre",
+  },
+  descanso: { um: "dia de descanso", muitos: "dias de descanso" },
+  dica_ajudou: {
+    um: "vez que sua dica ajudou",
+    muitos: "vezes que sua dica ajudou",
+  },
+  dica_protegeu: {
+    um: "vez que sua dica protegeu",
+    muitos: "vezes que sua dica protegeu",
+  },
+};
+
+/** As chaves que aparecem no resumo, na ordem em que aparecem. */
+export const ACOES_DO_RESUMO = Object.keys(CONTAGEM_ACAO);
+
+/** "4 despesas lançadas" — null quando a chave não entra no resumo. */
+export function resumoAcao(acao: string, n: number): string | null {
+  const texto = CONTAGEM_ACAO[acao];
+  if (!texto || n <= 0) return null;
+  return `${numero(n)} ${n === 1 ? texto.um : texto.muitos}`;
+}
+
+/** Uma linha de comparação com o período fechado anterior. */
+export function resumoAnterior(glow: number, tipo: TipoPeriodo): string {
+  const quando = {
+    semana: "Na semana passada",
+    mes: "No mês passado",
+    ano: "No ano passado",
+  };
+  return `${quando[tipo]}: ${numero(glow)} ${NOME_GLOW}`;
+}
+
+/** Período sem nada ainda. Sem cobrança: vazio é só vazio. */
+export const RESUMO_VAZIO: Record<TipoPeriodo, string> = {
+  semana: "Nada por aqui nesta semana. Tudo bem.",
+  mes: "Nada por aqui neste mês. Tudo bem.",
+  ano: "Nada por aqui neste ano. Tudo bem.",
+};
+
+/** Rodapé do resumo: o tom do pacote, sem cobrança. */
+export const RESUMO_RODAPE =
+  "Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo.";

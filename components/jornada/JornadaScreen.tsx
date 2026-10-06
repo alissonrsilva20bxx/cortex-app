@@ -15,6 +15,7 @@ import { JornadaColecao } from "./JornadaColecao";
 import { JornadaDinheiro } from "./JornadaDinheiro";
 import { JornadaEstagio } from "./JornadaEstagio";
 import { JornadaPilares } from "./JornadaPilares";
+import { JornadaResumos } from "./resumos/JornadaResumos";
 import { JornadaSelos } from "./JornadaSelos";
 import { hojeDoEstado } from "./progresso";
 
@@ -128,6 +129,7 @@ export function JornadaScreen({ userId, onVoltar }: Props) {
             <JornadaColecao estado={estado} hoje={hoje} />
             <JornadaDinheiro estado={estado} />
             <JornadaPilares estado={estado} />
+            <JornadaResumos userId={userId} />
             <JornadaSelos estado={estado} />
             <JornadaAjustes
               preferencias={estado.preferencias}
