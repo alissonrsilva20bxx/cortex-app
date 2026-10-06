@@ -1,0 +1,1423 @@
+{
+ "fase": "antes",
+ "geradoEm": "2026-10-06T05:16:30.355Z",
+ "teclado": 336,
+ "casos": [
+  {
+   "formulario": "atendimento",
+   "width": 390,
+   "mode": "light",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 84,
+    "base": 844,
+    "altura": 760,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 177,
+     "base": 225,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "date",
+     "topo": 265,
+     "base": 316,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "time",
+     "topo": 265,
+     "base": 316,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "0,00",
+     "topo": 356,
+     "base": 404,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 526,
+     "base": 575,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 691,
+     "base": 785,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    }
+   ],
+   "cobertos": 2
+  },
+  {
+   "formulario": "atendimento",
+   "width": 390,
+   "mode": "light",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 84,
+    "base": 844,
+    "altura": 760,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 210,
+     "base": 259,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "date",
+     "topo": 299,
+     "base": 349,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "time",
+     "topo": 299,
+     "base": 349,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "0,00",
+     "topo": 389,
+     "base": 438,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 560,
+     "base": 608,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 725,
+     "base": 818,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    }
+   ],
+   "cobertos": 2
+  },
+  {
+   "formulario": "atendimento",
+   "width": 390,
+   "mode": "dark",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 84,
+    "base": 844,
+    "altura": 760,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 177,
+     "base": 225,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "date",
+     "topo": 265,
+     "base": 316,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "time",
+     "topo": 265,
+     "base": 316,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "0,00",
+     "topo": 356,
+     "base": 404,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 526,
+     "base": 575,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 691,
+     "base": 785,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    }
+   ],
+   "cobertos": 2
+  },
+  {
+   "formulario": "atendimento",
+   "width": 390,
+   "mode": "dark",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 84,
+    "base": 844,
+    "altura": 760,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 210,
+     "base": 259,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "date",
+     "topo": 299,
+     "base": 349,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "time",
+     "topo": 299,
+     "base": 349,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "0,00",
+     "topo": 389,
+     "base": 438,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 560,
+     "base": 608,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 725,
+     "base": 818,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 84,
+     "sheetBase": 844
+    }
+   ],
+   "cobertos": 2
+  },
+  {
+   "formulario": "atendimento",
+   "width": 430,
+   "mode": "light",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 93,
+    "base": 932,
+    "altura": 839,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 186,
+     "base": 234,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "date",
+     "topo": 274,
+     "base": 325,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "time",
+     "topo": 274,
+     "base": 325,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "0,00",
+     "topo": 365,
+     "base": 413,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 535,
+     "base": 584,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 712,
+     "base": 806,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    }
+   ],
+   "cobertos": 1
+  },
+  {
+   "formulario": "atendimento",
+   "width": 430,
+   "mode": "light",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 93,
+    "base": 932,
+    "altura": 839,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 219,
+     "base": 268,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "date",
+     "topo": 308,
+     "base": 358,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "time",
+     "topo": 308,
+     "base": 358,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "0,00",
+     "topo": 398,
+     "base": 447,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 569,
+     "base": 617,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 746,
+     "base": 839,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    }
+   ],
+   "cobertos": 2
+  },
+  {
+   "formulario": "atendimento",
+   "width": 430,
+   "mode": "dark",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 93,
+    "base": 932,
+    "altura": 839,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 186,
+     "base": 234,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "date",
+     "topo": 274,
+     "base": 325,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "time",
+     "topo": 274,
+     "base": 325,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "0,00",
+     "topo": 365,
+     "base": 413,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 535,
+     "base": 584,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 712,
+     "base": 806,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    }
+   ],
+   "cobertos": 1
+  },
+  {
+   "formulario": "atendimento",
+   "width": 430,
+   "mode": "dark",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 93,
+    "base": 932,
+    "altura": 839,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Nome do cliente",
+     "topo": 219,
+     "base": 268,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "date",
+     "topo": 308,
+     "base": 358,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "time",
+     "topo": 308,
+     "base": 358,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "0,00",
+     "topo": 398,
+     "base": 447,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "Endereço ou local",
+     "topo": 569,
+     "base": 617,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    },
+    {
+     "campo": "Só deste atendimento: cor escolhida, alergia, sinal pago…",
+     "topo": 746,
+     "base": 839,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 932
+    }
+   ],
+   "cobertos": 2
+  },
+  {
+   "formulario": "despesa",
+   "width": 390,
+   "mode": "light",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 195,
+    "base": 844,
+    "altura": 649,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 490,
+     "base": 536,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 548,
+     "base": 596,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "date",
+     "topo": 548,
+     "base": 596,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "despesa",
+   "width": 390,
+   "mode": "light",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 195,
+    "base": 844,
+    "altura": 649,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 634,
+     "base": 680,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 195,
+     "sheetBase": 844
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 692,
+     "base": 740,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 195,
+     "sheetBase": 844
+    },
+    {
+     "campo": "date",
+     "topo": 692,
+     "base": 740,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 195,
+     "sheetBase": 844
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "despesa",
+   "width": 390,
+   "mode": "dark",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 195,
+    "base": 844,
+    "altura": 649,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 490,
+     "base": 536,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 548,
+     "base": 596,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "date",
+     "topo": 548,
+     "base": 596,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "despesa",
+   "width": 390,
+   "mode": "dark",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 195,
+    "base": 844,
+    "altura": 649,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 634,
+     "base": 680,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 195,
+     "sheetBase": 844
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 692,
+     "base": 740,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 195,
+     "sheetBase": 844
+    },
+    {
+     "campo": "date",
+     "topo": 692,
+     "base": 740,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 195,
+     "sheetBase": 844
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "despesa",
+   "width": 430,
+   "mode": "light",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 283,
+    "base": 932,
+    "altura": 649,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 499,
+     "base": 545,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 557,
+     "base": 605,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "date",
+     "topo": 557,
+     "base": 605,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    }
+   ],
+   "cobertos": 2
+  },
+  {
+   "formulario": "despesa",
+   "width": 430,
+   "mode": "light",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 283,
+    "base": 932,
+    "altura": 649,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 722,
+     "base": 768,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 283,
+     "sheetBase": 932
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 780,
+     "base": 828,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 283,
+     "sheetBase": 932
+    },
+    {
+     "campo": "date",
+     "topo": 780,
+     "base": 828,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 283,
+     "sheetBase": 932
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "despesa",
+   "width": 430,
+   "mode": "dark",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 283,
+    "base": 932,
+    "altura": 649,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 499,
+     "base": 545,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 557,
+     "base": 605,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    },
+    {
+     "campo": "date",
+     "topo": 557,
+     "base": 605,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 60,
+     "sheetBase": 596
+    }
+   ],
+   "cobertos": 2
+  },
+  {
+   "formulario": "despesa",
+   "width": 430,
+   "mode": "dark",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 283,
+    "base": 932,
+    "altura": 649,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 722,
+     "base": 768,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 283,
+     "sheetBase": 932
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 780,
+     "base": 828,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 283,
+     "sheetBase": 932
+    },
+    {
+     "campo": "date",
+     "topo": 780,
+     "base": 828,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 283,
+     "sheetBase": 932
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "entrada",
+   "width": 390,
+   "mode": "light",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 341,
+    "base": 844,
+    "altura": 503,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 344,
+     "base": 390,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 402,
+     "base": 450,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "date",
+     "topo": 402,
+     "base": 450,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    }
+   ],
+   "cobertos": 0
+  },
+  {
+   "formulario": "entrada",
+   "width": 390,
+   "mode": "light",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 341,
+    "base": 844,
+    "altura": 503,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 634,
+     "base": 680,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 341,
+     "sheetBase": 844
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 692,
+     "base": 740,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 341,
+     "sheetBase": 844
+    },
+    {
+     "campo": "date",
+     "topo": 692,
+     "base": 740,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 341,
+     "sheetBase": 844
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "entrada",
+   "width": 390,
+   "mode": "dark",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 341,
+    "base": 844,
+    "altura": 503,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 344,
+     "base": 390,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 402,
+     "base": 450,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    },
+    {
+     "campo": "date",
+     "topo": 402,
+     "base": 450,
+     "visivelAte": 508,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 51,
+     "sheetBase": 508
+    }
+   ],
+   "cobertos": 0
+  },
+  {
+   "formulario": "entrada",
+   "width": 390,
+   "mode": "dark",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 341,
+    "base": 844,
+    "altura": 503,
+    "alturaJanela": 844
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 634,
+     "base": 680,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 341,
+     "sheetBase": 844
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 692,
+     "base": 740,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 341,
+     "sheetBase": 844
+    },
+    {
+     "campo": "date",
+     "topo": 692,
+     "base": 740,
+     "visivelAte": 508,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 341,
+     "sheetBase": 844
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "entrada",
+   "width": 430,
+   "mode": "light",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 429,
+    "base": 932,
+    "altura": 503,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 386,
+     "base": 432,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 596
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 444,
+     "base": 492,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 596
+    },
+    {
+     "campo": "date",
+     "topo": 444,
+     "base": 492,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 596
+    }
+   ],
+   "cobertos": 0
+  },
+  {
+   "formulario": "entrada",
+   "width": 430,
+   "mode": "light",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "light"
+   },
+   "semTeclado": {
+    "topo": 429,
+    "base": 932,
+    "altura": 503,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 722,
+     "base": 768,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 429,
+     "sheetBase": 932
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 780,
+     "base": 828,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 429,
+     "sheetBase": 932
+    },
+    {
+     "campo": "date",
+     "topo": 780,
+     "base": 828,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 429,
+     "sheetBase": 932
+    }
+   ],
+   "cobertos": 3
+  },
+  {
+   "formulario": "entrada",
+   "width": 430,
+   "mode": "dark",
+   "simulacao": "janela",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 429,
+    "base": 932,
+    "altura": 503,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 386,
+     "base": 432,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 596
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 444,
+     "base": 492,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 596
+    },
+    {
+     "campo": "date",
+     "topo": 444,
+     "base": 492,
+     "visivelAte": 596,
+     "visivel": true,
+     "focado": true,
+     "sheetTopo": 93,
+     "sheetBase": 596
+    }
+   ],
+   "cobertos": 0
+  },
+  {
+   "formulario": "entrada",
+   "width": 430,
+   "mode": "dark",
+   "simulacao": "iphone",
+   "tema": {
+    "theme": "pink-neon",
+    "mode": "dark"
+   },
+   "semTeclado": {
+    "topo": 429,
+    "base": 932,
+    "altura": 503,
+    "alturaJanela": 932
+   },
+   "campos": [
+    {
+     "campo": "Descrição",
+     "topo": 722,
+     "base": 768,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 429,
+     "sheetBase": 932
+    },
+    {
+     "campo": "Valor (R$)",
+     "topo": 780,
+     "base": 828,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 429,
+     "sheetBase": 932
+    },
+    {
+     "campo": "date",
+     "topo": 780,
+     "base": 828,
+     "visivelAte": 596,
+     "visivel": false,
+     "focado": true,
+     "sheetTopo": 429,
+     "sheetBase": 932
+    }
+   ],
+   "cobertos": 3
+  }
+ ]
+}
