@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import { useToast } from "@/components/Toast";
 import { localKey } from "@/lib/finance";
+import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 
 const CATEGORIAS = [
   { id: "freelance", label: "Freelance", emoji: "💼" },
@@ -29,6 +30,9 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
   const [categoria, setCategoria] = useState("outros");
   const [data, setData] = useState(localKey(new Date()));
   const [loading, setLoading] = useState(false);
+  // #176: mantém o campo focado visível com o teclado aberto.
+  const painelRef = useRef<HTMLDivElement>(null);
+  useCampoVisivelComTeclado(painelRef, open);
 
   async function handleSave() {
     const v = parseFloat(valor.replace(",", "."));
@@ -64,13 +68,19 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
       <SheetBackdrop open={open} onClose={onClose} className="z-[200]" />
 
       <div
+        ref={painelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Nova Entrada"
         aria-hidden={!open || undefined}
-        className="fixed left-0 right-0 z-[200] px-4 pt-5 pb-8 max-h-[90vh] overflow-y-auto transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed left-0 right-0 z-[200] px-4 pt-5 pb-8 overflow-y-auto transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
-          bottom: 0,
+          // #176: com o teclado aberto, o sheet sobe acima dele e cabe na
+          // área que sobrou (variáveis do useCampoVisivelComTeclado). Sem
+          // teclado valem os valores de sempre: bottom 0 e 90vh (era a
+          // classe max-h-[90vh]).
+          bottom: "var(--teclado-inset, 0px)",
+          maxHeight: "min(90vh, calc(var(--teclado-altura-util, 100vh) * 0.9))",
           transform: open ? "translateY(0)" : "translateY(105%)",
           background: "var(--bg)",
           border: "1px solid var(--card-border)",

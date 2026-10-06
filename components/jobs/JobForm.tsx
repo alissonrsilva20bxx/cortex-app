@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
+import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 import type { Job, JobStatus, Modalidade } from "@/lib/types";
 
 interface FormState {
@@ -74,6 +75,9 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // #176: mantém o campo focado visível com o teclado aberto.
+  const painelRef = useRef<HTMLDivElement>(null);
+  useCampoVisivelComTeclado(painelRef, open);
 
   useEffect(() => {
     if (open) {
@@ -140,14 +144,20 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
           gradiente opaco sobre --bg do tema, sem blur; raio do topo usa
           --radius-sheet (26px), não o rounded-t-3xl (24px fixo do Tailwind). */}
       <div
+        ref={painelRef}
         role="dialog"
         aria-modal="true"
         aria-label={job ? "Editar atendimento" : "Novo atendimento"}
         aria-hidden={!open || undefined}
         className="fixed left-0 right-0 z-50 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
-          bottom: 0,
-          maxHeight: "90dvh",
+          // #176: com o teclado aberto, o sheet sobe acima dele e cabe na
+          // área que sobrou (variáveis do useCampoVisivelComTeclado). Sem
+          // teclado as variáveis não existem e valem os valores de sempre:
+          // bottom 0 e 90dvh.
+          bottom: "var(--teclado-inset, 0px)",
+          maxHeight:
+            "min(90dvh, calc(var(--teclado-altura-util, 100dvh) * 0.9))",
           transform: open ? "translateY(0)" : "translateY(105%)",
           background: `linear-gradient(180deg, rgb(var(--bg-rgb) / 0.97), rgb(var(--bg-rgb) / 0.995) 70%)`,
           border: "1px solid var(--card-border)",
