@@ -1068,3 +1068,38 @@ select:focus-visible,
 [data-theme="midnight"] {
   --accent-fill: color-mix(in srgb, var(--accent) 98%, #000);
 }
+
+/* ── Sua Jornada (J12, #162) ────────────────────────────────────────
+   Tokens `--j-*` do card do Início e da tela da Jornada. Nenhuma cor nova:
+   cada um aponta pra um token que já existe e já varia por tema (8) e por
+   modo (claro/escuro), então a Jornada acompanha o tema sem bloco por
+   tema. Os únicos valores literais são o botão branco da chave e a sombra
+   dele, iguais nos dois modos. */
+:root {
+  --j-tela-bg: var(--body-bg);
+  --j-card: var(--card-solid);
+  --j-card-sub: var(--surface-sub);
+  --j-hero-bg: var(--hero-bg);
+  --j-hero-texto: #fff;
+  --j-hero-texto-2: var(--hero-text-muted);
+  --j-hero-trilho: var(--hero-bg-2);
+  --j-hero-progresso: var(--accent);
+  --j-progresso: var(--accent-fill);
+  --j-trilho: var(--accent-tint);
+  --j-acento-texto: var(--accent-deep);
+  --j-chip-bg: var(--accent-tint);
+  --j-chip-texto: var(--accent-deep-2);
+  --j-pilar-organizar: var(--accent-fill);
+  --j-pilar-prosperar: var(--success);
+  --j-pilar-proteger: var(--violet);
+  --j-pilar-conectar: var(--info);
+  --j-selo-bg: var(--accent-tint);
+  --j-selo-icone: var(--accent-deep);
+  --j-bloqueado-bg: var(--surface-sub);
+  --j-bloqueado-icone: var(--text-muted);
+  --j-mes-vazio: var(--ring);
+  --j-feito: var(--success);
+  --j-feito-texto: var(--success-text);
+  --j-chave-botao: #fff;
+  --j-chave-sombra: 0 1px 3px rgba(0, 0, 0, 0.25);
+}

@@ -12,6 +12,14 @@ import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { CofreCard } from "@/components/home/CofreCard";
 import { SemanaSection } from "@/components/home/SemanaSection";
 import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
+import { JornadaCard } from "@/components/home/JornadaCard";
+import { JornadaScreen } from "@/components/jornada/JornadaScreen";
+import { usarTransporteDeLaboratorio } from "@/lib/jornada/cliente";
+import {
+  criarTransporteJornadaLaboratorio,
+  estadoJornadaContaNova,
+  estadoJornadaExemplo,
+} from "@/lib/mockJornada";
 import { JobsTab } from "@/components/jobs/JobsTab";
 import { JobForm } from "@/components/jobs/JobForm";
 import { FinanceiroTab } from "@/components/financeiro/FinanceiroTab";
@@ -87,6 +95,20 @@ export default function DevPreviewApp() {
         MOCK_APP_USUARIO.id
       )
     );
+    // "Sua Jornada" (J12): sem servidor, o estado vem de lib/mockJornada.ts.
+    // `?jornada=nova` mostra a conta nova (tudo zero); sem o parâmetro, uma
+    // usuária com algumas semanas de Jornada.
+    const jornadaParam =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("jornada")
+        : null;
+    usarTransporteDeLaboratorio(
+      criarTransporteJornadaLaboratorio(
+        jornadaParam === "nova"
+          ? estadoJornadaContaNova()
+          : estadoJornadaExemplo()
+      )
+    );
   }
 
   const toast = useToast();
@@ -115,6 +137,7 @@ export default function DevPreviewApp() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [redeReselect, setRedeReselect] = useState(0);
   const [fabOpen, setFabOpen] = useState(false);
+  const [jornadaAberta, setJornadaAberta] = useState(false);
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
@@ -417,6 +440,12 @@ export default function DevPreviewApp() {
               />
             </div>
 
+            {/* Card "Sua Jornada" (J12): só no laboratório por enquanto. */}
+            <JornadaCard
+              userId={usuario.id}
+              onAbrir={() => setJornadaAberta(true)}
+            />
+
             {/* Espelha app/page.tsx: bloco da Agenda removível em
                 Ajustes › Tela inicial (#181). */}
             {(homeCards.agenda ?? true) && (
@@ -550,6 +579,13 @@ export default function DevPreviewApp() {
       )}
 
       {dataLoaded && <RecapSheet jobs={jobs} />}
+
+      {jornadaAberta && (
+        <JornadaScreen
+          userId={usuario.id}
+          onVoltar={() => setJornadaAberta(false)}
+        />
+      )}
 
       <JobForm
         open={jobFormOpen}
