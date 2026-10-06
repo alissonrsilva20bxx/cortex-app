@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import type { EstadoJornada, Periodo, TipoPeriodo } from "../../lib/jornada/estado";
+import type {
+  EstadoJornada,
+  Periodo,
+  TipoPeriodo,
+} from "../../lib/jornada/estado";
 import { TIPOS_PERIODO } from "../../lib/jornada/estado";
 import {
   acoesFeitas,
@@ -9,6 +13,7 @@ import {
   chaveDoRitmo,
   contador,
   doEstado,
+  ehPeriodoAnterior,
   periodoVazio,
 } from "../../components/jornada/resumos/leitura";
 import {
@@ -74,7 +79,9 @@ describe("J14 — os resumos só leem do hook", () => {
   it("nenhum arquivo importa Supabase, cliente ou cache", () => {
     for (const f of FONTES) {
       const src = semComentarios(read(f));
-      expect(src, f).not.toMatch(/@\/lib\/supabase|from "\.\.\/\.\.\/lib\/supabase"/);
+      expect(src, f).not.toMatch(
+        /@\/lib\/supabase|from "\.\.\/\.\.\/lib\/supabase"/
+      );
       expect(src, f).not.toMatch(/lib\/jornada\/(cliente|cache)/);
     }
   });
@@ -90,7 +97,9 @@ describe("J14 — os resumos só leem do hook", () => {
   it("nenhum resumo decide Glow, estágio, limite ou selo", () => {
     for (const f of FONTES) {
       const src = semComentarios(read(f));
-      expect(src, f).not.toMatch(/\b(3000|1200|1500|glowTotal|estagio|selos)\b/);
+      expect(src, f).not.toMatch(
+        /\b(3000|1200|1500|glowTotal|estagio|selos)\b/
+      );
     }
   });
 });
@@ -115,6 +124,8 @@ describe("J14 — texto e moeda só em textos.ts", () => {
         const dentro = s.slice(1, -1);
         if (dentro.startsWith("var(--")) return false; // token de cor
         if (/^(@\/|\.{1,2}\/)/.test(dentro)) return false; // caminho de módulo
+        // vão entre dois atributos JSX na mesma linha (' aria-x='), não é literal
+        if (/^\s/.test(dentro) || /=$/.test(dentro)) return false;
         // classe utilitária: só minúsculas, dígitos e pontuação de classe
         return !/^[a-z0-9_ :[\]()/.%-]+$/.test(dentro);
       });
@@ -149,7 +160,9 @@ describe("J14 — só contadores que jornada_periodos guarda", () => {
   it("nenhuma chave com cara de diário é lida", () => {
     for (const f of FONTES) {
       const src = semComentarios(read(f));
-      expect(src, f).not.toMatch(/\bdias\b\s*:|"dia"|historico|por_dia|diario/i);
+      expect(src, f).not.toMatch(
+        /\bdias\b\s*:|"dia"|historico|por_dia|diario/i
+      );
     }
   });
 
@@ -188,9 +201,22 @@ describe("J14 — período vazio não quebra e não cobra", () => {
     expect(periodoVazio(doEstado(e, "ano").atual, "ano")).toBe(true);
   });
 
-  it("o último fechado chega quando existe", () => {
-    const e = estadoCom("mes", periodo({ glow: 10 }), periodo({ glow: 80 }));
+  it("o último fechado chega quando é mesmo o mês anterior", () => {
+    const e = estadoCom(
+      "mes",
+      { inicio: "2026-10-01", contadores: { glow: 10 } },
+      { inicio: "2026-09-01", contadores: { glow: 80 } }
+    );
     expect(doEstado(e, "mes").fechado?.contadores.glow).toBe(80);
+  });
+
+  it("um fechado antigo não vira comparação", () => {
+    const e = estadoCom(
+      "mes",
+      { inicio: "2026-10-01", contadores: { glow: 10 } },
+      { inicio: "2026-03-01", contadores: { glow: 80 } }
+    );
+    expect(doEstado(e, "mes").fechado).toBeNull();
   });
 });
 
@@ -223,5 +249,128 @@ describe("J14 — os textos contam sem cobrar", () => {
   it("a comparação com o período anterior é só informativa", () => {
     expect(resumoAnterior(80, "semana")).toContain("Na semana passada");
     expect(resumoAnterior(80, "semana")).toContain("80");
+  });
+});
+
+describe("J14 — a tela abre o resumo, e as abas trocam", () => {
+  const tela = read("components/jornada/JornadaScreen.tsx");
+  const container = read(`${DIR}/JornadaResumos.tsx`);
+
+  it("a JornadaScreen importa e monta o resumo", () => {
+    expect(tela).toMatch(
+      /^import \{ JornadaResumos \} from "\.\/resumos\/JornadaResumos";$/m
+    );
+    expect(tela).toMatch(/<JornadaResumos\s+userId=\{userId\}\s*\/>/);
+  });
+
+  it("cada aba troca para o próprio período, não para um fixo", () => {
+    expect(container).toMatch(/onClick=\{\(\) => setAba\(tipo\)\}/);
+    expect(container).not.toMatch(/setAba\("(semana|mes|ano)"\)/);
+  });
+
+  it("o container percorre os três tipos, sem lista própria", () => {
+    expect(container).toMatch(/TIPOS_PERIODO\.map/);
+  });
+});
+
+describe("J14 — o componente trata o vazio, não só a leitura", () => {
+  const comp = read(`${DIR}/ResumoPeriodo.tsx`);
+
+  it("ResumoPeriodo decide pelo periodoVazio e mostra RESUMO_VAZIO", () => {
+    expect(comp).toMatch(/periodoVazio\(atual, tipo\)/);
+    expect(comp).toMatch(/RESUMO_VAZIO\[tipo\]/);
+    // o ramo do vazio existe de verdade: nada de Glow quando está vazio
+    expect(comp).toMatch(/\{vazio \? \(/);
+  });
+
+  it("o Glow do período só aparece fora do vazio", () => {
+    const depoisDoVazio = comp.slice(comp.indexOf("{vazio ? ("));
+    const ramoCheio = depoisDoVazio.slice(depoisDoVazio.indexOf(") : ("));
+    expect(ramoCheio).toMatch(/resumoGlow\(/);
+  });
+});
+
+describe("J14 — a comparação não cobra e não mente", () => {
+  it("só compara com o período imediatamente anterior", () => {
+    const semana = periodo({ glow: 10 });
+    const anterior = { inicio: "2026-09-28", contadores: { glow: 80 } };
+    const antiga = { inicio: "2026-08-24", contadores: { glow: 80 } };
+    const corrente = { inicio: "2026-10-05", contadores: { glow: 10 } };
+    expect(ehPeriodoAnterior(corrente, anterior, "semana")).toBe(true);
+    expect(ehPeriodoAnterior(corrente, antiga, "semana")).toBe(false);
+    expect(ehPeriodoAnterior(corrente, null, "semana")).toBe(false);
+    expect(semana.inicio).toBe("2026-10-05");
+  });
+
+  it("mês e ano conferem o calendário, não sete dias", () => {
+    const mes = { inicio: "2026-10-01", contadores: { glow: 10 } };
+    expect(
+      ehPeriodoAnterior(mes, { inicio: "2026-09-01", contadores: {} }, "mes")
+    ).toBe(true);
+    expect(
+      ehPeriodoAnterior(mes, { inicio: "2026-07-01", contadores: {} }, "mes")
+    ).toBe(false);
+    const ano = { inicio: "2026-01-01", contadores: { glow: 10 } };
+    expect(
+      ehPeriodoAnterior(ano, { inicio: "2025-01-01", contadores: {} }, "ano")
+    ).toBe(true);
+    expect(
+      ehPeriodoAnterior(ano, { inicio: "2023-01-01", contadores: {} }, "ano")
+    ).toBe(false);
+  });
+
+  it("a virada de ano não quebra a semana nem o mês", () => {
+    expect(
+      ehPeriodoAnterior(
+        { inicio: "2027-01-04", contadores: { glow: 1 } },
+        { inicio: "2026-12-28", contadores: {} },
+        "semana"
+      )
+    ).toBe(true);
+    expect(
+      ehPeriodoAnterior(
+        { inicio: "2027-01-01", contadores: { glow: 1 } },
+        { inicio: "2026-12-01", contadores: {} },
+        "mes"
+      )
+    ).toBe(true);
+  });
+
+  it("período corrente vazio não ganha comparação (seria cobrança)", () => {
+    const e = estadoCom("semana", periodo({}), {
+      inicio: "2026-09-28",
+      contadores: { glow: 80 },
+    });
+    expect(doEstado(e, "semana").fechado).toBeNull();
+  });
+
+  it("a linha de comparação não tem seta, sinal nem julgamento", () => {
+    const texto = resumoAnterior(80, "semana");
+    expect(texto).not.toMatch(/[▲▼↑↓+−-]|mais|menos|melhor|pior|caiu|subiu/i);
+  });
+});
+
+describe("J14 — discrição: o resumo não vaza da tela da Jornada", () => {
+  it("nada fora de components/jornada importa os resumos", () => {
+    const raizes = ["app", "components", "lib"];
+    const pendentes = raizes.map((r) => join(ROOT, r));
+    const culpados: string[] = [];
+    while (pendentes.length > 0) {
+      const dir = pendentes.pop() as string;
+      for (const nome of readdirSync(dir, { withFileTypes: true })) {
+        const caminho = join(dir, nome.name);
+        if (nome.isDirectory()) {
+          if (nome.name !== "node_modules") pendentes.push(caminho);
+          continue;
+        }
+        if (!/\.(ts|tsx)$/.test(nome.name)) continue;
+        const rel = caminho.slice(ROOT.length + 1).replace(/\\/g, "/");
+        if (rel.startsWith("components/jornada/")) continue;
+        if (/from "[^"]*resumos\//.test(readFileSync(caminho, "utf-8"))) {
+          culpados.push(rel);
+        }
+      }
+    }
+    expect(culpados).toEqual([]);
   });
 });

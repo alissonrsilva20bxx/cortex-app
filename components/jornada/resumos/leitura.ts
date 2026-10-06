@@ -50,17 +50,59 @@ export function periodoVazio(
   );
 }
 
+/** "AAAA-MM-DD" → Date local, por partes (nunca `new Date(string)`, que vira UTC). */
+function doIso(iso: string): Date | null {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+const iguais = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
 /**
- * O par (corrente, último fechado) de um tipo de período, na forma que o
- * servidor manda (J10): `corrente` sempre existe; `ultimoFechado` só depois
- * que um período daquele tipo virou.
+ * Se o período fechado é mesmo o IMEDIATAMENTE anterior ao corrente.
+ *
+ * O servidor guarda uma linha fechada por tipo (`primary key (user_id, tipo,
+ * fechado)`), e ela é o último período em que ela teve atividade -- não
+ * necessariamente o anterior. Quem ficou cinco semanas fora veria "na semana
+ * passada" sobre uma semana de mais de um mês atrás. É conferência de
+ * calendário, não de Glow: fora isso, a comparação some.
+ */
+export function ehPeriodoAnterior(
+  corrente: Periodo,
+  fechado: Periodo | null,
+  tipo: TipoPeriodo
+): boolean {
+  if (!fechado) return false;
+  const inicio = doIso(corrente.inicio);
+  const antes = doIso(fechado.inicio);
+  if (!inicio || !antes) return false;
+  if (tipo === "semana") {
+    const esperado = new Date(inicio);
+    esperado.setDate(esperado.getDate() - 7);
+    return iguais(antes, esperado);
+  }
+  if (tipo === "mes") {
+    const esperado = new Date(inicio.getFullYear(), inicio.getMonth() - 1, 1);
+    return iguais(antes, esperado);
+  }
+  return iguais(antes, new Date(inicio.getFullYear() - 1, 0, 1));
+}
+
+/**
+ * O par (corrente, anterior) de um tipo de período, na forma que o servidor
+ * manda (J10). O `fechado` só vem quando é mesmo o período anterior E o
+ * corrente tem alguma coisa: comparar com um período vazio vira cobrança.
  */
 export function doEstado(
   estado: EstadoJornada,
   tipo: TipoPeriodo
 ): { atual: Periodo; fechado: Periodo | null } {
-  return {
-    atual: estado.periodos.corrente[tipo],
-    fechado: estado.periodos.ultimoFechado[tipo] ?? null,
-  };
+  const atual = estado.periodos.corrente[tipo];
+  const guardado = estado.periodos.ultimoFechado[tipo] ?? null;
+  const comparavel =
+    !periodoVazio(atual, tipo) && ehPeriodoAnterior(atual, guardado, tipo);
+  return { atual, fechado: comparavel ? guardado : null };
 }

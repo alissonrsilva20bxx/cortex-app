@@ -566,9 +566,9 @@ export function resumoAnterior(glow: number, tipo: TipoPeriodo): string {
 
 /** Período sem nada ainda. Sem cobrança: vazio é só vazio. */
 export const RESUMO_VAZIO: Record<TipoPeriodo, string> = {
-  semana: "A semana está começando. O que vier, vem no seu ritmo.",
-  mes: "O mês está no começo. Não precisa de pressa.",
-  ano: "O ano mal começou. Tem tempo de sobra.",
+  semana: "Nada por aqui nesta semana. Tudo bem.",
+  mes: "Nada por aqui neste mês. Tudo bem.",
+  ano: "Nada por aqui neste ano. Tudo bem.",
 };
 
 /** Rodapé do resumo: o tom do pacote, sem cobrança. */

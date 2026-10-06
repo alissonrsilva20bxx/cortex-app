@@ -27,11 +27,7 @@ export function JornadaResumos({ userId }: Props) {
 
   return (
     <div className="flex flex-col gap-3" data-jornada-resumos>
-      <div
-        role="tablist"
-        aria-orientation="horizontal"
-        className="flex gap-2"
-      >
+      <div role="tablist" aria-orientation="horizontal" className="flex gap-2">
         {TIPOS_PERIODO.map((tipo) => {
           const ativa = tipo === aba;
           return (
