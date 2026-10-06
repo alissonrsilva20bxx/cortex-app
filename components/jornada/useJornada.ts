@@ -7,6 +7,7 @@ import type {
   Comemoracao,
   ErroJornada,
   EstadoJornada,
+  Preferencias,
 } from "@/lib/jornada/estado";
 
 /**
@@ -24,6 +25,8 @@ import type {
  * - `fila` / `proximaComemoracao`: comemorações pendentes, na ordem do
  *   servidor. Persistem entre aberturas do app.
  * - `consumirComemoracao(id)`: tira uma da fila depois de tocada.
+ * - `salvarPreferencias(parcial)`: grava som, Modo discreto ou perfil. A
+ *   chave muda na hora; se o servidor recusar, volta e devolve `false`.
  *
  * Seguro a montar duas vezes (StrictMode): o efeito só CARREGA e reenvia
  * pendentes, e a loja reaproveita a chamada em andamento. Registrar nunca
@@ -38,6 +41,7 @@ export interface UsoJornada {
   registrar: (acao: Acao) => Promise<Comemoracao[]>;
   registrarAbertura: () => Promise<Comemoracao[]>;
   consumirComemoracao: (id: string) => void;
+  salvarPreferencias: (parcial: Partial<Preferencias>) => Promise<boolean>;
   recarregar: () => Promise<void>;
 }
 
@@ -69,6 +73,10 @@ export function useJornada(userId: string): UsoJornada {
     (id: string) => loja.consumir(id),
     [loja]
   );
+  const salvarPreferencias = useCallback(
+    (parcial: Partial<Preferencias>) => loja.salvarPreferencias(parcial),
+    [loja]
+  );
   const recarregar = useCallback(() => loja.carregar(), [loja]);
 
   return {
@@ -80,6 +88,7 @@ export function useJornada(userId: string): UsoJornada {
     registrar,
     registrarAbertura,
     consumirComemoracao,
+    salvarPreferencias,
     recarregar,
   };
 }

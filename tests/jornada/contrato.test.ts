@@ -37,10 +37,15 @@ function arquivos(dir: string): string[] {
   return out;
 }
 
-const DA_JORNADA = [
-  ...arquivos("lib/jornada"),
+/** Telas da Jornada: `components/jornada/` e o card no Início (J12). */
+const TELAS = [
   ...arquivos("components/jornada"),
+  ...(existsSync(join(ROOT, "components/home/JornadaCard.tsx"))
+    ? ["components/home/JornadaCard.tsx"]
+    : []),
 ];
+
+const DA_JORNADA = [...arquivos("lib/jornada"), ...TELAS];
 
 function soCodigo(src: string): string {
   return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
@@ -82,9 +87,13 @@ describe("nenhum valor de Glow, limite ou corte de estágio no cliente", () => {
     );
   });
 
-  // `textos.ts` escreve números por extenso (romanos, plural): fica fora só
-  // desta regra, não das outras duas abaixo.
-  const SEM_NUMEROS = DA_JORNADA.filter((f) => f !== "lib/jornada/textos.ts");
+  // A lógica (`lib/jornada/`) não tem número nenhum. `textos.ts` escreve
+  // números por extenso (romanos, plural) e fica fora só desta regra. As
+  // telas têm tamanho de ícone e classes de layout: a regra delas é a de
+  // baixo, focada em Glow.
+  const SEM_NUMEROS = arquivos("lib/jornada").filter(
+    (f) => f !== "lib/jornada/textos.ts"
+  );
 
   it.each(SEM_NUMEROS)("%s não tem número maior que 1 no código", (arquivo) => {
     let codigo = soCodigo(read(arquivo));
@@ -98,6 +107,23 @@ describe("nenhum valor de Glow, limite ou corte de estágio no cliente", () => {
       []
     );
   });
+
+  it.each(TELAS)(
+    "%s (tela) não escreve corte de estágio nem faz conta com Glow",
+    (arquivo) => {
+      const codigo = soCodigo(read(arquivo));
+      // Os cortes de estágio da spec §4 (100, 400, 1.200, 3.000 e o passo de
+      // 1.500): nunca aparecem numa tela. O estado já traz os cortes prontos.
+      expect(codigo).not.toMatch(/(?<![\w.])(100|400|1200|1500|3000)(?![\w.])/);
+      // Nenhuma linha que mexe com Glow tem número escrito (`glowTotal + 15`,
+      // `(glowTotal ?? 0) * 20`…): o Glow só passa da tela pro texto.
+      const linhasComGlow = codigo
+        .split("\n")
+        .filter((l) => /glow/i.test(l))
+        .filter((l) => /(?<![\w.])(?:[2-9]|\d{2,})(?![\w.])/.test(l));
+      expect(linhasComGlow).toEqual([]);
+    }
+  );
 
   it.each(DA_JORNADA)("%s não tem tabela de ação → número", (arquivo) => {
     const codigo = soCodigo(read(arquivo));
@@ -186,5 +212,49 @@ describe("ações = spec §3 = migration 0034 (J09)", () => {
       (m) => m[1]
     );
     expect([...daSpec3].sort()).toEqual([...daMigration].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3. A forma dos períodos: só agregados, nunca um diário (decisão 16)
+// ---------------------------------------------------------------------------
+
+describe("Periodo é só inicio + contadores de números (decisão 16)", () => {
+  const estado = soCodigo(read("lib/jornada/estado.ts"));
+
+  /** Os campos de uma interface de estado.ts, um por linha, sem espaços extras. */
+  function campos(nome: string): string[] {
+    const m = estado.match(
+      new RegExp(`export interface ${nome} \\{([\\s\\S]*?)\\n\\}`)
+    );
+    expect(m, `interface ${nome}`).not.toBeNull();
+    return m![1]
+      .split(";")
+      .map((c) => c.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+  }
+
+  it("Periodo tem exatamente inicio (texto) e contadores (chave → número)", () => {
+    expect(campos("Periodo")).toEqual([
+      "inicio: string",
+      "contadores: Record<string, number>",
+    ]);
+  });
+
+  it("Periodos tem só o corrente e o último fechado, por tipo", () => {
+    expect(campos("Periodos")).toEqual([
+      "corrente: Record<TipoPeriodo, Periodo>",
+      "ultimoFechado: Partial<Record<TipoPeriodo, Periodo>>",
+    ]);
+  });
+
+  it("os tipos de período são semana, mês e ano", () => {
+    expect(estado).toMatch(
+      /export const TIPOS_PERIODO = \["semana", "mes", "ano"\] as const;/
+    );
+  });
+
+  it("o estado leva os períodos nessa forma", () => {
+    expect(campos("EstadoJornada")).toContain("periodos: Periodos");
   });
 });

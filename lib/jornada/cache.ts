@@ -47,7 +47,9 @@ export interface Retrato {
 }
 
 const PREFIXO = "jobapp-jornada:";
-const VERSAO = 1;
+// "v2": o estado passou a ter periodos e glowInicioEstagio obrigatórios;
+// cache gravado na versão anterior é descartado e a tela recarrega do servidor.
+const VERSAO = "v2";
 
 const mem = new Map<string, Retrato>(); // userId -> retrato
 let armazenamentoInjetado: Armazenamento | null | undefined;

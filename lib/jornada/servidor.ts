@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../database.types";
-import type { EstadoJornada, PedidoRegistro, RespostaRegistro } from "./estado";
+import type {
+  EstadoJornada,
+  PedidoRegistro,
+  Preferencias,
+  RespostaRegistro,
+} from "./estado";
 
 /**
  * A porta do app para o motor da Jornada no servidor (J10, migration
@@ -16,6 +21,8 @@ import type { EstadoJornada, PedidoRegistro, RespostaRegistro } from "./estado";
  *  - `jornada_registrar(p_acao, p_chave, p_fuso, p_deslocamento_min)`
  *      -> RespostaRegistro ({ estado, comemoracoes, duplicada })
  *  - `jornada_estado(p_fuso, p_deslocamento_min)` -> EstadoJornada
+ *  - preferências: a linha dela em `jornada_preferencias` (J09). Não há RPC:
+ *    a RLS deixa a dona ler, criar e alterar a própria linha, e só ela.
  *
  * A usuária é sempre a do `auth.uid()` no servidor; nenhum id vai daqui.
  *
@@ -66,4 +73,64 @@ export async function lerEstadoDoServidor(
     p_fuso: fuso,
     p_deslocamento_min: deslocamentoMin,
   })) as EstadoJornada;
+}
+
+/** Colunas de `jornada_preferencias` (J09) que a tela grava e lê de volta. */
+interface LinhaPreferencias {
+  som_ligado: boolean;
+  modo_discreto: boolean;
+  estagio_no_perfil: boolean;
+  selos_no_perfil: boolean;
+}
+
+type TabelaSemTipo = {
+  upsert: (
+    linha: Record<string, unknown>,
+    opcoes: { onConflict: string }
+  ) => {
+    select: (colunas: string) => {
+      single: () => PromiseLike<{ data: unknown; error: unknown }>;
+    };
+  };
+};
+
+/**
+ * Grava só as preferências mandadas e devolve como ficaram. A usuária é a
+ * da sessão (a RLS confere `auth.uid() = user_id`). "Mostrar no perfil" é
+ * um só pro cliente e dois opt-ins na J09 (estágio, selos): grava os dois,
+ * do mesmo jeito que `jornada_estado` lê os dois como um.
+ */
+export async function salvarPreferenciasNoServidor(
+  client: JornadaClient,
+  parcial: Partial<Preferencias>
+): Promise<Preferencias> {
+  const { data: sessao, error: erroSessao } = await client.auth.getUser();
+  if (erroSessao || !sessao.user) {
+    throw erroSessao ?? new Error("auth");
+  }
+  const linha: Record<string, unknown> = { user_id: sessao.user.id };
+  if (parcial.somLigado !== undefined) linha.som_ligado = parcial.somLigado;
+  if (parcial.modoDiscreto !== undefined) {
+    linha.modo_discreto = parcial.modoDiscreto;
+  }
+  if (parcial.mostrarNoPerfil !== undefined) {
+    linha.estagio_no_perfil = parcial.mostrarNoPerfil;
+    linha.selos_no_perfil = parcial.mostrarNoPerfil;
+  }
+  const tabela = (
+    client.from as unknown as (nome: string) => TabelaSemTipo
+  ).call(client, "jornada_preferencias");
+  const { data, error } = await tabela
+    .upsert(linha, { onConflict: "user_id" })
+    .select("som_ligado, modo_discreto, estagio_no_perfil, selos_no_perfil")
+    .single();
+  if (error) {
+    throw error;
+  }
+  const r = data as LinhaPreferencias;
+  return {
+    somLigado: r.som_ligado,
+    modoDiscreto: r.modo_discreto,
+    mostrarNoPerfil: r.estagio_no_perfil || r.selos_no_perfil,
+  };
 }

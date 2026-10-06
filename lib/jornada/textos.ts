@@ -65,6 +65,11 @@ export function faltaParaProximo(
   return `Faltam ${numero(falta)} ${NOME_GLOW} para ${nomeEstagio(proximoEstagio)}`;
 }
 
+/** "95 Glow até Organizada" (protótipo: card e topo da tela). */
+export function glowAteProximo(falta: number, proximoEstagio: number): string {
+  return `${numero(falta)} ${NOME_GLOW} até ${nomeEstagio(proximoEstagio)}`;
+}
+
 // ───────────────────────────── estágios ──────────────────────────────
 
 const ESTAGIOS = [
@@ -298,11 +303,146 @@ export const TITULO_COMEMORACAO = {
 
 // ──────────────────────────── preferências ───────────────────────────
 
+/** Rótulos curtos (protótipo, "Ajustes da Jornada"). */
 export const PREFERENCIAS = {
-  som: "Som da Jornada",
+  som: "Sons",
   modoDiscreto: "Modo discreto",
-  mostrarNoPerfil: "Mostrar estágio e selos no perfil",
+  mostrarNoPerfil: "Mostrar meu estágio no perfil",
 } as const;
+
+/** A linha de explicação de cada preferência (protótipo). */
+export const DESCRICAO_PREFERENCIA = {
+  som: "Segue a chave do silencioso do celular.",
+  modoDiscreto: "1 toque: sem som, sem confete, palavras neutras.",
+  mostrarNoPerfil:
+    "Desligado por padrão. Só as mulheres da Rede veem seu perfil.",
+} as const;
+
+// ────────────────────────── tela e card (J12) ────────────────────────
+// Tudo do protótipo aprovado (docs/jornada/referencias/prototipo-sua-jornada.html).
+
+/** Título da tela e do card. Com o Modo discreto, a palavra fica neutra. */
+export function tituloJornada(modoDiscreto: boolean): string {
+  return modoDiscreto ? "Seu progresso" : "Sua Jornada";
+}
+
+/** Nome acessível do card do Início. */
+export const ABRIR_JORNADA = "Abrir sua Jornada";
+
+export const VOLTAR = "Voltar";
+
+/** "Estágio 2 de 5" até a Icônica; depois "Icônica · nível 2". */
+export function rotuloEstagio(nivel: number): string {
+  const total = ESTAGIOS.length;
+  return nivel < total
+    ? `Estágio ${numero(nivel + 1)} de ${numero(total)}`
+    : `${ESTAGIOS[total - 1]} · nível ${numero(nivel - total + 2)}`;
+}
+
+/** "2 dias fortes nesta semana" */
+export function diasFortesNaSemana(dias: number): string {
+  return `${numero(dias)} ${plural(dias, "dia forte", "dias fortes")} nesta semana`;
+}
+
+export const RITMO_COMPLETO = "ritmo completo ✓";
+
+/** "Capítulo de outubro · 1 de 3 missões" */
+export function linhaCapitulo(
+  mes: number,
+  feitas: number,
+  total: number
+): string {
+  return `${tituloCapitulo(mes)} · ${numero(feitas)} de ${numero(total)} missões`;
+}
+
+/** "Lua de outubro na sua coleção ✓" */
+export function enfeiteNaColecao(mes: number): string {
+  return `${nomeEnfeite(mes)} na sua coleção ✓`;
+}
+
+export const SECAO = {
+  pilares: "Seus 4 pilares",
+  selos: "Selos",
+  colecao: "Sua coleção",
+  dinheiro: "Seu dinheiro",
+  ajustes: "Ajustes da Jornada",
+} as const;
+
+export const SUBTITULO_AJUSTES =
+  "Tudo aqui é escolha sua. Nada da sua Jornada fica público se você não ligar.";
+
+/** A nota de cada seção (protótipo). */
+export const NOTA = {
+  estagio:
+    "Subir só soma. Nada do que você já tem é tirado, e depois da Icônica vêm Icônica II, III…",
+  selos: "Cada selo tem níveis. O próximo nível vem com o tempo, no seu ritmo.",
+  capitulo:
+    "Todo mês tem missões novas. Se não der, tudo bem: o mês fica em branco na coleção e nada é tirado.",
+  mesesEmBranco:
+    "Os meses tracejados ficaram em branco. Sem culpa: eles não voltam, mas também não tiram nada de você.",
+} as const;
+
+/** Chip do capítulo: "completo ✓", "último dia", "5 dias". */
+export function prazoCapitulo(diasRestantes: number, fechado: boolean): string {
+  if (fechado) return "completo ✓";
+  if (diasRestantes <= 0) return "último dia";
+  return `${numero(diasRestantes)} ${plural(diasRestantes, "dia", "dias")}`;
+}
+
+/** "O prêmio do mês: um enfeite pra coleção" / "Já está na sua coleção." */
+export function premioCapitulo(fechado: boolean): string {
+  return fechado
+    ? "Já está na sua coleção."
+    : "O prêmio do mês: um enfeite pra coleção.";
+}
+
+/** "3 enfeites" */
+export function contagemEnfeites(n: number): string {
+  return `${numero(n)} ${plural(n, "enfeite", "enfeites")}`;
+}
+
+/** "1 meta concluída" */
+export function contagemMetas(n: number): string {
+  return `${numero(n)} ${plural(n, "meta concluída", "metas concluídas")}`;
+}
+
+/** "3 de 11" (selos conquistados) */
+export function contagemSelos(conquistados: number, total: number): string {
+  return `${numero(conquistados)} de ${numero(total)}`;
+}
+
+export const NIVEL_MAXIMO = "nível máximo";
+
+/** "out 26" (célula da coleção). */
+const MESES_CURTOS = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
+export function rotuloMesColecao(ano: number, mes: number): string {
+  return `${MESES_CURTOS[mes - 1] ?? ""} ${String(ano).slice(-2)}`;
+}
+
+/** Título da lista de marcos (protótipo: "Marcos do total guardado"). */
+export const MARCOS_DO_TOTAL = "Marcos do total guardado";
+
+/** "Isso me ajudou / Isso me protegeu" (decisão 12): só a autora vê. */
+export const SO_VOCE_VE = "Só você vê isso";
+export function textoAjudou(n: number): string {
+  return `${numero(n)} ${plural(n, "mulher disse", "mulheres disseram")} que ajudou`;
+}
+export function textoProtegeu(n: number): string {
+  return `${numero(n)} ${plural(n, "disse", "disseram")} que as protegeu`;
+}
 
 // ─────────────────────────────── estados ─────────────────────────────
 

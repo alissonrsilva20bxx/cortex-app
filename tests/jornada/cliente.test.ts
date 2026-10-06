@@ -11,11 +11,14 @@ import {
   criarLojaJornada,
   limparTudo,
   lojaDaUsuaria,
+  usarTransporteDeLaboratorio,
 } from "../../lib/jornada/cliente";
+import { ehEstadoJornada } from "../../lib/jornada/estado";
 import type {
   Comemoracao,
   EstadoJornada,
   PedidoRegistro,
+  Preferencias,
   RespostaRegistro,
   TransporteJornada,
 } from "../../lib/jornada/estado";
@@ -59,6 +62,7 @@ function estado(glowTotal: number): EstadoJornada {
       conectar: 0,
     },
     estagio: 0,
+    glowInicioEstagio: 0,
     glowProximoEstagio: 100,
     selos: {},
     capitulo: null,
@@ -70,6 +74,14 @@ function estado(glowTotal: number): EstadoJornada {
       somLigado: true,
       modoDiscreto: false,
       mostrarNoPerfil: false,
+    },
+    periodos: {
+      corrente: {
+        semana: { inicio: "2026-10-05", contadores: { dias_fortes: 2 } },
+        mes: { inicio: "2026-10-01", contadores: { dias_fortes: 2 } },
+        ano: { inicio: "2026-01-01", contadores: { dias_fortes: 2 } },
+      },
+      ultimoFechado: {},
     },
   };
 }
@@ -108,11 +120,27 @@ function servidorFalso() {
     if (semRede) throw new Error("rede");
     return estado(glow);
   });
-  const transporte: TransporteJornada = { lerEstado, registrar };
+  let preferencias: Preferencias = {
+    somLigado: true,
+    modoDiscreto: false,
+    mostrarNoPerfil: false,
+  };
+  const salvarPreferencias = vi.fn(async (parcial: Partial<Preferencias>) => {
+    await Promise.resolve();
+    if (semRede) throw new Error("rede");
+    preferencias = { ...preferencias, ...parcial };
+    return preferencias;
+  });
+  const transporte: TransporteJornada = {
+    lerEstado,
+    registrar,
+    salvarPreferencias,
+  };
   return {
     transporte,
     registrar,
     lerEstado,
+    salvarPreferencias,
     chavesVistas,
     set semRede(v: boolean) {
       semRede = v;
@@ -387,5 +415,191 @@ describe("contas e privacidade do cache", () => {
     const s = servidorFalso();
     const l = loja(s.transporte);
     expect(l.retrato()).toBe(l.retrato());
+  });
+});
+
+describe("preferências (Modo discreto a 1 toque)", () => {
+  it("muda na hora, grava no servidor e persiste", async () => {
+    const s = servidorFalso();
+    const l = loja(s.transporte);
+    await l.carregar();
+    const salvando = l.salvarPreferencias({ modoDiscreto: true });
+    // Na hora, antes de o servidor responder.
+    expect(l.retrato().estado?.preferencias.modoDiscreto).toBe(true);
+    await expect(salvando).resolves.toBe(true);
+    expect(s.salvarPreferencias).toHaveBeenCalledWith({ modoDiscreto: true });
+
+    cache._fecharAppParaTeste();
+    expect(loja(s.transporte).retrato().estado?.preferencias.modoDiscreto).toBe(
+      true
+    );
+  });
+
+  it("sem rede, volta ao que estava (a chave não mente) e devolve false", async () => {
+    const s = servidorFalso();
+    const l = loja(s.transporte);
+    await l.carregar();
+    s.semRede = true;
+    await expect(l.salvarPreferencias({ modoDiscreto: true })).resolves.toBe(
+      false
+    );
+    expect(l.retrato().estado?.preferencias.modoDiscreto).toBe(false);
+    expect(l.retrato().erro).toBe("sem-conexao");
+  });
+
+  it("resposta inválida do servidor também volta ao que estava", async () => {
+    const s = servidorFalso();
+    const l = loja(s.transporte);
+    await l.carregar();
+    s.salvarPreferencias.mockResolvedValueOnce({
+      x: 1,
+    } as unknown as Preferencias);
+    await expect(l.salvarPreferencias({ somLigado: false })).resolves.toBe(
+      false
+    );
+    expect(l.retrato().estado?.preferencias.somLigado).toBe(true);
+  });
+
+  it("o hook expõe salvarPreferencias e nunca grava num efeito", () => {
+    const hook = soCodigo(read("components/jornada/useJornada.ts"));
+    expect(hook).toContain("salvarPreferencias,");
+    const efeito = hook.match(/useEffect\(\(\) => \{([\s\S]*?)\}, \[loja\]\);/);
+    expect(efeito![1]).not.toMatch(/salvarPreferencias/);
+  });
+});
+
+describe("transporte de laboratório", () => {
+  it("troca o transporte de todas as lojas e esquece as já criadas", async () => {
+    const s = servidorFalso();
+    const antes = lojaDaUsuaria("lab");
+    usarTransporteDeLaboratorio(s.transporte);
+    const depois = lojaDaUsuaria("lab");
+    expect(depois).not.toBe(antes);
+    await depois.carregar();
+    expect(s.lerEstado).toHaveBeenCalledTimes(1);
+    usarTransporteDeLaboratorio(null);
+  });
+
+  it("só o laboratório usa: o app de verdade e o hook não importam isto", () => {
+    for (const arquivo of [
+      "app/page.tsx",
+      "components/jornada/useJornada.ts",
+    ]) {
+      expect(read(arquivo)).not.toContain("usarTransporteDeLaboratorio");
+    }
+  });
+});
+
+describe("validação dos períodos (J09 jornada_periodos)", () => {
+  it("aceita o estado com os 3 períodos", () => {
+    expect(ehEstadoJornada(estado(0))).toBe(true);
+  });
+
+  it("aceita a forma que o servidor (J10) manda, com último período fechado", () => {
+    const e = estado(0);
+    expect(
+      ehEstadoJornada({
+        ...e,
+        hoje: "2026-10-06",
+        destravados: ["moldura_estagio_1"],
+        periodos: {
+          ...e.periodos,
+          ultimoFechado: {
+            semana: { inicio: "2026-09-28", contadores: { glow: 80 } },
+          },
+        },
+      })
+    ).toBe(true);
+  });
+
+  it("recusa contador que não é número, data fora do formato e período faltando", () => {
+    const e = estado(0);
+    const corrente = e.periodos.corrente;
+    const com = (periodos: unknown) => ({ ...e, periodos });
+    expect(
+      ehEstadoJornada(
+        com({
+          ...e.periodos,
+          corrente: {
+            ...corrente,
+            semana: { inicio: "2026-10-05", contadores: { despesa: "4" } },
+          },
+        })
+      )
+    ).toBe(false);
+    expect(
+      ehEstadoJornada(
+        com({
+          ...e.periodos,
+          corrente: {
+            ...corrente,
+            semana: { inicio: "ontem", contadores: {} },
+          },
+        })
+      )
+    ).toBe(false);
+    expect(
+      ehEstadoJornada(
+        com({
+          ...e.periodos,
+          corrente: { semana: corrente.semana, mes: corrente.mes },
+        })
+      )
+    ).toBe(false);
+    expect(ehEstadoJornada({ ...e, periodos: undefined })).toBe(false);
+  });
+
+  it("recusa período com campo a mais (nada de diário: decisão 16)", () => {
+    const e = estado(0);
+    const corrente = e.periodos.corrente;
+    const comDias = {
+      ...e,
+      periodos: {
+        ...e.periodos,
+        corrente: {
+          ...corrente,
+          semana: { ...corrente.semana, dias: ["2026-10-05", "2026-10-06"] },
+        },
+      },
+    };
+    const fechadoComDias = {
+      ...e,
+      periodos: {
+        ...e.periodos,
+        ultimoFechado: {
+          semana: { inicio: "2026-09-28", contadores: {}, dias: [] },
+        },
+      },
+    };
+    const tipoInventado = {
+      ...e,
+      periodos: {
+        ...e.periodos,
+        ultimoFechado: { dia: { inicio: "2026-10-05", contadores: {} } },
+      },
+    };
+    const chaveAMais = {
+      ...e,
+      periodos: { ...e.periodos, diario: [] },
+    };
+    expect(ehEstadoJornada(comDias)).toBe(false);
+    expect(ehEstadoJornada(fechadoComDias)).toBe(false);
+    expect(ehEstadoJornada(tipoInventado)).toBe(false);
+    expect(ehEstadoJornada(chaveAMais)).toBe(false);
+  });
+
+  it("cache gravado na versão anterior (sem períodos) é descartado", () => {
+    disco.setItem(
+      "jobapp-jornada:u1",
+      JSON.stringify({
+        v: 1,
+        userId: "u1",
+        estado: { glowTotal: 5 },
+        fila: [],
+        pendentes: [],
+      })
+    );
+    cache._fecharAppParaTeste();
+    expect(cache.ler("u1").estado).toBeNull();
   });
 });
