@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -235,6 +235,17 @@ export function FinanceiroTab({
   const totalEntradaMes = calcEarnings(jobs, receitas, "mes");
   const saldo = totalEntradaMes - totalDespMes;
 
+  // "Novo" do cabeçalho abre o mesmo formulário que o "+" abre em cada
+  // sub-aba (handleFabAction em app/page.tsx): Entradas -> receita; Visão
+  // e Saídas -> despesa. Em Metas o "+" abre o MetaForm, que este
+  // componente não recebe -- ali o botão não aparece (o "+" continua).
+  const acaoNovo =
+    tab === "entradas"
+      ? onAddReceita
+      : tab === "metas"
+        ? undefined
+        : onAddDespesa;
+
   async function deleteDespesa(id: string) {
     await supabase.from("despesas").delete().eq("id", id);
     setDespesas((prev) => prev.filter((d) => d.id !== id));
@@ -247,26 +258,42 @@ export function FinanceiroTab({
 
   return (
     <div className="pb-4">
-      {/* Cabeçalho — 22px/semibold/-0.055em, como o `ScreenTitle` do
-          laboratório (LaunchScreens.tsx:677-704, mesmo usado por
-          AgendaScreen). Rótulo de mês/ano abaixo é dado real (data
-          atual), não a pílula decorativa do laboratório. */}
-      <h1
-        className="font-semibold"
-        style={{
-          fontSize: "22px",
-          letterSpacing: "-0.055em",
-          color: "var(--text)",
-        }}
-      >
-        Financeiro
-      </h1>
-      <p
-        className="mt-1 mb-4"
-        style={{ fontSize: "11px", color: "var(--text-muted)" }}
-      >
-        {monthYearLabel}
-      </p>
+      {/* Cabeçalho no visual novo (Jornada J04, mockup
+          5-telas-8-temas-claro-escuro.html): "Financeiro" com o mês por
+          extenso embaixo e o botão "Novo" à direita. O avatar do mockup
+          não está aqui: ele abre Ajustes, e essa ligação mora em
+          app/page.tsx, fora do escopo deste ticket. */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="min-w-0 flex-grow">
+          <h1
+            className="font-extrabold truncate"
+            style={{ fontSize: "17px", lineHeight: 1.3, color: "var(--text)" }}
+          >
+            Financeiro
+          </h1>
+          <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            {monthYearLabel}
+          </p>
+        </div>
+        {acaoNovo && (
+          <button
+            type="button"
+            onClick={acaoNovo}
+            data-fab-avoid
+            className="flex items-center gap-1.5 shrink-0 rounded-full font-bold transition-opacity active:opacity-80"
+            style={{
+              minHeight: "44px",
+              padding: "0 14px",
+              fontSize: "13px",
+              background: "var(--accent)",
+              color: "#fff",
+            }}
+          >
+            <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
+            Novo
+          </button>
+        )}
+      </div>
 
       {/* Falha ao revalidar com dado já carregado — mesmo padrão visual
           já estabelecido em JobsTab.tsx (#135, que por sua vez seguiu o
@@ -363,6 +390,7 @@ export function FinanceiroTab({
             totalEntradaMes={totalEntradaMes}
             totalDespMes={totalDespMes}
             saldo={saldo}
+            metas={metas}
             chartType={chartType}
           />
 
