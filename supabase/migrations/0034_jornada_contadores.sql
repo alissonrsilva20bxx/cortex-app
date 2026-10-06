@@ -31,11 +31,30 @@
 -- Aditiva: nenhuma tabela ou coluna existente é alterada.
 
 -- ------------------------------------------------------------
+-- NÚMEROS PROPOSTOS -- AGUARDANDO APROVAÇÃO DO OPERADOR
+-- ------------------------------------------------------------
+-- A spec aprovada (J08) tem as decisões, mas não os números. Os números
+-- abaixo são uma PROPOSTA, tirada do protótipo aprovado em 02/10/2026
+-- (docs/jornada/referencias/prototipo-sua-jornada.html, constantes ACTIONS,
+-- BADGES, STAGES, GOALS/MILES, CH_SETS). A J08 diz: "os valores do
+-- protótipo são a proposta, não a lei". Nada aqui é aplicado pelo banco:
+-- quem usa estes números são as RPCs da J10, que só começa depois da
+-- aprovação. O schema não depende de nenhum deles, exceto os marcos de
+-- dinheiro (check de jornada_marcos) e os 3 níveis de selo.
+-- Comentário no ponto de uso de cada número, em cada tabela abaixo.
+
+-- ------------------------------------------------------------
 -- Tabelas
 -- ------------------------------------------------------------
 
 -- Total de Glow e Glow por pilar (spec, decisões 2 e 3). Uma linha por
 -- usuária. Nunca diminui (spec, decisão 5: nada zera).
+-- Proposta (estágios, spec decisão 5, protótipo STAGES): Começando a partir
+-- de 0 Glow, Em movimento a partir de 100, Organizada a partir de 400,
+-- Prosperando a partir de 1200, Icônica a partir de 3000; depois Icônica
+-- II, III... a cada 1500 Glow (4500, 6000, ...). Nada zera.
+-- Proposta (pilares): cada Glow ganho soma no total E no pilar da ação
+-- (ver a tabela de ações em jornada_acoes).
 create table if not exists public.jornada_saldo (
   user_id uuid primary key references auth.users(id) on delete cascade,
   glow_total integer not null default 0 check (glow_total >= 0),
@@ -61,6 +80,25 @@ create table if not exists public.jornada_estagio (
 -- não, o RPC sobrescreve com hoje e 1. Nada mais é guardado por ação.
 -- `acao` é a chave da ação definida na spec (ex.: 'atendimento',
 -- 'despesa', 'meta_concluida'); a lista e os valores ficam nas RPCs.
+-- Proposta (ações, protótipo ACTIONS; "limite diário" = quantas vezes por
+-- dia a ação dá Glow, que é o que ganhos_no_dia conta):
+--   Proposta: Glow de despesa = 5, pilar Organizar, limite diário = 3 vezes (15 Glow/dia)
+--   Proposta: Glow de planejar o dia = 5, pilar Organizar, limite diário = 1 vez
+--   Proposta: Glow de guardar numa meta = 15, pilar Prosperar, limite diário = 1 vez
+--   Proposta: Glow de comprovante no Cofre = 10, pilar Proteger, limite diário = 3 vezes
+--   Proposta: Glow de descanso = 10, pilar Proteger, limite diário = 1 vez
+--   Proposta: Glow de "sua dica ajudou" = 5, pilar Conectar, limite diário = 5 vezes
+--   Proposta: Glow de "sua dica protegeu" = 5, pilar Conectar, limite diário = 5 vezes
+--   Proposta: Glow de atendimento = 0, limite diário = 1 vez (só marca o dia
+--             como ativo, spec decisão 1)
+--   Proposta: Glow de concluir uma meta = 100, pilar Prosperar, sem limite diário
+-- Passou do limite: a ação conta em contagem_total, mas sem Glow, selo nem
+-- missão (protótipo: "registra igual, só sem Glow").
+-- Proposta: chaves de ação 'despesa', 'planejar', 'guardar_meta',
+-- 'comprovante_cofre', 'descanso', 'dica_ajudou', 'dica_protegeu',
+-- 'atendimento', 'meta_concluida'. "Isso me ajudou" e "Isso me protegeu"
+-- (spec decisão 12) são as contagens totais de 'dica_ajudou' e
+-- 'dica_protegeu', legíveis só pela autora (RLS abaixo).
 create table if not exists public.jornada_acoes (
   user_id uuid not null references auth.users(id) on delete cascade,
   acao text not null check (acao ~ '^[a-z][a-z0-9_]{0,47}$'),
@@ -77,6 +115,20 @@ create table if not exists public.jornada_acoes (
 
 -- Selos e o nível atual de cada um (spec, decisão 6: I, II, III). Só o
 -- nível de agora, nunca quando foi conquistado.
+-- Proposta (selos, protótipo BADGES; Glow por nível: I = +20, II = +30,
+-- III = +50, spec decisão 6). Patamar = contagem acumulada pra cada nível:
+--   Proposta: 'primeiros_passos' (abriu a Jornada): nível I com 1
+--   Proposta: 'planejadora' (dias planejados): I com 1, II com 10, III com 50
+--   Proposta: 'mao_amiga' (dica ajudou alguém): I com 1, II com 25, III com 100
+--   Proposta: 'semana_firme' (semanas com 3 dias fortes): I com 1, II com 4, III com 12
+--   Proposta: 'rumo_a_meta' (vezes guardando dinheiro): I com 1, II com 10, III com 50
+--   Proposta: 'tudo_guardado' (comprovantes no Cofre): I com 1, II com 20, III com 100
+--   Proposta: 'descansar_conta' (descansos de propósito): I com 1, II com 8, III com 24
+--   Proposta: 'guardia' (dica protegeu alguém): I com 5, II com 25, III com 100
+--   Proposta: 'em_casa' (completou os 7 dias da Jornada de Começo): nível I com 1
+--   Proposta: 'mes_a_mes' (meses na Jornada): I com 1, II com 3, III com 6
+--   Proposta: 'um_ano' (um ano na Jornada): nível I com 1
+-- O patamar sai das contagens de jornada_acoes; aqui fica só o nível atual.
 create table if not exists public.jornada_selos (
   user_id uuid not null references auth.users(id) on delete cascade,
   selo text not null check (selo ~ '^[a-z][a-z0-9_]{0,47}$'),
@@ -87,6 +139,22 @@ create table if not exists public.jornada_selos (
 -- Capítulo do mês CORRENTE (spec, decisão 7): uma linha por usuária,
 -- sobrescrita na virada do mês. Progresso de cada uma das 3 missões e se o
 -- capítulo fechou. O mês anterior não fica guardado aqui.
+-- Proposta (capítulo do mês, protótipo CH_SETS e CH_PTS): fechar as 3
+-- missões dá +40 Glow e o enfeite do mês. Os meses alternam 3 conjuntos de
+-- missões (mês do ano módulo 3); missao_1..3 é o progresso, na ordem:
+--   Proposta: jan, abr, jul, out: planejar 8 dias; guardar dinheiro em 3
+--             semanas; tirar 2 descansos
+--   Proposta: fev, mai, ago, nov: guardar 4 comprovantes no Cofre; lançar
+--             10 despesas; ter 12 dias fortes
+--   Proposta: mar, jun, set, dez: guardar dinheiro em 4 semanas; planejar 6
+--             dias; sua dica ajudar 3 vezes
+-- ATENÇÃO, A DECIDIR: "guardar dinheiro em N semanas" e o selo
+-- 'semana_firme' precisam saber o que já aconteceu NA SEMANA CORRENTE, e
+-- este schema ainda não guarda isso. Opções: (a) uma tabela da semana
+-- corrente, uma linha por usuária, sobrescrita na virada (sem histórico);
+-- ou (b) trocar essas missões e o selo por outros que só usam o que já
+-- existe. "Dia forte" (algum registro no dia) dá pra contar uma vez por dia
+-- com a ação sintética 'dia_ativo' em jornada_acoes, sem tabela nova.
 create table if not exists public.jornada_capitulo (
   user_id uuid primary key references auth.users(id) on delete cascade,
   ano smallint not null check (ano between 2000 and 2999),
@@ -109,6 +177,10 @@ create table if not exists public.jornada_colecao (
 
 -- Marcos de dinheiro guardado já batidos (spec, decisão 8: 500, 1.000,
 -- 2.500, 5.000). Só QUAIS marcos, nunca quando nem o valor guardado.
+-- Proposta (dinheiro, protótipo GOAL_PTS e MILES, spec decisão 8): concluir
+-- uma meta = +100 Glow (ação 'meta_concluida'); cada marco do total
+-- guardado (somando todas as metas) = +50 Glow, uma vez por marco. Os
+-- marcos 500/1000/2500/5000 já estão no check abaixo.
 create table if not exists public.jornada_marcos (
   user_id uuid not null references auth.users(id) on delete cascade,
   marco integer not null check (marco in (500, 1000, 2500, 5000)),
