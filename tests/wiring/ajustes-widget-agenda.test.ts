@@ -3,12 +3,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Widget "Agenda" removivel na Inicio (#181).
+ * Widget "Agenda" removível na Início (#181).
  *
- * Teste de fiacao: le o fonte e afirma que a ligacao existe de verdade --
+ * Teste de fiação: lê o fonte e afirma que a ligação existe de verdade --
  * a chave entra no tipo como OPCIONAL, o item aparece na mesma lista dos
- * outros widgets dos Ajustes, e as duas secoes da Agenda ficam dentro da
- * MESMA condicional, nas duas paginas. O `?? true` e o que garante que
+ * outros widgets dos Ajustes, e as duas seções da Agenda ficam dentro da
+ * MESMA condicional, nas duas páginas. O `?? true` é o que garante que
  * quem ja tem preferencia salva continua vendo a Agenda.
  */
 
@@ -17,10 +17,10 @@ const read = (p: string) => readFileSync(join(ROOT, p), "utf-8");
 
 const PAGINAS = ["app/page.tsx", "app/dev-preview/app/page.tsx"];
 
-/** Só o conteudo do painel da Inicio -- montar em outra aba nao conta. */
+/** Só o conteúdo do painel da Início -- montar em outra aba não conta. */
 function painelInicio(src: string): string {
   const start = src.indexOf('<TabPanel tab="home"');
-  if (start === -1) throw new Error('<TabPanel tab="home"> nao encontrado');
+  if (start === -1) throw new Error('<TabPanel tab="home"> não encontrado');
   return src.slice(start, src.indexOf("</TabPanel>", start));
 }
 
@@ -32,7 +32,7 @@ describe("#181 — a chave da Agenda entra sem quebrar quem ja usa", () => {
       types.indexOf("export interface HomeCardConfig"),
       types.indexOf("}", types.indexOf("export interface HomeCardConfig"))
     );
-    // Opcional de proposito: `agenda: boolean` obrigaria todo mundo a ter a
+    // Opcional de propósito: `agenda: boolean` obrigaria todo mundo a ter a
     // chave gravada, e quem nao tem cairia em `undefined` -> escondido.
     expect(bloco).toMatch(/agenda\?: boolean;/);
     expect(bloco).not.toMatch(/agenda: boolean;/);
@@ -57,19 +57,19 @@ describe("#181 — o interruptor aparece na mesma lista dos outros widgets", () 
     ajustes.indexOf("];", ajustes.indexOf("const homeCardItems"))
   );
 
-  it("entra em homeCardItems, com rotulo e descricao em PT-BR", () => {
+  it("entra em homeCardItems, com rótulo e descrição em PT-BR", () => {
     expect(lista).toMatch(/key: "agenda",/);
     expect(lista).toMatch(/label: "Agenda",/);
     expect(lista).toMatch(/desc: "[^"]+",/);
   });
 
-  it("fica ao lado dos widgets que ja existiam, nao numa lista propria", () => {
+  it("fica ao lado dos widgets que já existiam, não numa lista própria", () => {
     for (const key of ["nextJob", "objetivos", "agenda"]) {
       expect(lista, key).toMatch(new RegExp(`key: "${key}",`));
     }
   });
 
-  it("usa o mesmo mecanismo e a mesma persistencia -- sem chave nova, sem banco", () => {
+  it("usa o mesmo mecanismo e a mesma persistência -- sem chave nova, sem banco", () => {
     // O loop da UI ja trata `homeCards[key] ?? true` e grava via updateHomeCards.
     expect(ajustes).toMatch(/const on = homeCards\[key\] \?\? true;/);
     expect(ajustes).toMatch(
@@ -81,7 +81,7 @@ describe("#181 — o interruptor aparece na mesma lista dos outros widgets", () 
   });
 });
 
-describe("#181 — a Inicio esconde as DUAS secoes da Agenda, nas duas paginas", () => {
+describe("#181 — a Início esconde as DUAS seções da Agenda, nas duas páginas", () => {
   for (const pagina of PAGINAS) {
     const painel = painelInicio(read(pagina));
 
@@ -89,13 +89,13 @@ describe("#181 — a Inicio esconde as DUAS secoes da Agenda, nas duas paginas",
       const m = painel.match(
         /\{\(homeCards\.agenda \?\? true\) && \(\s*<>([\s\S]*?)<\/>\s*\)\}/
       );
-      expect(m, "condicional da Agenda nao encontrada").not.toBeNull();
+      expect(m, "condicional da Agenda não encontrada").not.toBeNull();
       // As duas tem que estar DENTRO; uma fora continuaria aparecendo.
       expect(m![1]).toMatch(/<SemanaSection/);
       expect(m![1]).toMatch(/<ProximosAtendimentos/);
     });
 
-    it(`${pagina}: nenhuma das duas secoes sobra fora da condicional`, () => {
+    it(`${pagina}: nenhuma das duas seções sobra fora da condicional`, () => {
       const semCondicional = painel.replace(
         /\{\(homeCards\.agenda \?\? true\) && \(\s*<>[\s\S]*?<\/>\s*\)\}/,
         ""
@@ -104,7 +104,7 @@ describe("#181 — a Inicio esconde as DUAS secoes da Agenda, nas duas paginas",
       expect(semCondicional).not.toMatch(/<ProximosAtendimentos/);
     });
 
-    it(`${pagina}: o padrao e visivel (\`?? true\`), nao escondido`, () => {
+    it(`${pagina}: o padrão é visível (\`?? true\`), não escondido`, () => {
       // `homeCards.agenda &&` esconderia a Agenda de todo mundo que ja tem
       // preferencia salva sem essa chave. E o bug que o `?? true` evita.
       expect(painel).not.toMatch(/\{homeCards\.agenda && \(/);

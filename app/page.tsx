@@ -564,9 +564,9 @@ export default function Page() {
                   />
                 </div>
 
-                {/* Bloco da Agenda: removivel em Ajustes > Tela inicial
-                    (#181). `?? true` mantem visivel pra quem ja tinha
-                    preferencia salva antes dessa chave existir. */}
+                {/* Bloco da Agenda: removível em Ajustes › Tela inicial
+                    (#181). `?? true` mantém visível pra quem já tinha
+                    preferência salva antes dessa chave existir. */}
                 {(homeCards.agenda ?? true) && (
                   <>
                     <SemanaSection

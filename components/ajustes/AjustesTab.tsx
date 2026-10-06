@@ -387,7 +387,7 @@ export function AjustesTab({
     {
       key: "agenda",
       label: "Agenda",
-      desc: "Esta semana e proximos atendimentos",
+      desc: "Esta semana e próximos atendimentos",
     },
   ];
 

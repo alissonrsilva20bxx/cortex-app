@@ -417,8 +417,8 @@ export default function DevPreviewApp() {
               />
             </div>
 
-            {/* Espelha app/page.tsx: bloco da Agenda removivel em
-                Ajustes > Tela inicial (#181). */}
+            {/* Espelha app/page.tsx: bloco da Agenda removível em
+                Ajustes › Tela inicial (#181). */}
             {(homeCards.agenda ?? true) && (
               <>
                 <SemanaSection
