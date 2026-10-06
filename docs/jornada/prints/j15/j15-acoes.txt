@@ -1,0 +1,13 @@
+j15-inicio-card-claro
+j15-inicio-card-escuro
+j15-despesa-comemora
+depois da despesa: despesa
+j15-receita-comemora
+depois da receita: despesa,receita
+j15-atendimento-sem-comemoracao
+depois do atendimento: despesa,receita,atendimento
+depois de um DOCUMENTO no cofre: despesa,receita,atendimento
+j15-comprovante-comemora
+depois de um COMPROVANTE no cofre: despesa,receita,atendimento,comprovante_cofre
+j15-guardar-meta-comemora
+depois de guardar numa meta (Wishlist): despesa,receita,atendimento,comprovante_cofre,guardar_meta

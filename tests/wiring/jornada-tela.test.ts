@@ -288,8 +288,12 @@ describe("o laboratório monta o card e a tela dos caminhos reais", () => {
     expect(lab).toMatch(/estadoJornadaContaNova\(\)/);
   });
 
-  it("app/page.tsx (o app de verdade) ainda não mostra a Jornada", () => {
-    expect(read("app/page.tsx")).not.toMatch(/JornadaCard|JornadaScreen/);
+  // Até a J15 o app de verdade não mostrava a Jornada. A J15 (#165) ligou
+  // card, tela e host em app/page.tsx; a fiação completa é conferida em
+  // tests/wiring/jornada-ligacao.test.ts.
+  it("app/page.tsx (o app de verdade) mostra a Jornada, ligada pela J15", () => {
+    expect(read("app/page.tsx")).toMatch(/<JornadaCard/);
+    expect(read("app/page.tsx")).toMatch(/<JornadaScreen/);
   });
 });
 
