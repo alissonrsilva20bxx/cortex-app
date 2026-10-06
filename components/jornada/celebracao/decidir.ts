@@ -116,17 +116,17 @@ export function planoDaComemoracao(c: Comemoracao, amb: Ambiente): Plano {
   const vibra = (p: number | number[]) => (discreto ? null : p);
 
   if (c.tipo === "pequena") {
-    const comGlow = c.glow > 0 && c.ganhou;
+    const rendeu = c.glow > 0 && c.ganhou;
     return {
       forma: "aviso",
-      som: som(comGlow ? "plim" : "check"),
+      som: som(rendeu ? "plim" : "check"),
       atrasoSom: 0,
-      efeitos: comGlow && !quieto,
+      efeitos: rendeu && !quieto,
       animar: !amb.movimentoReduzido,
-      vibracao: comGlow ? vibra(12) : null,
-      duracaoMs: comGlow ? 1900 : 2200,
+      vibracao: rendeu ? vibra(12) : null,
+      duracaoMs: rendeu ? 1900 : 2200,
       seguirEmMs: quieto ? 1150 : 1300,
-      neutro: discreto || !comGlow,
+      neutro: discreto || !rendeu,
     };
   }
 

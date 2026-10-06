@@ -28,4 +28,5 @@ discreto-estagio @600ms
 reduzido-estagio @100ms
 reduzido-selo @600ms
 fila consumida: f1,f2,f3,f4
-fila mostrou, em ordem: +15 Glow | Selo novo · Rumo à meta | Você subiu de estágio · Em movimento | Meta concluída | +15 Glow
+fila mostrou, em ordem: +15 Glow | Selo novo · Rumo à meta | Você subiu de estágio · Em movimento | Meta concluída
+depois da fila (+2,6s): 0 aviso/camada no DOM

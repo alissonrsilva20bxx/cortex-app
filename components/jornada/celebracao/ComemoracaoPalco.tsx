@@ -116,6 +116,10 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
   const fxRef = useRef<Particulas | null>(null);
   const ambienteRef = useRef(ambiente);
   ambienteRef.current = ambiente;
+  // Timers do aviso ficam FORA da linha do tempo do item: a fila segue
+  // (consome) antes do aviso sumir, e a troca de item não pode cancelar o
+  // "esconder" -- senão o último aviso ficava na tela.
+  const avisoTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const adiadas = adiadasDaSessao(fila);
   const proxima = proximaParaTocar(fila, adiadas);
@@ -148,6 +152,31 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
       fx.parar();
       fxRef.current = null;
     };
+  }, []);
+
+  useEffect(
+    () => () => {
+      avisoTimers.current.forEach(clearTimeout);
+    },
+    []
+  );
+
+  const mostrarAviso = useCallback((a: Aviso, duracaoMs: number) => {
+    avisoTimers.current.forEach(clearTimeout);
+    setAviso(a);
+    setAvisoOn(false);
+    avisoTimers.current = [
+      setTimeout(() => setAvisoOn(true), 16),
+      setTimeout(() => setAvisoOn(false), duracaoMs),
+      // depois da transição de saída (.55s), tira do DOM
+      setTimeout(
+        () =>
+          setAviso((atualAviso) =>
+            atualAviso?.id === a.id ? null : atualAviso
+          ),
+        duracaoMs + 600
+      ),
+    ];
   }, []);
 
   const terminar = useCallback(
@@ -188,23 +217,23 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
 
     if (plano.forma === "aviso") {
       setAtual(null);
-      setAviso({
-        id: c.id,
-        titulo: tituloDoAviso(textos),
-        apoio: c.tipo === "pequena" ? textos.apoio : textos.glow,
-        neutro: plano.neutro,
-        icone:
-          c.tipo === "pequena"
-            ? plano.neutro
-              ? "ok"
-              : "brilho"
-            : c.tipo === "meta" || c.tipo === "marco"
-              ? "meta"
-              : "selo",
-      });
-      setAvisoOn(false);
-      depois(16, () => setAvisoOn(true));
-      depois(plano.duracaoMs, () => setAvisoOn(false));
+      mostrarAviso(
+        {
+          id: c.id,
+          titulo: tituloDoAviso(textos),
+          apoio: c.tipo === "pequena" ? textos.apoio : textos.glow,
+          neutro: plano.neutro,
+          icone:
+            c.tipo === "pequena"
+              ? plano.neutro
+                ? "ok"
+                : "brilho"
+              : c.tipo === "meta" || c.tipo === "marco"
+                ? "meta"
+                : "selo",
+        },
+        plano.duracaoMs
+      );
       if (plano.efeitos) {
         const w = window.innerWidth;
         depois(60, () => fx()?.estouro(w / 2, 34, 16, false));
@@ -248,7 +277,7 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
       });
     }
     return () => timers.forEach(clearTimeout);
-  }, [proximaId, terminar]);
+  }, [proximaId, terminar, mostrarAviso]);
 
   const fechar = () => {
     if (!atual || !podeSeguir || fechando) return;

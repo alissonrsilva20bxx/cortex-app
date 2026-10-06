@@ -99,6 +99,8 @@ beforeEach(() => {
 interface Gravacao {
   freqs: number[];
   ctor: number;
+  /** `navigator.audioSession.type` no instante em que o contexto nasceu. */
+  sessaoAoCriar: string | undefined;
 }
 
 function audioFalso(
@@ -108,7 +110,7 @@ function audioFalso(
     quebraAo?: "criar" | "oscilador";
   } = {}
 ) {
-  const g: Gravacao = { freqs: [], ctor: 0 };
+  const g: Gravacao = { freqs: [], ctor: 0, sessaoAoCriar: undefined };
   const param = () => ({
     value: 0,
     setValueAtTime: vi.fn(),
@@ -122,6 +124,11 @@ function audioFalso(
     destination = {};
     constructor() {
       g.ctor++;
+      g.sessaoAoCriar = (
+        globalThis.navigator as unknown as {
+          audioSession?: { type: string };
+        }
+      )?.audioSession?.type;
       if (opcoes.quebraAo === "criar") throw new Error("sem áudio");
     }
     resume() {
@@ -348,6 +355,29 @@ describe("som bloqueado ou ausente não derruba nada", () => {
     expect(soCodigo(PALCO)).not.toMatch(/if \(\s*!?tocarSom/);
   });
 
+  it("o som nunca fura o silencioso: sessão de áudio 'ambient' ANTES do contexto nascer", () => {
+    const sessao = { type: "auto" };
+    vi.stubGlobal("navigator", { audioSession: sessao });
+    try {
+      const g = audioFalso();
+      expect(tocarSom("plim", { ligado: true })).toBe(true);
+      expect(g.sessaoAoCriar).toBe("ambient");
+      expect(sessao.type).toBe("ambient");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("sem navigator.audioSession (fora do Safari) o som segue sem lançar", () => {
+    vi.stubGlobal("navigator", {});
+    try {
+      audioFalso();
+      expect(tocarSom("plim", { ligado: true })).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("áudio liberado: o plim toca as notas do protótipo", () => {
     const g = audioFalso();
     expect(tocarSom("plim", { ligado: true })).toBe(true);
@@ -358,6 +388,30 @@ describe("som bloqueado ou ausente não derruba nada", () => {
 // ---------------------------------------------------------------------------
 // 6. Montar duas vezes não repete
 // ---------------------------------------------------------------------------
+
+describe("o palco: voltar ao app e o aviso sair da tela", () => {
+  it("voltar ao primeiro plano (visibilitychange) libera as adiadas no palco", () => {
+    const codigo = soCodigo(PALCO);
+    const corpo = codigo.match(/const visivel = \(\) => \{([\s\S]*?)\n {4}\};/);
+    expect(corpo).not.toBeNull();
+    expect(corpo![1]).toMatch(/document\.visibilityState === "visible"/);
+    expect(corpo![1]).toContain("liberarAdiadas()");
+    expect(codigo).toMatch(/addEventListener\("visibilitychange", visivel\)/);
+  });
+
+  it("o aviso some e sai do DOM com timers próprios (a troca de item não cancela)", () => {
+    const codigo = soCodigo(PALCO);
+    const mostrar = codigo.match(
+      /const mostrarAviso = useCallback\(([\s\S]*?)\}, \[\]\);/
+    );
+    expect(mostrar).not.toBeNull();
+    expect(mostrar![1]).toMatch(/avisoTimers\.current = \[/);
+    expect(mostrar![1]).toMatch(/setAvisoOn\(false\), duracaoMs\)/);
+    expect(mostrar![1]).toMatch(/atualAviso\?\.id === a\.id \? null/);
+    // O "esconder" não mora nos timers da linha do tempo do item.
+    expect(codigo).not.toMatch(/depois\(plano\.duracaoMs, \(\) => setAvisoOn/);
+  });
+});
 
 describe("montar duas vezes (StrictMode) não repete comemoração", () => {
   it("o som de uma comemoração toca uma vez só", () => {
@@ -558,6 +612,17 @@ describe("a comemoração só mostra o Glow que o servidor mandou", () => {
     expect(soCodigo(PALCO)).not.toContain("useJornada");
     expect(soCodigo(read(`${DIR}/ComemoracaoHost.tsx`))).toContain(
       'from "@/components/jornada/useJornada"'
+    );
+  });
+
+  it("o host repassa as preferências de verdade (a chave da J12 chega aqui)", () => {
+    const host = soCodigo(read(`${DIR}/ComemoracaoHost.tsx`));
+    expect(host).toMatch(/somLigado:\s*estado\.preferencias\.somLigado,/);
+    expect(host).toMatch(/modoDiscreto:\s*estado\.preferencias\.modoDiscreto,/);
+    expect(host).toMatch(/movimentoReduzido(,|:\s*movimentoReduzido)/);
+    // E não fixa nenhuma delas.
+    expect(host).not.toMatch(
+      /(somLigado|modoDiscreto|movimentoReduzido):\s*(true|false)/
     );
   });
 
