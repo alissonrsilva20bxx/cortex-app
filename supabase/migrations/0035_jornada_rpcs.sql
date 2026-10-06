@@ -220,6 +220,22 @@ as $$
   end;
 $$;
 
+-- §4: o Glow em que começou o estágio atual (início da barra de progresso).
+create or replace function public.jornada_inicio_do_estagio(glow integer)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select case
+    when glow < 100 then 0
+    when glow < 400 then 100
+    when glow < 1200 then 400
+    when glow < 3000 then 1200
+    else 3000 + ((glow - 3000) / 1500) * 1500
+  end;
+$$;
+
 -- ------------------------------------------------------------
 -- Apoio
 -- ------------------------------------------------------------
@@ -944,6 +960,7 @@ begin
       'conectar', coalesce(v_saldo.glow_conectar, 0)
     ),
     'estagio', public.jornada_estagio_de(coalesce(v_saldo.glow_total, 0)),
+    'estagio_desde', public.jornada_inicio_do_estagio(coalesce(v_saldo.glow_total, 0)),
     'proximo_estagio_em', public.jornada_proximo_estagio_em(coalesce(v_saldo.glow_total, 0)),
     'selos', (
       select coalesce(jsonb_agg(jsonb_build_object(
@@ -1033,9 +1050,13 @@ revoke all on function public.jornada_estado(text, integer)
   from public, anon, authenticated, service_role;
 revoke all on function public.jornada_proximo_estagio_em(integer)
   from public, anon, authenticated, service_role;
+revoke all on function public.jornada_inicio_do_estagio(integer)
+  from public, anon, authenticated, service_role;
 grant execute on function public.jornada_registrar(text, uuid, uuid, text, integer)
   to authenticated;
 grant execute on function public.jornada_estado(text, integer)
   to authenticated;
 grant execute on function public.jornada_proximo_estagio_em(integer)
+  to authenticated, service_role;
+grant execute on function public.jornada_inicio_do_estagio(integer)
   to authenticated, service_role;

@@ -124,6 +124,8 @@ export interface EstadoServidor {
   glow_total: number;
   pilares: Record<Pilar, number>;
   estagio: number;
+  /** Glow em que começou o estágio atual (início da barra de progresso). */
+  estagio_desde: number;
   /** Glow em que começa o próximo estágio. */
   proximo_estagio_em: number;
   selos: {
