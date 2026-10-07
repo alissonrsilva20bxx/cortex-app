@@ -38,20 +38,20 @@ function Svg({
 
 const PATHS: Record<string, ReactNode> = {
   chev: <path d="m9 18 6-6-6-6" />,
-  shieldp: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
-  check: <path d="M20 6 9 17l-5-5" />,
   cal: (
     <>
       <rect x="3" y="4" width="18" height="17" rx="2" />
       <path d="M16 2v4M8 2v4M3 10h18" />
     </>
   ),
+  shieldp: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
   receipt: (
     <>
       <path d="M4 2v20l3-2 3 2 2-2 2 2 3-2 3 2V2l-3 2-3-2-2 2-2-2-3 2z" />
       <path d="M8 9h8M8 13h6" />
     </>
   ),
+  check: <path d="M20 6 9 17l-5-5" />,
   spark: (
     <path d="M12 3l1.9 5.6a2 2 0 0 0 1.3 1.3L21 12l-5.8 2.1a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.6a2 2 0 0 0-1.3-1.3L3 12l5.8-2.1a2 2 0 0 0 1.3-1.3z" />
   ),

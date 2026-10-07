@@ -1,11 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { escapar, norm, read } from "./pixelMockup";
 import {
+  LETRAS_DA_SEMANA,
+  ORDEM_DO_PROXIMO_PASSO,
+  PROXIMO_PASSO,
+  TEXTO_DO_PROXIMO_PASSO,
   ateProximo,
   capituloEmPartes,
   diasFortesDeTres,
   enfeiteEmPartes,
 } from "../../lib/jornada/textos";
+import {
+  destinoDoProximoPasso,
+  indiceDeHojeNaSemana,
+  proximoPasso,
+} from "../../components/jornada/progresso";
+import { estadoJornadaExemplo } from "../../lib/mockJornada";
+import type { EstadoJornada } from "../../lib/jornada/estado";
 
 /**
  * Card "Sua Jornada" no Início = o `.jcard` do protótipo aprovado
@@ -304,4 +315,235 @@ describe("Pixel card da Jornada — lugar no Início (protótipo)", () => {
       expect(home.indexOf("jcard")).toBeGreaterThan(home.indexOf("Receita · "));
     }
   );
+});
+
+describe("Pixel card da Jornada — semana e próximo passo (ordem do operador)", () => {
+  const ESTILOS = read("styles/globals.css");
+
+  it("as 7 bolinhas: .week, .day e .dot com os valores do protótipo", () => {
+    expect(regra(".week")).toEqual({
+      display: "flex",
+      "justify-content": "space-between",
+    });
+    const day = regra(".day");
+    const dia = estiloCom(
+      'flexDirection: "column",\n                alignItems: "center",\n                gap: "4px"'
+    );
+    for (const p of ["gap", "font-size", "font-weight"])
+      temDecl(dia, p, day[p]);
+    expect(dia).toContain(
+      `i===hoje?${norm(regra(".day.is-today").color)}:${norm(day.color)}`
+    );
+    const dot = regra(".dot");
+    const base = norm(
+      CARD.slice(
+        CARD.indexOf("const base: CSSProperties"),
+        CARD.indexOf("};", CARD.indexOf("const base: CSSProperties"))
+      )
+    );
+    for (const p of ["width", "height", "border-radius", "color"])
+      temDecl(base, p, dot[p]);
+    expect(CARD).toContain(
+      `<span style={{ ...base, background: "${regra(".dot.strong").background}" }}>`
+    );
+    expect(regra(".dot.rest")).toEqual({
+      background: "var(--t-soft)",
+      color: "var(--t-deep)",
+    });
+    expect(CARD).toMatch(
+      /background: "var\(--t-soft\)", color: "var\(--t-deep\)"/
+    );
+    expect(regra(".dot.today")["box-shadow"]).toBe(
+      "inset 0 0 0 2px var(--t-acc)"
+    );
+    expect(CARD).toContain('boxShadow: "inset 0 0 0 2px var(--t-acc)"');
+    // Vazia: --t-sub no claro; no escuro, só o contorno.
+    expect(ESTILOS).toMatch(
+      /\.jornada-dia-vazio \{\s*background: var\(--t-sub\);/
+    );
+    expect(PROTO).toContain(
+      ".ph[data-md=dark] .dot:not(.strong):not(.rest):not(.today){background:transparent;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--t-mut) 45%,transparent)}"
+    );
+    expect(ESTILOS).toMatch(
+      /:root:not\(\[data-mode="light"\]\) \.jornada-dia-vazio \{\s*background: transparent;\s*box-shadow: inset 0 0 0 1\.5px\s+color-mix\(in srgb, var\(--t-mut\) 45%, transparent\);/
+    );
+    // ic('check', 15, 3) e ic('moon', 13, 2.4)
+    expect(PROTO).toMatch(/ic\('check', big \? 18 : 15, 3\)/);
+    expect(PROTO).toMatch(/ic\('moon', big \? 16 : 13, 2\.4\)/);
+    expect(CARD).toContain(
+      '<IconeDoPrototipo nome="check" tamanho={15} traco={3} />'
+    );
+    expect(CARD).toContain(
+      '<IconeDoPrototipo nome="moon" tamanho={13} traco={2.4} />'
+    );
+  });
+
+  it("as letras dos dias e a ordem (segunda a domingo) são as do protótipo", () => {
+    const days = PROTO.match(/var DAYS = (\[[^\]]+\]);/)![1].replace(/'/g, '"');
+    expect(JSON.stringify(LETRAS_DA_SEMANA)).toBe(days.replace(/\s/g, ""));
+  });
+
+  it("o próximo passo: .next, .nic, .ntx, small e .pts", () => {
+    const next = regra(".next");
+    const passo = norm(
+      CARD.slice(
+        CARD.indexOf("const PASSO: CSSProperties"),
+        CARD.indexOf("};", CARD.indexOf("const PASSO: CSSProperties"))
+      )
+    );
+    temDecl(passo, "gap", next.gap);
+    temDecl(passo, "padding", next.padding.replace("!important", ""));
+    temDecl(passo, "border-radius", next["border-radius"]);
+    temDecl(passo, "background", next.background.replace("!important", ""));
+    const nic = regra(".next .nic");
+    const icone = norm(
+      CARD.slice(
+        CARD.indexOf("const PASSO_ICONE"),
+        CARD.indexOf("};", CARD.indexOf("const PASSO_ICONE"))
+      )
+    );
+    for (const p of ["width", "height", "border-radius", "background", "color"])
+      temDecl(icone, p, nic[p]);
+    const ntx = regra(".next .ntx");
+    const texto = norm(
+      CARD.slice(
+        CARD.indexOf("const PASSO_TEXTO"),
+        CARD.indexOf("};", CARD.indexOf("const PASSO_TEXTO"))
+      )
+    );
+    for (const p of ["font-size", "font-weight"]) temDecl(texto, p, ntx[p]);
+    const small = regra(".next .ntx small");
+    const rotulo = norm(
+      CARD.slice(
+        CARD.indexOf("const PASSO_ROTULO"),
+        CARD.indexOf("};", CARD.indexOf("const PASSO_ROTULO"))
+      )
+    );
+    for (const p of [
+      "font-size",
+      "font-weight",
+      "letter-spacing",
+      "text-transform",
+      "color",
+    ])
+      temDecl(rotulo, p, small[p]);
+    const pts = regra(".pts");
+    const ptsApp = estiloCom('gap: "3px"');
+    for (const p of ["gap", "font-size", "font-weight", "color"])
+      temDecl(ptsApp, p, pts[p]);
+    // ic(ACTIONS[nk].ic, 16, 2.3) e icf('spark', 11)
+    expect(PROTO).toMatch(/ic\(ACTIONS\[nk\]\.ic, 16, 2\.3\)/);
+    expect(CARD).toMatch(/tamanho=\{16\}\s*traco=\{2\.3\}/);
+    expect(PROTO).toMatch(/icf\('spark', 11\)/);
+    expect(CARD).toContain("<FaiscaCheia tamanho={11} />");
+  });
+
+  it("ordem, textos e ícones do próximo passo = NEXT_ORDER, NEXT_TXT e ACTIONS do protótipo", () => {
+    const ordem = PROTO.match(/var NEXT_ORDER = \[([^\]]+)\]/)![1]
+      .match(/'(\w+)'/g)!
+      .map((x) => x.slice(1, -1));
+    const DE = {
+      save: "guardar_meta",
+      vault: "comprovante_cofre",
+      plan: "planejar",
+      rest: "descanso",
+      expense: "despesa",
+    } as const;
+    expect(ordem.map((k) => DE[k as keyof typeof DE])).toEqual([
+      ...ORDEM_DO_PROXIMO_PASSO,
+    ]);
+    const txt = PROTO.match(/var NEXT_TXT = \{([^}]+)\}/)![1];
+    for (const k of ordem) {
+      const m = txt.match(
+        new RegExp(`${k}:'([^']*)'(?: \\+ money\\((\\d+)\\) \\+ '([^']*)')?`)
+      )!;
+      const esperado = m[2] ? `${m[1]}€ ${m[2]}${m[3]}` : m[1];
+      expect(
+        TEXTO_DO_PROXIMO_PASSO[DE[k as keyof typeof DE]].replace(/€ /, "€ ")
+      ).toBe(esperado);
+    }
+    for (const k of ordem) {
+      const ic = PROTO.match(new RegExp(`\\n  ${k}:\\{[^}]*ic:'(\\w+)'`))![1];
+      expect(CARD).toContain(`${DE[k as keyof typeof DE]}: "${ic}"`);
+    }
+    expect(PROTO).toContain("<small>Próximo passo</small>");
+    expect(PROTO).toContain("<small>Hoje</small>Hoje você já cuidou de tudo");
+    expect(PROXIMO_PASSO).toEqual({
+      rotulo: "Próximo passo",
+      feitoRotulo: "Hoje",
+      feito: "Hoje você já cuidou de tudo",
+    });
+  });
+
+  it("o próximo passo é o primeiro que ela não fez hoje (nextKey do protótipo)", () => {
+    const base = { feitasHoje: {} } as unknown as EstadoJornada;
+    expect(proximoPasso(base)).toBe("guardar_meta");
+    expect(proximoPasso({ ...base, feitasHoje: { guardar_meta: 1 } })).toBe(
+      "comprovante_cofre"
+    );
+    expect(
+      proximoPasso({
+        ...base,
+        feitasHoje: {
+          guardar_meta: 1,
+          comprovante_cofre: 2,
+          planejar: 1,
+          descanso: 1,
+        },
+      })
+    ).toBe("despesa");
+    expect(
+      proximoPasso({
+        ...base,
+        feitasHoje: {
+          guardar_meta: 1,
+          comprovante_cofre: 1,
+          planejar: 1,
+          descanso: 1,
+          despesa: 1,
+        },
+      })
+    ).toBeNull();
+    // Hoje no card: segunda = 0 (sexta 02/10/2026 = 4, como S.today).
+    expect(indiceDeHojeNaSemana({ hoje: "2026-10-02" } as EstadoJornada)).toBe(
+      4
+    );
+    expect(PROTO).toMatch(/today:4/);
+  });
+
+  it("a 0038 manda feitasHoje lido de jornada_acoes, sem registrar nada novo, e não é aplicada", () => {
+    const sql = read("supabase/migrations/0038_jornada_feitas_hoje.sql");
+    expect(sql).toMatch(
+      /alter function private\.jornada_estado_de\(uuid, date\)\s*rename to jornada_estado_base;/
+    );
+    expect(sql).toMatch(
+      /from public\.jornada_acoes a\s*where a\.user_id = p_user and a\.dia = p_hoje and a\.ganhos_no_dia > 0/
+    );
+    expect(sql).toMatch(
+      /'feitasHoje', private\.jornada_feitas_hoje\(p_user, p_hoje\)/
+    );
+    expect(sql).not.toMatch(/\b(insert|update|delete)\b/i);
+    expect(sql).toMatch(/NUNCA aplicada/);
+  });
+
+  it("o laboratório começa sem nada feito hoje (S.done = {}) e o card leva cada passo ao lugar certo", () => {
+    expect(PROTO).toMatch(/done:\{\}/);
+    expect(estadoJornadaExemplo(new Date(2026, 9, 2)).feitasHoje).toEqual({});
+    expect(destinoDoProximoPasso("guardar_meta")).toEqual({
+      aba: "financeiro",
+      financeiro: "metas",
+    });
+    expect(destinoDoProximoPasso("despesa")).toEqual({
+      aba: "financeiro",
+      financeiro: "saidas",
+    });
+    expect(destinoDoProximoPasso("comprovante_cofre")).toEqual({
+      aba: "cofre",
+    });
+    expect(destinoDoProximoPasso("planejar")).toEqual({ aba: "jobs" });
+    for (const pagina of ["app/page.tsx", "app/dev-preview/app/page.tsx"])
+      expect(read(pagina)).toMatch(
+        /onProximoPasso=\{\(acao\) => \{\s*const destino = destinoDoProximoPasso\(acao\);\s*handleTabChange\(destino\.aba\);\s*if \(destino\.financeiro\)\s*setFinanceiroFocusTab\(destino\.financeiro\);/
+      );
+  });
 });
