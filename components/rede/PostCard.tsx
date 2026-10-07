@@ -17,6 +17,8 @@ interface Props {
    * chamado ao detectar falha de carregamento; devolve uma URL nova pro
    * mesmo path, ou `null` se a renovação falhar (ex.: bloqueio mudou). */
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** Posição no feed: a referência alterna o tom do espaço da foto. */
+  indice?: number;
 }
 
 function ActionButton({
@@ -67,6 +69,7 @@ export function PostCard({
   onOpenMenu,
   onOpenAutor,
   onRenovarFoto,
+  indice = 0,
 }: Props) {
   const cat = CATEGORIA_META[post.categoria];
 
@@ -132,6 +135,10 @@ export function PostCard({
           fotos={post.fotos}
           autorNome={post.autorNome}
           onRenovarFoto={onRenovarFoto}
+          // A referência alterna o tom do espaço da foto entre um artigo e
+          // o seguinte: `--t-soft` e `--t-psoft`, que aqui são o
+          // `--accent-tint` e o `--violet-tint`.
+          tom={indice % 2 === 0 ? "var(--accent-tint)" : "var(--violet-tint)"}
         />
       )}
 

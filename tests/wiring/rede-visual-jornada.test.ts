@@ -125,6 +125,9 @@ describe("J06 — foto do feed continua sem visualizador (decisão de 2026-09-10
     expect(props).toEqual(
       [
         "key",
+        // `indice` é DADO (a posição no feed), não toque: a referência
+        // alterna o tom do espaço da foto entre um artigo e o seguinte.
+        "indice",
         "onComment",
         "onOpenAutor",
         "onOpenMenu",
@@ -134,6 +137,15 @@ describe("J06 — foto do feed continua sem visualizador (decisão de 2026-09-10
         "post",
       ].sort()
     );
+    // O que esta guarda protege: nenhum handler NOVO entra no post.
+    expect(props.filter((n) => n.startsWith("on")).sort()).toEqual([
+      "onComment",
+      "onOpenAutor",
+      "onOpenMenu",
+      "onRenovarFoto",
+      "onShare",
+      "onToggleLike",
+    ]);
   });
 
   it("e o PostCard passa pra foto só dado e renovação de URL, nenhum toque", () => {
@@ -142,7 +154,16 @@ describe("J06 — foto do feed continua sem visualizador (decisão de 2026-09-10
     );
     expect(tag).not.toBeNull();
     const props = [...tag![0].matchAll(/\s(\w+)=\{/g)].map((m) => m[1]).sort();
-    expect(props).toEqual(["autorNome", "fotos", "onRenovarFoto", "postId"]);
+    // `tom` é dado (a cor do espaço da foto), não toque.
+    expect(props).toEqual([
+      "autorNome",
+      "fotos",
+      "onRenovarFoto",
+      "postId",
+      "tom",
+    ]);
+    // O que esta guarda protege: a foto do feed NÃO é interativa.
+    expect(props.filter((n) => n.startsWith("on"))).toEqual(["onRenovarFoto"]);
   });
 });
 

@@ -414,10 +414,11 @@ export function FeedScreen({
                 : "Nenhuma publicação por aqui ainda."}
             </p>
           ) : (
-            items.map((item) =>
+            items.map((item, i) =>
               item.type === "post" ? (
                 <PostCard
                   key={item.post.id}
+                  indice={i}
                   post={item.post}
                   onToggleLike={onToggleLike}
                   onComment={onComment}

@@ -75,10 +75,16 @@ describe("FeedFotos — direção iOS + Instagram", () => {
     expect(bleedBody).not.toMatch(/border:/);
   });
 
-  it("fundo do espaço da foto é o tom neutro da referência, object-contain", () => {
-    // `--accent-tint` é o `--t-soft` da referência (#ededee claro / #51172e
-    // no pink-neon escuro -- os valores batem tema a tema).
-    expect(f).toMatch(/background:\s*"var\(--accent-tint\)"/);
+  it("o tom do espaço da foto vem de fora e alterna entre os posts", () => {
+    // A referência ALTERNA: `--t-soft` no 1º artigo e `--t-psoft` no 2º,
+    // que no app são `--accent-tint` e `--violet-tint`. Com um tom só, o 2º
+    // post divergia em todos os temas -- e no crimson escuro, onde o acento
+    // é muito saturado, era a maior diferença da tela.
+    expect(f).toMatch(/background:\s*tom,/);
+    const card = read("components/rede/PostCard.tsx");
+    expect(card).toMatch(
+      /tom=\{indice % 2 === 0 \? "var\(--accent-tint\)" : "var\(--violet-tint\)"\}/
+    );
     expect(f).toMatch(/objectFit:\s*"contain"/);
     expect(f).not.toMatch(/objectFit:\s*"cover"/);
   });
