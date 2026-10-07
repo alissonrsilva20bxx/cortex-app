@@ -447,15 +447,27 @@ export default function DevPreviewApp() {
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
     um buraco. */}
             <div className="grid grid-cols-2 gap-[10px] [&>:last-child:nth-child(even)]:col-span-2">
-              {/* `data-tour` do tour guiado (lib/appTour.ts); ocupa as 2 colunas. */}
-              <div data-tour="home-hero" className="col-span-2">
-                <HeroCard
-                  jobs={jobs}
-                  metas={metas}
-                  onGoToFinanceiro={() => {
-                    handleTabChange("financeiro");
-                    setFinanceiroFocusTab("visao");
-                  }}
+              {/* O card principal e o card "Sua Jornada" (J12) ocupam as 2
+                  colunas, um embaixo do outro com o gap de 10px da grade, como no
+                  protótipo da Jornada (`.grid2 > .span2.jcard` logo depois da
+                  receita). Juntos num bloco só, pra não mudar a contagem que
+                  decide se o último card pequeno ocupa a linha toda. Sem estado
+                  da Jornada o card não aparece (nunca trava o Início). */}
+              <div className="col-span-2 flex flex-col gap-[10px]">
+                {/* `data-tour` do tour guiado (lib/appTour.ts). */}
+                <div data-tour="home-hero">
+                  <HeroCard
+                    jobs={jobs}
+                    metas={metas}
+                    onGoToFinanceiro={() => {
+                      handleTabChange("financeiro");
+                      setFinanceiroFocusTab("visao");
+                    }}
+                  />
+                </div>
+                <JornadaCard
+                  userId={usuario.id}
+                  onAbrir={() => setJornadaAberta(true)}
                 />
               </div>
               {homeCards.nextJob && <NextJobCard jobs={jobs} />}
@@ -481,12 +493,6 @@ export default function DevPreviewApp() {
                 onOpenCofre={() => handleTabChange("cofre")}
               />
             </div>
-
-            {/* Card "Sua Jornada" (J12): só no laboratório por enquanto. */}
-            <JornadaCard
-              userId={usuario.id}
-              onAbrir={() => setJornadaAberta(true)}
-            />
 
             {/* Espelha app/page.tsx: bloco da Agenda removível em
                 Ajustes › Tela inicial (#181). */}

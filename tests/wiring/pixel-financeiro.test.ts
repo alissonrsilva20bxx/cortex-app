@@ -4,8 +4,10 @@ import {
   calcEarnings,
   formatBRL,
   monthConcludedCount,
+  monthEarnings,
   monthExpenses,
 } from "../../lib/finance";
+import { progressoMeta } from "../../components/financeiro/progressoMeta";
 import { buildMovements } from "../../components/financeiro/movimentos";
 import type { Despesa, Job, ReceitaAvulsa } from "../../lib/types";
 import {
@@ -266,7 +268,10 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
     })) as unknown as Job[];
     const despesas = t.despesas as unknown as Despesa[];
     const receitas = t.receitas_avulsas as unknown as ReceitaAvulsa[];
-    return { jobs, despesas, receitas };
+    const metaMes = Number(
+      t.metas.find((m) => m.periodo === "mes")?.valor_alvo ?? NaN
+    );
+    return { jobs, despesas, receitas, metaMes };
   }
 
   /** "R$ 530" -> o texto do app pelo mesmo formatBRL. */
@@ -401,35 +406,59 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
     expect(saidas(app.slice(0, ate + 1))).toEqual(saidas(mock));
   });
 
+  it("iguais ao mockup: Entrou, Saldo e a variação contra agosto", () => {
+    const app = numeros();
+    expect([app.entrou, app.saldo, app.variacao]).toEqual([
+      MOCK.entrou(),
+      MOCK.saldo(),
+      MOCK.variacao(),
+    ]);
+    // O card Entradas mostra o mesmo total do "Entrou".
+    expect(FIN).toMatch(
+      new RegExp(`>Entradas</span><span[^>]*>${re(MOCK.entrou())}<`)
+    );
+  });
+
   /**
-   * Divergências conhecidas, travadas dos DOIS lados. O mockup da Agenda
-   * (que a #204 seguiu no laboratório) tem Camila Duarte concluída em
-   * 20/09 por R$ 120; o do Financeiro tem Sônia Aparecida em 20/09 por
-   * R$ 150 e Camila em 17/09. Um laboratório só não atende os dois sem
-   * quebrar a Agenda, então vale o da Agenda e o Financeiro difere aqui.
+   * Divergências conhecidas, travadas dos DOIS lados. Nenhum laboratório
+   * casa estas linhas sem mudar regra ou quebrar outra tela:
+   *  - Meta e Ticket médio: o mockup escreve "R$ 430 de R$ 3.500" (12%) e
+   *    "R$ 177" com Entrou R$ 530. A regra do app usa o MESMO total do
+   *    "Entrou" na Meta (R$ 530, 15%) e o ticket é faturamento de
+   *    atendimentos ÷ atendimentos (R$ 430 ÷ 2). Os números do mockup não
+   *    fecham entre si por nenhuma regra.
+   *  - A 3ª linha de Recentes e as entradas de Mais lançamentos: o mockup
+   *    da Agenda tem Camila Duarte concluída em 20/09 por R$ 120; o do
+   *    Financeiro tem Sônia Aparecida em 20/09 por R$ 150 e Camila em
+   *    17/09. Vale o da Agenda.
    * Se um dos lados mudar (mockup ou laboratório), este teste cai e a
    * lista tem de ser revista.
    */
-  it("divergências conhecidas (Agenda x Financeiro no mockup): Entrou, Saldo, variação e a 3ª linha de Recentes", () => {
-    const app = numeros();
-    const DIVERGENCIAS: [string, string, string][] = [
-      // [o quê, mockup, app]
-      ["Entrou", MOCK.entrou(), app.entrou],
-      ["Saldo", MOCK.saldo(), app.saldo],
-      ["variação", MOCK.variacao(), app.variacao],
+  it("divergências conhecidas: Meta e Ticket médio (regra) e Sônia x Camila (Agenda x Financeiro)", () => {
+    const { jobs, receitas, metaMes } = seed();
+    const entrou = calcEarnings(jobs, receitas, "mes");
+    const mockMeta = [
+      doMockup(/>Meta<\/span><span[^>]*>([^<]+)</),
+      doMockup(/>Meta<\/span><span[^>]*>[^<]+<\/span><span[^>]*>([^<]+)</),
     ];
-    expect(DIVERGENCIAS.map(([o, m, a]) => [o, m, a])).toEqual([
-      ["Entrou", "R$ 530", "R$ 500"],
-      ["Saldo", "R$ 217", "R$ 187"],
-      ["variação", "-56% vs agosto", "-62% vs agosto"],
+    const appMeta = [
+      `${Math.round(progressoMeta(entrou, metaMes))}%`,
+      `${brl(entrou)} de ${brl(metaMes)}`,
+    ];
+    const mockTicket = doMockup(/>Ticket médio<\/span><span[^>]*>([^<]+)</);
+    const appTicket = brl(
+      Math.round(monthEarnings(jobs) / monthConcludedCount(jobs))
+    );
+    expect([mockMeta, appMeta, [mockTicket, appTicket]]).toEqual([
+      ["12%", "R$ 430 de R$ 3.500"],
+      ["15%", "R$ 530 de R$ 3.500"],
+      ["R$ 177", "R$ 215"],
     ]);
     const { mock, app: linhas } = recentes();
     expect([mock[2], linhas[2]]).toEqual([
       ["20 SET", "Sônia Aparecida", "+R$ 150"],
       ["20 SET", "Camila Duarte", "+R$ 120"],
     ]);
-    // Entradas de Mais lançamentos: as do mockup não existem no
-    // laboratório (que segue a Agenda); as do laboratório são as de antes.
     const m2 = mais();
     const entradas = (l: string[][]) => l.filter((x) => x[2].startsWith("+"));
     expect(entradas(m2.mock)).toEqual([
@@ -440,7 +469,7 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
     expect(entradas(m2.app)).toEqual([
       ["19 set.", "Venda de kit de esmaltes", "+R$ 60"],
       ["14 set.", "Comissão de indicação", "+R$ 40"],
-      ["13 set.", "Helena Brito", "+R$ 280"],
+      ["13 set.", "Helena Brito", "+R$ 310"],
     ]);
   });
 });

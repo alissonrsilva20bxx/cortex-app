@@ -72,13 +72,13 @@ describe("o app autenticado monta a Jornada dos caminhos reais", () => {
     expect(APP).toMatch(new RegExp(`<${nome}\\b`));
   });
 
-  it("o card fica no Início, entre a grade e a Agenda, e abre a tela", () => {
+  it("o card fica no Início, logo depois do card principal (protótipo), e abre a tela", () => {
     const inicio = APP.indexOf('<TabPanel tab="home"');
     const fim = APP.indexOf("</TabPanel>", inicio);
     const home = APP.slice(inicio, fim);
     const card = home.indexOf("<JornadaCard");
-    expect(card).toBeGreaterThan(home.indexOf("<CofreCard"));
-    expect(card).toBeLessThan(home.indexOf("<SemanaSection"));
+    expect(card).toBeGreaterThan(home.indexOf("<HeroCard"));
+    expect(card).toBeLessThan(home.indexOf("<NextJobCard"));
     expect(APP).toMatch(/onAbrir=\{\(\) => setJornadaAberta\(true\)\}/);
   });
 

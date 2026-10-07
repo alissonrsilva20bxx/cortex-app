@@ -38,6 +38,8 @@
 //   --limiar=0.1             limiar do pixelmatch (0 a 1)
 //   --inteira                compara o conteúdo rolável inteiro, não só a 1ª dobra
 //   --so-pixel               pula o dump de estilos (bem mais rápido)
+//   --sem-jornada            no Início, esconde o card "Sua Jornada" (o mockup
+//                            das 5 telas não tem esse card)
 //   --json                   imprime só o JSON no stdout
 //
 // Ambiente: PIXEL_PLAYWRIGHT, PIXEL_CHROME e PIXEL_BASE_URL sobrescrevem os
@@ -583,6 +585,7 @@ async function principal() {
     limiar: Number(arg("limiar", "0.1")),
     soPixel: flag("so-pixel"),
     inteira: flag("inteira"),
+    semJornada: flag("sem-jornada"),
     json: flag("json"),
   };
 
@@ -905,6 +908,13 @@ async function principal() {
       .click();
     await page.waitForTimeout(900);
     if (tela === "inicio") await travarParaOCardDoCofre(page);
+    // O mockup das 5 telas é anterior à Jornada: sem o card dela, o Início
+    // do app tem o mesmo conteúdo do mockup (o card fica no protótipo da
+    // Jornada, docs/jornada/referencias/prototipo-sua-jornada.html).
+    if (tela === "inicio" && OPC.semJornada)
+      await page.addStyleTag({
+        content: '[aria-label="Abrir sua Jornada"]{display:none!important}',
+      });
     await forcarTema(page, tema);
     await esconderOQueEhSoDoLaboratorio(page);
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -922,7 +932,9 @@ async function principal() {
   const app = await abrirApp(OPC);
 
   for (const tela of OPC.telas) {
-    const nome = `${tela}-${OPC.largura}-${OPC.modo}-${OPC.tema}`;
+    const nome =
+      `${tela}-${OPC.largura}-${OPC.modo}-${OPC.tema}` +
+      (tela === "inicio" && OPC.semJornada ? "-sem-jornada" : "");
     const dir = join(OPC.saida, tela);
     mkdirSync(dir, { recursive: true });
 

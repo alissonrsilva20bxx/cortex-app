@@ -77,7 +77,7 @@ describe("J02 — /dev-preview/app e app/page.tsx montam a Início real, na orde
         /<div className="grid grid-cols-2 gap-\[10px\] \[&>:last-child:nth-child\(even\)\]:col-span-2">/
       );
       expect(painel).toMatch(
-        /<div data-tour="home-hero" className="col-span-2">\s*<HeroCard/
+        /<div className="col-span-2 flex flex-col gap-\[10px\]">\s*\{\/\*[\s\S]*?\*\/\}\s*<div data-tour="home-hero">\s*<HeroCard/
       );
     });
 

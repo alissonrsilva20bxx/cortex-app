@@ -282,7 +282,7 @@ describe("Pixel Início A — medidas iguais às do mockup", () => {
         `<div className="grid grid-cols-2 gap-[${grade.gap}]`
       );
       expect(src, pagina).toMatch(
-        /<div data-tour="home-hero" className="col-span-2">\s*<HeroCard/
+        /<div className="col-span-2 flex flex-col gap-\[10px\]">\s*\{\/\*[\s\S]*?\*\/\}\s*<div data-tour="home-hero">\s*<HeroCard/
       );
     }
   });
@@ -494,13 +494,11 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
   });
 
   /**
-   * Divergências conhecidas, travadas dos DOIS lados. O mockup da Agenda
-   * (que a #204 seguiu no laboratório) tem Camila Duarte concluída em
-   * 20/09 por R$ 120; o do Financeiro/Início conta Sônia em 20/09 por
-   * R$ 150. Vale o da Agenda, e o faturamento do mês fica R$ 30 abaixo.
-   * Se o mockup ou o laboratório mudar, este teste cai.
+   * O laboratório tem o faturamento do mockup (R$ 430): Helena Brito, de
+   * 13/09, vale R$ 310, e Camila Duarte continua em 20/09 por R$ 120 (o
+   * mockup da Agenda). Daí saem a % da meta, a projeção e o que falta.
    */
-  it("divergências conhecidas (Agenda x Financeiro no mockup): faturamento, % da meta, projeção e falta pra meta", () => {
+  it("iguais ao mockup: faturamento, % da meta, projeção e falta pra meta", () => {
     const { jobs, metas } = seed();
     const p = monthProjection(jobs, metas);
     const eta = p.metaEta!.toLocaleDateString("pt-BR", {
@@ -516,10 +514,10 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
         brl(p.remaining!),
       ],
     ]).toEqual([
-      ["R$ 430", "R$ 400"],
-      ["12% da meta", "11% da meta"],
-      ["7 de março", "21 de março"],
-      ["R$ 3.070", "R$ 3.100"],
+      ["R$ 430", "R$ 430"],
+      ["12% da meta", "12% da meta"],
+      ["7 de março", "7 de março"],
+      ["R$ 3.070", "R$ 3.070"],
     ]);
     // A meta é a mesma dos dois lados.
     expect(texto(/>de ([^<]+)</)).toBe(brl(p.meta!));

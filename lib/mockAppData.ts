@@ -91,7 +91,7 @@ export function buildMockAppSeed(opts?: {
       cliente_nome: "Helena Brito",
       data: daysFromNow(-10),
       hora: "09:00",
-      valor: 280,
+      valor: 310,
       modalidade: "presencial",
       local: "Casa da cliente",
       status: "concluído",

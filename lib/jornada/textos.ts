@@ -423,6 +423,49 @@ export function enfeiteNaColecao(mes: number): string {
   return `${nomeEnfeite(mes)} na sua coleção ✓`;
 }
 
+// Card do Início no desenho do protótipo: cada linha tem um trecho em
+// negrito, então o texto vem em partes.
+
+/** Dias fortes que fazem a semana firme (spec §3: "3 dias fortes por
+ * semana"); o protótipo escreve "2 de 3". Só exibição: quem decide se a
+ * semana foi firme continua sendo o servidor (contador "firme"). */
+export const DIAS_FORTES_DA_SEMANA_FIRME = 3;
+
+/** "95 até Organizada" (no card, o protótipo não repete "Glow"). */
+export function ateProximo(falta: number, proximoEstagio: number): string {
+  return `${numero(falta)} até ${nomeEstagio(proximoEstagio)}`;
+}
+
+/** "**2 de 3** dias fortes nesta semana" */
+export function diasFortesDeTres(dias: number): {
+  forte: string;
+  resto: string;
+} {
+  const n = Math.min(dias, DIAS_FORTES_DA_SEMANA_FIRME);
+  return {
+    forte: `${numero(n)} de ${numero(DIAS_FORTES_DA_SEMANA_FIRME)}`,
+    resto: " dias fortes nesta semana",
+  };
+}
+
+/** "Capítulo de outubro · **1 de 3** missões" */
+export function capituloEmPartes(
+  mes: number,
+  feitas: number,
+  total: number
+): { antes: string; forte: string; resto: string } {
+  return {
+    antes: `${tituloCapitulo(mes)} · `,
+    forte: `${numero(feitas)} de ${numero(total)}`,
+    resto: " missões",
+  };
+}
+
+/** "**Lua de outubro** na sua coleção ✓" */
+export function enfeiteEmPartes(mes: number): { forte: string; resto: string } {
+  return { forte: nomeEnfeite(mes), resto: " na sua coleção ✓" };
+}
+
 export const SECAO = {
   ritmo: "Ritmo da semana",
   comeco: "Jornada de Começo",
