@@ -1,6 +1,7 @@
 import type {
   Capitulo,
   EstadoJornada,
+  MarcaDoDia,
   MesDaColecao,
 } from "@/lib/jornada/estado";
 
@@ -100,4 +101,22 @@ export function mesesDaColecao(
     meses.push({ ...mes, situacao });
   }
   return meses;
+}
+
+/** As marcas da semana corrente (0036, `semana.dias`), de segunda a
+ * domingo; sem o campo (servidor antigo), a semana vazia. */
+export function marcasDaSemana(estado: EstadoJornada): MarcaDoDia[] {
+  return estado.semana?.dias ?? [null, null, null, null, null, null, null];
+}
+
+/** Os dias fortes da semana: as marcas, ou o contador do período. */
+export function diasFortesDaSemana(estado: EstadoJornada): number {
+  if (estado.semana)
+    return estado.semana.dias.filter((d) => d === "forte").length;
+  return contadorDaSemana(estado, "dias_fortes");
+}
+
+/** O dia de hoje na semana (segunda = 0), como o `S.today` do protótipo. */
+export function indiceDeHoje(hoje: Date): number {
+  return (hoje.getDay() + 6) % 7;
 }

@@ -1507,3 +1507,251 @@
   background: #fff !important;
   color: #111114 !important;
 }
+
+/* ── 0036: as peças que vêm dos dados novos do servidor (protótipo) ── */
+/* Ritmo da semana (`weekHTML(true)`). */
+.week {
+  display: flex;
+  justify-content: space-between;
+}
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--t-mut);
+}
+.dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--t-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: background 0.3s;
+}
+:global(:root:not([data-mode="light"]))
+  .dot:not(.strong):not(.rest):not(.today) {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px
+    color-mix(in srgb, var(--t-mut) 45%, transparent);
+}
+.dot.strong {
+  background: var(--t-acc);
+}
+.dot.rest {
+  background: var(--t-soft);
+  color: var(--t-deep);
+}
+.dot.today {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--t-acc);
+}
+.day.is-today {
+  color: var(--t-deep);
+}
+.bigweek .dot {
+  width: 36px;
+  height: 36px;
+}
+.legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--t-mut);
+  font-weight: 600;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+/* "+40 ✦" (`ptsTag`). */
+.pts {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--t-deep);
+  white-space: nowrap;
+}
+
+/* O que dá Glow (`.wc`). */
+.wc {
+  display: flex;
+  flex-direction: column;
+}
+.wc .r {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--t-line);
+  font-size: 13px;
+  font-weight: 600;
+}
+.wc .r:first-child {
+  border-top: 0;
+}
+.wc .ri {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--t-soft);
+  color: var(--t-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.wc .r .grow small {
+  display: block;
+  font-size: 11px;
+  color: var(--t-mut);
+  font-weight: 500;
+}
+
+/* Seu dinheiro: a meta atual (`.mrow`). */
+.mrow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mrow b {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+}
+.mrow .n {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--t-mut);
+  white-space: nowrap;
+}
+
+/* Jornada de Começo (`.st-list`). */
+.st-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.st {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.st .ck {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--t-sub);
+  color: var(--t-mut);
+  font-size: 10px;
+  font-weight: 800;
+}
+.st.ok .ck {
+  background: var(--t-green);
+  color: #fff;
+}
+.st.ok .grow {
+  color: var(--t-mut);
+  text-decoration: line-through;
+}
+.st.now .ck {
+  background: var(--t-acc);
+  color: #fff;
+}
+.st .go {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff !important;
+  background: var(--t-acc) !important;
+  padding: 6px 12px !important;
+  border-radius: 999px;
+}
+
+/* Folha de Ajustes: Comemorações (`.psel`) e a prévia do perfil (`.psv`). */
+.psv {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--t-sub);
+  margin-top: 4px;
+}
+.psv .nm {
+  font-size: 13px;
+  font-weight: 800;
+}
+.psv .nm small {
+  display: block;
+  font-size: 11px;
+  color: var(--t-mut);
+  font-weight: 600;
+}
+.psel {
+  display: inline-flex;
+  background: var(--t-sub);
+  border-radius: 999px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+.psel button {
+  font-size: 12px !important;
+  font-weight: 700;
+  padding: 6px 12px !important;
+  border-radius: 999px;
+  color: var(--t-mut);
+}
+.psel button.on {
+  background: var(--t-card) !important;
+  color: var(--t-ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.avf {
+  border-radius: 50%;
+  padding: 3px;
+  background: conic-gradient(
+    from 210deg,
+    #ffd9a0,
+    var(--t-acc),
+    #f7b6c8,
+    #ffd9a0
+  );
+  flex-shrink: 0;
+}
+.avf .av {
+  border: 2px solid var(--t-card);
+}
+/* Toque de 44px (#198) sem mexer no desenho: a área invisível passa da
+   pílula, o layout continua o do protótipo. */
+.st .go,
+.psel button {
+  position: relative;
+}
+.st .go::after,
+.psel button::after {
+  content: "";
+  position: absolute;
+  inset: -9px 0;
+}

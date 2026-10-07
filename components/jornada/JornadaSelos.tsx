@@ -1,7 +1,13 @@
 "use client";
 
 import { SELOS, type EstadoJornada, type SeloId } from "@/lib/jornada/estado";
-import { NOTA, SECAO, SELO, contagemSelos } from "@/lib/jornada/textos";
+import {
+  NOTA,
+  SECAO,
+  SELO,
+  contadorSelo,
+  contagemSelos,
+} from "@/lib/jornada/textos";
 import { Ic, type NomeIcone } from "./IconeJornada";
 import { cx, Nota, Secao } from "./JornadaPecas";
 import s from "./jornada.module.css";
@@ -30,13 +36,13 @@ function temNiveis(selo: SeloId): boolean {
 }
 
 /**
- * "Selos" (protótipo: a medalha, o nome e os pontinhos de nível). O nível
- * de cada selo vem do servidor. O protótipo também escreve o contador
- * até o próximo nível ("3/10"); o corte de cada nível é regra do servidor
- * e não vem no estado, então fica fora (listado na PR).
+ * "Selos" (protótipo: a medalha, o nome, os pontinhos de nível e o
+ * contador até o próximo nível, "3/10" ou "nível máximo"). O nível, o
+ * contador e o próximo corte vêm do servidor (0036, `selosProgresso`).
  */
 export function JornadaSelos({ estado }: { estado: EstadoJornada }) {
   const conquistados = SELOS.filter((selo) => estado.selos[selo]).length;
+  const progresso = estado.selosProgresso ?? {};
   return (
     <Secao
       titulo={SECAO.selos}
@@ -63,6 +69,14 @@ export function JornadaSelos({ estado }: { estado: EstadoJornada }) {
                     <i key={p} className={cx(i < nivel && s.on)} />
                   ))}
                 </span>
+              )}
+              {temNiveis(selo) && progresso[selo] && (
+                <small>
+                  {contadorSelo(
+                    progresso[selo].contador,
+                    progresso[selo].proximo
+                  )}
+                </small>
               )}
             </div>
           );

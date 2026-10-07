@@ -137,7 +137,7 @@ describe("app/page.tsx monta a Jornada no app autenticado", () => {
 
   it("a tela abre pelo card e o host monta uma vez, só com usuária logada", () => {
     expect(page).toMatch(
-      /\{usuario && jornadaAberta && \(\s*<JornadaScreen\s+userId=\{usuario\.id\}\s+inicial=\{usuario\.nome\.trim\(\)\.charAt\(0\)\.toUpperCase\(\)\}\s+onVoltar=\{\(\) => setJornadaAberta\(false\)\}/
+      /\{usuario && jornadaAberta && \(\s*<JornadaScreen\s+userId=\{usuario\.id\}\s+nome=\{usuario\.nome\.trim\(\)\.split\(\/\\s\+\/\)\[0\] \?\? ""\}\s+inicial=\{usuario\.nome\.trim\(\)\.charAt\(0\)\.toUpperCase\(\)\}\s+onVoltar=\{\(\) => setJornadaAberta\(false\)\}\s+onIrPara=\{\(aba\) => \{\s*setJornadaAberta\(false\);\s*handleTabChange\(aba\);/
     );
     expect(page).toMatch(
       /\{usuario && \(\s*<ComemoracaoHost\s+userId=\{usuario\.id\}\s+inicial=\{usuario\.nome\.trim\(\)\.charAt\(0\)\.toUpperCase\(\)\}\s+onVerJornada=\{\(\) => setJornadaAberta\(true\)\}\s*\/>\s*\)\}/
@@ -196,13 +196,13 @@ describe("cada ação da spec chama o registro certo, depois da ação principal
     );
     // ver_resumo (Jornada de Começo, 0036) também é da tela: ao abrir um
     // resumo, no toque (nunca num efeito).
-    const resumos = soCodigo(
-      read("components/jornada/resumos/JornadaResumos.tsx")
+    // Abrir um resumo (os botões do fim da tela) é "ver o primeiro resumo".
+    const tela = soCodigo(read("components/jornada/JornadaScreen.tsx"));
+    expect(tela).toMatch(
+      /const abrirResumo = \(tipo: TipoPeriodo\) => \{\s*setResumo\(tipo\);\s*void registrar\("ver_resumo"\);/
     );
-    expect(resumos).toMatch(
-      /onClick=\{\(\) => \{\s*setAba\(tipo\);\s*void registrar\("ver_resumo"\);/
-    );
-    expect(resumos.match(/registrar\("ver_resumo"\)/g)).toHaveLength(1);
+    expect(tela).toMatch(/onAbrir=\{abrirResumo\}/);
+    expect(tela.match(/registrar\("ver_resumo"\)/g)).toHaveLength(1);
   });
 
   it("ninguém registra as dicas nem as ações que não existem no app", () => {

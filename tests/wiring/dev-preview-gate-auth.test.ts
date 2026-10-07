@@ -127,9 +127,7 @@ describe("resolveGateAuth — dev-preview header present", () => {
     );
 
     expect(result.kind).toBe("unavailable");
-    expect((result as { message: string }).message).toMatch(
-      /não configurado/i
-    );
+    expect((result as { message: string }).message).toMatch(/não configurado/i);
     expect(mocks.cookieCreateClient).not.toHaveBeenCalled();
   });
 
@@ -164,9 +162,7 @@ describe("resolveGateAuth — dev-preview header present", () => {
     );
 
     expect(result.kind).toBe("unavailable");
-    expect((result as { message: string }).message).toMatch(
-      /local de teste/i
-    );
+    expect((result as { message: string }).message).toMatch(/local de teste/i);
   });
 
   it("authenticates with a client carrying the bearer token, once the token verifies", async () => {

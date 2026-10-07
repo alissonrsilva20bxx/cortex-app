@@ -732,8 +732,13 @@ export default function Page() {
       {usuario && jornadaAberta && (
         <JornadaScreen
           userId={usuario.id}
+          nome={usuario.nome.trim().split(/\s+/)[0] ?? ""}
           inicial={usuario.nome.trim().charAt(0).toUpperCase()}
           onVoltar={() => setJornadaAberta(false)}
+          onIrPara={(aba) => {
+            setJornadaAberta(false);
+            handleTabChange(aba);
+          }}
         />
       )}
       {usuario && (

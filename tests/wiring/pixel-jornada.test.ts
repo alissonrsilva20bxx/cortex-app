@@ -214,6 +214,9 @@ describe("Pixel Jornada — CSS: as regras do protótipo, sem tirar nem pôr", (
     /^\.palco$/,
     // O style inline do #sOk (conferido abaixo).
     /^\.sOk$/,
+    // Toque de 44px do "Fazer" e do Completa/Calma (área invisível).
+    /^\.st \.go,\.psel button$/,
+    /^\.st \.go::after,\.psel button::after$/,
   ];
   const PAR_NO_PROTOTIPO: Record<string, string> = {
     ".pad": ".pad",
@@ -221,6 +224,10 @@ describe("Pixel Jornada — CSS: as regras do protótipo, sem tirar nem pôr", (
     ".sw::after": "input.sw::after",
     ".sw:checked": ".sr input.sw:checked",
     ".sw:checked::after": "input.sw:checked::after",
+    // O escuro do protótipo é o `data-md=dark` do celular; no app, o tema
+    // sem `data-mode="light"`.
+    ':global(:root:not([data-mode="light"])) .dot:not(.strong):not(.rest):not(.today)':
+      ".ph[data-md=dark] .dot:not(.strong):not(.rest):not(.today)",
   };
 
   it("o módulo tem as regras de tela, folha, resumo e comemorações", () => {
@@ -398,33 +405,40 @@ describe('Pixel Jornada — laboratório = a foto "Agora" do protótipo', () => 
 // ---------------------------------------------------------------------------
 
 describe("Pixel Jornada — a ordem da tela é a do journeyHTML", () => {
-  it("estágio, capítulo, coleção, dinheiro, pilares, selos, destrava, resumos", () => {
+  it("estágio, começo, ritmo, capítulo, coleção, dinheiro, pilares, selos, destrava, o que dá Glow, resumos", () => {
     const j = JS.slice(
       JS.indexOf("function journeyHTML()"),
       JS.indexOf("function redeHTML()")
     );
+    const corpo = j.slice(j.indexOf("return '' +"));
     const ordemProto = [
       '<section class="hero">',
+      "starter +",
+      "<h3>Ritmo da semana</h3>",
       "chapterHTML()",
       "collectionHTML()",
       "moneyHTML()",
       "Seus 4 pilares",
       "<h3>Selos</h3>",
       "Destrava em",
+      "<h3>O que dá Glow</h3>",
       "recap-btn",
-    ].map((m) => j.indexOf(m));
+    ].map((m) => corpo.indexOf(m));
     expect(
       ordemProto.every((p, i) => p > -1 && (i === 0 || p > ordemProto[i - 1]))
     ).toBe(true);
     const tela = read("components/jornada/JornadaScreen.tsx");
     const ordemApp = [
       "<JornadaEstagio",
+      "<JornadaComeco",
+      "<JornadaRitmo",
       "<JornadaCapitulo",
       "<JornadaColecao",
       "<JornadaDinheiro",
       "<JornadaPilares",
       "<JornadaSelos",
       "<JornadaDestrava",
+      "<JornadaOQueDaGlow",
       "<BotoesDosResumos",
     ].map((m) => tela.indexOf(m));
     expect(
@@ -432,13 +446,23 @@ describe("Pixel Jornada — a ordem da tela é a do journeyHTML", () => {
     ).toBe(true);
   });
 
-  it("o que fica fora (sem dado no app) está escrito na tela, pra decisão", () => {
-    const tela = read("components/jornada/JornadaScreen.tsx").replace(
-      /\s*\n\s*\*\s*/g,
-      " "
+  it("nada fica fora: cada peça do protótipo lê o dado do servidor (0036)", () => {
+    const fonte: [string, RegExp][] = [
+      ["JornadaRitmo", /marcasDaSemana\(estado\)/],
+      ["JornadaDinheiro", /estado\.dinheiro/],
+      ["JornadaPilares", /estado\.pilares\?\.\[pilar\]/],
+      ["JornadaSelos", /estado\.selosProgresso/],
+      ["JornadaOQueDaGlow", /const \{ glowPorAcao, premios \} = estado;/],
+      ["JornadaComeco", /estado\.comeco\.passos/],
+      ["JornadaAjustes", /estado\.preferencias/],
+    ];
+    for (const [peca, re] of fonte)
+      expect(read(`components/jornada/${peca}.tsx`), peca).toMatch(re);
+    expect(read("components/jornada/JornadaScreen.tsx")).toMatch(
+      /premio=\{estado\.premios\?\.capitulo\}/
     );
-    expect(tela).toMatch(/os dias da semana um a um/);
-    expect(tela).toMatch(/a meta de dinheiro atual/);
-    expect(tela).toMatch(/a tabela "O que dá Glow"/);
+    expect(read("components/jornada/progresso.ts")).toMatch(
+      /return estado\.semana\?\.dias \?\?/
+    );
   });
 });

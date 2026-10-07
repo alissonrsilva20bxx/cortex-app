@@ -383,7 +383,7 @@ async function capturarApp(browser, baseUrl, { estado, tema, modo, largura }) {
     estado === "ano" ? HOJE_DO_ANO : HOJE_DO_PROTOTIPO
   );
   await page.goto(
-    `${baseUrl}/dev-preview/app${estado === "ano" ? "?jornada=ano" : ""}`,
+    `${baseUrl}/dev-preview/app?jornada=${estado === "ano" ? "ano" : "agora"}`,
     {
       waitUntil: "networkidle",
       timeout: 180000,

@@ -39,9 +39,12 @@ const ICONE_DA_MISSAO: Record<TipoMissao, NomeIcone> = {
 export function JornadaCapitulo({
   capitulo,
   hoje,
+  premio,
 }: {
   capitulo: Capitulo;
   hoje: Date;
+  /** O Glow do capítulo fechado (0036, `premios.capitulo`). */
+  premio?: number;
 }) {
   const icone = ICONE_DO_ENFEITE[capitulo.mes - 1];
   return (
@@ -92,7 +95,7 @@ export function JornadaCapitulo({
         </span>
         <div className={s.grow}>
           <b>{nomeEnfeite(capitulo.mes)}</b>
-          <small>{premioCapitulo(capitulo.fechado)}</small>
+          <small>{premioCapitulo(capitulo.fechado, premio)}</small>
         </div>
       </div>
       <Nota texto={NOTA.capitulo} />

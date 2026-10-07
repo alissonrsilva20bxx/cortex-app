@@ -11,16 +11,20 @@ import {
   tituloJornada,
 } from "@/lib/jornada/textos";
 import type { TipoPeriodo } from "@/lib/jornada/estado";
+import type { TabId } from "@/lib/types";
 import { useJornada } from "./useJornada";
 import { Ic } from "./IconeJornada";
 import { cx } from "./JornadaPecas";
 import { JornadaAjustes } from "./JornadaAjustes";
 import { JornadaCapitulo } from "./JornadaCapitulo";
 import { JornadaColecao } from "./JornadaColecao";
+import { JornadaComeco, type PassoDoComeco } from "./JornadaComeco";
 import { JornadaDestrava } from "./JornadaDestrava";
 import { JornadaDinheiro } from "./JornadaDinheiro";
 import { JornadaEstagio } from "./JornadaEstagio";
+import { JornadaOQueDaGlow } from "./JornadaOQueDaGlow";
 import { JornadaPilares } from "./JornadaPilares";
+import { JornadaRitmo } from "./JornadaRitmo";
 import { JornadaSelos } from "./JornadaSelos";
 import { BotoesDosResumos, JornadaRecap } from "./resumos/JornadaResumos";
 import { hojeDoEstado } from "./progresso";
@@ -28,10 +32,22 @@ import s from "./jornada.module.css";
 
 interface Props {
   userId: string;
+  /** O primeiro nome dela (a prévia do perfil nos Ajustes). */
+  nome: string;
   /** Inicial do nome dela (a prévia da moldura em "Destrava em"). */
   inicial: string;
   onVoltar: () => void;
+  /** "Fazer" da Jornada de Começo: sai da Jornada e abre a aba do passo. */
+  onIrPara: (aba: TabId) => void;
 }
+
+/** A aba onde ela faz cada passo da Jornada de Começo. */
+const ABA_DO_PASSO: Record<Exclude<PassoDoComeco, "resumo">, TabId> = {
+  planejar: "jobs",
+  cofre: "cofre",
+  rede: "rede",
+  descanso: "jobs",
+};
 
 /**
  * A tela "Sua Jornada" no desenho EXATO do protótipo aprovado
@@ -44,13 +60,25 @@ interface Props {
  * texto vem de `lib/jornada/textos.ts`. Abre por cima do app (diálogo de
  * tela cheia, acima da barra de abas); Esc ou "Voltar" fecham.
  *
- * O que o protótipo tem e o app não guarda (os dias da semana um a um, a
- * meta de dinheiro atual, a tabela "O que dá Glow") fica fora: está
- * listado na PR, pra decisão do operador.
+ * As peças com dados novos (o ritmo da semana, a meta de dinheiro, a % dos
+ * pilares, o contador dos selos, "O que dá Glow", a Jornada de Começo)
+ * vêm do servidor (0036, ordem do operador, spec §11).
  */
-export function JornadaScreen({ userId, inicial, onVoltar }: Props) {
-  const { estado, carregando, erro, salvarPreferencias, registrarAbertura } =
-    useJornada(userId);
+export function JornadaScreen({
+  userId,
+  nome,
+  inicial,
+  onVoltar,
+  onIrPara,
+}: Props) {
+  const {
+    estado,
+    carregando,
+    erro,
+    salvarPreferencias,
+    registrar,
+    registrarAbertura,
+  } = useJornada(userId);
   const [aparelho] = useState(() => new Date());
   const [ajustesAbertos, setAjustesAbertos] = useState(false);
   const [resumo, setResumo] = useState<TipoPeriodo | null>(null);
@@ -85,6 +113,12 @@ export function JornadaScreen({ userId, inicial, onVoltar }: Props) {
   useEffect(() => {
     void registrarAbertura();
   }, [registrarAbertura]);
+
+  // Jornada de Começo (0036): abrir um resumo é "Ver seu primeiro resumo".
+  const abrirResumo = (tipo: TipoPeriodo) => {
+    setResumo(tipo);
+    void registrar("ver_resumo");
+  };
 
   const discreto = estado?.preferencias.modoDiscreto ?? false;
   const hoje = estado ? hojeDoEstado(estado, aparelho) : aparelho;
@@ -159,15 +193,32 @@ export function JornadaScreen({ userId, inicial, onVoltar }: Props) {
         ) : (
           <>
             <JornadaEstagio estado={estado} />
+            <JornadaComeco
+              estado={estado}
+              onFazer={(passo) => {
+                if (passo === "resumo") abrirResumo("semana");
+                else onIrPara(ABA_DO_PASSO[passo]);
+              }}
+            />
+            <JornadaRitmo estado={estado} hoje={hoje} />
             {estado.capitulo && (
-              <JornadaCapitulo capitulo={estado.capitulo} hoje={hoje} />
+              <JornadaCapitulo
+                capitulo={estado.capitulo}
+                hoje={hoje}
+                premio={estado.premios?.capitulo}
+              />
             )}
             <JornadaColecao estado={estado} hoje={hoje} />
             <JornadaDinheiro estado={estado} />
             <JornadaPilares estado={estado} />
             <JornadaSelos estado={estado} />
             <JornadaDestrava estado={estado} inicial={inicial} />
-            <BotoesDosResumos estado={estado} hoje={hoje} onAbrir={setResumo} />
+            <JornadaOQueDaGlow estado={estado} />
+            <BotoesDosResumos
+              estado={estado}
+              hoje={hoje}
+              onAbrir={abrirResumo}
+            />
           </>
         )}
       </div>
@@ -179,7 +230,9 @@ export function JornadaScreen({ userId, inicial, onVoltar }: Props) {
         createPortal(
           <JornadaAjustes
             aberto={ajustesAbertos}
-            preferencias={estado.preferencias}
+            estado={estado}
+            nome={nome}
+            inicial={inicial}
             onMudar={(parcial) => void salvarPreferencias(parcial)}
             onFechar={() => setAjustesAbertos(false)}
           />,

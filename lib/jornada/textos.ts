@@ -337,6 +337,13 @@ export const COMEMORACAO = {
     `Seu enfeite de ${nomeMes(mes)} entrou na coleção. Ele é seu pra sempre.`,
   marcoApoio: "Somando todas as suas metas. Dinheiro de verdade, seu.",
   metaVale: "Meta concluída é o que mais vale",
+  /** A linha de apoio da meta (protótipo: `goalUp`). */
+  metaGuardada: (valor: number) => `${money(valor)} guardados de verdade.`,
+  proximaMeta: (nome: string) => `Próxima meta: ${nome}`,
+  doZero: "Começa do zero, no seu ritmo",
+  /** O aviso da meta em modo quieto: "Meta concluída · Fundo Viagem". */
+  avisoMeta: (nome: string) =>
+    nome ? `${TITULO_COMEMORACAO.meta} · ${nome}` : TITULO_COMEMORACAO.meta,
   continuar: "Continuar",
   verJornada: "Ver minha Jornada",
 } as const;
@@ -357,15 +364,19 @@ export function subEstagio(nivel: number): string {
 export const PREFERENCIAS = {
   som: "Sons",
   modoDiscreto: "Modo discreto",
-  mostrarNoPerfil: "Mostrar meu estágio no perfil",
+  estagioNoPerfil: "Mostrar meu estágio no perfil",
+  selosNoPerfil: "Mostrar selos no perfil",
+  jornadaComeco: "Jornada de Começo",
 } as const;
 
 /** A linha de explicação de cada preferência (protótipo). */
 export const DESCRICAO_PREFERENCIA = {
   som: "Segue a chave do silencioso do celular.",
   modoDiscreto: "1 toque: sem som, sem confete, palavras neutras.",
-  mostrarNoPerfil:
+  estagioNoPerfil:
     "Desligado por padrão. Só as mulheres da Rede veem seu perfil.",
+  selosNoPerfil: "Desligado por padrão. Você escolhe quais.",
+  jornadaComeco: "7 passos curtos pra sua primeira semana. Opcional.",
 } as const;
 
 // ────────────────────────── tela e card (J12) ────────────────────────
@@ -413,6 +424,9 @@ export function enfeiteNaColecao(mes: number): string {
 }
 
 export const SECAO = {
+  ritmo: "Ritmo da semana",
+  comeco: "Jornada de Começo",
+  oQueDaGlow: "O que dá Glow",
   pilares: "Seus 4 pilares",
   selos: "Selos",
   colecao: "Sua coleção",
@@ -506,6 +520,15 @@ export const RECAP = {
   vezesGuardando: (n: number) =>
     n === 1 ? "vez guardando dinheiro." : "vezes guardando dinheiro.",
   futuro: "A você do futuro agradece.",
+  // Prosperar com a meta de dinheiro (0036, `dinheiro`).
+  naMeta: (nome: string) => `na meta ${nome}.`,
+  jaECaminho: (fracao: number) =>
+    `Já é ${emPorcento(fracao)} do caminho. A você do futuro agradece.`,
+  guardadosNasMetas: "guardados nas suas metas.",
+  agoraMeta: (concluidas: number, nome: string | null) =>
+    `${concluidas > 0 ? `${contagemMetas(concluidas)}. ` : ""}${nome ? `Agora: ${nome}.` : ""}`,
+  guardadosDeVerdade: "guardados de verdade.",
+  metasConcluidasPonto: (n: number) => `${contagemMetas(n)}.`,
   ateProximo: (falta: number, proximo: string) =>
     `${numero(falta)} até ${proximo}`,
   // semana
@@ -565,9 +588,30 @@ export const SUBTITULO_AJUSTES =
 export type TrechoComDestaque = readonly [string, string, string];
 
 export const NOTA: Record<
-  "estagio" | "selos" | "capitulo" | "mesesEmBranco",
+  | "estagio"
+  | "selos"
+  | "capitulo"
+  | "mesesEmBranco"
+  | "ritmo"
+  | "ritmoCompleto"
+  | "oQueDaGlow",
   TrechoComDestaque
 > = {
+  ritmo: [
+    "Dia forte é qualquer dia em que você cuida do seu negócio. ",
+    "Descanso nunca quebra o seu ritmo",
+    ", e não existe sequência pra perder.",
+  ],
+  ritmoCompleto: [
+    "",
+    "Ritmo completo.",
+    " O que vier a mais nesta semana é bônus.",
+  ],
+  oQueDaGlow: [
+    "Depois do limite do dia, o que você registra continua salvo, só não dá Glow. Atendimento só marca o dia como ativo, 1x por dia. ",
+    "Sua Jornada premia cuidar de você, nunca trabalhar mais.",
+    "",
+  ],
   estagio: [
     "Subir só soma. ",
     "Nada do que você já tem é tirado",
@@ -597,11 +641,17 @@ export function prazoCapitulo(diasRestantes: number, fechado: boolean): string {
   return `${numero(diasRestantes)} ${plural(diasRestantes, "dia", "dias")}`;
 }
 
-/** "O prêmio do mês: um enfeite pra coleção" / "Já está na sua coleção." */
-export function premioCapitulo(fechado: boolean): string {
+/** "O prêmio do mês: um enfeite pra coleção e +40 Glow" / "Já está na sua
+ * coleção. +40 Glow" (o Glow vem do servidor, `premios.capitulo`). Sem ele
+ * (servidor antigo), a frase sem o número. */
+export function premioCapitulo(fechado: boolean, glow?: number): string {
+  if (glow === undefined)
+    return fechado
+      ? "Já está na sua coleção."
+      : "O prêmio do mês: um enfeite pra coleção.";
   return fechado
-    ? "Já está na sua coleção."
-    : "O prêmio do mês: um enfeite pra coleção.";
+    ? `Já está na sua coleção. +${numero(glow)} ${NOME_GLOW}`
+    : `O prêmio do mês: um enfeite pra coleção e +${numero(glow)} ${NOME_GLOW}`;
 }
 
 /** "3 enfeites" */
@@ -781,3 +831,110 @@ export const RESUMO_VAZIO: Record<TipoPeriodo, string> = {
 /** Rodapé do resumo: o tom do pacote, sem cobrança. */
 export const RESUMO_RODAPE =
   "Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo.";
+
+// ───────────────────── 0036: as peças com dados novos ─────────────────────
+
+/** A meta da semana: 3 dias fortes (spec §3, "Ritmo"). */
+export const DIAS_FORTES_DO_RITMO = 3;
+
+/** As letras dos dias, de segunda a domingo (protótipo: DAYS). */
+export const LETRAS_DOS_DIAS = ["S", "T", "Q", "Q", "S", "S", "D"] as const;
+
+/** "2 de 3 dias fortes" (chip do Ritmo da semana). */
+export function chipRitmo(fortes: number): string {
+  return `${numero(Math.min(fortes, DIAS_FORTES_DO_RITMO))} de ${numero(DIAS_FORTES_DO_RITMO)} dias fortes`;
+}
+
+export const LEGENDA_RITMO = {
+  forte: "Dia forte",
+  descanso: "Descanso",
+  hoje: "Hoje",
+} as const;
+
+/** Seu dinheiro: a meta atual e o total. */
+export const META_ATUAL = "Meta atual";
+/** "€120 de €300" */
+export function metaDeAte(atual: number, alvo: number): string {
+  return `${money(atual)} de ${money(alvo)}`;
+}
+/** "Marcos do total guardado · €120" */
+export function marcosDoTotal(total: string): string {
+  return `${MARCOS_DO_TOTAL} · ${total}`;
+}
+/** O valor escondido do Modo discreto (protótipo: `moneyHidden`). */
+export function dinheiroEscondido(): string {
+  return money(0).replace("0", "•••");
+}
+export const MARCO_ESCONDIDO = "•••";
+/** A nota do dinheiro: [antes, +100 Glow, meio, +50, depois]. */
+export function notaDinheiro(
+  meta: number,
+  marco: number
+): readonly [string, string, string, string, string] {
+  return [
+    "Concluir uma meta vale ",
+    `+${numero(meta)} ${NOME_GLOW}`,
+    ", e cada marco ",
+    `+${numero(marco)}`,
+    ". É dinheiro de verdade, então é o que mais vale.",
+  ];
+}
+
+/** O contador de um selo com níveis: "3/10" ou "nível máximo". */
+export function contadorSelo(contador: number, proximo: number | null): string {
+  return proximo === null
+    ? NIVEL_MAXIMO
+    : `${numero(contador)}/${numero(proximo)}`;
+}
+
+/** "O que dá Glow": o limite de cada linha (`capTxt` do protótipo). */
+export function limiteDoDia(vezes: number): string {
+  return vezes === 1 ? "1x por dia" : `até ${numero(vezes)}x por dia`;
+}
+/** "+5" (o número do `ptsTag` do protótipo, antes da faísca). */
+export function maisGlow(glow: number): string {
+  return `+${numero(glow)}`;
+}
+/** A porcentagem de 0 a 100 do servidor como fração (o anel do pilar). */
+export function dePorcento(porcento: number): number {
+  return porcento / 100;
+}
+export const UMA_VEZ_POR_MES = "1x por mês";
+export const LINHA_GLOW = {
+  planejar: "Planejar o dia ou a semana",
+  despesa: "Lançar uma despesa",
+  guardar_meta: "Guardar dinheiro numa meta",
+  comprovante_cofre: "Guardar um comprovante no Cofre",
+  descanso: "Tirar um dia de descanso",
+  dica_ajudou: "Sua dica ajudou alguém",
+  meta: "Concluir uma meta",
+  marco: "Marco do seu dinheiro",
+  capitulo: "Completar o capítulo do mês",
+} as const;
+
+/** Jornada de Começo (protótipo: STARTER). */
+export const PASSOS_DO_COMECO = [
+  "Criar seu PIN",
+  "Criar sua primeira meta",
+  "Planejar sua semana",
+  "Guardar um comprovante no Cofre",
+  "Dar oi na Rede",
+  "Tirar um dia de descanso",
+  "Ver seu primeiro resumo",
+] as const;
+/** "Dia 3 de 7" */
+export function diaDoComeco(feitos: number): string {
+  const total = PASSOS_DO_COMECO.length;
+  return `Dia ${numero(Math.min(total, feitos + 1))} de ${numero(total)}`;
+}
+export const FAZER = "Fazer";
+
+/** Folha de Ajustes: as linhas novas do protótipo. */
+export const COMEMORACOES = {
+  titulo: "Comemorações",
+  descricao: "Calma deixa só confirmações pequenas e silenciosas.",
+  completa: "Completa",
+  calma: "Calma",
+} as const;
+export const ESTAGIO_OCULTO = "Estágio oculto";
+export const SELOS_OCULTOS = "Selos ocultos";

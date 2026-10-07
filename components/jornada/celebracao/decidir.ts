@@ -81,6 +81,8 @@ export interface Ambiente {
   modoDiscreto: boolean;
   /** `prefers-reduced-motion: reduce`. */
   movimentoReduzido: boolean;
+  /** "Comemorações: Calma" (0036): quieto como o protótipo (`quiet()`). */
+  comemoracoesCalmas?: boolean;
 }
 
 export interface Plano {
@@ -112,7 +114,8 @@ export interface Plano {
  */
 export function planoDaComemoracao(c: Comemoracao, amb: Ambiente): Plano {
   const discreto = amb.modoDiscreto;
-  const quieto = discreto || amb.movimentoReduzido;
+  const quieto =
+    discreto || amb.movimentoReduzido || amb.comemoracoesCalmas === true;
   const mudo = discreto || !amb.somLigado;
   const som = (n: NomeSom | null): NomeSom | null => (mudo ? null : n);
   const vibra = (p: number | number[]) => (discreto ? null : p);
@@ -284,14 +287,15 @@ export function textosDaComemoracao(
         glow,
       };
     case "meta":
-      // O servidor não manda o nome da meta nem o valor (o protótipo mostra
-      // "Fundo Viagem" e "€ 300 guardados de verdade"): a linha de cima diz
-      // "Meta concluída" e o nome fica vazio. Depende de decisão do operador
-      // (PR #208): não muda até o servidor mandar esses dados.
+      // O nome e o valor da meta vêm do servidor (0036), como no protótipo:
+      // "Fundo Viagem", "€ 300 guardados de verdade."
       return {
         chamada: TITULO_COMEMORACAO.meta,
-        titulo: "",
-        apoio: "",
+        titulo: c.nome ?? "",
+        apoio:
+          c.valor !== undefined && !discreto
+            ? COMEMORACAO.metaGuardada(c.valor)
+            : "",
         glow,
       };
   }

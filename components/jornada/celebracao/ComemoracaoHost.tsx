@@ -59,6 +59,7 @@ export function ComemoracaoHost({
         somLigado: estado.preferencias.somLigado,
         modoDiscreto: estado.preferencias.modoDiscreto,
         movimentoReduzido,
+        comemoracoesCalmas: estado.preferencias.comemoracoesCalmas ?? false,
       }}
     />
   );

@@ -24,6 +24,7 @@ import {
   estadoJornadaAno,
   estadoJornadaContaNova,
   estadoJornadaExemplo,
+  NOME_DO_PROTOTIPO,
   prepararComemoracaoDeLaboratorio,
   type DemoDeComemoracao,
 } from "@/lib/mockJornada";
@@ -121,7 +122,17 @@ export default function DevPreviewApp() {
   }
 
   const toast = useToast();
-  const usuario = MOCK_APP_USUARIO;
+  // `?jornada=agora|ano`: a usuária do protótipo da Jornada (Bella), pra a
+  // tela sair igual à referência; sem o parâmetro, a usuária dos mockups.
+  const [usuario] = useState(() => {
+    const jornada =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("jornada")
+        : null;
+    return jornada === "agora" || jornada === "ano"
+      ? { ...MOCK_APP_USUARIO, nome: NOME_DO_PROTOTIPO }
+      : MOCK_APP_USUARIO;
+  });
 
   // Só afeta as duas chamadas reais do Gate da Rede (solicitar-beta,
   // convites) — anexa um bearer token de uma conta de teste local
@@ -626,8 +637,13 @@ export default function DevPreviewApp() {
       {jornadaAberta && (
         <JornadaScreen
           userId={usuario.id}
+          nome={usuario.nome.trim().split(/\s+/)[0] ?? ""}
           inicial={usuario.nome.trim().charAt(0).toUpperCase()}
           onVoltar={() => setJornadaAberta(false)}
+          onIrPara={(aba) => {
+            setJornadaAberta(false);
+            handleTabChange(aba);
+          }}
         />
       )}
       <ComemoracaoHost

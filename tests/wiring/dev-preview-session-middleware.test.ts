@@ -47,9 +47,8 @@ describe("middleware — dev-preview session bypass is narrowly scoped", () => {
   it("lets a Gate request through when the dev-preview header is present outside production", async () => {
     vi.stubEnv("NODE_ENV", "development");
     const { middleware } = await import("../../middleware");
-    const { DEV_PREVIEW_SESSION_HEADER } = await import(
-      "../../lib/devPreview/session"
-    );
+    const { DEV_PREVIEW_SESSION_HEADER } =
+      await import("../../lib/devPreview/session");
 
     const response = await middleware(
       requestTo("/api/rede/solicitar-beta", {
@@ -74,9 +73,8 @@ describe("middleware — dev-preview session bypass is narrowly scoped", () => {
   it("still redirects an unrelated route even with the header present (no blanket bypass)", async () => {
     vi.stubEnv("NODE_ENV", "development");
     const { middleware } = await import("../../middleware");
-    const { DEV_PREVIEW_SESSION_HEADER } = await import(
-      "../../lib/devPreview/session"
-    );
+    const { DEV_PREVIEW_SESSION_HEADER } =
+      await import("../../lib/devPreview/session");
 
     const response = await middleware(
       requestTo("/financeiro", {
@@ -91,9 +89,8 @@ describe("middleware — dev-preview session bypass is narrowly scoped", () => {
   it("still redirects the other real API routes even with the header present (only the 2 Gate paths qualify)", async () => {
     vi.stubEnv("NODE_ENV", "development");
     const { middleware } = await import("../../middleware");
-    const { DEV_PREVIEW_SESSION_HEADER } = await import(
-      "../../lib/devPreview/session"
-    );
+    const { DEV_PREVIEW_SESSION_HEADER } =
+      await import("../../lib/devPreview/session");
 
     const response = await middleware(
       requestTo("/api/jobs", {
@@ -108,9 +105,8 @@ describe("middleware — dev-preview session bypass is narrowly scoped", () => {
   it("the bypass is inert in production even with the correct path + header", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const { middleware } = await import("../../middleware");
-    const { DEV_PREVIEW_SESSION_HEADER } = await import(
-      "../../lib/devPreview/session"
-    );
+    const { DEV_PREVIEW_SESSION_HEADER } =
+      await import("../../lib/devPreview/session");
 
     const response = await middleware(
       requestTo("/api/rede/convites", {
@@ -154,18 +150,14 @@ describe("middleware — dev-preview session bootstrap endpoint", () => {
   it("is public outside production (no header needed — it's how the header is obtained)", async () => {
     vi.stubEnv("NODE_ENV", "development");
     const { middleware } = await import("../../middleware");
-    const response = await middleware(
-      requestTo("/api/dev-preview/session")
-    );
+    const response = await middleware(requestTo("/api/dev-preview/session"));
     expect(response.status).not.toBe(307);
   });
 
   it("is NOT public in production", async () => {
     vi.stubEnv("NODE_ENV", "production");
     const { middleware } = await import("../../middleware");
-    const response = await middleware(
-      requestTo("/api/dev-preview/session")
-    );
+    const response = await middleware(requestTo("/api/dev-preview/session"));
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toContain("/login");
   });

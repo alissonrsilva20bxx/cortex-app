@@ -251,7 +251,10 @@ export function ComemoracaoPalco({
       mostrarAviso(
         {
           id: c.id,
-          titulo: tituloDoAviso(textos),
+          titulo:
+            c.tipo === "meta"
+              ? COMEMORACAO.avisoMeta(textos.titulo)
+              : tituloDoAviso(textos),
           apoio: c.tipo === "pequena" ? textos.apoio : textos.glow,
           neutro: plano.neutro,
           icone:
@@ -495,26 +498,46 @@ export function ComemoracaoPalco({
                       </div>
                     </div>
                   ))
-                : atual.textos.glow && (
-                    <div className={s["s-u"]}>
-                      <span
-                        className={cx(s.pv, s.sq)}
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          background:
-                            "linear-gradient(140deg,var(--t-acc),var(--t-deep))",
-                          color: "#fff",
-                        }}
+                : (() => {
+                    // Meta (protótipo `goalUp`): o Glow e a próxima meta.
+                    const linhas: [React.ReactNode, string, string][] = [];
+                    if (atual.textos.glow)
+                      linhas.push([
+                        <Icf key="i" n="spark" s={18} />,
+                        atual.textos.glow,
+                        COMEMORACAO.metaVale,
+                      ]);
+                    if (atual.c.tipo === "meta" && atual.c.proxima)
+                      linhas.push([
+                        <Ic key="i" n="target" s={18} sw={2.2} />,
+                        COMEMORACAO.proximaMeta(atual.c.proxima),
+                        COMEMORACAO.doZero,
+                      ]);
+                    return linhas.map(([icone, titulo, apoio], i) => (
+                      <div
+                        key={titulo}
+                        className={s["s-u"]}
+                        style={{ transitionDelay: `${i * 150}ms` }}
                       >
-                        <Icf n="spark" s={18} />
-                      </span>
-                      <div>
-                        <b>{atual.textos.glow}</b>
-                        <small>{COMEMORACAO.metaVale}</small>
+                        <span
+                          className={cx(s.pv, s.sq)}
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            background:
+                              "linear-gradient(140deg,var(--t-acc),var(--t-deep))",
+                            color: "#fff",
+                          }}
+                        >
+                          {icone}
+                        </span>
+                        <div>
+                          <b>{titulo}</b>
+                          <small>{apoio}</small>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ));
+                  })()}
             </div>
             <button
               type="button"
