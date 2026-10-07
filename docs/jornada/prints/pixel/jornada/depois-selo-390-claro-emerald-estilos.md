@@ -2,26 +2,18 @@
 
 - mockup: `prototipo-sua-jornada.html`
 - app: `http://localhost:3103/dev-preview/app`
-- pareados 222 · divergem 117 · só no mockup 493 · só no app 375
-- impacto total: **229.707**
+- pareados 536 · divergem 87 · só no mockup 179 · só no app 252
+- impacto total: **116.956**
 - famílias no mockup: plus jakarta sans (222)
-- famílias no app: plus jakarta sans (206)
+- famílias no app: plus jakarta sans (280)
 
 Ordem por impacto = (soma das diferenças normalizadas) × √(área relativa).
 Em cada célula: **mockup** → app.
 
-## Só os elementos com texto (34)
+## Só os elementos com texto (39)
 
 | impacto | texto | propriedade | mockup → app |
 | ------- | ----- | ----------- | ------------ |
-| 6.961 | “Concluir uma meta vale , e cada marco . É dinhei” | fontSize | `12px` → `15px` |
-| 6.961 | “Concluir uma meta vale , e cada marco . É dinhei” | lineHeight | `18px` → `22.5px` |
-| 6.961 | “Concluir uma meta vale , e cada marco . É dinhei” | color | `rgb(107, 107, 116)` → `rgb(15, 15, 15)` |
-| 6.961 | “Concluir uma meta vale , e cada marco . É dinhei” | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
-| 6.961 | “Concluir uma meta vale , e cada marco . É dinhei” | borderRadius | `14px 14px 14px 14px` → `0px 0px 0px 0px` |
-| 6.961 | “Concluir uma meta vale , e cada marco . É dinhei” | padding | `10px 12px 10px 12px` → `0px 0px 0px 0px` |
-| 6.961 | “Concluir uma meta vale , e cada marco . É dinhei” | largura | `326px` → `348px` |
-| 6.961 | “Concluir uma meta vale , e cada marco . É dinhei” | altura | `56px` → `66px` |
 | 5.062 | “Em movimento” | fontSize | `19px` → `9.5px` |
 | 5.062 | “Em movimento” | fontWeight | `800` → `700` |
 | 5.062 | “Em movimento” | letterSpacing | `-0.3px` → `normal` |
@@ -62,6 +54,27 @@ Em cada célula: **mockup** → app.
 | 2.443 | “Sua Jornada” | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
 | 2.443 | “Sua Jornada” | largura | `214px` → `226px` |
 | 2.443 | “Sua Jornada” | altura | `25px` → `16.5px` |
+| 2.288 | “B” | fontSize | `18px` → `15px` |
+| 2.288 | “B” | lineHeight | `normal` → `22.5px` |
+| 2.288 | “B” | backgroundColor | `rgb(223, 241, 236)` → `rgba(0, 0, 0, 0)` |
+| 2.288 | “B” | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
+| 2.288 | “B” | largura | `42px` → `10.4px` |
+| 2.288 | “B” | altura | `42px` → `22.5px` |
+| 2.03 | “Q” | color | `rgb(107, 107, 116)` → `rgb(255, 255, 255)` |
+| 2.03 | “Q” | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
+| 2.03 | “Q” | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+| 2.03 | “Q” | gap | `4px` → `normal` |
+| 2.03 | “Q” | altura | `52px` → `36px` |
+| 2.03 | “S” | color | `rgb(107, 107, 116)` → `rgb(255, 255, 255)` |
+| 2.03 | “S” | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
+| 2.03 | “S” | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+| 2.03 | “S” | gap | `4px` → `normal` |
+| 2.03 | “S” | altura | `52px` → `36px` |
+| 2.03 | “D” | color | `rgb(107, 107, 116)` → `rgb(255, 255, 255)` |
+| 2.03 | “D” | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
+| 2.03 | “D” | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+| 2.03 | “D” | gap | `4px` → `normal` |
+| 2.03 | “D” | altura | `52px` → `36px` |
 | 1.859 | “Novo” | fontSize | `16px` → `13px` |
 | 1.859 | “Novo” | fontWeight | `400` → `700` |
 | 1.859 | “Novo” | lineHeight | `normal` → `19.5px` |
@@ -73,83 +86,39 @@ Em cada célula: **mockup** → app.
 | 1.849 | “Sua Jornada” | color | `rgb(4, 120, 84)` → `rgb(15, 15, 15)` |
 | 1.849 | “Sua Jornada” | largura | `226px` → `214px` |
 | 1.849 | “Sua Jornada” | altura | `12px` → `25px` |
-| 1.788 | “Tudo o que você registra aqui é só seu. O Glow p” | fontSize | `12.5px` → `15px` |
-| 1.788 | “Tudo o que você registra aqui é só seu. O Glow p” | lineHeight | `18.125px` → `22.5px` |
-| 1.788 | “Tudo o que você registra aqui é só seu. O Glow p” | color | `rgb(107, 107, 116)` → `rgb(15, 15, 15)` |
-| 1.788 | “Tudo o que você registra aqui é só seu. O Glow p” | largura | `354px` → `356px` |
-| 1.788 | “Tudo o que você registra aqui é só seu. O Glow p” | altura | `36.3px` → `44px` |
-| 1.548 | “Mostrar selos no perfil” | fontSize | `14px` → `16px` |
-| 1.548 | “Mostrar selos no perfil” | fontWeight | `800` → `400` |
-| 1.548 | “Mostrar selos no perfil” | gap | `normal` → `8px` |
-| 1.548 | “Mostrar selos no perfil” | largura | `296px` → `326px` |
-| 1.548 | “Mostrar selos no perfil” | altura | `18px` → `19px` |
-| 1.084 | “0 de 3” | fontSize | `12px` → `11px` |
-| 1.084 | “0 de 3” | fontWeight | `800` → `700` |
-| 1.084 | “0 de 3” | color | `rgb(15, 15, 15)` → `rgb(4, 120, 84)` |
-| 1.084 | “0 de 3” | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(223, 241, 236)` |
-| 1.084 | “0 de 3” | borderRadius | `0px 0px 0px 0px` → `999px 999px 999px 999px` |
-| 1.084 | “0 de 3” | padding | `0px 0px 0px 0px` → `3px 9px 3px 9px` |
-| 1.084 | “0 de 3” | largura | `35.5px` → `51.6px` |
-| 1.084 | “0 de 3” | altura | `15px` → `19px` |
-| 1.074 | “B” | fontSize | `18px` → `15px` |
-| 1.074 | “B” | lineHeight | `normal` → `22.5px` |
-| 1.074 | “B” | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
-| 1.074 | “B” | largura | `42px` → `40px` |
-| 1.074 | “B” | altura | `42px` → `40px` |
+| 1.829 | “S” | color | `rgb(4, 120, 84)` → `rgb(255, 255, 255)` |
+| 1.829 | “S” | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(5, 150, 105)` |
+| 1.829 | “S” | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+| 1.829 | “S” | gap | `4px` → `normal` |
+| 1.829 | “S” | altura | `52px` → `36px` |
 
 ## Todos os elementos
 
 | # | impacto | elemento | onde | propriedade | mockup → app |
 | - | ------- | -------- | ---- | ----------- | ------------ |
-| 1 | 21.749 | div | 18,978 · 354x420 | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(255, 255, 255)` |
-|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `22px 22px 22px 22px` |
-|  |  |  |  | padding | `0px 0px 0px 0px` → `16px 16px 16px 16px` |
-|  |  |  |  | gap | `10px` → `14px` |
-|  |  |  |  | largura | `354px` → `358px` |
-|  |  |  |  | altura | `420px` → `292px` |
-| 2 | 19.515 | div | 0,0 · 390x3214 | altura | `3214.3px` → `2256.3px` |
-| 3 | 13.945 | section | 16,1049 · 358x278 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | backgroundColor | `rgb(255, 255, 255)` → `rgba(0, 0, 0, 0)` |
-|  |  |  |  | borderRadius | `20px 20px 20px 20px` → `0px 0px 0px 0px` |
-|  |  |  |  | padding | `16px 16px 16px 16px` → `0px 0px 0px 0px` |
-|  |  |  |  | gap | `12px` → `8px` |
-|  |  |  |  | largura | `358px` → `356px` |
-|  |  |  |  | altura | `278px` → `290px` |
-| 4 | 11.862 | div | 0,874 · 390x597 | fontSize | `16px` → `15px` |
+| 1 | 11.862 | div | 0,874 · 390x597 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | backgroundColor | `rgb(255, 255, 255)` → `rgb(245, 245, 247)` |
 |  |  |  |  | borderRadius | `28px 28px 0px 0px` → `26px 26px 0px 0px` |
 |  |  |  |  | padding | `10px 18px 30px 18px` → `20px 16px 32px 16px` |
 |  |  |  |  | altura | `597px` → `649px` |
-| 5 | 11.627 | div | 0,872 · 390x556 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | backgroundColor | `rgb(255, 255, 255)` → `rgb(245, 245, 247)` |
-|  |  |  |  | borderRadius | `28px 28px 0px 0px` → `26px 26px 0px 0px` |
-|  |  |  |  | padding | `10px 18px 30px 18px` → `20px 16px 32px 16px` |
-|  |  |  |  | altura | `556.3px` → `503px` |
-| 6 | 10.092 | div | 0,0 · 390x844 | backgroundColor | `rgb(245, 245, 247)` → `rgba(0, 0, 0, 0)` |
+| 2 | 10.092 | div | 0,0 · 390x844 | backgroundColor | `rgb(245, 245, 247)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | boxShadow | `rgba(0, 0, 0, 0.12) -20px 0px 40px 0px` → `none` |
-| 7 | 8.134 | div | 16,762 · 358x60 | fontSize | `16px` → `15px` |
+| 3 | 8.134 | div | 16,762 · 358x60 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(255, 255, 255, 0.74)` |
 |  |  |  |  | borderRadius | `0px 0px 0px 0px` → `999px 999px 999px 999px` |
 |  |  |  |  | boxShadow | `none` → `rgba(17, 17, 20, 0.14) 0px 10px 30px 0px` |
 |  |  |  |  | largura | `358px` → `288px` |
-| 8 | 6.961 | div “Concluir uma meta vale , e cada marco . É dinhei” | 32,1255 · 326x56 | fontSize | `12px` → `15px` |
-|  |  |  |  | lineHeight | `18px` → `22.5px` |
-|  |  |  |  | color | `rgb(107, 107, 116)` → `rgb(15, 15, 15)` |
-|  |  |  |  | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
-|  |  |  |  | borderRadius | `14px 14px 14px 14px` → `0px 0px 0px 0px` |
-|  |  |  |  | padding | `10px 12px 10px 12px` → `0px 0px 0px 0px` |
-|  |  |  |  | largura | `326px` → `348px` |
-|  |  |  |  | altura | `56px` → `66px` |
-| 9 | 5.315 | div | 18,980 · 354x461 | fontSize | `16px` → `15px` |
+| 4 | 5.507 | div | 0,872 · 390x556 | altura | `556.3px` → `597px` |
+| 5 | 5.315 | div | 18,980 · 354x461 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | gap | `normal` → `12px` |
 |  |  |  |  | largura | `354px` → `358px` |
 |  |  |  |  | altura | `460.8px` → `437.5px` |
-| 10 | 5.062 | div “Em movimento” | -1,276 · 226x23 | fontSize | `19px` → `9.5px` |
+| 6 | 5.242 | div | 18,978 · 354x420 | gap | `10px` → `normal` |
+|  |  |  |  | altura | `420px` → `460.8px` |
+| 7 | 5.062 | div “Em movimento” | -1,276 · 226x23 | fontSize | `19px` → `9.5px` |
 |  |  |  |  | fontWeight | `800` → `700` |
 |  |  |  |  | letterSpacing | `-0.3px` → `normal` |
 |  |  |  |  | lineHeight | `22.8px` → `11.4px` |
@@ -157,12 +126,12 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | gap | `normal` → `6px` |
 |  |  |  |  | largura | `226px` → `56px` |
 |  |  |  |  | altura | `22.8px` → `54.8px` |
-| 11 | 5.004 | nav | 16,762 · 288x60 | fontSize | `16px` → `15px` |
+| 8 | 5.004 | nav | 16,762 · 288x60 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | backgroundColor | `rgba(255, 255, 255, 0.74)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | borderRadius | `30px 30px 30px 30px` → `0px 0px 0px 0px` |
 |  |  |  |  | boxShadow | `rgba(17, 17, 20, 0.14) 0px 10px 30px 0px` → `none` |
-| 12 | 4.795 | b “Registrar atendimento” | 32,1036 · 144x34 | fontSize | `13.5px` → `16px` |
+| 9 | 4.795 | b “Registrar atendimento” | 32,1036 · 144x34 | fontSize | `13.5px` → `16px` |
 |  |  |  |  | fontWeight | `800` → `600` |
 |  |  |  |  | lineHeight | `normal` → `24px` |
 |  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(255, 255, 255)` |
@@ -171,27 +140,7 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | padding | `0px 0px 0px 0px` → `14px 0px 14px 0px` |
 |  |  |  |  | largura | `144px` → `348px` |
 |  |  |  |  | altura | `34px` → `52px` |
-| 13 | 4.526 | div | 18,1320 · 354x60 | fontSize | `16px` → `14px` |
-|  |  |  |  | fontWeight | `400` → `500` |
-|  |  |  |  | lineHeight | `normal` → `20px` |
-|  |  |  |  | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0.04)` |
-|  |  |  |  | borderRadius | `14px 14px 14px 14px` → `12px 12px 12px 12px` |
-|  |  |  |  | padding | `10px 12px 10px 12px` → `12px 16px 12px 16px` |
-|  |  |  |  | gap | `10px` → `normal` |
-|  |  |  |  | largura | `354px` → `356px` |
-|  |  |  |  | altura | `60px` → `46px` |
-| 14 | 4.212 | div | 32,749 · 326x64 | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
-|  |  |  |  | borderRadius | `14px 14px 14px 14px` → `0px 0px 0px 0px` |
-|  |  |  |  | padding | `10px 12px 10px 12px` → `0px 0px 0px 0px` |
-|  |  |  |  | altura | `64px` → `61px` |
-| 15 | 3.979 | div | 18,1191 · 296x52 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(0, 0, 0, 0.04)` |
-|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
-|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 14px 12px 14px` |
-|  |  |  |  | largura | `296px` → `348px` |
-|  |  |  |  | altura | `52.2px` → `48.5px` |
-| 16 | 3.961 | span “€ 430” | -67,131 · 100x45 | fontSize | `36px` → `11px` |
+| 10 | 3.961 | span “€ 430” | -67,131 · 100x45 | fontSize | `36px` → `11px` |
 |  |  |  |  | letterSpacing | `-1px` → `normal` |
 |  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
 |  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
@@ -200,230 +149,193 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | gap | `normal` → `4px` |
 |  |  |  |  | largura | `100.2px` → `77px` |
 |  |  |  |  | altura | `45px` → `46px` |
-| 17 | 3.849 | div “Em movimento” | 101,268 · 56x55 | fontSize | `9.5px` → `18px` |
+| 11 | 3.849 | div “Em movimento” | 101,268 · 56x55 | fontSize | `9.5px` → `18px` |
 |  |  |  |  | fontWeight | `700` → `800` |
 |  |  |  |  | lineHeight | `11.4px` → `27px` |
 |  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
 |  |  |  |  | gap | `6px` → `normal` |
 |  |  |  |  | largura | `56px` → `226px` |
 |  |  |  |  | altura | `54.8px` → `27px` |
-| 18 | 3.189 | span | 32,1450 · 50x50 | fontSize | `16px` → `11px` |
-|  |  |  |  | fontWeight | `400` → `700` |
-|  |  |  |  | lineHeight | `normal` → `13.75px` |
-|  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(216, 216, 222)` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
-|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
-|  |  |  |  | largura | `50px` → `58px` |
-|  |  |  |  | altura | `50px` → `58px` |
-| 19 | 3.189 | span | 201,1450 · 50x50 | fontSize | `16px` → `11px` |
-|  |  |  |  | fontWeight | `400` → `700` |
-|  |  |  |  | lineHeight | `normal` → `13.75px` |
-|  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(216, 216, 222)` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
-|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
-|  |  |  |  | largura | `50px` → `58px` |
-|  |  |  |  | altura | `50px` → `58px` |
-| 20 | 3.018 | div | 32,1096 · 326x40 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(0, 0, 0, 0.04)` |
-|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
-|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 14px 12px 14px` |
-|  |  |  |  | gap | `8px` → `normal` |
-|  |  |  |  | largura | `326px` → `348px` |
-|  |  |  |  | altura | `40px` → `48.5px` |
-| 21 | 2.956 | span | 17,763 · 286x58 | fontSize | `16px` → `15px` |
+| 12 | 2.956 | span | 17,763 · 286x58 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | padding | `0px 0px 0px 0px` → `12px 0px 12px 0px` |
 |  |  |  |  | gap | `normal` → `12px` |
 |  |  |  |  | largura | `286px` → `326px` |
 |  |  |  |  | altura | `58px` → `61px` |
-| 22 | 2.61 | label | 18,1255 · 354x61 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
-|  |  |  |  | gap | `12px` → `8px` |
-|  |  |  |  | largura | `354px` → `348px` |
-|  |  |  |  | altura | `61.1px` → `42px` |
-| 23 | 2.491 | span | 49,960 · 44x44 | fontSize | `10px` → `15px` |
-|  |  |  |  | fontWeight | `700` → `400` |
-|  |  |  |  | lineHeight | `12px` → `22.5px` |
-|  |  |  |  | color | `rgb(4, 120, 84)` → `rgb(15, 15, 15)` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(5, 150, 105, 0.12)` |
-|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
-|  |  |  |  | padding | `0px 0px 0px 0px` → `10px 10px 10px 10px` |
-|  |  |  |  | largura | `44px` → `40px` |
-|  |  |  |  | altura | `44px` → `40px` |
-| 24 | 2.443 | h1 “Sua Jornada” | 64,28 · 214x25 | fontSize | `20px` → `11px` |
+| 13 | 2.443 | h1 “Sua Jornada” | 64,28 · 214x25 | fontSize | `20px` → `11px` |
 |  |  |  |  | fontWeight | `800` → `600` |
 |  |  |  |  | letterSpacing | `-0.4px` → `normal` |
 |  |  |  |  | lineHeight | `normal` → `16.5px` |
 |  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
 |  |  |  |  | largura | `214px` → `226px` |
 |  |  |  |  | altura | `25px` → `16.5px` |
-| 25 | 2.443 | div | 18,1101 · 354x76 | fontSize | `16px` → `15px` |
+| 14 | 2.288 | span “B” | -85,24 · 42x42 | fontSize | `18px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | largura | `354px` → `326px` |
-|  |  |  |  | altura | `76.2px` → `65px` |
-| 26 | 2.346 | div | 18,1113 · 192x52 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(0, 0, 0, 0.04)` |
-|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
-|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 14px 12px 14px` |
-|  |  |  |  | largura | `192.4px` → `168px` |
-|  |  |  |  | altura | `52.2px` → `50.5px` |
-| 27 | 2.305 | label | 18,980 · 354x60 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
-|  |  |  |  | gap | `12px` → `normal` |
-|  |  |  |  | largura | `354px` → `348px` |
-|  |  |  |  | altura | `60.1px` → `72.5px` |
-| 28 | 2.303 | div | 32,1388 · 157x50 | fontSize | `16px` → `14px` |
-|  |  |  |  | fontWeight | `400` → `500` |
-|  |  |  |  | lineHeight | `normal` → `20px` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(0, 0, 0, 0.04)` |
-|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
-|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 16px 12px 16px` |
-|  |  |  |  | gap | `10px` → `normal` |
-|  |  |  |  | largura | `157px` → `172px` |
-|  |  |  |  | altura | `50px` → `48px` |
-| 29 | 2.303 | div | 201,1388 · 157x50 | fontSize | `16px` → `14px` |
-|  |  |  |  | fontWeight | `400` → `500` |
-|  |  |  |  | lineHeight | `normal` → `20px` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(0, 0, 0, 0.04)` |
-|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
-|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 16px 12px 16px` |
-|  |  |  |  | gap | `10px` → `normal` |
-|  |  |  |  | largura | `157px` → `172px` |
-|  |  |  |  | altura | `50px` → `48px` |
-| 30 | 2.243 | label | 18,1178 · 354x77 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
-|  |  |  |  | gap | `12px` → `normal` |
-|  |  |  |  | largura | `354px` → `348px` |
-|  |  |  |  | altura | `77.2px` → `72.5px` |
-| 31 | 2.169 | div | 32,705 · 326x30 | fontSize | `13px` → `15px` |
-|  |  |  |  | fontWeight | `600` → `400` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | gap | `10px` → `normal` |
-|  |  |  |  | largura | `326px` → `358px` |
-|  |  |  |  | altura | `30px` → `22.5px` |
-| 32 | 2.11 | div | 32,960 · 326x61 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | gap | `12px 6px` → `normal` |
-|  |  |  |  | largura | `326px` → `348px` |
-|  |  |  |  | altura | `61px` → `72.5px` |
-| 33 | 1.98 | button | 314,762 · 60x60 | fontSize | `16px` → `15px` |
+|  |  |  |  | backgroundColor | `rgb(223, 241, 236)` → `rgba(0, 0, 0, 0)` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
+|  |  |  |  | largura | `42px` → `10.4px` |
+|  |  |  |  | altura | `42px` → `22.5px` |
+| 15 | 2.03 | div “Q” | 177,399 · 36x52 | color | `rgb(107, 107, 116)` → `rgb(255, 255, 255)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | gap | `4px` → `normal` |
+|  |  |  |  | altura | `52px` → `36px` |
+| 16 | 2.03 | div “S” | 274,399 · 36x52 | color | `rgb(107, 107, 116)` → `rgb(255, 255, 255)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | gap | `4px` → `normal` |
+|  |  |  |  | altura | `52px` → `36px` |
+| 17 | 2.03 | div “D” | 322,399 · 36x52 | color | `rgb(107, 107, 116)` → `rgb(255, 255, 255)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | gap | `4px` → `normal` |
+|  |  |  |  | altura | `52px` → `36px` |
+| 18 | 1.98 | button | 314,762 · 60x60 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 34 | 1.927 | label | 18,1380 · 354x61 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
-|  |  |  |  | largura | `354px` → `356px` |
-|  |  |  |  | altura | `61.1px` → `48px` |
-| 35 | 1.859 | button “Novo” | 182,26 · 91x38 | fontSize | `16px` → `13px` |
+| 19 | 1.859 | button “Novo” | 182,26 · 91x38 | fontSize | `16px` → `13px` |
 |  |  |  |  | fontWeight | `400` → `700` |
 |  |  |  |  | lineHeight | `normal` → `19.5px` |
 |  |  |  |  | borderRadius | `19px 19px 19px 19px` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `90.7px` → `83.7px` |
-| 36 | 1.849 | div “Sua Jornada” | -1,264 · 226x12 | fontSize | `10px` → `20px` |
+| 20 | 1.849 | div “Sua Jornada” | -1,264 · 226x12 | fontSize | `10px` → `20px` |
 |  |  |  |  | letterSpacing | `0.9px` → `-0.4px` |
 |  |  |  |  | textTransform | `uppercase` → `none` |
 |  |  |  |  | color | `rgb(4, 120, 84)` → `rgb(15, 15, 15)` |
 |  |  |  |  | largura | `226px` → `214px` |
 |  |  |  |  | altura | `12px` → `25px` |
-| 37 | 1.795 | div | 32,1197 · 326x46 | fontSize | `16px` → `12px` |
-|  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-|  |  |  |  | gap | `6px` → `4px` |
-|  |  |  |  | altura | `46px` → `53px` |
-| 38 | 1.788 | p “Tudo o que você registra aqui é só seu. O Glow p” | 18,928 · 354x36 | fontSize | `12.5px` → `15px` |
+| 21 | 1.829 | div “S” | 225,399 · 36x52 | color | `rgb(4, 120, 84)` → `rgb(255, 255, 255)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(5, 150, 105)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | gap | `4px` → `normal` |
+|  |  |  |  | altura | `52px` → `36px` |
+| 22 | 1.826 | div “T” | 80,399 · 36x52 | color | `rgb(107, 107, 116)` → `rgb(4, 120, 84)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(223, 241, 236)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | gap | `4px` → `normal` |
+|  |  |  |  | altura | `52px` → `36px` |
+| 23 | 1.788 | p “Tudo o que você registra aqui é só seu. O Glow p” | 18,928 · 354x36 | fontSize | `12.5px` → `15px` |
 |  |  |  |  | lineHeight | `18.125px` → `22.5px` |
 |  |  |  |  | color | `rgb(107, 107, 116)` → `rgb(15, 15, 15)` |
 |  |  |  |  | largura | `354px` → `356px` |
 |  |  |  |  | altura | `36.3px` → `44px` |
-| 39 | 1.548 | b “Mostrar selos no perfil” | 18,1268 · 296x18 | fontSize | `14px` → `16px` |
-|  |  |  |  | fontWeight | `800` → `400` |
-|  |  |  |  | gap | `normal` → `8px` |
-|  |  |  |  | largura | `296px` → `326px` |
-|  |  |  |  | altura | `18px` → `19px` |
-| 40 | 1.535 | span | 177,329 · 30x30 | fontSize | `10px` → `16px` |
+| 24 | 1.728 | div “S” | 32,399 · 36x52 | color | `rgb(107, 107, 116)` → `rgb(255, 255, 255)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(5, 150, 105)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | gap | `4px` → `normal` |
+|  |  |  |  | altura | `52px` → `36px` |
+| 25 | 1.728 | div “Q” | 129,399 · 36x52 | color | `rgb(107, 107, 116)` → `rgb(255, 255, 255)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(5, 150, 105)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | gap | `4px` → `normal` |
+|  |  |  |  | altura | `52px` → `36px` |
+| 26 | 1.535 | span | 177,329 · 30x30 | fontSize | `10px` → `16px` |
 |  |  |  |  | fontWeight | `700` → `400` |
 |  |  |  |  | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
 |  |  |  |  | largura | `30px` → `26.2px` |
 |  |  |  |  | altura | `30px` → `26.1px` |
-| 41 | 1.416 | div | 0,0 · 390x844 | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(10, 8, 14, 0.55)` |
-| 42 | 1.416 | div | 0,0 · 390x844 | backgroundColor | `rgba(10, 8, 14, 0.55)` → `rgba(0, 0, 0, 0)` |
-| 43 | 1.126 | span | 55,1577 · 58x58 | color | `rgb(255, 255, 255)` → `rgb(216, 216, 222)` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
-|  |  |  |  | boxShadow | `color(srgb 0.0196078 0.588235 0.411765 / 0.4) 0px 6px 14px 0px, rgba(255, 255, 255, 0.35) 0px 0px 0px 3px inset` → `none` |
-| 44 | 1.126 | span | 166,1577 · 58x58 | color | `rgb(255, 255, 255)` → `rgb(216, 216, 222)` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
-|  |  |  |  | boxShadow | `color(srgb 0.0196078 0.588235 0.411765 / 0.4) 0px 6px 14px 0px, rgba(255, 255, 255, 0.35) 0px 0px 0px 3px inset` → `none` |
-| 45 | 1.126 | span | 277,1577 · 58x58 | color | `rgb(255, 255, 255)` → `rgb(216, 216, 222)` |
-|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(244, 244, 246)` |
-|  |  |  |  | boxShadow | `color(srgb 0.0196078 0.588235 0.411765 / 0.4) 0px 6px 14px 0px, rgba(255, 255, 255, 0.35) 0px 0px 0px 3px inset` → `none` |
-| 46 | 1.084 | b “0 de 3” | 87,412 · 36x15 | fontSize | `12px` → `11px` |
+| 27 | 1.416 | div | 0,0 · 390x844 | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(10, 8, 14, 0.55)` |
+| 28 | 1.416 | div | 0,0 · 390x844 | backgroundColor | `rgba(10, 8, 14, 0.55)` → `rgba(0, 0, 0, 0)` |
+| 29 | 1.098 | span “Guardar um comprovante no Cofre” | -18,453 · 217x44 | fontWeight | `700` → `600` |
+|  |  |  |  | largura | `216.8px` → `234.5px` |
+|  |  |  |  | altura | `44px` → `29px` |
+| 30 | 1.087 | b “0 de 3” | 87,412 · 36x15 | fontSize | `12px` → `11px` |
 |  |  |  |  | fontWeight | `800` → `700` |
 |  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(4, 120, 84)` |
 |  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(223, 241, 236)` |
 |  |  |  |  | borderRadius | `0px 0px 0px 0px` → `999px 999px 999px 999px` |
 |  |  |  |  | padding | `0px 0px 0px 0px` → `3px 9px 3px 9px` |
-|  |  |  |  | largura | `35.5px` → `51.6px` |
+|  |  |  |  | largura | `35.5px` → `52.1px` |
 |  |  |  |  | altura | `15px` → `19px` |
-| 47 | 1.074 | span “B” | -85,24 · 42x42 | fontSize | `18px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
-|  |  |  |  | largura | `42px` → `40px` |
-|  |  |  |  | altura | `42px` → `40px` |
-| 48 | 1.02 | button | 19,770 · 54x44 | fontSize | `16px` → `15px` |
+| 31 | 1.02 | button | 19,770 · 54x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 49 | 1.007 | span | 32,399 · 36x36 | fontSize | `10px` → `13px` |
-|  |  |  |  | fontWeight | `700` → `600` |
-|  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(4, 120, 84)` |
-|  |  |  |  | backgroundColor | `rgb(5, 150, 105)` → `rgb(223, 241, 236)` |
-|  |  |  |  | largura | `36px` → `30px` |
-|  |  |  |  | altura | `36px` → `30px` |
-| 50 | 0.969 | div “Rumo à meta” | 143,1697 · 103x105 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-|  |  |  |  | altura | `105.3px` → `89.8px` |
-| 51 | 0.941 | button | 80,770 · 46x44 | fontSize | `16px` → `15px` |
+| 32 | 0.941 | button | 80,770 · 46x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 52 | 0.941 | button | 137,770 · 46x44 | fontSize | `16px` → `15px` |
+| 33 | 0.941 | button | 137,770 · 46x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 53 | 0.941 | button | 194,770 · 46x44 | fontSize | `16px` → `15px` |
+| 34 | 0.941 | button | 194,770 · 46x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 54 | 0.941 | button | 251,770 · 46x44 | fontSize | `16px` → `15px` |
+| 35 | 0.941 | button | 251,770 · 46x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 55 | 0.935 | i | 32,1148 · 140x8 | backgroundColor | `rgb(5, 150, 105)` → `rgb(222, 241, 236)` |
-|  |  |  |  | borderRadius | `4px 4px 4px 4px` → `999px 999px 999px 999px` |
-|  |  |  |  | largura | `140.2px` → `133px` |
-|  |  |  |  | altura | `8px` → `6px` |
-| 56 | 0.891 | b “3 de 3” | -69,384 · 34x15 | fontSize | `12px` → `20px` |
+| 36 | 0.891 | b “3 de 3” | -69,384 · 34x15 | fontSize | `12px` → `20px` |
 |  |  |  |  | fontWeight | `900` → `800` |
 |  |  |  |  | lineHeight | `normal` → `30px` |
 |  |  |  |  | largura | `34.4px` → `142px` |
 |  |  |  |  | altura | `15px` → `30px` |
-| 57 | 0.767 | span | 44,759 · 44x44 | fontSize | `16px` → `10px` |
-|  |  |  |  | fontWeight | `400` → `700` |
-|  |  |  |  | lineHeight | `normal` → `12px` |
-| 58 | 0.576 | button | 338,26 · 40x40 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
+| 37 | 0.576 | button | 338,26 · 40x40 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
 |  |  |  |  | largura | `40px` → `44px` |
 |  |  |  |  | altura | `40px` → `44px` |
-| 59 | 0.531 | div | 175,884 · 40x5 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | backgroundColor | `rgb(236, 236, 240)` → `rgba(0, 0, 0, 0.08)` |
-|  |  |  |  | borderRadius | `3px 3px 3px 3px` → `9999px 9999px 9999px 9999px` |
-|  |  |  |  | largura | `40px` → `36px` |
-|  |  |  |  | altura | `5px` → `4px` |
-| 60 | 0.53 | div | 175,882 · 40x5 | fontSize | `16px` → `15px` |
+| 38 | 0.53 | div | 175,884 · 40x5 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | backgroundColor | `rgb(236, 236, 240)` → `rgba(0, 0, 0, 0.1)` |
 |  |  |  |  | borderRadius | `3px 3px 3px 3px` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `40px` → `36px` |
 |  |  |  |  | altura | `5px` → `4px` |
+| 39 | 0.444 | input | 326,996 · 46x28 | fontFamily | `arial` → `plus jakarta sans` |
+|  |  |  |  | fontSize | `13.3333px` → `16px` |
+|  |  |  |  | color | `rgb(0, 0, 0)` → `rgb(15, 15, 15)` |
+| 40 | 0.444 | input | 326,1057 · 46x28 | fontFamily | `arial` → `plus jakarta sans` |
+|  |  |  |  | fontSize | `13.3333px` → `16px` |
+|  |  |  |  | color | `rgb(0, 0, 0)` → `rgb(15, 15, 15)` |
+| 41 | 0.444 | input | 326,1203 · 46x28 | fontFamily | `arial` → `plus jakarta sans` |
+|  |  |  |  | fontSize | `13.3333px` → `16px` |
+|  |  |  |  | color | `rgb(0, 0, 0)` → `rgb(15, 15, 15)` |
+| 42 | 0.444 | input | 326,1272 · 46x28 | fontFamily | `arial` → `plus jakarta sans` |
+|  |  |  |  | fontSize | `13.3333px` → `16px` |
+|  |  |  |  | color | `rgb(0, 0, 0)` → `rgb(15, 15, 15)` |
+| 43 | 0.444 | input | 326,1397 · 46x28 | fontFamily | `arial` → `plus jakarta sans` |
+|  |  |  |  | fontSize | `13.3333px` → `16px` |
+|  |  |  |  | color | `rgb(0, 0, 0)` → `rgb(15, 15, 15)` |
+| 44 | 0.373 | span | 332,780 · 24x24 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
+| 45 | 0.304 | b “340” | -1,299 · 24x15 | fontWeight | `800` → `900` |
+|  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(255, 255, 255)` |
+|  |  |  |  | largura | `23.7px` → `15.7px` |
+| 46 | 0.285 | a “Agenda ›” | 220,811 · 52x15 | lineHeight | `normal` → `18px` |
+|  |  |  |  | altura | `15px` → `44px` |
+| 47 | 0.284 | span “+10” | 209,468 · 36x15 | fontWeight | `800` → `700` |
+|  |  |  |  | lineHeight | `normal` → `18px` |
+|  |  |  |  | color | `rgb(4, 120, 84)` → `rgb(15, 15, 15)` |
+|  |  |  |  | gap | `3px` → `normal` |
+|  |  |  |  | largura | `35.5px` → `23.8px` |
+| 48 | 0.255 | div “Sexta, 2 de outubro” | -31,49 · 201x15 | lineHeight | `normal` → `18px` |
+|  |  |  |  | largura | `201.3px` → `208.3px` |
+|  |  |  |  | altura | `15px` → `18px` |
+| 49 | 0.199 | b “+50” | 44,1284 · 24x15 | fontWeight | `700` → `800` |
+|  |  |  |  | lineHeight | `18px` → `normal` |
+|  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(4, 120, 84)` |
+|  |  |  |  | gap | `normal` → `3px` |
+|  |  |  |  | largura | `23.8px` → `29.5px` |
+| 50 | 0.129 | div “S” | -69,329 · 30x46 | largura | `30px` → `36px` |
+|  |  |  |  | altura | `46px` → `52px` |
+| 51 | 0.129 | div “T” | -20,329 · 30x46 | largura | `30px` → `36px` |
+|  |  |  |  | altura | `46px` → `52px` |
+| 52 | 0.129 | div “Q” | 29,329 · 30x46 | largura | `30px` → `36px` |
+|  |  |  |  | altura | `46px` → `52px` |
+| 53 | 0.129 | div “Q” | 79,329 · 30x46 | largura | `30px` → `36px` |
+|  |  |  |  | altura | `46px` → `52px` |
+| 54 | 0.129 | div “S” | 128,329 · 30x46 | largura | `30px` → `36px` |
+|  |  |  |  | altura | `46px` → `52px` |
+| 55 | 0.129 | div “S” | 177,329 · 30x46 | largura | `30px` → `36px` |
+|  |  |  |  | altura | `46px` → `52px` |
+| 56 | 0.129 | div “D” | 227,329 · 30x46 | largura | `30px` → `36px` |
+|  |  |  |  | altura | `46px` → `52px` |
+| 57 | 0.119 | span “Próximo” | -69,575 · 142x13 | lineHeight | `normal` → `16.5px` |
+|  |  |  |  | altura | `13px` → `16.5px` |
+| 58 | 0.115 | h2 “Esta semana” | -85,809 · 92x19 | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | altura | `19px` → `22.5px` |
+| 59 | 0.108 | svg | 237,279 · 20x20 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | largura | `20px` → `16.7px` |
+|  |  |  |  | altura | `20px` → `16.7px` |
+| 60 | 0.088 | span “+5” | 329,2720 · 30x15 | largura | `29.5px` → `43.9px` |
 
-_(57 elementos de impacto menor omitidos)_
+_(27 elementos de impacto menor omitidos)_

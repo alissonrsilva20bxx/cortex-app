@@ -2,15 +2,15 @@
 
 - mockup: `prototipo-sua-jornada.html`
 - app: `http://localhost:3103/dev-preview/app`
-- pareados 113 · divergem 76 · só no mockup 628 · só no app 223
-- impacto total: **198.906**
+- pareados 115 · divergem 78 · só no mockup 626 · só no app 221
+- impacto total: **202.121**
 - famílias no mockup: plus jakarta sans (237)
 - famílias no app: plus jakarta sans (142)
 
 Ordem por impacto = (soma das diferenças normalizadas) × √(área relativa).
 Em cada célula: **mockup** → app.
 
-## Só os elementos com texto (14)
+## Só os elementos com texto (16)
 
 | impacto | texto | propriedade | mockup → app |
 | ------- | ----- | ----------- | ------------ |
@@ -30,6 +30,12 @@ Em cada célula: **mockup** → app.
 | 3.659 | “Em movimento” | gap | `6px` → `normal` |
 | 3.659 | “Em movimento” | largura | `56px` → `226px` |
 | 3.659 | “Em movimento” | altura | `54.8px` → `27px` |
+| 2.291 | “B” | fontSize | `18px` → `15px` |
+| 2.291 | “B” | lineHeight | `normal` → `22.5px` |
+| 2.291 | “B” | backgroundColor | `rgb(250, 224, 230)` → `rgba(0, 0, 0, 0)` |
+| 2.291 | “B” | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
+| 2.291 | “B” | largura | `42px` → `10.4px` |
+| 2.291 | “B” | altura | `42px` → `22.5px` |
 | 1.859 | “Novo” | fontSize | `16px` → `13px` |
 | 1.859 | “Novo” | fontWeight | `400` → `700` |
 | 1.859 | “Novo” | lineHeight | `normal` → `19.5px` |
@@ -40,6 +46,11 @@ Em cada célula: **mockup** → app.
 | 1.788 | “Tudo o que você registra aqui é só seu. O Glow p” | color | `rgb(107, 107, 116)` → `rgb(15, 15, 15)` |
 | 1.788 | “Tudo o que você registra aqui é só seu. O Glow p” | largura | `354px` → `356px` |
 | 1.788 | “Tudo o que você registra aqui é só seu. O Glow p” | altura | `36.3px` → `44px` |
+| 1.719 | “B” | fontSize | `21px` → `15px` |
+| 1.719 | “B” | lineHeight | `26.25px` → `22.5px` |
+| 1.719 | “B” | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
+| 1.719 | “B” | largura | `48px` → `40px` |
+| 1.719 | “B” | altura | `48px` → `40px` |
 | 1.267 | “D” | fontSize | `10px` → `40px` |
 | 1.267 | “D” | fontWeight | `700` → `800` |
 | 1.267 | “D” | letterSpacing | `normal` → `-1.2px` |
@@ -48,11 +59,6 @@ Em cada célula: **mockup** → app.
 | 1.267 | “D” | gap | `4px` → `normal` |
 | 1.267 | “D” | largura | `30px` → `25.7px` |
 | 1.267 | “D” | altura | `46px` → `42px` |
-| 1.074 | “B” | fontSize | `18px` → `15px` |
-| 1.074 | “B” | lineHeight | `normal` → `22.5px` |
-| 1.074 | “B” | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
-| 1.074 | “B” | largura | `42px` → `40px` |
-| 1.074 | “B” | altura | `42px` → `40px` |
 | 0.936 | “Troque nos Ajustes” | fontSize | `10px` → `11.5px` |
 | 0.936 | “Troque nos Ajustes” | lineHeight | `12.5px` → `normal` |
 | 0.936 | “Troque nos Ajustes” | color | `rgb(107, 107, 116)` → `rgba(255, 255, 255, 0.65)` |
@@ -78,8 +84,6 @@ Em cada célula: **mockup** → app.
 | 0.346 | “Sexta, 2 de outubro” | lineHeight | `normal` → `18px` |
 | 0.346 | “Sexta, 2 de outubro” | largura | `195.3px` → `208.3px` |
 | 0.346 | “Sexta, 2 de outubro” | altura | `15px` → `18px` |
-| 0.285 | “Agenda ›” | lineHeight | `normal` → `18px` |
-| 0.285 | “Agenda ›” | altura | `15px` → `44px` |
 
 ## Todos os elementos
 
@@ -208,56 +212,67 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | gap | `12px` → `normal` |
 |  |  |  |  | largura | `354px` → `348px` |
 |  |  |  |  | altura | `60.1px` → `72.5px` |
-| 22 | 2.281 | label | 18,1041 · 354x61 | fontSize | `16px` → `15px` |
+| 22 | 2.291 | span “B” | 19,27 · 42x42 | fontSize | `18px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgb(250, 224, 230)` → `rgba(0, 0, 0, 0)` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
+|  |  |  |  | largura | `42px` → `10.4px` |
+|  |  |  |  | altura | `42px` → `22.5px` |
+| 23 | 2.281 | label | 18,1041 · 354x61 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
 |  |  |  |  | gap | `12px` → `normal` |
 |  |  |  |  | largura | `354px` → `348px` |
 |  |  |  |  | altura | `61.1px` → `72.5px` |
-| 23 | 2.279 | div | 18,1268 · 296x36 | fontSize | `16px` → `15px` |
+| 24 | 2.279 | div | 18,1268 · 296x36 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | gap | `normal` → `8px` |
 |  |  |  |  | largura | `296px` → `348px` |
 |  |  |  |  | altura | `36.1px` → `42px` |
-| 24 | 2.243 | label | 18,1178 · 354x77 | fontSize | `16px` → `15px` |
+| 25 | 2.243 | label | 18,1178 · 354x77 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
 |  |  |  |  | gap | `12px` → `normal` |
 |  |  |  |  | largura | `354px` → `348px` |
 |  |  |  |  | altura | `77.2px` → `72.5px` |
-| 25 | 2.004 | label | 18,1255 · 354x61 | fontSize | `16px` → `15px` |
+| 26 | 2.004 | label | 18,1255 · 354x61 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
 |  |  |  |  | gap | `12px` → `normal` |
 |  |  |  |  | largura | `354px` → `348px` |
 |  |  |  |  | altura | `61.1px` → `66px` |
-| 26 | 1.98 | button | 314,762 · 60x60 | fontSize | `16px` → `15px` |
+| 27 | 1.98 | button | 314,762 · 60x60 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 27 | 1.969 | span | 16,24 · 48x48 | fontSize | `16px` → `15px` |
+| 28 | 1.969 | span | 16,24 · 48x48 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(250, 224, 230)` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | padding | `3px 3px 3px 3px` → `0px 0px 0px 0px` |
 |  |  |  |  | largura | `48px` → `42px` |
 |  |  |  |  | altura | `48px` → `42px` |
-| 28 | 1.927 | label | 18,1386 · 354x61 | fontSize | `16px` → `15px` |
+| 29 | 1.927 | label | 18,1386 · 354x61 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
 |  |  |  |  | largura | `354px` → `356px` |
 |  |  |  |  | altura | `61.1px` → `48px` |
-| 29 | 1.859 | button “Novo” | 283,29 · 91x38 | fontSize | `16px` → `13px` |
+| 30 | 1.859 | button “Novo” | 283,29 · 91x38 | fontSize | `16px` → `13px` |
 |  |  |  |  | fontWeight | `400` → `700` |
 |  |  |  |  | lineHeight | `normal` → `19.5px` |
 |  |  |  |  | borderRadius | `19px 19px 19px 19px` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `90.7px` → `83.7px` |
-| 30 | 1.788 | p “Tudo o que você registra aqui é só seu. O Glow p” | 18,928 · 354x36 | fontSize | `12.5px` → `15px` |
+| 31 | 1.788 | p “Tudo o que você registra aqui é só seu. O Glow p” | 18,928 · 354x36 | fontSize | `12.5px` → `15px` |
 |  |  |  |  | lineHeight | `18.125px` → `22.5px` |
 |  |  |  |  | color | `rgb(107, 107, 116)` → `rgb(15, 15, 15)` |
 |  |  |  |  | largura | `354px` → `356px` |
 |  |  |  |  | altura | `36.3px` → `44px` |
-| 31 | 1.267 | div “D” | 328,335 · 30x46 | fontSize | `10px` → `40px` |
+| 32 | 1.719 | span “B” | 450,2190 · 48x48 | fontSize | `21px` → `15px` |
+|  |  |  |  | lineHeight | `26.25px` → `22.5px` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
+|  |  |  |  | largura | `48px` → `40px` |
+|  |  |  |  | altura | `48px` → `40px` |
+| 33 | 1.267 | div “D” | 328,335 · 30x46 | fontSize | `10px` → `40px` |
 |  |  |  |  | fontWeight | `700` → `800` |
 |  |  |  |  | letterSpacing | `normal` → `-1.2px` |
 |  |  |  |  | lineHeight | `normal` → `42px` |
@@ -265,118 +280,111 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | gap | `4px` → `normal` |
 |  |  |  |  | largura | `30px` → `25.7px` |
 |  |  |  |  | altura | `46px` → `42px` |
-| 32 | 1.074 | span “B” | 19,27 · 42x42 | fontSize | `18px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
-|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
-|  |  |  |  | largura | `42px` → `40px` |
-|  |  |  |  | altura | `42px` → `40px` |
-| 33 | 1.02 | button | 19,770 · 54x44 | fontSize | `16px` → `15px` |
+| 34 | 1.02 | button | 19,770 · 54x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 34 | 0.941 | button | 80,770 · 46x44 | fontSize | `16px` → `15px` |
+| 35 | 0.941 | button | 80,770 · 46x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 35 | 0.941 | button | 137,770 · 46x44 | fontSize | `16px` → `15px` |
+| 36 | 0.941 | button | 137,770 · 46x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 36 | 0.941 | button | 194,770 · 46x44 | fontSize | `16px` → `15px` |
+| 37 | 0.941 | button | 194,770 · 46x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 37 | 0.941 | button | 251,770 · 46x44 | fontSize | `16px` → `15px` |
+| 38 | 0.941 | button | 251,770 · 46x44 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 38 | 0.936 | small “Troque nos Ajustes” | 651,2269 · 90x25 | fontSize | `10px` → `11.5px` |
+| 39 | 0.936 | small “Troque nos Ajustes” | 651,2269 · 90x25 | fontSize | `10px` → `11.5px` |
 |  |  |  |  | lineHeight | `12.5px` → `normal` |
 |  |  |  |  | color | `rgb(107, 107, 116)` → `rgba(255, 255, 255, 0.65)` |
 |  |  |  |  | largura | `90px` → `103.6px` |
 |  |  |  |  | altura | `25px` → `15px` |
-| 39 | 0.891 | b “3 de 3” | 32,390 · 34x15 | fontSize | `12px` → `20px` |
+| 40 | 0.891 | b “3 de 3” | 32,390 · 34x15 | fontSize | `12px` → `20px` |
 |  |  |  |  | fontWeight | `900` → `800` |
 |  |  |  |  | lineHeight | `normal` → `30px` |
 |  |  |  |  | largura | `34.4px` → `142px` |
 |  |  |  |  | altura | `15px` → `30px` |
-| 40 | 0.859 | div “Sua Jornada” | 100,270 · 226x12 | fontSize | `10px` → `11px` |
+| 41 | 0.859 | div “Sua Jornada” | 100,270 · 226x12 | fontSize | `10px` → `11px` |
 |  |  |  |  | fontWeight | `800` → `600` |
 |  |  |  |  | letterSpacing | `0.9px` → `normal` |
 |  |  |  |  | lineHeight | `normal` → `16.5px` |
 |  |  |  |  | textTransform | `uppercase` → `none` |
 |  |  |  |  | color | `rgb(176, 16, 48)` → `rgb(107, 107, 116)` |
 |  |  |  |  | altura | `12px` → `16.5px` |
-| 41 | 0.84 | span | 32,413 · 24x24 | fontSize | `12px` → `15px` |
+| 42 | 0.84 | span | 32,413 · 24x24 | fontSize | `12px` → `15px` |
 |  |  |  |  | fontWeight | `600` → `400` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | color | `rgb(176, 16, 48)` → `rgb(15, 15, 15)` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
 |  |  |  |  | largura | `24px` → `20px` |
 |  |  |  |  | altura | `24px` → `20px` |
-| 42 | 0.778 | div | 76,30 · 195x37 | fontSize | `16px` → `15px` |
+| 43 | 0.778 | div | 76,30 · 195x37 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | largura | `195.3px` → `208.3px` |
 |  |  |  |  | altura | `37px` → `43.5px` |
-| 43 | 0.734 | div | 34,137 · 322x45 | fontSize | `16px` → `15px` |
+| 44 | 0.734 | div | 34,137 · 322x45 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | altura | `45px` → `54px` |
-| 44 | 0.667 | div | 32,838 · 326x56 | fontSize | `16px` → `15px` |
+| 45 | 0.667 | div | 32,838 · 326x56 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | altura | `56px` → `61px` |
-| 45 | 0.628 | div | 16,24 · 358x48 | fontSize | `16px` → `15px` |
+| 46 | 0.628 | div | 16,24 · 358x48 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | altura | `48px` → `43.5px` |
-| 46 | 0.541 | small “Para o seu avatar” | 434,2283 · 80x13 | fontSize | `10px` → `11.5px` |
+| 47 | 0.541 | small “Para o seu avatar” | 434,2283 · 80x13 | fontSize | `10px` → `11.5px` |
 |  |  |  |  | lineHeight | `12.5px` → `normal` |
 |  |  |  |  | color | `rgb(107, 107, 116)` → `rgba(255, 255, 255, 0.65)` |
 |  |  |  |  | largura | `80.3px` → `92.3px` |
 |  |  |  |  | altura | `12.5px` → `15px` |
-| 47 | 0.531 | div | 175,884 · 40x5 | fontSize | `16px` → `15px` |
+| 48 | 0.531 | div | 175,884 · 40x5 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | backgroundColor | `rgb(236, 236, 240)` → `rgba(0, 0, 0, 0.08)` |
 |  |  |  |  | borderRadius | `3px 3px 3px 3px` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `40px` → `36px` |
 |  |  |  |  | altura | `5px` → `4px` |
-| 48 | 0.53 | div | 175,882 · 40x5 | fontSize | `16px` → `15px` |
+| 49 | 0.53 | div | 175,882 · 40x5 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | backgroundColor | `rgb(236, 236, 240)` → `rgba(0, 0, 0, 0.1)` |
 |  |  |  |  | borderRadius | `3px 3px 3px 3px` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `40px` → `36px` |
 |  |  |  |  | altura | `5px` → `4px` |
-| 49 | 0.373 | span | 332,780 · 24x24 | fontSize | `16px` → `15px` |
+| 50 | 0.373 | span | 332,780 · 24x24 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
-| 50 | 0.352 | div | 34,108 · 322x19 | fontSize | `16px` → `15px` |
+| 51 | 0.352 | div | 34,108 · 322x19 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | altura | `19px` → `22.5px` |
-| 51 | 0.346 | div “Sexta, 2 de outubro” | 76,52 · 195x15 | lineHeight | `normal` → `18px` |
+| 52 | 0.346 | div “Sexta, 2 de outubro” | 76,52 · 195x15 | lineHeight | `normal` → `18px` |
 |  |  |  |  | largura | `195.3px` → `208.3px` |
 |  |  |  |  | altura | `15px` → `18px` |
-| 52 | 0.285 | a “Agenda ›” | 322,803 · 52x15 | lineHeight | `normal` → `18px` |
+| 53 | 0.285 | a “Agenda ›” | 322,803 · 52x15 | lineHeight | `normal` → `18px` |
 |  |  |  |  | altura | `15px` → `44px` |
-| 53 | 0.207 | svg | 49,284 · 22x22 | fontSize | `16px` → `15px` |
+| 54 | 0.279 | span “B” | 33,1333 · 40x40 | fontSize | `17px` → `15px` |
+|  |  |  |  | largura | `40px` → `34px` |
+|  |  |  |  | altura | `40px` → `34px` |
+| 55 | 0.207 | svg | 49,284 · 22x22 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | color | `rgb(176, 16, 48)` → `rgb(15, 15, 15)` |
 |  |  |  |  | largura | `22px` → `20px` |
 |  |  |  |  | altura | `22px` → `20px` |
-| 54 | 0.195 | svg | 297,40 · 16x16 | fontSize | `16px` → `13px` |
+| 56 | 0.195 | svg | 297,40 · 16x16 | fontSize | `16px` → `13px` |
 |  |  |  |  | fontWeight | `400` → `700` |
 |  |  |  |  | lineHeight | `normal` → `19.5px` |
-| 55 | 0.188 | svg | 32,539 · 20x20 | fontSize | `16px` → `15px` |
+| 57 | 0.188 | svg | 32,539 · 20x20 | fontSize | `16px` → `15px` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | color | `rgb(15, 15, 15)` → `rgb(176, 16, 48)` |
 |  |  |  |  | largura | `20px` → `22px` |
 |  |  |  |  | altura | `20px` → `22px` |
-| 56 | 0.156 | path | 39,420 · 10x10 | fontSize | `12px` → `15px` |
+| 58 | 0.156 | path | 39,420 · 10x10 | fontSize | `12px` → `15px` |
 |  |  |  |  | fontWeight | `600` → `400` |
 |  |  |  |  | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | color | `rgb(176, 16, 48)` → `rgb(15, 15, 15)` |
 |  |  |  |  | largura | `9.7px` → `8.3px` |
 |  |  |  |  | altura | `9.7px` → `8.3px` |
-| 57 | 0.119 | span “Próximo” | 32,567 · 142x13 | lineHeight | `normal` → `16.5px` |
+| 59 | 0.119 | span “Próximo” | 32,567 · 142x13 | lineHeight | `normal` → `16.5px` |
 |  |  |  |  | altura | `13px` → `16.5px` |
-| 58 | 0.115 | h2 “Esta semana” | 16,801 · 92x19 | lineHeight | `normal` → `22.5px` |
+| 60 | 0.115 | h2 “Esta semana” | 16,801 · 92x19 | lineHeight | `normal` → `22.5px` |
 |  |  |  |  | altura | `19px` → `22.5px` |
-| 59 | 0.113 | path | 301,43 · 9x9 | fontSize | `16px` → `13px` |
-|  |  |  |  | fontWeight | `400` → `700` |
-|  |  |  |  | lineHeight | `normal` → `19.5px` |
-| 60 | 0.077 | svg | 35,781 · 22x22 | fontSize | `16px` → `15px` |
-|  |  |  |  | lineHeight | `normal` → `22.5px` |
 
-_(16 elementos de impacto menor omitidos)_
+_(18 elementos de impacto menor omitidos)_
