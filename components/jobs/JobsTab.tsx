@@ -94,6 +94,7 @@ function dbRowToJob(row: {
   status: JobStatus;
   observacoes: string | null;
   criado_em: string;
+  pago_em?: string | null;
 }): Job {
   return {
     id: row.id,
@@ -106,6 +107,7 @@ function dbRowToJob(row: {
     status: row.status,
     observacoes: row.observacoes ?? undefined,
     criadoEm: row.criado_em,
+    pagoEm: row.pago_em ?? null,
   };
 }
 
@@ -319,6 +321,12 @@ export function JobsTab({
   const now = new Date();
   const today = toISODate(new Date());
   const weekStrip = buildWeekStrip(weekStart, filtered);
+  // O ponto de "dia com atendimento" só aparece fora da semana corrente: na
+  // semana corrente os atendimentos já estão listados logo abaixo, em "Esta
+  // semana", e o mockup normativo desenha a faixa sem pontos (ordem do
+  // operador, pixel da Agenda).
+  const naSemanaCorrente =
+    weekStart.getTime() === startOfWeek(new Date()).getTime();
   const days = weekStrip.map((d) => d.iso);
   const selectedDayJobs = filtered.filter((j) => j.data === selectedDate);
   const isViewingToday = selectedDate === today;
@@ -527,7 +535,8 @@ export function JobsTab({
                 >
                   {day}
                 </strong>
-                {/* Ponto de dia com atendimento (J03). Fora do fluxo, pra
+                {/* Ponto de dia com atendimento (J03), só fora da semana
+                    corrente (ver `naSemanaCorrente`). Fora do fluxo, pra
                     letra e número ficarem onde o mockup põe. */}
                 <span
                   aria-hidden="true"
@@ -538,11 +547,12 @@ export function JobsTab({
                     transform: "translateX(-50%)",
                     width: "4px",
                     height: "4px",
-                    background: hasJobs
-                      ? selected
-                        ? "var(--text)"
-                        : "var(--accent)"
-                      : "transparent",
+                    background:
+                      hasJobs && !naSemanaCorrente
+                        ? selected
+                          ? "var(--text)"
+                          : "var(--accent)"
+                        : "transparent",
                   }}
                 />
               </button>

@@ -42,6 +42,24 @@ function parseLocal(data: string): Date {
 
 const isConcluido = (j: Job) => j.status === "concluído";
 
+/** Dia em que o dinheiro de um atendimento entrou: `pagoEm` (sinal pago
+ * antes, ou atendimento pago depois) ou, sem ele, o dia do atendimento.
+ * O Financeiro (entradas, lançamentos, extrato) conta por este dia; o
+ * faturamento (Início, Meta, ticket) conta pelo dia do atendimento. */
+export const diaDoDinheiro = (j: Job): string => j.pagoEm ?? j.data;
+
+/** Nº de atendimentos concluídos cujo dinheiro entrou no mês de `ref`
+ * (os lançamentos de entrada que são atendimentos). */
+export function monthPaidJobsCount(jobs: Job[], ref = new Date()): number {
+  return jobs.filter((j) => {
+    if (!isConcluido(j)) return false;
+    const d = parseLocal(diaDoDinheiro(j));
+    return (
+      d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth()
+    );
+  }).length;
+}
+
 /** Jobs concluídos num mês/ano específico — base de earningsInMonth e
  * monthConcludedCount (não duplica o filtro nos dois). */
 function concludedInMonth(jobs: Job[], year: number, month: number): Job[] {
@@ -121,7 +139,8 @@ function inPeriod(dateStr: string, periodo: PeriodoMeta, ref: Date): boolean {
 }
 
 /**
- * Entradas totais (jobs concluídos + receitas avulsas) num período.
+ * Entradas totais (jobs concluídos + receitas avulsas) num período, pelo
+ * dia em que o dinheiro entrou (`diaDoDinheiro`).
  * Diferente de monthEarnings (só jobs) usado no herói da Home: aqui é a
  * visão completa do Financeiro. Ambos vivem aqui — telas consomem, não
  * recalculam.
@@ -133,7 +152,7 @@ export function calcEarnings(
   ref = new Date()
 ): number {
   const jobTotal = jobs
-    .filter((j) => isConcluido(j) && inPeriod(j.data, periodo, ref))
+    .filter((j) => isConcluido(j) && inPeriod(diaDoDinheiro(j), periodo, ref))
     .reduce((s, j) => s + j.valor, 0);
   const receitaTotal = receitas
     .filter((r) => inPeriod(r.data, periodo, ref))

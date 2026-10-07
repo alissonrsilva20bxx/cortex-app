@@ -694,6 +694,10 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--body-bg);
+  /* O brilho do escuro (radial 130% x 42%) é medido na TELA, como no
+     mockup (o fundo do .ph não rola com o conteúdo): sem isso ele esticava
+     com a altura da página e o tom do topo saía diferente. */
+  background-attachment: fixed;
   /* O texto sem tamanho próprio herda 15px, como no mockup normativo
      (`body { font-size: 15px; line-height: 1.5 }` da página das 5 telas,
      herdado por cada `.ph`). */
@@ -702,7 +706,8 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  /* Sem text-rendering: optimizeLegibility: o mockup normativo usa o
+     padrão (auto), e a diferença aparecia em pixel de borda de letra. */
 }
 
 * {
@@ -1794,6 +1799,18 @@ select:focus-visible,
   --t-glass-bd: rgba(255, 255, 255, 0.1);
   --t-glass-sh: rgba(0, 0, 0, 0.45);
   --t-plus-sh: rgba(99, 102, 241, 0.4);
+}
+
+/* Bolinha de dia vazio da semana no card da Jornada (protótipo, `.dot`):
+   --t-sub no claro; no escuro, só o contorno de 1,5px (`.ph[data-md=dark]
+   .dot:not(.strong):not(.rest):not(.today)`). */
+.jornada-dia-vazio {
+  background: var(--t-sub);
+}
+:root:not([data-mode="light"]) .jornada-dia-vazio {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px
+    color-mix(in srgb, var(--t-mut) 45%, transparent);
 }
 
 /* ── Sua Jornada (J12, #162) ────────────────────────────────────────

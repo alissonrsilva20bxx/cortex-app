@@ -64,7 +64,7 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
         <span
           style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-mut)" }}
         >
-          Faturamento · {p.monthLabel}
+          {`Faturamento · ${p.monthLabel}`}
         </span>
         {p.pct !== null && (
           <span
@@ -78,7 +78,7 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
               flexShrink: 0,
             }}
           >
-            {Math.round(p.pct)}% da meta
+            {`${Math.round(p.pct)}% da meta`}
           </span>
         )}
       </div>
@@ -91,7 +91,7 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
         </span>
         {p.meta !== null && (
           <span style={{ fontSize: "13px", color: "var(--t-mut)" }}>
-            de {formatBRL(p.meta)}
+            {`de ${formatBRL(p.meta)}`}
           </span>
         )}
       </div>

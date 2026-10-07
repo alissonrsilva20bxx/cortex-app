@@ -282,7 +282,7 @@ describe("Pixel Início A — medidas iguais às do mockup", () => {
         `<div className="grid grid-cols-2 gap-[${grade.gap}]`
       );
       expect(src, pagina).toMatch(
-        /<div data-tour="home-hero" className="col-span-2">\s*<HeroCard/
+        /<div className="col-span-2 flex flex-col gap-\[10px\]">\s*\{\/\*[\s\S]*?\*\/\}\s*<div data-tour="home-hero">\s*<HeroCard/
       );
     }
   });
@@ -430,6 +430,7 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
       modalidade: r.modalidade,
       local: r.local ?? undefined,
       status: r.status,
+      pagoEm: (r.pago_em as string | null | undefined) ?? null,
     })) as unknown as Job[];
     const metas = t.metas.map((r) => ({
       periodo: r.periodo,
@@ -489,18 +490,16 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
     ]);
     expect(app).toEqual(mock);
     expect(read(PROXIMOS)).toContain(
-      "{rotuloDiaFrase(job.data)} · {formatHora(job.hora)}"
+      "{`${rotuloDiaFrase(job.data)} · ${formatHora(job.hora)}`}"
     );
   });
 
   /**
-   * Divergências conhecidas, travadas dos DOIS lados. O mockup da Agenda
-   * (que a #204 seguiu no laboratório) tem Camila Duarte concluída em
-   * 20/09 por R$ 120; o do Financeiro/Início conta Sônia em 20/09 por
-   * R$ 150. Vale o da Agenda, e o faturamento do mês fica R$ 30 abaixo.
-   * Se o mockup ou o laboratório mudar, este teste cai.
+   * O laboratório tem o faturamento do mockup (R$ 430): Helena Brito, de
+   * 13/09, vale R$ 310, e Camila Duarte continua em 20/09 por R$ 120 (o
+   * mockup da Agenda). Daí saem a % da meta, a projeção e o que falta.
    */
-  it("divergências conhecidas (Agenda x Financeiro no mockup): faturamento, % da meta, projeção e falta pra meta", () => {
+  it("iguais ao mockup: faturamento, % da meta, projeção e falta pra meta", () => {
     const { jobs, metas } = seed();
     const p = monthProjection(jobs, metas);
     const eta = p.metaEta!.toLocaleDateString("pt-BR", {
@@ -516,10 +515,10 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
         brl(p.remaining!),
       ],
     ]).toEqual([
-      ["R$ 430", "R$ 400"],
-      ["12% da meta", "11% da meta"],
-      ["7 de março", "21 de março"],
-      ["R$ 3.070", "R$ 3.100"],
+      ["R$ 430", "R$ 430"],
+      ["12% da meta", "12% da meta"],
+      ["7 de março", "7 de março"],
+      ["R$ 3.070", "R$ 3.070"],
     ]);
     // A meta é a mesma dos dois lados.
     expect(texto(/>de ([^<]+)</)).toBe(brl(p.meta!));
@@ -558,6 +557,7 @@ describe('Pixel Início A — "Esta semana" como o mockup', () => {
       modalidade: r.modalidade,
       local: r.local ?? undefined,
       status: r.status,
+      pagoEm: (r.pago_em as string | null | undefined) ?? null,
     })) as unknown as Job[];
     return diasRestantesDaSemana(jobs, AGORA).flatMap((d) =>
       d.jobs.length === 0
@@ -587,18 +587,11 @@ describe('Pixel Início A — "Esta semana" como o mockup', () => {
     expect([...posicoes].sort((a, b) => a - b)).toEqual(posicoes);
   });
 
-  it('de hoje até domingo: os dias a mais do app (fora do recorte do mockup) são só "Dia livre"', () => {
-    const app = linhasDoApp();
-    expect(app.map((l) => l[0])).toEqual([
-      "QUA 23",
-      "QUI 24",
-      "SEX 25",
-      "SÁB 26",
-      "DOM 27",
-    ]);
-    const doMockup = new Set(linhasDoMockup().map((l) => JSON.stringify(l)));
-    for (const l of app.filter((a) => !doMockup.has(JSON.stringify(a))))
-      expect(l[1], l[0]).toBe("Dia livre");
+  // Regra revista por ordem do operador: do próximo dia com atendimento
+  // até sábado (components/home/inicioAgenda.ts, diasRestantesDaSemana).
+  it("as linhas do app são exatamente as do mockup (SEX 25 Renata, SÁB 26 livre)", () => {
+    expect(linhasDoApp()).toEqual(linhasDoMockup());
+    expect(linhasDoMockup().map((l) => l[0])).toEqual(["SEX 25", "SÁB 26"]);
   });
 
   it('a seção usa a regra de antes (diasRestantesDaSemana) e mostra "Dia livre"', () => {

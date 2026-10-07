@@ -18,6 +18,7 @@ import { ObjetivosCard } from "@/components/home/ObjetivosCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { CofreCard } from "@/components/home/CofreCard";
 import { JornadaCard } from "@/components/home/JornadaCard";
+import { destinoDoProximoPasso } from "@/components/jornada/progresso";
 import { JornadaScreen } from "@/components/jornada/JornadaScreen";
 import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
 import { SemanaSection } from "@/components/home/SemanaSection";
@@ -163,7 +164,7 @@ export default function Page() {
   // evolução" do HeroCard — issue #134) — ver comentário de `focusTab` em
   // FinanceiroTab.tsx (redesign iOS #122/#125).
   const [financeiroFocusTab, setFinanceiroFocusTab] = useState<
-    "metas" | "visao" | null
+    "metas" | "visao" | "saidas" | null
   >(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -322,6 +323,7 @@ export default function Page() {
               status: j.status,
               observacoes: j.observacoes ?? undefined,
               criadoEm: j.criado_em,
+              pagoEm: j.pago_em ?? null,
             }))
           );
         }
@@ -546,16 +548,36 @@ export default function Page() {
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
     um buraco. */}
                 <div className="grid grid-cols-2 gap-[10px] [&>:last-child:nth-child(even)]:col-span-2">
-                  {/* `data-tour` do tour guiado (lib/appTour.ts); ocupa as 2 colunas. */}
-                  <div data-tour="home-hero" className="col-span-2">
-                    <HeroCard
-                      jobs={jobs}
-                      metas={metas}
-                      onGoToFinanceiro={() => {
-                        handleTabChange("financeiro");
-                        setFinanceiroFocusTab("visao");
-                      }}
-                    />
+                  {/* O card principal e o card "Sua Jornada" (J12) ocupam as 2
+                      colunas, um embaixo do outro com o gap de 10px da grade, como no
+                      protótipo da Jornada (`.grid2 > .span2.jcard` logo depois da
+                      receita). Juntos num bloco só, pra não mudar a contagem que
+                      decide se o último card pequeno ocupa a linha toda. Sem estado
+                      da Jornada o card não aparece (nunca trava o Início). */}
+                  <div className="col-span-2 flex flex-col gap-[10px]">
+                    {/* `data-tour` do tour guiado (lib/appTour.ts). */}
+                    <div data-tour="home-hero">
+                      <HeroCard
+                        jobs={jobs}
+                        metas={metas}
+                        onGoToFinanceiro={() => {
+                          handleTabChange("financeiro");
+                          setFinanceiroFocusTab("visao");
+                        }}
+                      />
+                    </div>
+                    {usuario && (
+                      <JornadaCard
+                        userId={usuario.id}
+                        onAbrir={() => setJornadaAberta(true)}
+                        onProximoPasso={(acao) => {
+                          const destino = destinoDoProximoPasso(acao);
+                          handleTabChange(destino.aba);
+                          if (destino.financeiro)
+                            setFinanceiroFocusTab(destino.financeiro);
+                        }}
+                      />
+                    )}
                   </div>
                   {homeCards.nextJob && <NextJobCard jobs={jobs} />}
                   {(homeCards.objetivos ?? true) && (
@@ -580,16 +602,6 @@ export default function Page() {
                     onOpenCofre={() => handleTabChange("cofre")}
                   />
                 </div>
-
-                {/* Card "Sua Jornada" (J12), ligado no app pela J15: depois
-                    da grade e antes da Agenda, como no laboratório. Sem
-                    estado da Jornada ele não aparece (nunca trava o Início). */}
-                {usuario && (
-                  <JornadaCard
-                    userId={usuario.id}
-                    onAbrir={() => setJornadaAberta(true)}
-                  />
-                )}
 
                 {/* Bloco da Agenda: removível em Ajustes › Tela inicial
                     (#181). `?? true` mantém visível pra quem já tinha

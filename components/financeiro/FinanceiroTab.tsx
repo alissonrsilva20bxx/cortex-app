@@ -175,6 +175,7 @@ export function FinanceiroTab({
             status: r.status,
             observacoes: r.observacoes ?? undefined,
             criadoEm: r.criado_em,
+            pagoEm: r.pago_em ?? null,
           }))
         );
       }

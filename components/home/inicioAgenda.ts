@@ -47,11 +47,14 @@ export function proximoAtendimento(
   return upcoming[0] ?? null;
 }
 
-/** Último dia da semana corrente (domingo -- a semana começa na segunda). */
+/**
+ * Último dia da semana corrente: sábado. A semana vai de domingo a sábado,
+ * como a faixa de dias da Agenda (D S T Q Q S S) no mockup normativo
+ * (ordem do operador, pixel do Início).
+ */
 export function fimDaSemana(ref: Date = new Date()): Date {
   const d = inicioDoDia(ref);
-  const diasAteDomingo = (7 - d.getDay()) % 7;
-  d.setDate(d.getDate() + diasAteDomingo);
+  d.setDate(d.getDate() + (6 - d.getDay()));
   return d;
 }
 
@@ -61,9 +64,14 @@ export interface DiaDaSemana {
 }
 
 /**
- * De hoje até domingo, um item por dia, com os atendimentos ativos daquele
- * dia em ordem de hora. Dia sem atendimento vem com `jobs: []` -- a tela
- * mostra "Dia livre".
+ * "Esta semana" do Início (regra revista por ordem do operador para o
+ * mockup normativo, que mostra SEX 25 e SÁB 26 numa quarta, 23/09):
+ * começa no PRÓXIMO dia com atendimento ativo (hoje ou depois) e vai até
+ * o sábado, um item por dia, com os atendimentos em ordem de hora; dia sem
+ * atendimento depois dele vem com `jobs: []` (a tela mostra "Dia livre").
+ * Os dias livres ANTES do próximo atendimento não aparecem: o primeiro
+ * item é sempre o próximo compromisso. Semana sem nenhum atendimento até
+ * sábado: de hoje a sábado, todos "Dia livre".
  */
 export function diasRestantesDaSemana(
   jobs: Job[],
@@ -78,7 +86,8 @@ export function diasRestantesDaSemana(
       jobs: jobs.filter((j) => isAtivo(j) && j.data === data).sort(porDataHora),
     });
   }
-  return dias;
+  const primeiro = dias.findIndex((d) => d.jobs.length > 0);
+  return primeiro > 0 ? dias.slice(primeiro) : dias;
 }
 
 /** Atendimentos ativos depois desta semana, em ordem, até `limite` (6,

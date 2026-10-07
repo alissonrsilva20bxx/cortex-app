@@ -99,6 +99,7 @@ export type Database = {
           local: string | null;
           modalidade: Database["public"]["Enums"]["modalidade"];
           observacoes: string | null;
+          pago_em: string | null;
           status: Database["public"]["Enums"]["job_status"];
           user_id: string;
           valor: number;
@@ -113,6 +114,7 @@ export type Database = {
           local?: string | null;
           modalidade: Database["public"]["Enums"]["modalidade"];
           observacoes?: string | null;
+          pago_em?: string | null;
           status?: Database["public"]["Enums"]["job_status"];
           user_id: string;
           valor: number;
@@ -127,6 +129,7 @@ export type Database = {
           local?: string | null;
           modalidade?: Database["public"]["Enums"]["modalidade"];
           observacoes?: string | null;
+          pago_em?: string | null;
           status?: Database["public"]["Enums"]["job_status"];
           user_id?: string;
           valor?: number;

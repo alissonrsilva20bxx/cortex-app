@@ -120,7 +120,7 @@ describe("J04 — entrada x saída nunca só pela cor", () => {
   it("o valor de cada movimentação leva o sinal no texto", () => {
     const src = semComentarios(read("components/financeiro/VisaoTab.tsx"));
     expect(src).toMatch(
-      /\{m\.positive \? "\+" : "-"\}\s*\{formatBRL\(m\.valor\)\}/
+      /\{`\$\{m\.positive \? "\+" : "-"\}\$\{formatBRL\(m\.valor\)\}`\}/
     );
     // As duas listas usam esse mesmo componente de valor.
     expect(src.match(/<Valor m=\{m\}/g)).toHaveLength(2);
@@ -131,7 +131,7 @@ describe("J04 — entrada x saída nunca só pela cor", () => {
       read("components/financeiro/FinanceiroHeroCard.tsx")
     );
     expect(src).toMatch(
-      /\{sobe \? "\+" : ""\}\s*\{Math\.round\(variacaoPct\)\}% vs \{mesAnterior\}/
+      /\{`\$\{sobe \? "\+" : ""\}\$\{Math\.round\(variacaoPct\)\}% vs \$\{mesAnterior\}`\}/
     );
     expect(src).toContain(
       "const sobe = variacaoPct !== null && variacaoPct >= 0;"
@@ -151,18 +151,19 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     expect(args.length).toBeGreaterThan(0);
     for (const a of args) {
       expect(a, `formatBRL(${a})`).toMatch(
-        /^(saldo|totalEntradaMes|totalDespMes|metaMes|ticketMedio)$/
+        /^(saldo|totalEntradaMes|totalDespMes|metaMes|ticketMedio|faturamento)$/
       );
     }
   });
 
-  it("FinanceiroHeroCard: o ticket médio é só leitura (faturamento ÷ atendimentos do mês)", () => {
-    // Card "Ticket médio" do mockup: divide o que já existia em lib/finance.
+  // Regras revistas por ordem do operador (pixel do Financeiro, #209): o
+  // ticket médio é o que entrou no mês ÷ atendimentos concluídos no mês.
+  it("FinanceiroHeroCard: o ticket médio é o que entrou ÷ atendimentos do mês", () => {
     expect(hero).toContain(
       "const atendimentosMes = monthConcludedCount(jobs, now);"
     );
     expect(hero).toMatch(
-      /atendimentosMes > 0\s*\?\s*Math\.round\(monthEarnings\(jobs, now\) \/ atendimentosMes\)\s*:\s*null/
+      /atendimentosMes > 0\s*\?\s*Math\.round\(totalEntradaMes \/ atendimentosMes\)\s*:\s*null/
     );
     expect(hero).toContain("{formatBRL(ticketMedio)}");
   });
@@ -187,9 +188,13 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     expect(hero).not.toMatch(/\.reduce\(/);
   });
 
-  it("FinanceiroHeroCard: a meta usa monthMeta e a mesma conta do MetasTab (progressoMeta)", () => {
+  // Ordem do operador (#209): o card Meta mostra o faturamento do mês (o
+  // mesmo número do card principal do Início), com a conta do MetasTab.
+  it("FinanceiroHeroCard: a meta usa monthMeta, o faturamento do mês e progressoMeta", () => {
     expect(hero).toContain("const metaMes = monthMeta(metas);");
-    expect(hero).toContain("progressoMeta(totalEntradaMes, metaMes)");
+    expect(hero).toContain("const faturamento = monthEarnings(jobs, now);");
+    expect(hero).toContain("progressoMeta(faturamento, metaMes)");
+    expect(hero).toContain("{formatBRL(faturamento)} de {formatBRL(metaMes)}");
     expect(hero).toContain("{Math.round(metaPct)}%");
     const metas = semComentarios(read("components/financeiro/MetasTab.tsx"));
     expect(metas).toContain(

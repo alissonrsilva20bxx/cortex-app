@@ -4,8 +4,11 @@ import {
   calcEarnings,
   formatBRL,
   monthConcludedCount,
+  monthEarnings,
   monthExpenses,
+  monthPaidJobsCount,
 } from "../../lib/finance";
+import { progressoMeta } from "../../components/financeiro/progressoMeta";
 import { buildMovements } from "../../components/financeiro/movimentos";
 import type { Despesa, Job, ReceitaAvulsa } from "../../lib/types";
 import {
@@ -263,10 +266,14 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
       hora: r.hora,
       valor: r.valor,
       status: r.status,
+      pagoEm: (r.pago_em as string | null | undefined) ?? null,
     })) as unknown as Job[];
     const despesas = t.despesas as unknown as Despesa[];
     const receitas = t.receitas_avulsas as unknown as ReceitaAvulsa[];
-    return { jobs, despesas, receitas };
+    const metaMes = Number(
+      t.metas.find((m) => m.periodo === "mes")?.valor_alvo ?? NaN
+    );
+    return { jobs, despesas, receitas, metaMes };
   }
 
   /** "R$ 530" -> o texto do app pelo mesmo formatBRL. */
@@ -297,7 +304,7 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
       saiu: brl(saiu),
       saldo: brl(entrou - saiu),
       variacao: `${pct >= 0 ? "+" : ""}${pct}% vs agosto`,
-      qtdEntradas: `${monthConcludedCount(jobs) + receitas.filter((r) => noMes(r.data)).length} lançamentos`,
+      qtdEntradas: `${monthPaidJobsCount(jobs) + receitas.filter((r) => noMes(r.data)).length} lançamentos`,
       qtdSaidas: `${despesas.filter((d) => noMes(d.data)).length} lançamentos`,
     };
   }
@@ -401,46 +408,50 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
     expect(saidas(app.slice(0, ate + 1))).toEqual(saidas(mock));
   });
 
-  /**
-   * Divergências conhecidas, travadas dos DOIS lados. O mockup da Agenda
-   * (que a #204 seguiu no laboratório) tem Camila Duarte concluída em
-   * 20/09 por R$ 120; o do Financeiro tem Sônia Aparecida em 20/09 por
-   * R$ 150 e Camila em 17/09. Um laboratório só não atende os dois sem
-   * quebrar a Agenda, então vale o da Agenda e o Financeiro difere aqui.
-   * Se um dos lados mudar (mockup ou laboratório), este teste cai e a
-   * lista tem de ser revista.
-   */
-  it("divergências conhecidas (Agenda x Financeiro no mockup): Entrou, Saldo, variação e a 3ª linha de Recentes", () => {
+  it("iguais ao mockup: Entrou, Saldo e a variação contra agosto", () => {
     const app = numeros();
-    const DIVERGENCIAS: [string, string, string][] = [
-      // [o quê, mockup, app]
-      ["Entrou", MOCK.entrou(), app.entrou],
-      ["Saldo", MOCK.saldo(), app.saldo],
-      ["variação", MOCK.variacao(), app.variacao],
+    expect([app.entrou, app.saldo, app.variacao]).toEqual([
+      MOCK.entrou(),
+      MOCK.saldo(),
+      MOCK.variacao(),
+    ]);
+    // O card Entradas mostra o mesmo total do "Entrou".
+    expect(FIN).toMatch(
+      new RegExp(`>Entradas</span><span[^>]*>${re(MOCK.entrou())}<`)
+    );
+  });
+
+  /**
+   * Sem divergência: com o dia do pagamento (`pago_em`, migration 0037) e as
+   * regras revistas por ordem do operador (Meta = faturamento do mês; ticket
+   * = o que entrou ÷ atendimentos), o laboratório fecha o mockup inteiro e
+   * a Agenda continua com Camila Duarte no domingo 20/09 (ela pagou em
+   * 17/09, que é quando entra no Financeiro).
+   */
+  it("iguais ao mockup: Meta (12%, R$ 430 de R$ 3.500) e Ticket médio (R$ 177)", () => {
+    const { jobs, receitas, metaMes } = seed();
+    const entrou = calcEarnings(jobs, receitas, "mes");
+    const faturamento = monthEarnings(jobs);
+    const mockMeta = [
+      doMockup(/>Meta<\/span><span[^>]*>([^<]+)</),
+      doMockup(/>Meta<\/span><span[^>]*>[^<]+<\/span><span[^>]*>([^<]+)</),
     ];
-    expect(DIVERGENCIAS.map(([o, m, a]) => [o, m, a])).toEqual([
-      ["Entrou", "R$ 530", "R$ 500"],
-      ["Saldo", "R$ 217", "R$ 187"],
-      ["variação", "-56% vs agosto", "-62% vs agosto"],
-    ]);
-    const { mock, app: linhas } = recentes();
-    expect([mock[2], linhas[2]]).toEqual([
-      ["20 SET", "Sônia Aparecida", "+R$ 150"],
-      ["20 SET", "Camila Duarte", "+R$ 120"],
-    ]);
-    // Entradas de Mais lançamentos: as do mockup não existem no
-    // laboratório (que segue a Agenda); as do laboratório são as de antes.
-    const m2 = mais();
-    const entradas = (l: string[][]) => l.filter((x) => x[2].startsWith("+"));
-    expect(entradas(m2.mock)).toEqual([
-      ["20 set.", "Sônia Aparecida", "+R$ 150"],
-      ["17 set.", "Camila Duarte", "+R$ 120"],
-      ["14 set.", "Renata Ferreira", "+R$ 110"],
-    ]);
-    expect(entradas(m2.app)).toEqual([
-      ["19 set.", "Venda de kit de esmaltes", "+R$ 60"],
-      ["14 set.", "Comissão de indicação", "+R$ 40"],
-      ["13 set.", "Helena Brito", "+R$ 280"],
-    ]);
+    expect([
+      `${Math.round(progressoMeta(faturamento, metaMes))}%`,
+      `${brl(faturamento)} de ${brl(metaMes)}`,
+    ]).toEqual(mockMeta);
+    expect(brl(Math.round(entrou / monthConcludedCount(jobs)))).toBe(
+      doMockup(/>Ticket médio<\/span><span[^>]*>([^<]+)</)
+    );
+  });
+
+  it("Recentes: as três linhas iguais às do mockup", () => {
+    const { mock, app } = recentes();
+    expect(app).toEqual(mock);
+  });
+
+  it("Mais lançamentos: as linhas do mockup são as do laboratório, na ordem", () => {
+    const { mock, app } = mais();
+    expect(app.slice(0, mock.length)).toEqual(mock);
   });
 });

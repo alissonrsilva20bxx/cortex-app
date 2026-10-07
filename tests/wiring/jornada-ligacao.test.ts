@@ -124,12 +124,12 @@ describe("app/page.tsx monta a Jornada no app autenticado", () => {
     );
   });
 
-  it("o card fica no Início, depois da grade e antes da Agenda", () => {
-    const grade = page.indexOf("<CofreCard");
+  it("o card fica no Início, logo depois do card principal (protótipo)", () => {
+    const principal = page.indexOf("<HeroCard");
     const card = page.indexOf("<JornadaCard");
-    const agenda = page.indexOf("<SemanaSection");
-    expect(card).toBeGreaterThan(grade);
-    expect(agenda).toBeGreaterThan(card);
+    const pequenos = page.indexOf("<NextJobCard");
+    expect(card).toBeGreaterThan(principal);
+    expect(pequenos).toBeGreaterThan(card);
     expect(page).toMatch(
       /\{usuario && \(\s*<JornadaCard\s+userId=\{usuario\.id\}\s+onAbrir=\{\(\) => setJornadaAberta\(true\)\}/
     );

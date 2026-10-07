@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, Briefcase, PenSquare, TrendingUp, Upload } from "lucide-react";
+import { Briefcase, PenSquare, TrendingUp, Upload } from "lucide-react";
 import { collidesWithAny, type Rect } from "@/lib/rectCollision";
 import type { TabId } from "@/lib/types";
 import {
@@ -319,15 +319,26 @@ export function FAB({
         {/* A rotação mora no ícone, não no botão: um `transform` inline no
             botão anulava o `active:scale-90` (estilo inline vence classe) e
             o toque no FAB não dava feedback nenhum. */}
-        <Plus
-          size={24}
-          color="white"
-          strokeWidth={2.6}
+        {/* O "+" do mockup (`.plus svg`): um path só, "M12 5v14M5 12h14",
+            24px, traço 2,6. O Plus do lucide são dois paths e as pontas
+            saíam diferentes (ordem do operador: pixel idêntico). */}
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
           style={{
             transform: open ? "rotate(45deg)" : "rotate(0deg)",
             transition: "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)",
           }}
-        />
+        >
+          <path d="M12 5v14M5 12h14" />
+        </svg>
       </button>
     </>
   );

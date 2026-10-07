@@ -423,6 +423,89 @@ export function enfeiteNaColecao(mes: number): string {
   return `${nomeEnfeite(mes)} na sua coleção ✓`;
 }
 
+// Card do Início no desenho do protótipo: cada linha tem um trecho em
+// negrito, então o texto vem em partes.
+
+/** Dias fortes que fazem a semana firme (spec §3: "3 dias fortes por
+ * semana"); o protótipo escreve "2 de 3". Só exibição: quem decide se a
+ * semana foi firme continua sendo o servidor (contador "firme"). */
+export const DIAS_FORTES_DA_SEMANA_FIRME = 3;
+
+/** "95 até Organizada" (no card, o protótipo não repete "Glow"). */
+export function ateProximo(falta: number, proximoEstagio: number): string {
+  return `${numero(falta)} até ${nomeEstagio(proximoEstagio)}`;
+}
+
+/** "**2 de 3** dias fortes nesta semana" */
+export function diasFortesDeTres(dias: number): {
+  forte: string;
+  resto: string;
+} {
+  const n = Math.min(dias, DIAS_FORTES_DA_SEMANA_FIRME);
+  return {
+    forte: `${numero(n)} de ${numero(DIAS_FORTES_DA_SEMANA_FIRME)}`,
+    resto: " dias fortes nesta semana",
+  };
+}
+
+/** "Capítulo de outubro · **1 de 3** missões" */
+export function capituloEmPartes(
+  mes: number,
+  feitas: number,
+  total: number
+): { antes: string; forte: string; resto: string } {
+  return {
+    antes: `${tituloCapitulo(mes)} · `,
+    forte: `${numero(feitas)} de ${numero(total)}`,
+    resto: " missões",
+  };
+}
+
+/** As letras dos 7 dias do card, de segunda a domingo (`DAYS` do
+ * protótipo). */
+export const LETRAS_DA_SEMANA = ["S", "T", "Q", "Q", "S", "S", "D"] as const;
+
+// "Próximo passo" do card (protótipo: NEXT_ORDER e NEXT_TXT, ordem do
+// operador).
+
+/** Quanto o passo "guardar" sugere (`ACTIONS.save` do protótipo). */
+export const VALOR_SUGERIDO_PARA_GUARDAR = 10;
+
+/** A ordem em que o card sugere o próximo passo: o primeiro que ela ainda
+ * não fez hoje. */
+export const ORDEM_DO_PROXIMO_PASSO = [
+  "guardar_meta",
+  "comprovante_cofre",
+  "planejar",
+  "descanso",
+  "despesa",
+] as const satisfies readonly Acao[];
+export type AcaoDoProximoPasso = (typeof ORDEM_DO_PROXIMO_PASSO)[number];
+
+export const PROXIMO_PASSO = {
+  rotulo: "Próximo passo",
+  feitoRotulo: "Hoje",
+  feito: "Hoje você já cuidou de tudo",
+};
+
+export const TEXTO_DO_PROXIMO_PASSO: Record<AcaoDoProximoPasso, string> = {
+  guardar_meta: `Guardar ${money(VALOR_SUGERIDO_PARA_GUARDAR)} na sua meta`,
+  comprovante_cofre: "Guardar um comprovante no Cofre",
+  planejar: "Planejar amanhã em 1 minuto",
+  descanso: "Garantir um descanso esta semana",
+  despesa: "Lançar as despesas de hoje",
+};
+
+/** "+15" (o Glow do passo; a faísca vem do ícone). */
+export function glowDoPasso(glow: number): string {
+  return `+${numero(glow)} `;
+}
+
+/** "**Lua de outubro** na sua coleção ✓" */
+export function enfeiteEmPartes(mes: number): { forte: string; resto: string } {
+  return { forte: nomeEnfeite(mes), resto: " na sua coleção ✓" };
+}
+
 export const SECAO = {
   ritmo: "Ritmo da semana",
   comeco: "Jornada de Começo",

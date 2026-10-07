@@ -68,7 +68,7 @@ export function ProximosAtendimentos({ jobs }: Props) {
                 {job.clienteNome}
               </div>
               <div style={{ fontSize: "11px", color: "var(--t-mut)" }}>
-                {rotuloDiaFrase(job.data)} · {formatHora(job.hora)}
+                {`${rotuloDiaFrase(job.data)} · ${formatHora(job.hora)}`}
               </div>
             </div>
             <span

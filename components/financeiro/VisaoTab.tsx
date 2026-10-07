@@ -42,8 +42,8 @@ function Valor({ m, tamanho }: { m: Movement; tamanho: string }) {
         color: m.positive ? "var(--t-green)" : "var(--t-red)",
       }}
     >
-      {m.positive ? "+" : "-"}
-      {formatBRL(m.valor)}
+      {/* Um nó de texto só ("+R$ 150"), como no mockup. */}
+      {`${m.positive ? "+" : "-"}${formatBRL(m.valor)}`}
     </span>
   );
 }

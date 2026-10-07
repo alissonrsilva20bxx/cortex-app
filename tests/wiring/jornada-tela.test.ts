@@ -299,13 +299,13 @@ describe("o laboratório monta o card e a tela dos caminhos reais", () => {
     );
   });
 
-  it("o card fica no Início, depois da grade e antes da Agenda", () => {
+  it("o card fica no Início, logo depois do card principal (protótipo)", () => {
     const inicio = lab.indexOf('<TabPanel tab="home"');
     const fim = lab.indexOf("</TabPanel>", inicio);
     const home = lab.slice(inicio, fim);
     const card = home.indexOf("<JornadaCard");
-    expect(card).toBeGreaterThan(home.indexOf("<CofreCard"));
-    expect(card).toBeLessThan(home.indexOf("<SemanaSection"));
+    expect(card).toBeGreaterThan(home.indexOf("<HeroCard"));
+    expect(card).toBeLessThan(home.indexOf("<NextJobCard"));
   });
 
   it("a tela abre pelo card e usa o estado de laboratório", () => {
