@@ -168,6 +168,52 @@ describe("0036 — o estado manda o que o protótipo mostra", () => {
 });
 
 // ---------------------------------------------------------------------------
+// 2b. Quem é a usuária: o servidor decide (revisão da #211, ajuste 2)
+// ---------------------------------------------------------------------------
+
+describe("0036 — as RPCs públicas só agem sobre auth.uid()", () => {
+  /** A definição que vale de uma função pública: a última nas migrations. */
+  const SQL_TODO = ler("supabase/migrations/0035_jornada_rpcs.sql") + SQL;
+  function vigente(nome: string): string {
+    const i = SQL_TODO.lastIndexOf(
+      `create or replace function public.${nome}(`
+    );
+    expect(i, nome).toBeGreaterThan(-1);
+    return SQL_TODO.slice(i, SQL_TODO.indexOf("\n$$;", i));
+  }
+
+  it.each(["jornada_registrar", "jornada_estado"])(
+    "%s: security definer, search_path fixo, a usuária vem de auth.uid() e sem sessão nada roda",
+    (nome) => {
+      const corpo = vigente(nome);
+      expect(corpo).toMatch(/\nsecurity definer\nset search_path = ''\n/);
+      expect(corpo).toContain("v_uid uuid := auth.uid();");
+      expect(corpo).toMatch(
+        /if v_uid is null then\s+raise exception 'jornada: sem sessão' using errcode = '42501';/
+      );
+      // Nenhum outro jeito de achar a usuária, nem parâmetro uuid de quem chama.
+      expect(corpo).not.toMatch(/auth\.users|p_user|uuid\s*[,)]/);
+      expect(corpo.match(/auth\.uid\(\)/g)).toHaveLength(1);
+    }
+  );
+
+  it("jornada_registrar passa v_uid pra tudo o que lê ou escreve", () => {
+    const corpo = vigente("jornada_registrar");
+    expect(corpo).toContain("values (v_uid, p_fuso)");
+    expect(corpo).toContain(
+      "private.jornada_hoje(v_uid, p_fuso, p_deslocamento_min, true)"
+    );
+    expect(corpo).toContain(
+      "private.jornada_aplicar(v_uid, p_acao, v_hoje, p_chave)"
+    );
+    expect(corpo).toContain("private.jornada_estado_de(v_uid, v_hoje)");
+    // Toda chamada a private.* começa por v_uid (fora as de validar o fuso).
+    for (const m of corpo.matchAll(/private\.(\w+)\(([^,)]*)/g))
+      if (!/^jornada_fuso_/.test(m[1])) expect(m[2], m[1]).toBe("v_uid");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 3. A marca da semana: só a corrente, só a marca
 // ---------------------------------------------------------------------------
 
@@ -245,6 +291,43 @@ describe('0036 — o laboratório produz a foto "Agora" do protótipo', () => {
       null,
       null,
     ]);
+  });
+
+  // Revisão da #211, ajuste 3: os números que aparecem na tela (e no card
+  // do Início, #209) são os do fresh(), lidos do protótipo.
+  const num = (chave: string) =>
+    Number(fresh.match(new RegExp(`\\b${chave}:(\\d+)`))![1]);
+
+  it("o Glow total: sparks do protótipo (305)", () => {
+    expect(num("sparks")).toBe(305);
+    expect(e.glowTotal).toBe(num("sparks"));
+  });
+
+  it("os dias fortes da semana e o Glow da semana e do mês", () => {
+    const fortes = (
+      fresh.match(/week:\[([^\]]*)\]/)![1].match(/'strong'/g) ?? []
+    ).length;
+    expect(fortes).toBe(2);
+    const { semana, mes } = e.periodos.corrente;
+    expect(semana.contadores.dias_fortes).toBe(fortes);
+    expect(semana.contadores.glow).toBe(num("weekGain"));
+    expect(mes.contadores.glow).toBe(num("monthGain"));
+    expect(mes.contadores.dias_fortes).toBe(num("monthStrong"));
+  });
+
+  it("as missões do capítulo: o progresso do ch do protótipo, na trinca de outubro", () => {
+    const ch = fresh.match(/ch:\{ plan:(\d+), saveWk:(\d+), rest:(\d+) \}/)!;
+    expect(e.capitulo?.missoes.map((m) => [m.tipo, m.progresso])).toEqual([
+      ["planejar_dias", Number(ch[1])],
+      ["guardar_semanas", Number(ch[2])],
+      ["tirar_descansos", Number(ch[3])],
+    ]);
+    expect(e.capitulo?.fechado).toBe(false);
+  });
+
+  it("o retorno das dicas: helper 14 e safe 4", () => {
+    expect(e.ajudou).toBe(num("helper"));
+    expect(e.protegeu).toBe(num("safe"));
   });
 
   it("os pilares: 72%, 38%, 55%, 46%", () => {

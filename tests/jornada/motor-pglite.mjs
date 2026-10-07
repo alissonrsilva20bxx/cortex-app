@@ -387,7 +387,10 @@ const tempo = await db.query(`
   where table_schema = 'public' and table_name like 'jornada_%'
     and data_type in ('date', 'timestamp with time zone', 'timestamp without time zone', 'time without time zone')
   order by 1`);
-espera(tempo.rows.map((x) => x.c).join() === "jornada_acoes.dia,jornada_periodos.inicio", `as únicas datas continuam ${tempo.rows.map((x) => x.c).join()}`);
+// jornada_semana_dias.dia (0036, ordem do operador): a marca de cada dia da
+// SEMANA CORRENTE (só forte | descanso, nada do que foi feito), apagada na
+// primeira chamada da semana seguinte. Qualquer outra data nova é erro.
+espera(tempo.rows.map((x) => x.c).join() === "jornada_acoes.dia,jornada_periodos.inicio,jornada_semana_dias.dia", `as únicas datas continuam ${tempo.rows.map((x) => x.c).join()}`);
 const linhasAcao = await um(`select count(*)::int n from public.jornada_acoes where user_id = '${F}'`);
 espera(linhasAcao.n <= 5, `uma linha por ação, não por evento (${linhasAcao.n} linhas depois de ~20 chamadas)`);
 const fns = await db.query(`
