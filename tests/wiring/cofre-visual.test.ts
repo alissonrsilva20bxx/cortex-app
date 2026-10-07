@@ -341,9 +341,15 @@ describe("CofreTab.tsx locked gate renders through a portal (fixes the visual-ju
 });
 
 describe("CofreTab.tsx and UploadSheet.tsx meet the 44px touch-target findings (P1-5, P1-6)", () => {
-  it("CofreTab passes minTouchTarget to the shared FilterChips", () => {
+  it("CofreTab: os azulejos de categoria têm alvo de toque de sobra", () => {
     const src = read("components/cofre/CofreTab.tsx");
-    expect(src).toMatch(/<FilterChips[\s\S]*?minTouchTarget/);
+    // Os chips viraram os azulejos do mockup (layout C). Cada azulejo é o
+    // círculo de 56px MAIS 8px de intervalo MAIS a linha do rótulo: ~80px
+    // de altura tocável, bem acima dos 44 exigidos.
+    expect(src).toContain('width: "56px"');
+    expect(src).toContain('height: "56px"');
+    expect(src).toMatch(/const AZULEJO = \{/);
+    expect(src).not.toMatch(/<FilterChips/);
   });
 
   it("UploadSheet passes minTouchTarget to the shared FilterChips and largeCloseTarget to BottomSheet", () => {
@@ -352,8 +358,11 @@ describe("CofreTab.tsx and UploadSheet.tsx meet the 44px touch-target findings (
     expect(src).toMatch(/<BottomSheet[\s\S]*?largeCloseTarget/);
   });
 
-  it("CofreTab file rows declare an explicit 44px minHeight", () => {
-    const src = read("components/cofre/CofreTab.tsx");
+  it("as linhas de arquivo declaram 44px de altura mínima", () => {
+    // A lista mora em CofreArquivos desde a J05; a garantia continua lá.
+    const src =
+      read("components/cofre/CofreTab.tsx") +
+      read("components/cofre/CofreArquivos.tsx");
     expect(src).toContain('minHeight: "44px"');
   });
 });
@@ -387,12 +396,14 @@ describe("CofreTab.tsx 'Protegido' summary card matches the approved visual (#13
   it("renders the approved 'Protegido' heading and pluralized real file count", () => {
     expect(src).toContain("Protegido");
     expect(src).toMatch(/\{files\.length\}\{" "\}/);
-    expect(src).toContain('"arquivo armazenado"');
-    expect(src).toContain('"arquivos armazenados"');
+    // O rótulo é o do mockup ("arquivos"): o de duas palavras quebrava em
+    // duas linhas e esticava o hero. O plural real continua lá.
+    expect(src).toContain('"arquivo"');
+    expect(src).toContain('"arquivos"');
   });
 
   it("never hardcodes the lab's fixed '12 arquivos armazenados' value", () => {
-    expect(src).not.toContain("12 arquivos armazenados");
+    expect(src).not.toContain("12 arquivos");
   });
 
   it("reuses the same PIN-vs-app-lock distinction as the top honesty notice, no new copy path", () => {
@@ -405,22 +416,27 @@ describe("CofreTab.tsx 'Protegido' summary card matches the approved visual (#13
   });
 
   it("uses the theme accent token for the orb, never the prototype's fixed pink", () => {
-    // Anchored on the orb's own icon marker (Shield size={34}, matching the
-    // prototype's shieldOrb), not the surrounding prose comment — renaming
-    // the comment shouldn't break this test.
-    const cardStart = src.indexOf("Shield size={34}");
+    // Ancorado no próprio marcador do orbe (Shield size={26}, a geometria
+    // do mockup normativo), não no comentário em volta.
+    const cardStart = src.indexOf("Shield size={26}");
     const cardBlock = src.slice(Math.max(0, cardStart - 300), cardStart);
     expect(cardStart).toBeGreaterThan(-1);
     expect(cardBlock).toContain("var(--accent-rgb)");
     expect(cardBlock).not.toMatch(/#ff2d78|rgba\(255,\s*45,\s*120/i);
   });
 
-  it("matches the prototype's exact orb/title/icon geometry (72px orb, 34px shield, 23px title, 16px lock icon)", () => {
-    expect(src).toContain('width: "72px"');
-    expect(src).toContain('height: "72px"');
-    expect(src).toContain("Shield size={34}");
-    expect(src).toContain('fontSize: "23px"');
-    expect(src).toContain("LockKeyhole size={16}");
+  it("segue a geometria do mockup normativo (orbe 54 com raio 16, escudo 26, título 22)", () => {
+    // Substitui a geometria do #137 (orbe 72 redondo, escudo 34, título 23,
+    // cadeado 16): a decisão do operador em 07/10/2026 é que, onde o app e
+    // o mockup divergem, o MOCKUP vence. Medido com
+    // tests/visual/pixel/comparar.mjs.
+    expect(src).toContain('width: "54px"');
+    expect(src).toContain('height: "54px"');
+    expect(src).toContain('borderRadius: "16px"');
+    expect(src).toContain("Shield size={26}");
+    expect(src).toContain('fontSize: "22px"');
+    // O cadeado saiu: o mockup não o desenha e ele esticava o hero.
+    expect(src).not.toContain("LockKeyhole");
   });
 });
 

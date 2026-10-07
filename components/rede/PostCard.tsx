@@ -114,14 +114,6 @@ export function PostCard({
         </button>
       </div>
 
-      {/* Texto */}
-      <p
-        className="text-sm leading-relaxed mt-3"
-        style={{ color: "var(--text-2)" }}
-      >
-        {post.texto}
-      </p>
-
       {/* Fotos (0-2) -- foto grande no próprio card (sangra a padding), estilo
           Instagram. 2 fotos = carrossel com swipe. Miniatura como placeholder,
           principal sob demanda. A foto NÃO é interativa: fica no feed. */}
@@ -166,6 +158,17 @@ export function PostCard({
           />
         </div>
       </div>
+
+      {/* Legenda depois da foto e das ações, como no mockup (tela Rede): o
+          nome da autora em negrito abre a linha e o texto segue na mesma
+          linha. Antes a legenda vinha ACIMA da foto. */}
+      <p
+        className="text-sm leading-relaxed mt-3"
+        style={{ color: "var(--text-2)" }}
+      >
+        <strong style={{ color: "var(--text)" }}>{post.autorNome}</strong>{" "}
+        {post.texto}
+      </p>
     </GlassCard>
   );
 }

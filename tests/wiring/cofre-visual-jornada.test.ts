@@ -98,8 +98,8 @@ describe("CofreTab monta a composição do mockup com os componentes novos", () 
     const ordem = [
       />\s*Cofre\s*<\/h1>/,
       />\s*Protegido\s*<\/h2>/,
-      /<Upload size=\{18\} \/>\s*Enviar/,
-      /<FilterChips/,
+      /<Upload size=\{22\} \/>/,
+      /ORDEM_AZULEJOS\.map/,
       /<SecaoCofre titulo="Recentes" verTudo>/,
       /<SecaoCofre titulo="Todos os arquivos"/,
     ].map((re) => {
@@ -114,15 +114,20 @@ describe("CofreTab monta a composição do mockup com os componentes novos", () 
     expect(cofreTab).toContain("const usado = totalUsado(files);");
     expect(cofreTab).toContain("const ultimo = ultimoEnvio(files);");
     expect(cofreTab).toMatch(
-      /\{formatTamanho\(usado\)\}(\{" "\}|\s)[\s\S]{0,120}>usado</
+      /\{formatTamanho\(usado\)\}(\{" "\}|\s)[\s\S]{0,160}>usado</
     );
     expect(cofreTab).toMatch(
       /\{ultimo \?\? "—"\}(\{" "\}|\s)[\s\S]{0,120}>último</
     );
-    // Só código (comentários explicam justamente que não existe cota).
+    // Só código (comentários explicam justamente que não existe cota), e só
+    // o bloco do card: um `calc(100% ...)` do CSS da fileira de azulejos não
+    // é "porcentagem de cota", que é o que esta regra protege.
+    const inicio = cofreTab.indexOf("<Shield size={26}");
     const codigo = cofreTab
+      .slice(inicio, cofreTab.indexOf(">último<", inicio))
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/\/\/.*$/gm, "");
+    expect(inicio).toBeGreaterThan(-1);
     expect(codigo).not.toMatch(/\d\s*%|cota|quota/i);
   });
 
@@ -144,7 +149,11 @@ describe("Categorias: a lista real do app, não as 3 do mockup", () => {
       "documentos",
       "pessoal",
     ]);
-    expect(cofreTab).toMatch(/<FilterChips\s+options=\{CATS\}/);
+    // Os chips viraram os azulejos do mockup, mas a lista de categorias é a
+    // mesma: ORDEM_AZULEJOS cobre as 5 de CATS, nenhuma some.
+    const ordem = cofreTab.match(/const ORDEM_AZULEJOS:[\s\S]*?\];/)![0];
+    const nosAzulejos = [...ordem.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    expect([...nosAzulejos].sort()).toEqual([...ids].sort());
   });
 
   it("o rótulo da categoria em cada linha vem de CATS, sem texto próprio", () => {
@@ -165,8 +174,8 @@ describe("A proteção continua fiada e o visual novo não passa por fora dela",
       "<SecaoCofre",
       "<ListaArquivos",
       "onClick={onEnviar}",
-      "<FilterChips",
-      "<Shield size={34}",
+      "ORDEM_AZULEJOS.map",
+      "<Shield size={26}",
     ]) {
       const idx = cofreTab.indexOf(marca, lockedGateIdx);
       expect(idx, marca).toBeGreaterThan(mainReturnIdx);

@@ -30,17 +30,25 @@ function IconButton({
       onClick={onClick}
       aria-label={label}
       className="relative flex items-center justify-center rounded-full transition-opacity active:opacity-70"
-      // Jornada J06: fundo neutro do mockup (--surface-sub, token da J01).
-      // 44px, não os 40px desenhados: alvo de toque mínimo do app.
-      style={{ width: 44, height: 44, background: "var(--surface-sub)" }}
+      // O círculo que se vê tem os 40px do mockup; o botão fica com 44 de
+      // alvo de toque e margem negativa de 2px, a mesma receita já aprovada
+      // no #198 (JornadaScreen) -- assim o desenho é o do mockup sem perder
+      // o mínimo de toque.
+      style={{ width: 44, height: 44, margin: -2 }}
     >
-      {children}
+      <span
+        aria-hidden
+        className="absolute flex items-center justify-center rounded-full"
+        style={{ width: 40, height: 40, background: "var(--surface-sub)" }}
+      >
+        {children}
+      </span>
       {!!badge && (
         <span
           className="absolute flex items-center justify-center rounded-full font-bold"
           style={{
-            top: -2,
-            right: -2,
+            top: 0,
+            right: 0,
             minWidth: 16,
             height: 16,
             padding: "0 3px",
@@ -68,7 +76,7 @@ export function RedeHeader({
   onOpenMeuEspaco,
 }: Props) {
   return (
-    <div className="flex items-center justify-between gap-2 mb-4">
+    <div className="flex items-center justify-between gap-2" style={{ marginBottom: "14px" }}>
       {/* Jornada J06 (mockup 5-telas-8-temas-claro-escuro.html, tela Rede):
           título 24px/800, -0.5px. */}
       <h2
@@ -84,17 +92,17 @@ export function RedeHeader({
 
       <div className="flex items-center gap-2">
         <IconButton onClick={onSearch} label="Buscar">
-          <Search size={18} style={{ color: "var(--text)" }} />
+          <Search size={20} style={{ color: "var(--text)" }} />
         </IconButton>
         <IconButton
           onClick={onOpenNotifs}
           label="Notificações"
           badge={unreadNotifs}
         >
-          <Bell size={18} style={{ color: "var(--text)" }} />
+          <Bell size={20} style={{ color: "var(--text)" }} />
         </IconButton>
         <IconButton onClick={onOpenChat} label="Conversas" badge={unreadChats}>
-          <MessageCircle size={18} style={{ color: "var(--text)" }} />
+          <MessageCircle size={20} style={{ color: "var(--text)" }} />
         </IconButton>
         {/* Alvo do tour do app (lib/appTour.ts, passo "rede-perfil"). */}
         <span data-tour="rede-perfil" className="inline-flex rounded-full">
