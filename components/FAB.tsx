@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, Briefcase, TrendingUp, Upload } from "lucide-react";
+import { Plus, Briefcase, PenSquare, TrendingUp, Upload } from "lucide-react";
 import { collidesWithAny, type Rect } from "@/lib/rectCollision";
 import type { TabId } from "@/lib/types";
 import {
@@ -101,6 +101,13 @@ const SHEET_ACTIONS: Partial<Record<TabId, SheetAction>> = {
     description: "Adicionar arquivo ao cofre",
     Icon: Upload,
   },
+  // Pixel do mockup: a Rede tem o "+" ("Postar"). Abre o mesmo compositor
+  // do "Postar" do feed (RedeTab); só aparece com a Rede liberada.
+  rede: {
+    label: "Postar",
+    description: "Publicar no feed da Rede",
+    Icon: PenSquare,
+  },
 };
 
 // Achado P1 (rodada de preflight 2026-09-04): a aba Financeiro tem 4
@@ -134,18 +141,18 @@ const FINANCEIRO_SHEET_ACTIONS: Record<string, SheetAction> = {
  * `aria-label` do `.plus` de cada tela). É o nome do botão em si; o sheet
  * que ele abre continua com o rótulo da ação real (SHEET_ACTIONS /
  * FINANCEIRO_SHEET_ACTIONS acima), que no Financeiro muda por sub-aba.
- * O mockup também tem "Postar" na Rede, mas a Rede não tem "+" no app (a
- * pílula 2 ocupa a linha toda) -- fica de fora até alguém decidir mexer
- * na pílula.
+ * Na Rede é "Postar", como o mockup (pixel do mockup).
  */
 const FAB_ARIA_LABELS: Partial<Record<TabId, string>> = {
   home: "Novo",
   jobs: "Novo atendimento",
   financeiro: "Novo lançamento",
   cofre: "Enviar arquivo",
+  rede: "Postar",
 };
 
-/** A aba tem "+"? (Rede e Ajustes não têm -- aí a pílula ocupa a linha toda.) */
+/** A aba tem "+"? (Ajustes não tem -- aí a pílula ocupa a linha toda. A
+ * Rede tem, mas a página só desenha o "+" com a Rede liberada.) */
 export function tabTemFab(tab: TabId): boolean {
   return tab === "financeiro" || Boolean(SHEET_ACTIONS[tab]);
 }

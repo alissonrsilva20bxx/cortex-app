@@ -132,6 +132,8 @@ export default function Page() {
   // onboarding de conta nova; depois, só por Ajustes → "Ver tour do app".
   const [tourOpen, setTourOpen] = useState(false);
   const [redeAcesso, setRedeAcesso] = useState<RedeAcessoTour>("pendente");
+  // "+" da Rede (Postar): cada toque abre o compositor da Rede.
+  const [redePostar, setRedePostar] = useState(0);
   // Foto do perfil da Rede: o Início mostra a mesma (cai na da conta Google
   // quando a Rede não tem foto ou não está liberada).
   const [fotoRede, setFotoRede] = useState<string | null>(null);
@@ -410,6 +412,8 @@ export default function Page() {
       else setDespesaFormOpen(true);
     } else if (activeTab === "cofre") {
       setUploadOpen(true);
+    } else if (activeTab === "rede") {
+      setRedePostar((n) => n + 1);
     }
   }
 
@@ -642,6 +646,7 @@ export default function Page() {
                 active={activeTab === "rede"}
                 reselectSignal={redeReselect}
                 onChatFocusChange={setChatComposerFocused}
+                postarSignal={redePostar}
                 onAcessoChange={setRedeAcesso}
                 onFotoPerfilChange={setFotoRede}
               />
@@ -676,16 +681,22 @@ export default function Page() {
             activeTab={activeTab}
             onChange={handleTabChange}
             holdOpen={fabOpen || tourOpen}
-            renderFab={(compact) => (
-              <FAB
-                activeTab={activeTab}
-                financeiroSubTab={finInnerTab}
-                open={fabOpen}
-                onToggle={() => setFabOpen((v) => !v)}
-                onAction={handleFabAction}
-                compact={compact}
-              />
-            )}
+            renderFab={
+              // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
+              // de convite a pílula ocupa a linha toda.
+              activeTab === "rede" && redeAcesso !== "liberado"
+                ? undefined
+                : (compact) => (
+                    <FAB
+                      activeTab={activeTab}
+                      financeiroSubTab={finInnerTab}
+                      open={fabOpen}
+                      onToggle={() => setFabOpen((v) => !v)}
+                      onAction={handleFabAction}
+                      compact={compact}
+                    />
+                  )
+            }
           />
         </>
       )}

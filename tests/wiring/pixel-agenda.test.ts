@@ -202,6 +202,48 @@ describe("casca no visual do mockup", () => {
   });
 });
 
+describe('o "+" da Rede é o "Postar" do mockup, sem ação nova', () => {
+  it('o mockup tem "Postar" no "+" da Rede', () => {
+    const rede = MOCKUP.slice(
+      MOCKUP.indexOf('<figure class="frame" data-t="rede" data-md="light">')
+    );
+    expect(rede.slice(0, rede.indexOf("</figure>"))).toMatch(
+      /class="plus" aria-label="Postar"/
+    );
+  });
+
+  it('o FAB da Rede se chama "Postar"', () => {
+    const fab = read("components/FAB.tsx");
+    expect(fab).toMatch(/rede: \{\s*label: "Postar",/);
+    expect(fab).toMatch(/rede: "Postar",/);
+  });
+
+  it.each(["app/page.tsx", "app/dev-preview/app/page.tsx"])(
+    '%s: só desenha o "+" da Rede com a Rede liberada, e o toque vira o sinal de postar',
+    (pagina) => {
+      const src = read(pagina);
+      expect(src).toMatch(
+        /activeTab === "rede" && redeAcesso !== "liberado"\s*\?\s*undefined/
+      );
+      expect(src).toMatch(
+        /activeTab === "rede"\) \{\s*setRedePostar\(\(n\) => n \+ 1\);/
+      );
+      expect(src).toMatch(/postarSignal=\{redePostar\}/);
+    }
+  );
+
+  it("o sinal chega na Rede e abre o MESMO compositor do Postar do feed", () => {
+    expect(read("components/rede/RedeGatedTab.tsx")).toMatch(
+      /postarSignal=\{postarSignal\}/
+    );
+    const tab = read("components/rede/RedeTab.tsx");
+    expect(tab).toMatch(
+      /if \(postarSignal === ultimoPostar\.current\) return;\s*ultimoPostar\.current = postarSignal;\s*setComposerOpen\(true\);/
+    );
+    expect(tab).toMatch(/onOpenComposer=\{\(\) => setComposerOpen\(true\)\}/);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Ícones: o traço exato do mockup
 // ---------------------------------------------------------------------------
