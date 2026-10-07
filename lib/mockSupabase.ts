@@ -359,6 +359,14 @@ class MockStorageBucket {
 }
 
 function placeholderDocDataUri(name: string) {
+  // Foto de post: SVG LOCAL e transparente, nunca Storage. Transparente de
+  // propósito -- quem pinta o espaço é o contêiner da foto, com os tokens do
+  // tema, como a referência desenha (bloco no tom do acento). Um fundo fixo
+  // aqui (era `#1a1825`) ficava escuro em todos os 8 temas e no modo claro.
+  if (name.startsWith("rede-") || /^\d+(-thumb-[\dx]+)?\.jpg$/.test(name)) {
+    const vazio = `<svg xmlns="http://www.w3.org/2000/svg" width="390" height="300"></svg>`;
+    return `data:image/svg+xml;base64,${btoa(vazio)}`;
+  }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="100%" height="100%" fill="#1a1825"/><text x="50%" y="50%" fill="#9B5CF6" font-size="28" font-family="sans-serif" text-anchor="middle">${name}</text></svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }

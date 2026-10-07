@@ -181,14 +181,16 @@ function useAltura(foto0: FotoPost) {
 
 const bleed = (altura: number, ratio: number): React.CSSProperties => ({
   position: "relative",
-  // sangra a padding do PostCard (`p-4` = 16px) -- foto na largura do card
-  marginLeft: -16,
-  marginRight: -16,
-  marginTop: 12,
+  // A referência (tela Rede) desenha a foto de ponta a ponta, sem margem e
+  // sem raio: o PostCard já não tem padding lateral, então a foto ocupa os
+  // 390px. Antes a margem negativa compensava o `p-4` do cartão antigo.
   height: altura || undefined,
   aspectRatio: altura ? undefined : String(ratio),
   overflow: "hidden",
-  background: "var(--bg)", // fundo neutro, só visível onde a foto não preenche
+  // `--accent-tint` é o `--t-soft` da referência (#ededee no claro,
+  // #3a3a3d no escuro): tinta NEUTRA, não o acento saturado. É com ela que
+  // a referência pinta o espaço da foto.
+  background: "var(--accent-tint)",
 });
 
 // ─────────────────────────────── palco ──────────────────────────────────

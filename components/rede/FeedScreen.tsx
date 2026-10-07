@@ -48,7 +48,11 @@ function AbasFeed({
             aria-selected={ativa}
             onClick={() => onChange(aba.id)}
             style={{
+              // 44 de alvo de toque com o desenho de 8px 0 da referência
+              // (altura 37px): a margem negativa devolve a diferença.
               minHeight: "44px",
+              margin: "-3.5px 0",
+              padding: "8px 0",
               fontSize: "14px",
               fontWeight: ativa ? 800 : 700,
               color: ativa ? "var(--text)" : "var(--text-muted)",
@@ -130,7 +134,7 @@ function FileiraAmigas({
               width: "62px",
               height: "62px",
               padding: "3px",
-              border: "2.5px solid var(--ring)",
+              border: "2.5px solid var(--accent)",
             }}
           >
             <span
@@ -329,13 +333,13 @@ export function FeedScreen({
             na borda. */}
         <div style={{ padding: "0 16px" }}>
           <RedeHeader
-          usuarioNome={usuario.nome}
-          usuarioFotoUrl={usuarioFotoUrl}
-          unreadChats={unreadChats}
-          unreadNotifs={unreadNotifs}
-          onSearch={onOpenSearch}
-          onOpenNotifs={onOpenNotifs}
-          onOpenChat={onOpenChat}
+            usuarioNome={usuario.nome}
+            usuarioFotoUrl={usuarioFotoUrl}
+            unreadChats={unreadChats}
+            unreadNotifs={unreadNotifs}
+            onSearch={onOpenSearch}
+            onOpenNotifs={onOpenNotifs}
+            onOpenChat={onOpenChat}
             onOpenMeuEspaco={onOpenMeuEspaco}
           />
         </div>

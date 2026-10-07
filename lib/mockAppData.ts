@@ -12,6 +12,18 @@ export const MOCK_APP_USUARIO: Usuario = {
 const daysFromNow = (d: number) =>
   new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
 
+/**
+ * As 4 amigas da fileira do topo da Rede, como a referência as desenha
+ * (`5-telas-8-temas-claro-escuro.html`, tela Rede): nome, inicial e cor do
+ * avatar. São dados de laboratório -- no app de verdade vêm do servidor.
+ */
+const AMIGAS_DA_REFERENCIA = [
+  { id: "mock-amiga-1", nome: "Amiga 1", cor: "#c7b8f5" },
+  { id: "mock-amiga-2", nome: "Amiga 2", cor: "#f7c6a3" },
+  { id: "mock-amiga-3", nome: "Amiga 3", cor: "#b8e3d0" },
+  { id: "mock-amiga-4", nome: "Amiga 4", cor: "#bcd3f5" },
+];
+
 const hoursAgoIso = (h: number) =>
   new Date(Date.now() - h * 3_600_000).toISOString();
 
@@ -436,6 +448,18 @@ export function buildMockAppSeed(opts?: {
       criado_em: daysFromNow(-30),
       atualizado_em: daysFromNow(-5),
     },
+    // As 4 da fileira da referência (tela Rede): mesmo nome, mesma inicial
+    // e a mesma cor de avatar que ela desenha.
+    ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
+      user_id: a.id,
+      nome_exibicao: a.nome,
+      cor_avatar: a.cor,
+      bio: "",
+      avatar_url: null,
+      area_atuacao: "",
+      criado_em: daysFromNow(-29 + i),
+      atualizado_em: daysFromNow(-4),
+    })),
   ];
   // 15 posts -- o suficiente pra exercitar a paginação do feed
   // (FEED_PAGE_SIZE = 10: página 1 cheia + página 2 com resto, `hasMore`
@@ -612,10 +636,12 @@ export function buildMockAppSeed(opts?: {
       ],
     };
   };
+  // 1300x1000 = proporção 1,3: a 390px de largura a foto fica com os 300px
+  // de altura que a referência desenha (tela Rede).
   const fotosDef = [
-    foto("rede-post-1", uid, 1, "1080x1350", 3),
-    foto("rede-post-4", uid, 1, "1080x1350", 6),
-    foto("rede-post-4", uid, 2, "1080x810", 6),
+    foto("rede-post-1", uid, 1, "1300x1000", 3),
+    foto("rede-post-4", uid, 1, "1300x1000", 6),
+    foto("rede-post-4", uid, 2, "1300x1000", 6),
   ];
   const rede_post_fotos = fotosDef.map((f) => f.row);
   const rede_curtidas = [
@@ -718,14 +744,24 @@ export function buildMockAppSeed(opts?: {
       // Um pedido de amizade pendente (Marina → você) pra exercitar o
       // fluxo de responder: card no perfil, aba Solicitações, banner do feed.
       rede_amizades: [
+        // Marina aceita (era "pendente": a solicitação em aberto fazia
+        // nascer um bloco que a referência não tem, acima da dobra).
         {
           id: "mock-amizade-marina",
           solicitante_id: FRIEND_ID,
           destinatario_id: uid,
-          status: "pendente",
-          criado_em: daysFromNow(-1),
-          respondido_em: null,
+          status: "aceita",
+          criado_em: daysFromNow(-10),
+          respondido_em: daysFromNow(-9),
         },
+        ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
+          id: `mock-amizade-${a.id}`,
+          solicitante_id: a.id,
+          destinatario_id: uid,
+          status: "aceita",
+          criado_em: daysFromNow(-28 + i),
+          respondido_em: daysFromNow(-27 + i),
+        })),
       ],
       rede_conversas: [],
       rede_conversas_participantes: [],

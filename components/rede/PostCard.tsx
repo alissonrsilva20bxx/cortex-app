@@ -1,7 +1,6 @@
 "use client";
 
 import { Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { Avatar } from "./Avatar";
 import { FeedFotos } from "./FeedFotos";
 import { formatRelativeTime } from "@/lib/mockRede";
@@ -56,6 +55,11 @@ function ActionButton({
   );
 }
 
+/** "12 curtidas" / "1 curtida" -- o texto que a referência imprime. */
+function curtidasTexto(n: number): string {
+  return `${n} ${n === 1 ? "curtida" : "curtidas"}`;
+}
+
 export function PostCard({
   post,
   onToggleLike,
@@ -68,9 +72,12 @@ export function PostCard({
   const cat = CATEGORIA_META[post.categoria];
 
   return (
-    <GlassCard radius="lg" className="p-4">
-      {/* Header */}
-      <div className="flex items-start gap-3">
+    <article className="flex flex-col" style={{ gap: "10px" }}>
+      {/* Cabeçalho: 16px laterais, como na referência (só a foto sangra). */}
+      <div
+        className="flex items-center"
+        style={{ gap: "10px", padding: "0 16px" }}
+      >
         <Avatar
           nome={post.autorNome}
           cor={post.autorCor}
@@ -128,10 +135,10 @@ export function PostCard({
 
       {/* Ações */}
       <div
-        className="flex items-center justify-between mt-3 pt-3"
-        style={{ borderTop: "1px solid var(--divider)" }}
+        className="flex items-center"
+        style={{ gap: "16px", padding: "0 16px" }}
       >
-        <div className="flex items-center gap-1">
+        <div className="flex items-center" style={{ gap: "16px" }}>
           <ActionButton
             icon={
               <Heart
@@ -159,16 +166,17 @@ export function PostCard({
         </div>
       </div>
 
-      {/* Legenda depois da foto e das ações, como no mockup (tela Rede): o
-          nome da autora em negrito abre a linha e o texto segue na mesma
-          linha. Antes a legenda vinha ACIMA da foto. */}
-      <p
-        className="text-sm leading-relaxed mt-3"
-        style={{ color: "var(--text-2)" }}
-      >
+      {/* Curtidas e legenda, nesta ordem e com estes tamanhos, como a
+          referência desenha. */}
+      {post.curtidas > 0 && (
+        <div style={{ padding: "0 16px", fontSize: "13px" }}>
+          <strong>{curtidasTexto(post.curtidas)}</strong>
+        </div>
+      )}
+      <div style={{ padding: "0 16px", fontSize: "14px", marginTop: "-4px" }}>
         <strong style={{ color: "var(--text)" }}>{post.autorNome}</strong>{" "}
         {post.texto}
-      </p>
-    </GlassCard>
+      </div>
+    </article>
   );
 }
