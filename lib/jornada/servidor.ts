@@ -81,6 +81,8 @@ interface LinhaPreferencias {
   modo_discreto: boolean;
   estagio_no_perfil: boolean;
   selos_no_perfil: boolean;
+  comemoracoes_calmas: boolean;
+  jornada_comeco: boolean;
 }
 
 type TabelaSemTipo = {
@@ -117,12 +119,27 @@ export async function salvarPreferenciasNoServidor(
     linha.estagio_no_perfil = parcial.mostrarNoPerfil;
     linha.selos_no_perfil = parcial.mostrarNoPerfil;
   }
+  // Folha de Ajustes do protótipo (0036): cada chave na sua coluna.
+  if (parcial.estagioNoPerfil !== undefined) {
+    linha.estagio_no_perfil = parcial.estagioNoPerfil;
+  }
+  if (parcial.selosNoPerfil !== undefined) {
+    linha.selos_no_perfil = parcial.selosNoPerfil;
+  }
+  if (parcial.comemoracoesCalmas !== undefined) {
+    linha.comemoracoes_calmas = parcial.comemoracoesCalmas;
+  }
+  if (parcial.jornadaComeco !== undefined) {
+    linha.jornada_comeco = parcial.jornadaComeco;
+  }
   const tabela = (
     client.from as unknown as (nome: string) => TabelaSemTipo
   ).call(client, "jornada_preferencias");
   const { data, error } = await tabela
     .upsert(linha, { onConflict: "user_id" })
-    .select("som_ligado, modo_discreto, estagio_no_perfil, selos_no_perfil")
+    .select(
+      "som_ligado, modo_discreto, estagio_no_perfil, selos_no_perfil, comemoracoes_calmas, jornada_comeco"
+    )
     .single();
   if (error) {
     throw error;
@@ -132,5 +149,9 @@ export async function salvarPreferenciasNoServidor(
     somLigado: r.som_ligado,
     modoDiscreto: r.modo_discreto,
     mostrarNoPerfil: r.estagio_no_perfil || r.selos_no_perfil,
+    estagioNoPerfil: r.estagio_no_perfil,
+    selosNoPerfil: r.selos_no_perfil,
+    comemoracoesCalmas: r.comemoracoes_calmas,
+    jornadaComeco: r.jornada_comeco,
   };
 }

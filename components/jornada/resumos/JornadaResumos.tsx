@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function JornadaResumos({ userId }: Props) {
-  const { estado } = useJornada(userId);
+  const { estado, registrar } = useJornada(userId);
   const [aba, setAba] = useState<TipoPeriodo>("semana");
 
   if (!estado) return null;
@@ -36,7 +36,11 @@ export function JornadaResumos({ userId }: Props) {
               type="button"
               role="tab"
               aria-selected={ativa}
-              onClick={() => setAba(tipo)}
+              onClick={() => {
+                setAba(tipo);
+                // Jornada de Começo (0036): "Ver seu primeiro resumo".
+                void registrar("ver_resumo");
+              }}
               className="rounded-full px-4 font-bold transition-opacity active:opacity-70"
               style={{
                 minHeight: "44px",

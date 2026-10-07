@@ -35,6 +35,9 @@ export const ACOES = [
   "descanso",
   "atendimento",
   "abrir_jornada",
+  // Jornada de Começo (0036, ordem do operador): só contam o passo, sem Glow.
+  "criar_pin",
+  "ver_resumo",
 ] as const;
 export type Acao = (typeof ACOES)[number];
 
@@ -110,8 +113,52 @@ export type MarcoDinheiro = (typeof MARCOS_DINHEIRO)[number];
 export interface Preferencias {
   somLigado: boolean;
   modoDiscreto: boolean;
-  /** Estágio e selos no perfil público. Opt-in, desligado por padrão. */
+  /** Estágio OU selos no perfil público (os dois opt-ins abaixo). */
   mostrarNoPerfil: boolean;
+  /** Folha de Ajustes do protótipo (0036). Todos opt-in, desligados. */
+  estagioNoPerfil?: boolean;
+  selosNoPerfil?: boolean;
+  /** "Comemorações: Calma" -- só confirmações pequenas e silenciosas. */
+  comemoracoesCalmas?: boolean;
+  /** Jornada de Começo: os 7 passos da primeira semana. */
+  jornadaComeco?: boolean;
+}
+
+/** A marca de um dia da semana corrente (0036): forte, descanso ou nada. */
+export type MarcaDoDia = "forte" | "descanso" | null;
+
+/** Glow, limite do dia e pilar de uma ação (a regra do servidor, §3). */
+export interface RegraDaAcao {
+  glow: number;
+  limite: number;
+  pilar: Pilar | null;
+}
+
+/** Os prêmios de uma vez (§3) e o Glow de cada nível de selo (§5). */
+export interface Premios {
+  capitulo: number;
+  meta: number;
+  marco: number;
+  seloNivel: number[];
+}
+
+/** O contador de um selo e o corte do próximo nível (null = nível máximo). */
+export interface ProgressoDoSelo {
+  contador: number;
+  proximo: number | null;
+}
+
+/** A meta de dinheiro em aberto (a mais antiga da Wishlist dela). */
+export interface MetaDeDinheiro {
+  nome: string;
+  alvo: number;
+  atual: number;
+}
+
+export interface Dinheiro {
+  meta: MetaDeDinheiro | null;
+  totalGuardado: number;
+  metasConcluidas: number;
 }
 
 /** Os tipos de período (spec §8; J09 `jornada_periodos.tipo`). */
@@ -164,6 +211,19 @@ export interface EstadoJornada {
   destravados?: string[];
   /** Agregados da semana, do mês e do ano (J09 `jornada_periodos`). */
   periodos: Periodos;
+  // ── O que o protótipo mostra (0036, ordem do operador) ──
+  /** A marca de cada dia (segunda a domingo) da semana CORRENTE. */
+  semana?: { dias: MarcaDoDia[] };
+  /** A tabela "O que dá Glow": a regra de cada ação. */
+  glowPorAcao?: Partial<Record<Acao | AcaoDaDica, RegraDaAcao>>;
+  premios?: Premios;
+  /** O "3/10" de cada selo. */
+  selosProgresso?: Partial<Record<SeloId, ProgressoDoSelo>>;
+  dinheiro?: Dinheiro;
+  /** A porcentagem de cada pilar (0 a 100), pela regra do protótipo. */
+  pilares?: Record<Pilar, number>;
+  /** Jornada de Começo: os 7 passos, feitos ou não. */
+  comeco?: { passos: boolean[] };
 }
 
 /**
@@ -201,6 +261,10 @@ export interface Comemoracao {
   /** No tipo "estagio": o estágio anterior e os itens destravados agora. */
   de?: number;
   itens?: string[];
+  /** No tipo "meta" (0036): a meta concluída, o valor e a próxima. */
+  nome?: string;
+  valor?: number;
+  proxima?: string | null;
 }
 
 /** O que o cliente manda a cada registro de ação. */
@@ -249,12 +313,74 @@ function ehMes(x: unknown): x is MesDaColecao {
   return ehObjeto(x) && ehNumero(x.ano) && ehNumero(x.mes);
 }
 
+const opcionalBool = (v: unknown) => v === undefined || typeof v === "boolean";
+
 export function ehPreferencias(x: unknown): x is Preferencias {
   return (
     ehObjeto(x) &&
     typeof x.somLigado === "boolean" &&
     typeof x.modoDiscreto === "boolean" &&
-    typeof x.mostrarNoPerfil === "boolean"
+    typeof x.mostrarNoPerfil === "boolean" &&
+    opcionalBool(x.estagioNoPerfil) &&
+    opcionalBool(x.selosNoPerfil) &&
+    opcionalBool(x.comemoracoesCalmas) &&
+    opcionalBool(x.jornadaComeco)
+  );
+}
+
+/** Os campos do protótipo (0036): se vierem, vêm na forma certa. */
+function ehExtrasDoPrototipo(x: Record<string, unknown>): boolean {
+  const {
+    semana,
+    glowPorAcao,
+    premios,
+    selosProgresso,
+    dinheiro,
+    pilares,
+    comeco,
+  } = x;
+  return (
+    (semana === undefined ||
+      (ehObjeto(semana) &&
+        Array.isArray(semana.dias) &&
+        semana.dias.every(
+          (d) => d === null || d === "forte" || d === "descanso"
+        ))) &&
+    (glowPorAcao === undefined ||
+      (ehObjeto(glowPorAcao) &&
+        Object.values(glowPorAcao).every(
+          (r) => ehObjeto(r) && ehNumero(r.glow) && ehNumero(r.limite)
+        ))) &&
+    (premios === undefined ||
+      (ehObjeto(premios) &&
+        ehNumero(premios.capitulo) &&
+        ehNumero(premios.meta) &&
+        ehNumero(premios.marco) &&
+        Array.isArray(premios.seloNivel) &&
+        premios.seloNivel.every(ehNumero))) &&
+    (selosProgresso === undefined ||
+      (ehObjeto(selosProgresso) &&
+        Object.values(selosProgresso).every(
+          (p) =>
+            ehObjeto(p) &&
+            ehNumero(p.contador) &&
+            (p.proximo === null || ehNumero(p.proximo))
+        ))) &&
+    (dinheiro === undefined ||
+      (ehObjeto(dinheiro) &&
+        ehNumero(dinheiro.totalGuardado) &&
+        ehNumero(dinheiro.metasConcluidas) &&
+        (dinheiro.meta === null ||
+          (ehObjeto(dinheiro.meta) &&
+            typeof dinheiro.meta.nome === "string" &&
+            ehNumero(dinheiro.meta.alvo) &&
+            ehNumero(dinheiro.meta.atual))))) &&
+    (pilares === undefined ||
+      (ehObjeto(pilares) && PILARES.every((k) => ehNumero(pilares[k])))) &&
+    (comeco === undefined ||
+      (ehObjeto(comeco) &&
+        Array.isArray(comeco.passos) &&
+        comeco.passos.every((p) => typeof p === "boolean")))
   );
 }
 
@@ -312,7 +438,8 @@ export function ehEstadoJornada(x: unknown): x is EstadoJornada {
     (x.destravados === undefined ||
       (Array.isArray(x.destravados) &&
         x.destravados.every((d) => typeof d === "string"))) &&
-    ehPeriodos(x.periodos)
+    ehPeriodos(x.periodos) &&
+    ehExtrasDoPrototipo(x)
   );
 }
 
