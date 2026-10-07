@@ -1,31 +1,10 @@
 {
-  "quando": "2026-10-07T14:44:26.761Z",
+  "quando": "2026-10-07T20:17:14.389Z",
   "baseUrl": "http://localhost:3107",
   "metrica": "pixelmatch YIQ, limiar 0.1",
   "relogio": "2026-09-23T13:00:00.000Z",
   "meta": "difPct < 0,5",
   "resultados": [
-    {
-      "tela": "cofre",
-      "largura": 390,
-      "modo": "claro",
-      "tema": "pink-neon",
-      "layout": "C",
-      "metrica": "pixelmatch YIQ, limiar 0.1",
-      "difPct": 1.3392,
-      "pixelsDiferentes": 17632,
-      "tamanho": "780x1688",
-      "mesmoTamanho": true,
-      "reflowDoMockup": false,
-      "estilos": null,
-      "erros": [
-        "Text content does not match server-rendered HTML.",
-        "Text content does not match server-rendered HTML.",
-        "Text content does not match server-rendered HTML.",
-        "Text content does not match server-rendered HTML.",
-        "Text content does not match server-rendered HTML."
-      ]
-    },
     {
       "tela": "rede",
       "largura": 390,
@@ -33,8 +12,8 @@
       "tema": "pink-neon",
       "layout": "E",
       "metrica": "pixelmatch YIQ, limiar 0.1",
-      "difPct": 46.2347,
-      "pixelsDiferentes": 608744,
+      "difPct": 6.2558,
+      "pixelsDiferentes": 82366,
       "tamanho": "780x1688",
       "mesmoTamanho": true,
       "reflowDoMockup": false,

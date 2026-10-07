@@ -36,6 +36,12 @@ node tests/visual/pixel/comparar.mjs --tela=rede --modo=escuro --tema=ocean --ba
 
 ## O que sai, em `<saida>/<tela>/`
 
+> **A ferramenta só escreve dentro de `<saida>/<tela>/`, e nunca apaga nada.**
+> A raiz de `--saida` é compartilhada por todas as telas — arquivo solto ali,
+> ou uma limpeza da pasta antes de medir, já apagou por acidente a evidência
+> de PRs alheias. Para medir uma tela, aponte `--saida` ou confie no padrão:
+> cada tela escreve só na pasta dela, inclusive o `resumo-*.json`.
+
 | arquivo                                     |                                                    |
 | ------------------------------------------- | -------------------------------------------------- |
 | `<tela>-<largura>-<modo>-<tema>-mockup.png` | o recorte do mockup                                |
