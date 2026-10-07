@@ -15,11 +15,18 @@ import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
 import { JornadaCard } from "@/components/home/JornadaCard";
 import { JornadaScreen } from "@/components/jornada/JornadaScreen";
 import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
-import { usarTransporteDeLaboratorio } from "@/lib/jornada/cliente";
+import {
+  lojaDaUsuaria,
+  usarTransporteDeLaboratorio,
+} from "@/lib/jornada/cliente";
 import {
   criarTransporteJornadaLaboratorio,
+  estadoJornadaAno,
   estadoJornadaContaNova,
   estadoJornadaExemplo,
+  NOME_DO_PROTOTIPO,
+  prepararComemoracaoDeLaboratorio,
+  type DemoDeComemoracao,
 } from "@/lib/mockJornada";
 import { JobsTab } from "@/components/jobs/JobsTab";
 import { JobForm } from "@/components/jobs/JobForm";
@@ -107,13 +114,25 @@ export default function DevPreviewApp() {
       criarTransporteJornadaLaboratorio(
         jornadaParam === "nova"
           ? estadoJornadaContaNova()
-          : estadoJornadaExemplo()
+          : jornadaParam === "ano"
+            ? estadoJornadaAno()
+            : estadoJornadaExemplo()
       )
     );
   }
 
   const toast = useToast();
-  const usuario = MOCK_APP_USUARIO;
+  // `?jornada=agora|ano`: a usuária do protótipo da Jornada (Bella), pra a
+  // tela sair igual à referência; sem o parâmetro, a usuária dos mockups.
+  const [usuario] = useState(() => {
+    const jornada =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("jornada")
+        : null;
+    return jornada === "agora" || jornada === "ano"
+      ? { ...MOCK_APP_USUARIO, nome: NOME_DO_PROTOTIPO }
+      : MOCK_APP_USUARIO;
+  });
 
   // Só afeta as duas chamadas reais do Gate da Rede (solicitar-beta,
   // convites) — anexa um bearer token de uma conta de teste local
@@ -213,7 +232,17 @@ export default function DevPreviewApp() {
       setActiveTab("home");
       setTourOpen(true);
     };
+    // "Sua Jornada": toca a mesma comemoração que o botão de demonstração do
+    // protótipo (selo | estagio | meta), pelo caminho de verdade: o próximo
+    // registro do laboratório devolve a fila e o palco toca.
+    (
+      w as unknown as Record<string, (demo: DemoDeComemoracao) => void>
+    ).__previewComemoracao = (demo) => {
+      const { acao } = prepararComemoracaoDeLaboratorio(demo);
+      void lojaDaUsuaria(MOCK_APP_USUARIO.id).registrar(acao);
+    };
     return () => {
+      delete w.__previewComemoracao;
       delete w.__previewLock;
       delete w.__previewUnlock;
       delete w.__previewTour;
@@ -285,6 +314,9 @@ export default function DevPreviewApp() {
 
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
+    // A barra fica por cima da Sua Jornada (protótipo): tocar numa aba fecha
+    // a Jornada e vai pra aba.
+    setJornadaAberta(false);
     // Mesmo gesto da rota real (app/page.tsx): tocar de novo na aba ativa
     // volta a Rede pra raiz ou rola a aba pro topo.
     if (tab === activeTab) {
@@ -570,6 +602,7 @@ export default function DevPreviewApp() {
             activeTab={activeTab}
             onChange={handleTabChange}
             holdOpen={fabOpen || tourOpen}
+            pilulaDaJornada={jornadaAberta}
             renderFab={
               // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
               // de convite a pílula ocupa a linha toda.
@@ -605,10 +638,20 @@ export default function DevPreviewApp() {
       {jornadaAberta && (
         <JornadaScreen
           userId={usuario.id}
+          nome={usuario.nome.trim().split(/\s+/)[0] ?? ""}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
           onVoltar={() => setJornadaAberta(false)}
+          onIrPara={(aba) => {
+            setJornadaAberta(false);
+            handleTabChange(aba);
+          }}
         />
       )}
-      <ComemoracaoHost userId={usuario.id} />
+      <ComemoracaoHost
+        userId={usuario.id}
+        inicial={usuario.nome.trim().charAt(0).toUpperCase()}
+        onVerJornada={() => setJornadaAberta(true)}
+      />
 
       <JobForm
         open={jobFormOpen}

@@ -125,50 +125,67 @@ function contraste(a: number[], b: number[]): number {
   return (x + 0.05) / (y + 0.05);
 }
 
-describe("#197 — 'Selo novo' e '+N Glow' com contraste >= 4,5:1", () => {
-  const css = read("components/jornada/celebracao/Comemoracao.module.css");
-  const bloco = (nome: string) =>
-    css.match(new RegExp(`\\n\\.${nome} \\{([^}]*)\\}`))?.[1] ?? "";
+describe("#197 — 'Selo conquistado' e '+N Glow': o valor do protótipo, contraste listado", () => {
+  // Pixel do protótipo (decisão do operador): o cartão do selo usa as cores
+  // dele -- a chamada em --t-deep sobre o cartão (--t-card) e os raios (o
+  // acento a 20%), a pílula em --t-deep sobre --t-soft. Onde isso fica
+  // abaixo de 4,5:1, vale o protótipo e o caso fica LISTADO aqui (e na PR).
+  const css = read("components/jornada/jornada.module.css");
+  const regra = (sel: string) => {
+    const i = css.indexOf(`\n${sel} {`);
+    return i === -1 ? "" : css.slice(i, css.indexOf("}", i));
+  };
 
-  it("os dois textos usam a cor de TEXTO de acento, não o --accent puro", () => {
-    expect(css).toMatch(/--c-acc-texto: var\(--accent-deep-2\);/);
-    expect(bloco("chamada")).toMatch(/\n\s*color: var\(--c-acc-texto\);/);
-    expect(bloco("glow")).toMatch(/\n\s*color: var\(--c-acc-texto\);/);
-  });
-
-  // O cartão é --card-solid; os raios atrás do texto são o acento a 20%
-  // (conic-gradient do .raios) e a pílula do Glow é o acento a 16% (--c-soft),
-  // que pode cair em cima de um raio. Vale o PIOR desses fundos.
-  const casos = TEMAS.flatMap((t) =>
-    (["claro", "escuro"] as const).map((m) => [t, m] as const)
-  );
-
-  it("o cartão ainda desenha raios e pílula com essas proporções", () => {
-    expect(css).toMatch(
-      /color-mix\(in srgb, var\(--c-acc\) 20%, transparent\)/
-    );
-    expect(css).toMatch(
-      /--c-soft: color-mix\(in srgb, var\(--accent\) 16%, transparent\);/
+  it("a chamada e a pílula usam as cores do protótipo", () => {
+    expect(regra(".b-eye")).toMatch(/color:\s*var\(--t-deep\)/);
+    expect(regra(".b-pts")).toMatch(/color:\s*var\(--t-deep\)/);
+    expect(regra(".b-pts")).toMatch(/background:\s*var\(--t-soft\)/);
+    expect(regra(".rays")).toMatch(
+      /color-mix\(in srgb,\s*var\(--t-acc\) 20%,\s*transparent\)/
     );
   });
 
-  it.each(casos)("%s, %s", (tema, modo) => {
-    const texto = hex(token("--accent-deep-2", tema, modo));
-    const acento = hex(token("--accent", tema, modo));
-    const cartao = hex(token("--card-solid", tema, modo));
-    const raio = mistura(cartao, acento, 0.2);
-    const fundos = {
-      cartao,
-      raio,
-      pilula: mistura(cartao, acento, 0.16),
-      pilulaSobreRaio: mistura(raio, acento, 0.16),
-    };
-    for (const [onde, fundo] of Object.entries(fundos)) {
-      expect(
-        contraste(texto, fundo),
-        `${tema}/${modo} sobre ${onde}`
-      ).toBeGreaterThanOrEqual(4.5);
-    }
+  // A tela da Jornada sobrepõe --t-soft no emerald claro (jornada.module.css).
+  const SOBREPOSTO: Record<string, string> = {
+    "emerald/claro/--t-soft": "#dff1ec",
+  };
+  const t = (nome: string, tema: string, modo: Modo) =>
+    hex(SOBREPOSTO[`${tema}/${modo}/${nome}`] ?? token(nome, tema, modo));
+
+  /** Os casos abaixo de 4,5:1 com as cores do protótipo, travados. */
+  const ABAIXO_DE_4_5: string[] = [
+    "pink-neon/claro sobre raio: 3.89",
+    "pink-neon/claro sobre pilula: 4.25",
+    "ocean/claro sobre raio: 4.03",
+    "ocean/claro sobre pilula: 4.38",
+    "gold/claro sobre raio: 4.12",
+    "gold/claro sobre pilula: 4.46",
+    "emerald/claro sobre raio: 4.31",
+    "crimson/escuro sobre raio: 3.80",
+    "crimson/escuro sobre pilula: 3.80",
+  ];
+
+  it("os casos abaixo de 4,5:1 são exatamente os listados", () => {
+    const abaixo: string[] = [];
+    for (const tema of TEMAS)
+      for (const modo of ["claro", "escuro"] as const) {
+        const deep = t("--t-deep", tema, modo);
+        const card = t("--t-card", tema, modo);
+        const acc = t("--t-acc", tema, modo);
+        const soft = t("--t-soft", tema, modo);
+        const raio = mistura(card, acc, 0.2);
+        const fundos = {
+          cartao: card,
+          raio,
+          pilula: soft,
+        } as const;
+        for (const [onde, fundo] of Object.entries(fundos)) {
+          const c = contraste(deep, fundo);
+          if (c < 4.5)
+            abaixo.push(`${tema}/${modo} sobre ${onde}: ${c.toFixed(2)}`);
+        }
+      }
+    expect(abaixo).toEqual(ABAIXO_DE_4_5);
   });
 });
 
@@ -180,29 +197,42 @@ describe("#198 — 'Voltar' e as chaves com área de toque >= 44px", () => {
   const tela = read("components/jornada/JornadaScreen.tsx");
   const ajustes = read("components/jornada/JornadaAjustes.tsx");
 
-  it("Voltar: o botão tem 44×44 e o círculo que se vê continua 40×40", () => {
+  const css = read("components/jornada/jornada.module.css");
+  const regra = (sel: string) => {
+    const i = css.indexOf(`\n${sel} {`);
+    return i === -1 ? "" : css.slice(i, css.indexOf("}", i));
+  };
+
+  it("Voltar (e os outros botões do topo): o botão tem 44×44 e o círculo que se vê continua 40×40", () => {
+    // Pixel do protótipo: o círculo `.rb` de 40px dentro do `.toque` de 44px,
+    // com margem negativa (nada sai do lugar).
     const botao = tela.slice(
       tela.indexOf("ref={voltarRef}"),
       tela.indexOf("</button>", tela.indexOf("ref={voltarRef}"))
     );
-    expect(botao).toMatch(
-      /style=\{\{ width: "44px", height: "44px", margin: "-2px" \}\}/
+    expect(botao).toContain("className={s.toque}");
+    expect(botao).toContain("<span className={s.rb}>");
+    expect(regra(".toque")).toMatch(
+      /width: 44px;\s*height: 44px;\s*margin: -2px;/
     );
-    expect(botao).toMatch(
-      /width: "40px",\s*height: "40px",\s*background: "var\(--j-card\)"/
-    );
+    expect(regra(".rb")).toMatch(/width: 40px;\s*height: 40px;/);
+    expect(tela.match(/className=\{s\.toque\}/g)).toHaveLength(3);
   });
 
-  it("chaves: o botão (role=switch) tem 44 de altura e o trilho continua 48×28", () => {
-    const chave = ajustes.slice(ajustes.indexOf("function Chavinha"));
-    const botao = chave.slice(chave.indexOf("<button"), chave.indexOf("<span"));
-    expect(botao).toMatch(/role="switch"/);
-    expect(botao).toMatch(
-      /style=\{\{ width: "48px", height: "44px", margin: "-8px 0" \}\}/
+  it("chaves: a linha inteira é o alvo (>= 44px de altura) e a chave é a do protótipo (46×28)", () => {
+    expect(ajustes).toMatch(/<label className=\{s\.sr\}>/);
+    expect(ajustes).toMatch(
+      /type="checkbox"\s+role="switch"\s+className=\{s\.sw\}/
     );
-    const trilho = chave.slice(chave.indexOf("<span"));
-    expect(trilho).toMatch(
-      /width: "48px",\s*height: "28px",\s*borderRadius: "var\(--radius-pill\)"/
+    // 12px em cima e embaixo + a chave de 28px = 52px de alvo.
+    expect(regra(".sr")).toMatch(/padding: 12px 0;/);
+    expect(regra(".sw")).toMatch(/width: 46px;\s*height: 28px;/);
+  });
+
+  it("Fazer (Jornada de Começo) e Completa/Calma: 44px por uma área invisível, sem mexer no desenho", () => {
+    // As pílulas do protótipo têm ~27px; a área passa 9px em cima e embaixo.
+    expect(regra(".st .go::after,\n.psel button::after")).toMatch(
+      /content: "";\s*position: absolute;\s*inset: -9px 0;/
     );
   });
 });
@@ -220,7 +250,9 @@ describe("#200 — no laboratório, semana, mês e ano têm números próprios",
     expect(ano.contadores).not.toEqual(mes.contadores);
   });
 
-  it("o mês contém a semana e o ano contém o mês (nenhum contador diminui)", () => {
+  it("o mês contém a semana (quando ela começa no mês) e o ano contém o mês", () => {
+    // 15/10/2026: a semana começa em 12/10, dentro de outubro.
+    expect(semana.inicio >= mes.inicio).toBe(true);
     for (const [k, v] of Object.entries(semana.contadores))
       expect(mes.contadores[k] ?? 0, `mês ${k}`).toBeGreaterThanOrEqual(v);
     for (const [k, v] of Object.entries(mes.contadores))
@@ -238,6 +270,14 @@ describe("#200 — no laboratório, semana, mês e ano têm números próprios",
     };
     for (const m of e.capitulo!.missoes)
       expect(mes.contadores[doContador[m.tipo]] ?? 0, m.tipo).toBe(m.progresso);
+  });
+
+  it("na sexta 02/10 do protótipo, a semana começou em setembro e pode ter mais que o mês", () => {
+    const sexta = estadoJornadaExemplo(new Date(2026, 9, 2));
+    const p = sexta.periodos.corrente;
+    expect(p.semana.inicio).toBe("2026-09-28");
+    expect(p.semana.contadores.glow).toBe(85);
+    expect(p.mes.contadores.glow).toBe(40);
   });
 
   it("a semana fechada com 3 dias fortes foi firme", () => {

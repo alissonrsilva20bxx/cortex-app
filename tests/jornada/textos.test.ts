@@ -76,10 +76,31 @@ function ehListaDeClasses(s: string): boolean {
   );
 }
 
+/**
+ * Valor de CSS (`"2px solid var(--t-card)"`, `"conic-gradient(from 210deg,…)"`)
+ * ou marcação de SVG (`'<circle cx="12" r="3"/>'`, os traços dos ícones do
+ * protótipo): não é texto de interface. Sem letra acentuada, sempre com
+ * uma unidade, uma função de CSS ou atributo de SVG.
+ */
+function ehCssOuSvg(s: string): boolean {
+  if (/[À-ÿ]/.test(s)) return false;
+  if (
+    /^\s*<(path|circle|rect)\b[^<>]*\/>(\s*<(path|circle|rect)\b[^<>]*\/>)*\s*$/.test(
+      s
+    )
+  )
+    return true;
+  return (
+    /\b(var\(--|rgba?\(|[a-z-]*gradient\(|\d+(px|deg|%))/.test(s) &&
+    /^[a-z0-9\s.,#()%\-/]+$/i.test(s)
+  );
+}
+
 /** Parece texto de interface: tem letra acentuada, ou duas palavras separadas por espaço. */
 function pareceTextoVisivel(s: string): boolean {
   const semInterpolacao = s.replace(/\$\{[^}]*\}/g, " ");
   if (ehListaDeClasses(semInterpolacao)) return false;
+  if (ehCssOuSvg(semInterpolacao)) return false;
   return (
     /[À-ÿ]/.test(semInterpolacao) ||
     /[A-Za-zÀ-ÿ]{2,}\s+[A-Za-zÀ-ÿ]{2,}/.test(semInterpolacao)
@@ -95,12 +116,25 @@ describe("o detector de texto de interface", () => {
     expect(pareceTextoVisivel(classe)).toBe(false);
   });
 
-  it.each(["dias fortes", "último dia", "Sua Jornada", "Sem conexão agora"])(
-    "frase é texto: %s",
-    (frase) => {
-      expect(pareceTextoVisivel(frase)).toBe(true);
-    }
-  );
+  it.each([
+    "2px solid var(--t-card)",
+    "conic-gradient(from 210deg,#ffd9a0,var(--t-acc),#f7b6c8,#ffd9a0)",
+    "inset 0 0 0 3px rgba(255,255,255,.25)",
+    '<circle cx="12" cy="12" r="3"/><path d="M12 5v14"/>',
+  ])("valor de CSS ou traço de SVG não é texto: %s", (valor) => {
+    expect(pareceTextoVisivel(valor)).toBe(false);
+  });
+
+  it.each([
+    "dias fortes",
+    "último dia",
+    "Sua Jornada",
+    "Sem conexão agora",
+    "Moldura ouro rosé",
+    "Glow até 2px",
+  ])("frase é texto: %s", (frase) => {
+    expect(pareceTextoVisivel(frase)).toBe(true);
+  });
 });
 
 describe("nenhum texto visível nem moeda fora de lib/jornada/textos.ts", () => {

@@ -20,6 +20,8 @@ import {
   BOTTOM_NAV_ITEM_WIDTH,
   BOTTOM_NAV_MIN_TOUCH_TARGET,
   BOTTOM_NAV_OFFSET,
+  BOTTOM_NAV_FAB_SIZE,
+  BOTTOM_NAV_GAP,
   BOTTOM_NAV_PILL_WIDTH,
   getBottomNavCompactStyle,
 } from "@/lib/bottomNavCompactStyle";
@@ -53,6 +55,9 @@ interface Props {
    * pra encolher junto. Sem ele (ex.: /dev-preview/rede), a pílula ocupa
    * a linha inteira. */
   renderFab?: (compact: boolean) => ReactNode;
+  /** A Jornada está aberta: a pílula segue a largura do protótipo da
+   * Jornada (a linha menos o "+"), não a fixa do mockup das 5 telas. */
+  pilulaDaJornada?: boolean;
 }
 
 /**
@@ -63,7 +68,13 @@ interface Props {
  * novo. Sem rótulo embaixo: a troca de "sempre visível" por "aprende
  * rápido com uso" foi uma escolha consciente, não descuido.
  */
-export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
+export function BottomNav({
+  activeTab,
+  onChange,
+  holdOpen,
+  renderFab,
+  pilulaDaJornada,
+}: Props) {
   const scrollCompact = useScrollCompact(activeTab);
 
   // Tocar na bolinha abre a pílula sem mexer na rolagem. Ela fica aberta
@@ -90,9 +101,11 @@ export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
 
   // Largura da pílula aberta: a do mockup (288px). Sem o "+" (ex.:
   // /dev-preview/rede), a pílula ocupa a linha inteira.
-  const openWidth = hasFab
-    ? `${BOTTOM_NAV_PILL_WIDTH}px`
-    : `calc(100vw - ${BOTTOM_NAV_EDGE * 2}px)`;
+  const openWidth = !hasFab
+    ? `calc(100vw - ${BOTTOM_NAV_EDGE * 2}px)`
+    : pilulaDaJornada
+      ? `calc(100vw - ${BOTTOM_NAV_EDGE * 2 + BOTTOM_NAV_FAB_SIZE + BOTTOM_NAV_GAP}px)`
+      : `${BOTTOM_NAV_PILL_WIDTH}px`;
   const ActiveIcon = (TABS.find((t) => t.id === activeTab) ?? TABS[0]).Icon;
   const activeLabel = TABS.find((t) => t.id === activeTab)?.label ?? "Início";
   const motion = `${BOTTOM_NAV_DURATION_MS}ms ${BOTTOM_NAV_EASE}`;

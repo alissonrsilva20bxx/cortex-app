@@ -11,6 +11,7 @@ import {
   missoesFeitas,
 } from "../../components/jornada/progresso";
 import {
+  estadoJornadaAno,
   estadoJornadaContaNova,
   estadoJornadaExemplo,
 } from "../../lib/mockJornada";
@@ -63,22 +64,40 @@ function ehListaDeClasses(s: string): boolean {
   );
 }
 
+/** Valor de CSS (`"2px solid var(--t-card)"`, gradiente) ou traço de SVG
+ * (`'<circle cx="12" r="3"/>'`): não é texto de interface. */
+function ehCssOuSvg(s: string): boolean {
+  if (/[À-ÿ]/.test(s)) return false;
+  if (
+    /^\s*<(path|circle|rect)\b[^<>]*\/>(\s*<(path|circle|rect)\b[^<>]*\/>)*\s*$/.test(
+      s
+    )
+  )
+    return true;
+  return (
+    /\b(var\(--|rgba?\(|[a-z-]*gradient\(|\d+(px|deg|%))/.test(s) &&
+    /^[a-z0-9\s.,#()%\-/]+$/i.test(s)
+  );
+}
+
 function pareceTexto(s: string): boolean {
   const t = s.replace(/\$\{[^}]*\}/g, " ").trim();
-  if (!t || ehListaDeClasses(t)) return false;
+  if (!t || ehListaDeClasses(t) || ehCssOuSvg(t)) return false;
   return /[À-ÿ]/.test(t) || /[A-Za-zÀ-ÿ]{2,}\s+[A-Za-zÀ-ÿ]{2,}/.test(t);
 }
 
 /** Texto escrito no fonte: literais de string e texto solto no JSX. */
 function textosEscritos(src: string): string[] {
   const codigo = soCodigo(src);
-  const literais = [
-    ...codigo.matchAll(
-      /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g
-    ),
-  ].map((m) => m[1] ?? m[2] ?? m[3] ?? "");
-  // Texto entre `>` e `<` que não é código (sem =, ;, parênteses, chaves).
-  const jsx = [...codigo.matchAll(/>([^<>{}]+)</g)]
+  const reLiteral =
+    /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g;
+  const literais = [...codigo.matchAll(reLiteral)].map(
+    (m) => m[1] ?? m[2] ?? m[3] ?? ""
+  );
+  // Texto entre `>` e `<` que não é código (sem =, ;, parênteses, chaves),
+  // procurado FORA dos literais (o `>` de um traço de SVG não abre JSX).
+  const semLiterais = codigo.replace(reLiteral, '""');
+  const jsx = [...semLiterais.matchAll(/>([^<>{}]+)</g)]
     .map((m) => m[1])
     .filter((t) => /[A-Za-zÀ-ÿ]/.test(t) && !/[=;(){}&|?]/.test(t));
   // Texto solto com uma palavra só também é texto de interface no JSX.
@@ -221,6 +240,16 @@ describe("as leituras do estado (progresso.ts)", () => {
     expect(mesesDaColecao(e, hoje)).toEqual([
       { ano: 2026, mes: 10, situacao: "atual" },
     ]);
+  });
+
+  it('ano (foto "Mês 14"): meses fechados, em branco e o atual, em ordem', () => {
+    const dia = new Date(2027, 11, 3);
+    const meses = mesesDaColecao(estadoJornadaAno(dia), dia);
+    expect(meses).toHaveLength(15);
+    expect(meses[0]).toEqual({ ano: 2026, mes: 10, situacao: "fechado" });
+    expect(meses[2]).toEqual({ ano: 2026, mes: 12, situacao: "branco" });
+    expect(meses[14]).toEqual({ ano: 2027, mes: 12, situacao: "atual" });
+    expect(meses.filter((m) => m.situacao === "branco")).toHaveLength(3);
   });
 
   it("conta nova: nada andado, nada na semana, só o mês atual na coleção", () => {

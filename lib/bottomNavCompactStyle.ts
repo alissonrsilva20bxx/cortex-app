@@ -48,6 +48,11 @@ export const BOTTOM_NAV_ITEM_WIDTH = 46;
 /** Largura da pílula aberta (mockup: 288, fixa). */
 export const BOTTOM_NAV_PILL_WIDTH = 288;
 
+/** Com a Jornada aberta, a pílula segue o protótipo da Jornada
+ * (`.bar .pill { width: calc(100% - 70px) }`): a linha inteira menos o "+"
+ * (60) e o respiro (10). Em 390 dá os mesmos 288; em 430, 328. */
+export const BOTTOM_NAV_FAB_SIZE = 60;
+
 /** Distância da pílula e do "+" até o fundo da tela (mockup: 22). */
 export const BOTTOM_NAV_OFFSET = 22;
 

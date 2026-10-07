@@ -120,6 +120,11 @@ function periodos(
 }
 
 /** As preferências da foto "Agora": tudo opt-in desligado, som ligado. */
+/** A usuária do protótipo ("Oi, Bella"): o nome do laboratório da Jornada
+ * em `?jornada=agora` e `?jornada=ano` (as outras telas seguem com a
+ * usuária dos mockups delas). */
+export const NOME_DO_PROTOTIPO = "Bella";
+
 const PREFERENCIAS_DO_PROTOTIPO = {
   somLigado: true,
   modoDiscreto: false,
@@ -369,6 +374,108 @@ export function estadoJornadaContaNova(
  * app/dev-preview/app/page.tsx.
  */
 let comemoracoesDoLaboratorio: Comemoracao[] = [];
+/** O que a ação preparada muda no estado (o que o servidor mandaria de
+ * volta junto com as comemorações). */
+let efeitoDoLaboratorio: ((e: EstadoJornada) => EstadoJornada) | null = null;
+
+/** Soma `mais` aos contadores de um período. */
+function somar(
+  contadores: Record<string, number>,
+  mais: Record<string, number>
+): Record<string, number> {
+  const out = { ...contadores };
+  for (const [k, v] of Object.entries(mais)) out[k] = (out[k] ?? 0) + v;
+  return out;
+}
+
+/**
+ * "Guardar numa meta" no laboratório, igual ao `act('save')` do demo do
+ * protótipo: o dia de hoje vira forte (3 de 3 na semana), a semana conta
+ * como semana guardando (missão do capítulo), a meta e o total ganham
+ * € 10, o Prosperar sobe pela regra do servidor (Glow/160) e o selo Rumo à
+ * meta I entra. O demo do protótipo não dá a semana firme nessa ação
+ * (`noSteady`): o laboratório também não.
+ */
+function efeitoDeGuardar(e: EstadoJornada): EstadoJornada {
+  const glowDaAcao = e.glowPorAcao?.guardar_meta?.glow ?? 0;
+  const glowDoSelo = e.premios?.seloNivel[0] ?? 0;
+  const ganho = glowDaAcao + glowDoSelo;
+  const hoje = new Date(`${e.hoje}T12:00:00`);
+  const dias = [...(e.semana?.dias ?? [])];
+  const i = (hoje.getDay() + 6) % 7;
+  const virouForte = dias[i] !== "forte";
+  dias[i] = "forte";
+  const fortes: Record<string, number> = virouForte ? { dias_fortes: 1 } : {};
+  const c = e.periodos.corrente;
+  const guardar = 10;
+  const prosperar = e.glowPorPilar.prosperar + glowDaAcao;
+  return {
+    ...e,
+    glowPorPilar: { ...e.glowPorPilar, prosperar },
+    selos: { ...e.selos, rumo_a_meta: 1 },
+    selosProgresso: {
+      ...e.selosProgresso,
+      rumo_a_meta: { contador: 1, proximo: CORTES.rumo_a_meta[1] },
+    },
+    semana: { dias },
+    capitulo: e.capitulo && {
+      ...e.capitulo,
+      missoes: e.capitulo.missoes.map((m) =>
+        m.tipo === "guardar_semanas"
+          ? { ...m, progresso: Math.min(m.alvo, m.progresso + 1) }
+          : m
+      ),
+    },
+    dinheiro: e.dinheiro && {
+      ...e.dinheiro,
+      meta: e.dinheiro.meta && {
+        ...e.dinheiro.meta,
+        atual: e.dinheiro.meta.atual + guardar,
+      },
+      totalGuardado: e.dinheiro.totalGuardado + guardar,
+    },
+    // A % do Prosperar pela regra do servidor (0036): +Glow/160.
+    pilares: e.pilares && {
+      ...e.pilares,
+      prosperar: Math.min(
+        100,
+        Math.round(e.pilares.prosperar + (glowDaAcao * 100) / 160)
+      ),
+    },
+    periodos: {
+      ...e.periodos,
+      corrente: {
+        semana: {
+          ...c.semana,
+          contadores: somar(c.semana.contadores, {
+            ...fortes,
+            guardar_meta: 1,
+            semanas_guardou: 1,
+            glow: ganho,
+          }),
+        },
+        mes: {
+          ...c.mes,
+          contadores: somar(c.mes.contadores, {
+            ...fortes,
+            guardar_meta: 1,
+            semanas_guardou: 1,
+            glow: ganho,
+          }),
+        },
+        ano: {
+          ...c.ano,
+          contadores: somar(c.ano.contadores, {
+            ...fortes,
+            guardar_meta: 1,
+            semanas_guardou: 1,
+            glow: ganho,
+          }),
+        },
+      },
+    },
+  };
+}
 let contadorDoLaboratorio = 0;
 
 export type DemoDeComemoracao = "selo" | "estagio" | "meta";
@@ -380,6 +487,7 @@ export function prepararComemoracaoDeLaboratorio(demo: DemoDeComemoracao): {
   acao: "guardar_meta" | "planejar";
 } {
   const id = () => `lab-${++contadorDoLaboratorio}`;
+  efeitoDoLaboratorio = null;
   const pequena = (
     acao: "guardar_meta" | "planejar",
     glow: number
@@ -402,6 +510,7 @@ export function prepararComemoracaoDeLaboratorio(demo: DemoDeComemoracao): {
   };
   if (demo === "selo") {
     comemoracoesDoLaboratorio = [pequena("guardar_meta", 15), rumoAMeta];
+    efeitoDoLaboratorio = efeitoDeGuardar;
     return { acao: "guardar_meta" };
   }
   if (demo === "estagio") {
@@ -454,6 +563,8 @@ export function criarTransporteJornadaLaboratorio(
       const ganho = comemoracoes.reduce((soma, c) => soma + c.glow, 0);
       if (ganho > 0)
         estado = { ...estado, glowTotal: estado.glowTotal + ganho };
+      if (efeitoDoLaboratorio) estado = efeitoDoLaboratorio(estado);
+      efeitoDoLaboratorio = null;
       return { estado, comemoracoes };
     },
     async salvarPreferencias(parcial) {

@@ -390,6 +390,9 @@ export default function Page() {
 
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
+    // A barra fica por cima da Sua Jornada (protótipo): tocar numa aba fecha
+    // a Jornada e vai pra aba.
+    setJornadaAberta(false);
     if (tab === activeTab) {
       // Tocar de novo na aba ativa = gesto nativo do iOS: na Rede, com
       // uma subtela aberta, volta pra raiz (Feed); em qualquer outro caso
@@ -691,6 +694,7 @@ export default function Page() {
             activeTab={activeTab}
             onChange={handleTabChange}
             holdOpen={fabOpen || tourOpen}
+            pilulaDaJornada={jornadaAberta}
             renderFab={
               // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
               // de convite a pílula ocupa a linha toda.
@@ -729,10 +733,22 @@ export default function Page() {
       {usuario && jornadaAberta && (
         <JornadaScreen
           userId={usuario.id}
+          nome={usuario.nome.trim().split(/\s+/)[0] ?? ""}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
           onVoltar={() => setJornadaAberta(false)}
+          onIrPara={(aba) => {
+            setJornadaAberta(false);
+            handleTabChange(aba);
+          }}
         />
       )}
-      {usuario && <ComemoracaoHost userId={usuario.id} />}
+      {usuario && (
+        <ComemoracaoHost
+          userId={usuario.id}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
+          onVerJornada={() => setJornadaAberta(true)}
+        />
+      )}
 
       {usuario && (
         <>

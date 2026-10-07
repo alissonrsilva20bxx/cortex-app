@@ -116,7 +116,9 @@ describe("ensureDevPreviewSession", () => {
     const admin = adminClient({
       listUsers: vi.fn().mockResolvedValue({
         data: {
-          users: [{ id: "existing-user-id", email: "dev-preview-gate@example.test" }],
+          users: [
+            { id: "existing-user-id", email: "dev-preview-gate@example.test" },
+          ],
         },
         error: null,
       }),

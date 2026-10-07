@@ -1,52 +1,103 @@
 "use client";
 
-import { Check, Lock } from "lucide-react";
 import { MARCOS_DINHEIRO, type EstadoJornada } from "@/lib/jornada/estado";
 import {
-  MARCOS_DO_TOTAL,
+  MARCO_ESCONDIDO,
+  META_ATUAL,
   SECAO,
+  contagemMetas,
+  dinheiroEscondido,
+  emPorcento,
+  marcosDoTotal,
+  metaDeAte,
   money,
+  notaDinheiro,
   textoMarco,
 } from "@/lib/jornada/textos";
-import { JornadaSecao } from "./JornadaPecas";
+import { Ic } from "./IconeJornada";
+import { cx, Secao } from "./JornadaPecas";
+import s from "./jornada.module.css";
 
 /**
- * Seu dinheiro: os marcos do total guardado
- * (€ 500, € 1.000, € 2.500, € 5.000; spec §7). O que acende é o que o
- * servidor mandou em `marcos`.
+ * "Seu dinheiro" (`moneyHTML` do protótipo): quantas metas ela concluiu, a
+ * meta atual (nome, quanto já tem, barra), o total guardado, os marcos e a
+ * nota com o Glow de cada coisa. Tudo do servidor (0036: `dinheiro`, das
+ * metas de verdade dela; `premios`). Com o Modo discreto, os valores somem
+ * (protótipo: `moneyHidden`).
  */
 export function JornadaDinheiro({ estado }: { estado: EstadoJornada }) {
+  const dinheiro = estado.dinheiro;
+  const meta = dinheiro?.meta ?? null;
+  const escondido = estado.preferencias.modoDiscreto;
+  const fracao =
+    meta && meta.alvo > 0 ? Math.min(1, meta.atual / meta.alvo) : 0;
+  const nota = estado.premios
+    ? notaDinheiro(estado.premios.meta, estado.premios.marco)
+    : null;
   return (
-    <JornadaSecao titulo={SECAO.dinheiro}>
-      <p
-        className="font-semibold"
-        style={{ fontSize: "11px", color: "var(--text-muted)" }}
-      >
-        {MARCOS_DO_TOTAL}
-      </p>
-      <ul className="grid grid-cols-2 gap-2">
+    <Secao
+      titulo={SECAO.dinheiro}
+      chip={dinheiro ? contagemMetas(dinheiro.metasConcluidas) : undefined}
+      gap={12}
+    >
+      {meta && (
+        <>
+          <div className={s.mrow}>
+            <div>
+              <span className={s.lbl} style={{ fontSize: "11px" }}>
+                {META_ATUAL}
+              </span>
+              <b>{meta.nome}</b>
+            </div>
+            <span className={s.n}>
+              {escondido
+                ? dinheiroEscondido()
+                : metaDeAte(meta.atual, meta.alvo)}
+            </span>
+          </div>
+          <div className={s.bar8}>
+            <i
+              style={{
+                width: emPorcento(fracao),
+                transition: "width .6s",
+              }}
+            />
+          </div>
+        </>
+      )}
+      <div className={s.lbl} style={{ fontSize: "11px", marginTop: "4px" }}>
+        {marcosDoTotal(
+          escondido ? dinheiroEscondido() : money(dinheiro?.totalGuardado ?? 0)
+        )}
+      </div>
+      <div className={s.miles}>
         {MARCOS_DINHEIRO.map((marco) => {
           const batido = estado.marcos.includes(marco);
-          const Icone = batido ? Check : Lock;
           return (
-            <li
+            <div
               key={marco}
               aria-label={textoMarco(marco)}
-              className="flex items-center gap-2 font-bold tabular-nums"
-              style={{
-                padding: "10px 12px",
-                borderRadius: "var(--radius-sm)",
-                fontSize: "13px",
-                background: batido ? "var(--j-selo-bg)" : "var(--j-card-sub)",
-                color: batido ? "var(--j-selo-icone)" : "var(--text-muted)",
-              }}
+              className={cx(s.mile, batido && s.on)}
             >
-              <Icone size={14} aria-hidden />
-              <span aria-hidden>{money(marco)}</span>
-            </li>
+              {batido ? (
+                <Ic n="check" s={14} sw={3} />
+              ) : (
+                <Ic n="lock" s={13} sw={2.2} />
+              )}
+              {escondido ? MARCO_ESCONDIDO : money(marco)}
+            </div>
           );
         })}
-      </ul>
-    </JornadaSecao>
+      </div>
+      {nota && (
+        <div className={s.note}>
+          {nota[0]}
+          <b>{nota[1]}</b>
+          {nota[2]}
+          <b>{nota[3]}</b>
+          {nota[4]}
+        </div>
+      )}
+    </Secao>
   );
 }

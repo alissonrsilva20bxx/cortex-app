@@ -11,13 +11,18 @@
  * `bigShow`), com os tempos de `TEMPOS` (decidir.ts).
  */
 
-import { Award, Check, Coins, Crown, Sparkles, Star } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
 import type { Comemoracao } from "@/lib/jornada/estado";
 import { liberarAudio, tocarSom, vibrar } from "@/lib/jornada/som";
+import { COMEMORACAO, NOME_GLOW, itensDoEstagio } from "@/lib/jornada/textos";
 
-import styles from "./Comemoracao.module.css";
+import { Ic, Icf, type NomeIcone } from "../IconeJornada";
+import { ICONE_DO_ENFEITE } from "../JornadaColecao";
+import { PreviaDoItem } from "../JornadaDestrava";
+import { cx } from "../JornadaPecas";
+import { ICONE_DO_SELO } from "../JornadaSelos";
+import s from "../jornada.module.css";
 import {
   type Ambiente,
   type Plano,
@@ -41,6 +46,10 @@ export interface PropsPalco {
   fila: readonly Comemoracao[];
   ambiente: Ambiente;
   consumir: (id: string) => void;
+  /** Inicial dela (a moldura nos itens do estágio novo). */
+  inicial: string;
+  /** "Ver minha Jornada" no estágio novo (protótipo); sem ele, "Continuar". */
+  onVerJornada?: () => void;
 }
 
 /** Etapas visuais: 0 entrando, 1 anel/carimbo, 3 pico, 4 detalhes, 5 pronto. */
@@ -57,27 +66,43 @@ interface Aviso {
   titulo: string;
   apoio: string;
   neutro: boolean;
-  icone: "brilho" | "ok" | "selo" | "meta";
+  icone: "brilho" | "ok" | NomeIcone;
 }
+
+/** A faísca da pílula "+N ✦ Glow" do selo (protótipo: `icf(spark, 12)`). */
+const TAMANHO_FAISCA_PILULA = 12;
 
 const ARCO = 477.5; // circunferência do anel (r = 76), como no protótipo
 
-function iconeDaForma(c: Comemoracao, size: number) {
-  switch (c.tipo) {
-    case "selo":
-      return <Award size={size} strokeWidth={2} />;
-    case "capitulo":
-      return <Star size={size} strokeWidth={2} />;
-    case "marco":
-    case "meta":
-      return <Coins size={size} strokeWidth={2} />;
-    case "estagio":
-      return <Crown size={size} strokeWidth={1.8} />;
-    default:
-      return <Sparkles size={size} strokeWidth={2} />;
-  }
+/** Os ícones do estágio na trilha (protótipo: STAGES). */
+const ICONE_DO_ESTAGIO: NomeIcone[] = [
+  "sprout",
+  "pulse",
+  "layers",
+  "star",
+  "crown",
+];
+
+/** O ícone da medalha (protótipo: o do selo; o enfeite do mês no capítulo;
+ * moedas no marco). */
+function iconeDaMedalha(c: Comemoracao): NomeIcone {
+  if (c.tipo === "selo" && c.selo) return ICONE_DO_SELO[c.selo];
+  if (c.tipo === "capitulo" && c.capitulo)
+    return ICONE_DO_ENFEITE[c.capitulo.mes - 1];
+  return "coins";
 }
 
+/** O ícone do anel: antes do pico, o de onde ela veio; no pico, o novo
+ * (protótipo: `icFrom` / `icTo`). Meta: alvo → moedas. */
+function iconeDoAnel(c: Comemoracao, pico: boolean): NomeIcone {
+  if (c.tipo === "meta") return pico ? "coins" : "target";
+  const ultimo = ICONE_DO_ESTAGIO.length - 1;
+  const nivel = c.estagio ?? 0;
+  if (pico) return ICONE_DO_ESTAGIO[Math.min(nivel, ultimo)];
+  return nivel > ultimo ? "crown" : ICONE_DO_ESTAGIO[Math.max(0, nivel - 1)];
+}
+
+/** O nome letra a letra (`lettersHTML` do protótipo). */
 function Letras({ texto }: { texto: string }) {
   let n = 0;
   return (
@@ -87,13 +112,9 @@ function Letras({ texto }: { texto: string }) {
         // como o `join(' ')` do protótipo.
         <Fragment key={i}>
           {i > 0 && " "}
-          <span className={styles.palavra}>
+          <span className={s.w}>
             {palavra.split("").map((ch, j) => (
-              <i
-                key={j}
-                className={styles.letra}
-                style={{ animationDelay: `${n++ * 45}ms` }}
-              >
+              <i key={j} style={{ animationDelay: `${n++ * 45}ms` }}>
                 {ch}
               </i>
             ))}
@@ -104,7 +125,13 @@ function Letras({ texto }: { texto: string }) {
   );
 }
 
-export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
+export function ComemoracaoPalco({
+  fila,
+  ambiente,
+  consumir,
+  inicial,
+  onVerJornada,
+}: PropsPalco) {
   const [, setVersao] = useState(0);
   const [atual, setAtual] = useState<Atual | null>(null);
   const [etapa, setEtapa] = useState<Etapa>(0);
@@ -224,7 +251,10 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
       mostrarAviso(
         {
           id: c.id,
-          titulo: tituloDoAviso(textos),
+          titulo:
+            c.tipo === "meta"
+              ? COMEMORACAO.avisoMeta(textos.titulo)
+              : tituloDoAviso(textos),
           apoio: c.tipo === "pequena" ? textos.apoio : textos.glow,
           neutro: plano.neutro,
           icone:
@@ -232,9 +262,11 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
               ? plano.neutro
                 ? "ok"
                 : "brilho"
-              : c.tipo === "meta" || c.tipo === "marco"
-                ? "meta"
-                : "selo",
+              : c.tipo === "estagio"
+                ? ICONE_DO_ESTAGIO[
+                    Math.min(c.estagio ?? 0, ICONE_DO_ESTAGIO.length - 1)
+                  ]
+                : iconeDaMedalha(c),
         },
         plano.duracaoMs
       );
@@ -292,182 +324,235 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
 
   const iconeAviso = (a: Aviso) =>
     a.icone === "ok" ? (
-      <Check size={18} strokeWidth={3} />
-    ) : a.icone === "meta" ? (
-      <Coins size={18} strokeWidth={2.2} />
-    ) : a.icone === "selo" ? (
-      <Award size={18} strokeWidth={2.2} />
+      <Ic n="check" s={18} sw={3} />
+    ) : a.icone === "brilho" ? (
+      <Icf n="spark" s={18} />
     ) : (
-      <Sparkles size={18} strokeWidth={2} fill="currentColor" />
+      <Ic n={a.icone} s={18} sw={2.2} />
     );
 
   const visivel = atual !== null && !fechando;
-  const etapaClasse =
-    atual?.plano.forma === "palco"
-      ? [
-          etapa >= 1 && styles.p1,
-          etapa >= 3 && styles.p3,
-          etapa >= 4 && styles.p4,
-        ]
-      : [etapa >= 1 && styles.go, etapa >= 5 && styles.pronto];
+  const ePalco = atual?.plano.forma === "palco";
+  // Classes da linha do tempo, como o protótipo: selo = on → go; palco =
+  // on → p1 (anel) → p3 (pico) → p4 (itens) → p5 (botão).
+  const etapaClasse = ePalco
+    ? [
+        etapa >= 1 && s.p1,
+        etapa >= 3 && s.p3,
+        etapa >= 4 && s.p4,
+        etapa >= 5 && s.p5,
+      ]
+    : [etapa >= 1 && s.go];
+  const pico = etapa >= 3;
+  const verJornada = atual?.c.tipo === "estagio" && onVerJornada !== undefined;
+
+  /** O botão de baixo: fecha (e no estágio novo, leva pra Jornada). */
+  const aoTocarNoBotao = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (verJornada && podeSeguir && !fechando) onVerJornada?.();
+    fechar();
+  };
 
   return (
-    <div className={styles.raiz} data-jornada-comemoracao="">
+    <div className={cx(s.raiz, s.palco)} data-jornada-comemoracao="">
       {aviso && !pausada && (
         <div
           key={aviso.id}
-          className={[
-            styles.aviso,
-            avisoOn && styles.on,
-            aviso.neutro && styles.neutro,
-          ]
-            .filter(Boolean)
-            .join(" ")}
+          className={cx(s.toast, avisoOn && s.on, aviso.neutro && s.neutral)}
           role="status"
           aria-live="polite"
         >
-          <span className={styles.avisoIcone}>{iconeAviso(aviso)}</span>
-          <div className={styles.avisoTexto}>
+          <span className={s["t-ic"]}>{iconeAviso(aviso)}</span>
+          <div className={s["t-tx"]}>
             <b>{aviso.titulo}</b>
             {aviso.apoio && <span>{aviso.apoio}</span>}
           </div>
         </div>
       )}
 
-      {atual && (
-        <button
-          type="button"
+      {atual && !ePalco && (
+        <div
           key={atual.c.id}
-          className={[styles.camada, visivel && styles.on, ...etapaClasse]
-            .filter(Boolean)
-            .join(" ")}
+          className={cx(s.ov, s.ovSelo, visivel && s.on, ...etapaClasse)}
+          role="alertdialog"
           aria-label={[atual.textos.chamada, atual.textos.titulo]
             .filter(Boolean)
             .join(" · ")}
           onClick={fechar}
           data-pode-seguir={podeSeguir ? "" : undefined}
         >
-          {atual.plano.forma === "selo" ? (
-            <>
-              <span className={styles.escurece} />
-              <span
-                className={[styles.cartao, treme && styles.treme]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                <span className={styles.raios} />
-                <span className={styles.medalhaCaixa}>
-                  <span className={styles.onda} />
-                  <span className={`${styles.onda} ${styles.o2}`} />
-                  <span
-                    className={[
-                      styles.medalha,
-                      atual.c.tipo !== "selo" && styles.dourada,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    {iconeDaForma(atual.c, 54)}
-                  </span>
-                </span>
-                <span
-                  className={`${styles.chamada} ${styles.surge} ${styles.s1}`}
-                >
-                  {atual.textos.chamada}
-                </span>
-                <span
-                  className={`${styles.nomeSelo} ${styles.surge} ${styles.s2}`}
-                >
-                  {atual.textos.titulo}
-                </span>
-                {atual.textos.apoio && (
-                  <span
-                    className={`${styles.descricao} ${styles.surge} ${styles.s3}`}
-                  >
-                    {atual.textos.apoio}
-                  </span>
-                )}
-                {atual.textos.glow && (
-                  <span
-                    className={`${styles.glow} ${styles.surge} ${styles.s4}`}
-                  >
-                    <Sparkles size={12} fill="currentColor" />
-                    {atual.textos.glow}
-                  </span>
-                )}
-              </span>
-            </>
-          ) : (
-            <span className={styles.palco}>
-              <span className={styles.palcoChamada}>
-                {atual.textos.chamada}
-              </span>
-              <span className={styles.anel}>
-                <span className={styles.onda} />
-                <span className={`${styles.onda} ${styles.o2}`} />
-                <svg viewBox="0 0 170 170" width="170" height="170" aria-hidden>
-                  <defs>
-                    <linearGradient
-                      id="jornadaAnelGrad"
-                      x1="0"
-                      y1="0"
-                      x2="1"
-                      y2="1"
-                    >
-                      <stop offset="0" stopColor="#ffd9a0" />
-                      <stop offset="1" stopColor="var(--accent)" />
-                    </linearGradient>
-                  </defs>
-                  <circle
-                    className={styles.anelFundo}
-                    cx="85"
-                    cy="85"
-                    r="76"
-                    fill="none"
-                    strokeWidth="8"
-                  />
-                  <circle
-                    className={styles.anelFrente}
-                    cx="85"
-                    cy="85"
-                    r="76"
-                    fill="none"
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    transform="rotate(-90 85 85)"
-                    strokeDasharray={ARCO}
-                    strokeDashoffset={etapa >= 1 ? 0 : ARCO * 0.18}
-                  />
-                </svg>
-                <span className={styles.anelIcone}>
-                  {iconeDaForma(atual.c, etapa >= 3 ? 56 : 52)}
-                </span>
-              </span>
-              <span
-                className={[
-                  styles.nomeGrande,
-                  atual.c.tipo === "meta" && styles.menor,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                <Letras texto={atual.textos.titulo} />
-              </span>
-              {atual.textos.apoio && (
-                <span className={styles.palcoApoio}>{atual.textos.apoio}</span>
-              )}
-              {atual.textos.glow && (
-                <span className={styles.palcoGlow}>
-                  <Sparkles size={14} fill="currentColor" />
-                  {atual.textos.glow}
-                </span>
-              )}
-            </span>
-          )}
-        </button>
+          <div className={s.dim} />
+          <div className={cx(s.bcard, treme && s.shake)}>
+            <div className={s.rays} />
+            <div className={s["medal-w"]}>
+              <span className={s.ripple} />
+              <span className={cx(s.ripple, s.r2)} />
+              <div className={cx(s.medal, atual.c.tipo !== "selo" && s.gold)}>
+                <Ic n={iconeDaMedalha(atual.c)} s={54} sw={2} />
+              </div>
+            </div>
+            <div className={cx(s["b-eye"], s.fade, s.f1)}>
+              {atual.textos.chamada}
+            </div>
+            <div className={cx(s["b-name"], s.fade, s.f2)}>
+              {atual.textos.titulo}
+            </div>
+            <div className={cx(s["b-desc"], s.fade, s.f3)}>
+              {atual.textos.apoio}
+            </div>
+            {atual.c.glow > 0 && atual.textos.glow && (
+              <div className={cx(s["b-pts"], s.fade, s.f4)}>
+                +{atual.c.glow} <Icf n="spark" s={TAMANHO_FAISCA_PILULA} />{" "}
+                {NOME_GLOW}
+              </div>
+            )}
+            <button
+              type="button"
+              className={cx(s.cta, s.fade, s.f5)}
+              onClick={aoTocarNoBotao}
+            >
+              {COMEMORACAO.continuar}
+            </button>
+          </div>
+        </div>
       )}
 
-      <canvas ref={canvasRef} className={styles.fx} aria-hidden />
+      {atual && ePalco && (
+        <div
+          key={atual.c.id}
+          className={cx(s.ov, s.ovEstagio, visivel && s.on, ...etapaClasse)}
+          role="alertdialog"
+          aria-label={[atual.textos.chamada, atual.textos.titulo]
+            .filter(Boolean)
+            .join(" · ")}
+          onClick={fechar}
+          data-pode-seguir={podeSeguir ? "" : undefined}
+        >
+          <div className={s.stg}>
+            <div className={s["s-eye"]}>{atual.textos.chamada}</div>
+            <div className={cx(s["s-ring"], pico && s.pop)}>
+              <span className={s.ripple} />
+              <span className={cx(s.ripple, s.r2)} />
+              <svg viewBox="0 0 170 170" width="170" height="170" aria-hidden>
+                <defs>
+                  <linearGradient id="sgrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#ffd9a0" />
+                    <stop offset="1" stopColor="var(--t-acc)" />
+                  </linearGradient>
+                </defs>
+                <circle
+                  className={s.bg}
+                  cx="85"
+                  cy="85"
+                  r="76"
+                  fill="none"
+                  strokeWidth="8"
+                />
+                <circle
+                  className={s.fg}
+                  cx="85"
+                  cy="85"
+                  r="76"
+                  fill="none"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  transform="rotate(-90 85 85)"
+                  strokeDasharray={ARCO}
+                  strokeDashoffset={etapa >= 1 ? 0 : (ARCO * 0.18).toFixed(1)}
+                />
+              </svg>
+              <div className={s["s-ic"]}>
+                <Ic
+                  n={iconeDoAnel(atual.c, pico)}
+                  s={pico ? 56 : 52}
+                  sw={1.8}
+                />
+              </div>
+            </div>
+            <div
+              className={cx(
+                s["s-name"],
+                atual.c.tipo === "meta" && s.sm,
+                pico && s.show
+              )}
+            >
+              <Letras texto={atual.textos.titulo} />
+            </div>
+            <div className={s["s-sub"]}>{atual.textos.apoio}</div>
+            <div className={s["s-un"]}>
+              {atual.c.tipo === "estagio"
+                ? itensDoEstagio(atual.c.estagio ?? 0).map((item, i) => (
+                    <div
+                      key={item.tipo}
+                      className={s["s-u"]}
+                      style={{ transitionDelay: `${i * 150}ms` }}
+                    >
+                      <PreviaDoItem
+                        tipo={item.tipo}
+                        tamanho={40}
+                        inicial={inicial}
+                      />
+                      <div>
+                        <b>{item.nome}</b>
+                        <small>{item.descricao}</small>
+                      </div>
+                    </div>
+                  ))
+                : (() => {
+                    // Meta (protótipo `goalUp`): o Glow e a próxima meta.
+                    const linhas: [React.ReactNode, string, string][] = [];
+                    if (atual.textos.glow)
+                      linhas.push([
+                        <Icf key="i" n="spark" s={18} />,
+                        atual.textos.glow,
+                        COMEMORACAO.metaVale,
+                      ]);
+                    if (atual.c.tipo === "meta" && atual.c.proxima)
+                      linhas.push([
+                        <Ic key="i" n="target" s={18} sw={2.2} />,
+                        COMEMORACAO.proximaMeta(atual.c.proxima),
+                        COMEMORACAO.doZero,
+                      ]);
+                    return linhas.map(([icone, titulo, apoio], i) => (
+                      <div
+                        key={titulo}
+                        className={s["s-u"]}
+                        style={{ transitionDelay: `${i * 150}ms` }}
+                      >
+                        <span
+                          className={cx(s.pv, s.sq)}
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            background:
+                              "linear-gradient(140deg,var(--t-acc),var(--t-deep))",
+                            color: "#fff",
+                          }}
+                        >
+                          {icone}
+                        </span>
+                        <div>
+                          <b>{titulo}</b>
+                          <small>{apoio}</small>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+            </div>
+            <button
+              type="button"
+              // O protótipo fixa o botão da tela cheia em branco (inline com
+              // !important no #sOk), no estágio e na meta.
+              className={cx(s.cta, s.sOk)}
+              onClick={aoTocarNoBotao}
+            >
+              {verJornada ? COMEMORACAO.verJornada : COMEMORACAO.continuar}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <canvas ref={canvasRef} className={s.fx} aria-hidden data-jornada-fx="" />
     </div>
   );
 }

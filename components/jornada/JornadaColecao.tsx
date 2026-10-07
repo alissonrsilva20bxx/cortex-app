@@ -1,21 +1,37 @@
 "use client";
 
-import { Star } from "lucide-react";
 import type { EstadoJornada } from "@/lib/jornada/estado";
 import {
-  MES_EM_BRANCO,
   NOTA,
   SECAO,
   contagemEnfeites,
-  nomeEnfeite,
   rotuloMesColecao,
 } from "@/lib/jornada/textos";
-import { JornadaSecao } from "./JornadaPecas";
-import { mesesDaColecao, type MesNaColecao } from "./progresso";
+import { Ic, type NomeIcone } from "./IconeJornada";
+import { cx, Nota, Secao } from "./JornadaPecas";
+import { mesesDaColecao } from "./progresso";
+import s from "./jornada.module.css";
+
+/** O ícone do enfeite de cada mês (protótipo: ORN), janeiro a dezembro. */
+export const ICONE_DO_ENFEITE: NomeIcone[] = [
+  "spark",
+  "heart",
+  "sprout",
+  "bulb",
+  "palette",
+  "sun",
+  "pulse",
+  "coins",
+  "bell",
+  "moon",
+  "sprout",
+  "star",
+];
 
 /**
- * A coleção: um enfeite por mês fechado; os meses que ficaram em branco
- * aparecem tracejados, sem cor de erro (mês em branco não é castigo).
+ * "Sua coleção" (`collectionHTML` do protótipo): um enfeite por mês, desde
+ * o primeiro mês dela. Fechado = dourado; em branco = tracejado; o mês
+ * atual = tracejado no acento.
  */
 export function JornadaColecao({
   estado,
@@ -27,52 +43,34 @@ export function JornadaColecao({
   const meses = mesesDaColecao(estado, hoje);
   const temBranco = meses.some((m) => m.situacao === "branco");
   return (
-    <JornadaSecao
+    <Secao
       titulo={SECAO.colecao}
       chip={contagemEnfeites(estado.colecao.length)}
-      nota={temBranco ? NOTA.mesesEmBranco : undefined}
+      gap={14}
     >
-      <ul className="grid grid-cols-4 gap-2">
-        {meses.map((m) => (
-          <CelulaDoMes key={`${m.ano}-${m.mes}`} mes={m} />
-        ))}
-      </ul>
-    </JornadaSecao>
-  );
-}
-
-function CelulaDoMes({ mes }: { mes: MesNaColecao }) {
-  const fechado = mes.situacao === "fechado";
-  const rotulo = rotuloMesColecao(mes.ano, mes.mes);
-  return (
-    <li
-      className="flex flex-col items-center gap-[6px] font-semibold"
-      aria-label={
-        fechado
-          ? `${nomeEnfeite(mes.mes)} · ${rotulo}`
-          : mes.situacao === "branco"
-            ? `${MES_EM_BRANCO} · ${rotulo}`
-            : rotulo
-      }
-      style={{
-        padding: "10px 4px",
-        borderRadius: "var(--radius-sm)",
-        fontSize: "11px",
-        color: fechado ? "var(--text)" : "var(--text-muted)",
-        background: fechado ? "var(--j-selo-bg)" : "transparent",
-        borderWidth: "1.5px",
-        borderStyle: mes.situacao === "branco" ? "dashed" : "solid",
-        borderColor: fechado ? "transparent" : "var(--j-mes-vazio)",
-      }}
-    >
-      <Star
-        size={20}
-        aria-hidden
-        style={{
-          color: fechado ? "var(--j-selo-icone)" : "var(--j-bloqueado-icone)",
-        }}
-      />
-      <span aria-hidden>{rotulo}</span>
-    </li>
+      <div className={s.coll}>
+        {meses.map((m) => {
+          const fechado = m.situacao === "fechado";
+          return (
+            <div
+              key={`${m.ano}-${m.mes}`}
+              className={cx(s.co, fechado && s.got)}
+            >
+              <span
+                className={cx(
+                  s.orn,
+                  !fechado && s.off,
+                  m.situacao === "atual" && s.now
+                )}
+              >
+                <Ic n={ICONE_DO_ENFEITE[m.mes - 1]} s={20} sw={2.2} />
+              </span>
+              {rotuloMesColecao(m.ano, m.mes)}
+            </div>
+          );
+        })}
+      </div>
+      {temBranco && <Nota texto={NOTA.mesesEmBranco} />}
+    </Secao>
   );
 }

@@ -1,134 +1,104 @@
 "use client";
 
-import {
-  Activity,
-  CalendarCheck,
-  Check,
-  Coins,
-  Lightbulb,
-  Moon,
-  Receipt,
-  ShieldCheck,
-  Star,
-  type LucideIcon,
-} from "lucide-react";
 import type { Capitulo, TipoMissao } from "@/lib/jornada/estado";
 import {
   NOTA,
+  emPorcento,
   nomeEnfeite,
-  premioCapitulo,
   prazoCapitulo,
+  premioCapitulo,
   progressoMissao,
   textoMissao,
   tituloCapitulo,
 } from "@/lib/jornada/textos";
-import { JornadaBarra, JornadaSecao } from "./JornadaPecas";
+import { Ic, type NomeIcone } from "./IconeJornada";
+import { cx, Nota, Secao } from "./JornadaPecas";
 import { diasRestantes } from "./progresso";
+import { ICONE_DO_ENFEITE } from "./JornadaColecao";
+import s from "./jornada.module.css";
 
-const ICONE_DA_MISSAO: Record<TipoMissao, LucideIcon> = {
-  planejar_dias: CalendarCheck,
-  lancar_despesas: Receipt,
-  tirar_descansos: Moon,
-  guardar_semanas: Coins,
-  comprovantes_cofre: ShieldCheck,
-  dias_fortes: Activity,
-  semanas_firmes: Activity,
-  dica_ajudou: Lightbulb,
-  dica_protegeu: Lightbulb,
-  dica_ajudou_ou_protegeu: Lightbulb,
+/** O ícone de cada missão (protótipo: o da ação que ela conta). */
+const ICONE_DA_MISSAO: Record<TipoMissao, NomeIcone> = {
+  planejar_dias: "cal",
+  lancar_despesas: "receipt",
+  tirar_descansos: "moon",
+  guardar_semanas: "coins",
+  comprovantes_cofre: "shieldp",
+  dias_fortes: "pulse",
+  semanas_firmes: "pulse",
+  dica_ajudou: "bulb",
+  dica_protegeu: "bulb",
+  dica_ajudou_ou_protegeu: "bulb",
 };
 
 /**
- * O capítulo do mês: as 3 missões com o alvo e o progresso que o servidor
- * mandou, o prazo e o enfeite que vai pra coleção.
+ * "Capítulo de <mês>" (`chapterHTML` do protótipo): as 3 missões com a
+ * barra de cada uma, o enfeite do mês e a nota. As missões e o progresso
+ * vêm do servidor (spec §6).
  */
 export function JornadaCapitulo({
   capitulo,
   hoje,
+  premio,
 }: {
   capitulo: Capitulo;
   hoje: Date;
+  /** O Glow do capítulo fechado (0036, `premios.capitulo`). */
+  premio?: number;
 }) {
+  const icone = ICONE_DO_ENFEITE[capitulo.mes - 1];
   return (
-    <JornadaSecao
+    <Secao
       titulo={tituloCapitulo(capitulo.mes)}
       chip={prazoCapitulo(diasRestantes(capitulo, hoje), capitulo.fechado)}
-      nota={NOTA.capitulo}
+      gap={14}
     >
-      <ul className="flex flex-col gap-3">
+      <div className={s.mis}>
         {capitulo.missoes.map((missao) => {
-          const feita = missao.progresso >= missao.alvo;
-          const Icone = feita ? Check : ICONE_DA_MISSAO[missao.tipo];
+          const feito = Math.min(missao.progresso, missao.alvo);
+          const ok = feito >= missao.alvo;
           return (
-            <li key={missao.tipo} className="flex items-center gap-3">
-              <span
-                className="flex shrink-0 items-center justify-center rounded-full"
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  background: feita ? "var(--j-feito)" : "var(--j-card-sub)",
-                  color: feita ? "var(--on-accent)" : "var(--j-acento-texto)",
-                }}
-              >
-                <Icone size={15} aria-hidden />
+            <div key={missao.tipo} className={cx(s.mi, ok && s.ok)}>
+              <span className={s.mic}>
+                {ok ? (
+                  <Ic n="check" s={15} sw={3} />
+                ) : (
+                  <Ic n={ICONE_DA_MISSAO[missao.tipo]} s={15} sw={2.2} />
+                )}
               </span>
-              <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
-                <span style={{ fontSize: "13px" }}>
-                  {textoMissao(missao.tipo, missao.alvo)}
-                </span>
-                <JornadaBarra
-                  fracao={missao.alvo > 0 ? missao.progresso / missao.alvo : 0}
-                  cor={feita ? "var(--j-feito)" : "var(--j-progresso)"}
-                />
+              <div className={s.grow}>
+                {textoMissao(missao.tipo, missao.alvo)}
+                <div className={s.bar8}>
+                  <i
+                    style={{
+                      width: emPorcento(feito / missao.alvo),
+                    }}
+                  />
+                </div>
               </div>
-              <span
-                className="shrink-0 font-bold tabular-nums"
-                style={{
-                  fontSize: "12px",
-                  color: feita ? "var(--j-feito-texto)" : "var(--text-muted)",
-                }}
-              >
+              <span className={s.n}>
                 {progressoMissao(missao.progresso, missao.alvo)}
               </span>
-            </li>
+            </div>
           );
         })}
-      </ul>
-      <div
-        className="flex items-center gap-3"
-        style={{
-          padding: "12px",
-          borderRadius: "var(--radius-sm)",
-          background: "var(--j-card-sub)",
-        }}
-      >
+      </div>
+      <div className={s.prize}>
         <span
-          className="flex shrink-0 items-center justify-center rounded-full"
-          style={{
-            width: "36px",
-            height: "36px",
-            background: capitulo.fechado
-              ? "var(--j-selo-bg)"
-              : "var(--j-bloqueado-bg)",
-            color: capitulo.fechado
-              ? "var(--j-selo-icone)"
-              : "var(--j-bloqueado-icone)",
-            boxShadow: capitulo.fechado
-              ? undefined
-              : "inset 0 0 0 1.5px var(--j-mes-vazio)",
-          }}
+          className={cx(
+            s.orn,
+            !capitulo.fechado && s.off,
+            !capitulo.fechado && s.now
+          )}
         >
-          <Star size={18} aria-hidden />
+          <Ic n={icone} s={20} sw={2.2} />
         </span>
-        <div className="flex min-w-0 flex-col">
-          <span className="font-bold" style={{ fontSize: "13px" }}>
-            {nomeEnfeite(capitulo.mes)}
-          </span>
-          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-            {premioCapitulo(capitulo.fechado)}
-          </span>
+        <div className={s.grow}>
+          <b>{nomeEnfeite(capitulo.mes)}</b>
+          <small>{premioCapitulo(capitulo.fechado, premio)}</small>
         </div>
       </div>
-    </JornadaSecao>
+      <Nota texto={NOTA.capitulo} />
+    </Secao>
   );
 }

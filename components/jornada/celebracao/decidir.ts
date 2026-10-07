@@ -21,7 +21,9 @@ import {
   LIMITE_DO_DIA,
   ROTULO_ACAO,
   SELO,
+  COMEMORACAO,
   TITULO_COMEMORACAO,
+  subEstagio,
   glowGanho,
   nomeEnfeite,
   nomeEstagio,
@@ -79,6 +81,8 @@ export interface Ambiente {
   modoDiscreto: boolean;
   /** `prefers-reduced-motion: reduce`. */
   movimentoReduzido: boolean;
+  /** "Comemorações: Calma" (0036): quieto como o protótipo (`quiet()`). */
+  comemoracoesCalmas?: boolean;
 }
 
 export interface Plano {
@@ -110,7 +114,8 @@ export interface Plano {
  */
 export function planoDaComemoracao(c: Comemoracao, amb: Ambiente): Plano {
   const discreto = amb.modoDiscreto;
-  const quieto = discreto || amb.movimentoReduzido;
+  const quieto =
+    discreto || amb.movimentoReduzido || amb.comemoracoesCalmas === true;
   const mudo = discreto || !amb.somLigado;
   const som = (n: NomeSom | null): NomeSom | null => (mudo ? null : n);
   const vibra = (p: number | number[]) => (discreto ? null : p);
@@ -230,7 +235,11 @@ export function textosDaComemoracao(
           : SELO[c.selo].nome
         : "";
       return {
-        chamada: TITULO_COMEMORACAO.selo,
+        // Protótipo: "Selo conquistado"; nos níveis II e III, "Selo nível N".
+        chamada:
+          (c.nivel ?? 1) > 1
+            ? COMEMORACAO.seloNivel(c.nivel ?? 1)
+            : TITULO_COMEMORACAO.selo,
         titulo,
         // A descrição de cada selo fala do nível I (como no protótipo):
         // nos níveis II e III ela não se aplica (#199).
@@ -241,22 +250,31 @@ export function textosDaComemoracao(
         glow,
       };
     }
-    case "estagio":
+    case "estagio": {
+      const nivel = c.estagio ?? 0;
       return {
-        chamada: TITULO_COMEMORACAO.estagio,
-        titulo: nomeEstagio(c.estagio ?? 0),
-        apoio: "",
+        // Depois da Icônica: "Novo nível de Icônica" (protótipo).
+        chamada:
+          nivel > ULTIMO_ESTAGIO_DA_TRILHA
+            ? COMEMORACAO.novoNivelIconica
+            : TITULO_COMEMORACAO.estagio,
+        titulo: nomeEstagio(nivel),
+        apoio: discreto ? "" : subEstagio(nivel),
         glow,
       };
+    }
     case "capitulo":
       return {
         chamada: c.capitulo
-          ? tituloCapitulo(c.capitulo.mes)
+          ? COMEMORACAO.capituloCompleto(c.capitulo.mes)
           : TITULO_COMEMORACAO.capitulo,
         titulo: c.capitulo
           ? nomeEnfeite(c.capitulo.mes)
           : TITULO_COMEMORACAO.capitulo,
-        apoio: "",
+        apoio:
+          c.capitulo && !discreto
+            ? COMEMORACAO.enfeiteNaColecao(c.capitulo.mes)
+            : "",
         glow,
       };
     case "marco":
@@ -265,16 +283,19 @@ export function textosDaComemoracao(
         // Discreto: sem valor de dinheiro na tela.
         titulo:
           c.marco && !discreto ? textoMarco(c.marco) : TITULO_COMEMORACAO.marco,
-        apoio: "",
+        apoio: discreto ? "" : COMEMORACAO.marcoApoio,
         glow,
       };
     case "meta":
-      // O servidor não manda o nome da meta: o título já diz tudo, sem
-      // repetir na linha de cima.
+      // O nome e o valor da meta vêm do servidor (0036), como no protótipo:
+      // "Fundo Viagem", "€ 300 guardados de verdade."
       return {
-        chamada: "",
-        titulo: TITULO_COMEMORACAO.meta,
-        apoio: "",
+        chamada: TITULO_COMEMORACAO.meta,
+        titulo: c.nome ?? "",
+        apoio:
+          c.valor !== undefined && !discreto
+            ? COMEMORACAO.metaGuardada(c.valor)
+            : "",
         glow,
       };
   }
@@ -284,3 +305,6 @@ export function textosDaComemoracao(
 export function tituloDoAviso(t: TextosComemoracao): string {
   return t.titulo || t.chamada;
 }
+
+/** O último degrau da trilha (Icônica); depois dele vêm os níveis. */
+const ULTIMO_ESTAGIO_DA_TRILHA = 4;
