@@ -53,7 +53,7 @@ export function ListaArquivos({
   return (
     <div style={LIST_STYLE}>
       {files.map((f, i) => {
-        const rgb = corCategoria(f.categoria);
+        const cor = corCategoria(f.categoria);
         return (
           <button
             key={f.path}
@@ -74,8 +74,8 @@ export function ListaArquivos({
                 width: "40px",
                 height: "40px",
                 borderRadius: "12px",
-                background: `rgb(${rgb} / 0.14)`,
-                color: `rgb(${rgb})`,
+                background: cor.fundo,
+                color: cor.tinta,
               }}
             >
               <FileIcon mime={f.mimeType} />

@@ -52,15 +52,22 @@ const CATS: { id: Categoria; label: string }[] = [
   { id: "pessoal", label: "Pessoal" },
 ];
 
-// Cor de identidade por categoria, como tripla RGB para compor rgb(... / a)
-// sem hex hard-coded (mata a deriva de cor da auditoria).
-const CAT_RGB: Record<string, string> = {
-  comprovantes: "var(--success-rgb)",
-  conversas: "var(--info-rgb)",
-  documentos: "var(--accent-rgb)",
-  pessoal: "192 132 252",
+/**
+ * Cor de identidade por categoria. A referência usa um PAR de tokens por
+ * categoria -- o tom cheio no ícone e o tom suave, SÓLIDO, no fundo do
+ * quadradinho (`--t-green`/`--t-gsoft`, `--t-blue`/`--t-bsoft`,
+ * `--t-purple`/`--t-psoft`). O app compunha o fundo com alfa sobre o tom
+ * cheio, o que derivava do valor desenhado. Agora usa os pares semânticos
+ * da fundação, que são os mesmos tokens.
+ */
+const CAT_COR: Record<string, { tinta: string; fundo: string }> = {
+  comprovantes: { tinta: "var(--success)", fundo: "var(--success-tint)" },
+  conversas: { tinta: "var(--info)", fundo: "var(--info-tint)" },
+  documentos: { tinta: "var(--accent-deep)", fundo: "var(--accent-tint)" },
+  pessoal: { tinta: "var(--violet)", fundo: "var(--violet-tint)" },
 };
-const catRgb = (cat: string) => CAT_RGB[cat] ?? "var(--accent-rgb)";
+const catCor = (cat: string) =>
+  CAT_COR[cat] ?? { tinta: "var(--accent-deep)", fundo: "var(--accent-tint)" };
 
 /**
  * Fileira de ações do mockup (layout C): azulejos redondos de 56px com o
@@ -663,7 +670,7 @@ export function CofreTab({
                 files={listaRecentes}
                 onOpen={openFile}
                 rotuloCategoria={rotuloCategoria}
-                corCategoria={catRgb}
+                corCategoria={catCor}
               />
             </SecaoCofre>
             <SecaoCofre titulo="Todos os arquivos" id={TODOS_OS_ARQUIVOS_ID}>
@@ -671,7 +678,7 @@ export function CofreTab({
                 files={filtered}
                 onOpen={openFile}
                 rotuloCategoria={rotuloCategoria}
-                corCategoria={catRgb}
+                corCategoria={catCor}
               />
             </SecaoCofre>
           </>
