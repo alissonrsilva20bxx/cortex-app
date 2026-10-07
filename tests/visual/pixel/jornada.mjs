@@ -321,13 +321,16 @@ async function capturarPrototipo(browser, { estado, tema, modo, largura }) {
  */
 async function recortar(page, alvo, nome) {
   const b = await alvo.boundingBox();
+  // boundingBox é da janela; o clip com fullPage é da página: soma a rolagem
+  // (no "mes" o protótipo rola até o botão do resumo).
+  const [sx, sy] = await page.evaluate(() => [window.scrollX, window.scrollY]);
   console.log(`altura ${nome}: ${b.height.toFixed(2)}px`);
   return page.screenshot({
     timeout: 120000,
     fullPage: true,
     clip: {
-      x: b.x,
-      y: b.y,
+      x: b.x + sx,
+      y: b.y + sy,
       width: Math.floor(b.width),
       height: Math.floor(b.height),
     },
