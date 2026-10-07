@@ -378,15 +378,19 @@ async function capturarApp(browser, baseUrl, { estado, tema, modo, largura }) {
       timeout: 180000,
     }
   );
-  await page.evaluate(
-    ([t, m]) => {
-      const h = document.documentElement;
-      h.setAttribute("data-theme", t);
-      if (m === "light") h.setAttribute("data-mode", "light");
-      else h.removeAttribute("data-mode");
-    },
-    [tema, md]
-  );
+  // O ThemeProvider do app pode reaplicar o tema salvo depois da carga:
+  // o tema da medição é imposto de novo logo antes do recorte.
+  const forcarTema = () =>
+    page.evaluate(
+      ([t, m]) => {
+        const h = document.documentElement;
+        h.setAttribute("data-theme", t);
+        if (m === "light") h.setAttribute("data-mode", "light");
+        else h.removeAttribute("data-mode");
+      },
+      [tema, md]
+    );
+  await forcarTema();
   await page.addStyleTag({ content: SO_DO_LABORATORIO });
   await page
     .getByRole("button", { name: /Jornada/ })
@@ -398,10 +402,22 @@ async function capturarApp(browser, baseUrl, { estado, tema, modo, largura }) {
   let alvo = page.locator("[data-jornada-tela]");
   if (estado === "tela") {
     await page.addStyleTag({ content: TELA_INTEIRA_APP });
+    // Só a tela da Jornada na página: o resto do app (a barra, o "+"
+    // fixos) apareceria por cima do recorte alto da tela inteira.
+    await page.evaluate(() => {
+      let el = document.querySelector("[data-jornada-tela]");
+      while (el && el !== document.body) {
+        for (const irmao of el.parentElement?.children ?? [])
+          if (irmao !== el)
+            irmao.style.setProperty("display", "none", "important");
+        el = el.parentElement;
+      }
+    });
   } else {
     await acionarApp(page, estado);
     alvo = page.locator("body");
   }
+  await forcarTema();
   await page.evaluate(() => document.fonts.ready);
   await congelar(page);
   const png =

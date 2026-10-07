@@ -86,19 +86,23 @@ describe("J14 — os resumos só leem do hook", () => {
     }
   });
 
-  it("o container monta o hook real da J11", () => {
-    const src = read(`${DIR}/JornadaResumos.tsx`);
-    expect(src).toMatch(
-      /^import \{ useJornada \} from "@\/components\/jornada\/useJornada";$/m
-    );
-    expect(src).toMatch(/useJornada\(userId\)/);
+  it("os resumos recebem o estado da tela, que lê o hook real da J11", () => {
+    // Pixel do protótipo: os botões ficam no fim da tela e abrem o resumo em
+    // stories; o estado vem da JornadaScreen (useJornada), sem outro caminho.
+    const tela = read("components/jornada/JornadaScreen.tsx");
+    expect(tela).toMatch(/^import \{ useJornada \} from "\.\/useJornada";$/m);
+    expect(tela).toMatch(/<BotoesDosResumos\s+estado=\{estado\}/);
+    expect(tela).toMatch(/<JornadaRecap\s+estado=\{estado\}/);
   });
 
   it("nenhum resumo decide Glow, estágio, limite ou selo", () => {
     for (const f of FONTES) {
       const src = semComentarios(read(f));
+      // Mostrar o Glow total e o nome do estágio (como o protótipo) é ler;
+      // decidir seria corte de estágio escrito ou conta com Glow.
+      expect(src, f).not.toMatch(/\b(100|400|3000|1200|1500|selos)\b/);
       expect(src, f).not.toMatch(
-        /\b(3000|1200|1500|glowTotal|estagio|selos)\b/
+        /glowTotal\s*[-+*/]|[-+*/]\s*estado\.glowTotal/
       );
     }
   });
@@ -252,41 +256,56 @@ describe("J14 — os textos contam sem cobrar", () => {
   });
 });
 
-describe("J14 — a tela abre o resumo, e as abas trocam", () => {
+describe("J14 — a tela abre o resumo do tipo tocado (botões do protótipo)", () => {
   const tela = read("components/jornada/JornadaScreen.tsx");
   const container = read(`${DIR}/JornadaResumos.tsx`);
 
-  it("a JornadaScreen importa e monta o resumo", () => {
+  it("a JornadaScreen importa os botões e o resumo, e abre o tipo tocado", () => {
     expect(tela).toMatch(
-      /^import \{ JornadaResumos \} from "\.\/resumos\/JornadaResumos";$/m
+      /^import \{ BotoesDosResumos, JornadaRecap \} from "\.\/resumos\/JornadaResumos";$/m
     );
-    expect(tela).toMatch(/<JornadaResumos\s+userId=\{userId\}\s*\/>/);
+    expect(tela).toMatch(/onAbrir=\{abrirResumo\}/);
+    expect(tela).toMatch(
+      /const abrirResumo = \(tipo: TipoPeriodo\) => \{\s*setResumo\(tipo\);/
+    );
+    // O resumo mora no body (cobre a barra de abas, como no protótipo).
+    expect(tela).toMatch(
+      /\{estado &&\s*resumo &&\s*createPortal\(\s*<JornadaRecap/
+    );
+    expect(tela).toMatch(/tipo=\{resumo\}/);
   });
 
-  it("cada aba troca para o próprio período, não para um fixo", () => {
-    expect(container).toMatch(/onClick=\{\(\) => \{\s*setAba\(tipo\);/);
-    expect(container).not.toMatch(/setAba\("(semana|mes|ano)"\)/);
+  it("cada botão abre o próprio período, não um fixo", () => {
+    expect(container).toMatch(/onClick=\{\(\) => onAbrir\(tipo\)\}/);
+    expect(container).not.toMatch(/onAbrir\("(semana|mes|ano)"\)/);
   });
 
-  it("o container percorre os três tipos, sem lista própria", () => {
-    expect(container).toMatch(/TIPOS_PERIODO\.map/);
+  it("Semana e Mês sempre; Ano só depois de 12 meses na Jornada (protótipo)", () => {
+    expect(container).toContain("const MESES_PRO_RESUMO_DO_ANO = 12;");
+    expect(container).toMatch(
+      /mesesNaJornada\(estado, hoje\) >= MESES_PRO_RESUMO_DO_ANO\s*\?\s*\["semana", "mes", "ano"\]\s*:\s*\["semana", "mes"\]/
+    );
   });
 });
 
-describe("J14 — o componente trata o vazio, não só a leitura", () => {
-  const comp = read(`${DIR}/ResumoPeriodo.tsx`);
+describe("J14 — os stories contam só o que o período guarda, sem inventar", () => {
+  const comp = semComentarios(read(`${DIR}/JornadaResumos.tsx`));
 
-  it("ResumoPeriodo decide pelo periodoVazio e mostra RESUMO_VAZIO", () => {
-    expect(comp).toMatch(/periodoVazio\(atual, tipo\)/);
-    expect(comp).toMatch(/RESUMO_VAZIO\[tipo\]/);
-    // o ramo do vazio existe de verdade: nada de Glow quando está vazio
-    expect(comp).toMatch(/\{vazio \? \(/);
+  it("os números vêm dos contadores do período que a usuária abriu", () => {
+    expect(comp).toContain("const periodo = estado.periodos.corrente[tipo];");
+    for (const chave of ["dias_fortes", "guardar_meta", "glow"])
+      expect(comp).toContain(`contador(periodo, "${chave}")`);
   });
 
-  it("o Glow do período só aparece fora do vazio", () => {
-    const depoisDoVazio = comp.slice(comp.indexOf("{vazio ? ("));
-    const ramoCheio = depoisDoVazio.slice(depoisDoVazio.indexOf(") : ("));
-    expect(ramoCheio).toMatch(/resumoGlow\(/);
+  it('zero é zero: nada de "pelo menos 1" (o protótipo mostra Math.max(n, 1))', () => {
+    expect(comp).not.toMatch(
+      /Math\.max\([^,()]+,\s*1\s*\)|Math\.max\(\s*1\s*,/
+    );
+  });
+
+  it("cada story passa sozinho depois do tempo do protótipo, e para no último", () => {
+    expect(comp).toContain("const TEMPO_DO_STORY_MS = 5500;");
+    expect(comp).toMatch(/if \(atual >= stories\.length - 1\) return;/);
   });
 });
 

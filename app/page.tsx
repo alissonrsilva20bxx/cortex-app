@@ -729,6 +729,7 @@ export default function Page() {
       {usuario && jornadaAberta && (
         <JornadaScreen
           userId={usuario.id}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
           onVoltar={() => setJornadaAberta(false)}
         />
       )}

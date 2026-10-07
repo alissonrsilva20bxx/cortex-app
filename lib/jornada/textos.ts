@@ -44,6 +44,18 @@ export function numero(valor: number): string {
   return formatoNumero.format(valor);
 }
 
+// ── porcentagem: só formatação de tela (larguras e anéis), nenhum Glow ──
+
+/** Largura cheia (`100%`). */
+export const CHEIO = "100%";
+
+/** Fração (0 a 1) em porcentagem: `0.683` → `"68%"`, ou `"68.3%"` com
+ * `casas = 1`. Arredonda como o protótipo (`Math.round` / `toFixed`). */
+export function emPorcento(fracao: number, casas = 0): string {
+  const p = fracao * 100;
+  return casas === 0 ? `${Math.round(p)}%` : `${p.toFixed(casas)}%`;
+}
+
 // ─────────────────────────────── Glow ────────────────────────────────
 
 export const NOME_GLOW = "Glow";
@@ -102,6 +114,14 @@ export const NOME_PILAR: Record<Pilar, string> = {
   prosperar: "Prosperar",
   proteger: "Proteger",
   conectar: "Conectar",
+};
+
+/** A linha de apoio de cada pilar na tela (protótipo). */
+export const DESCRICAO_PILAR: Record<Pilar, string> = {
+  organizar: "Agenda e despesas",
+  prosperar: "Poupança e metas",
+  proteger: "Cofre e descanso",
+  conectar: "Ajudando na Rede",
 };
 
 // ─────────────────────────────── ações ───────────────────────────────
@@ -287,7 +307,7 @@ export function textoMissao(tipo: TipoMissao, alvo: number): string {
 
 /** "3 de 8" */
 export function progressoMissao(progresso: number, alvo: number): string {
-  return `${numero(Math.min(progresso, alvo))} de ${numero(alvo)}`;
+  return `${numero(Math.min(progresso, alvo))}/${numero(alvo)}`;
 }
 
 // ───────────────────────────── dinheiro ──────────────────────────────
@@ -340,7 +360,9 @@ export const VOLTAR = "Voltar";
 /** "Estágio 2 de 5" até a Icônica; depois "Icônica · nível 2". */
 export function rotuloEstagio(nivel: number): string {
   const total = ESTAGIOS.length;
-  return nivel < total
+  // Protótipo: "Estágio 2 de 5" até a Prosperando; da Icônica em diante,
+  // "Icônica · nível 1", "Icônica · nível 2"…
+  return nivel < total - 1
     ? `Estágio ${numero(nivel + 1)} de ${numero(total)}`
     : `${ESTAGIOS[total - 1]} · nível ${numero(nivel - total + 2)}`;
 }
@@ -374,19 +396,175 @@ export const SECAO = {
   ajustes: "Ajustes da Jornada",
 } as const;
 
+export const AJUSTES_DA_JORNADA = SECAO.ajustes;
+
+export const FECHAR = "Fechar";
+
+export function tituloDestrava(proximoEstagio: string): string {
+  return `Destrava em ${proximoEstagio}`;
+}
+
+/** Um item que subir de estágio dá (spec §4: moldura, ícone, tema). */
+export interface ItemDestravado {
+  tipo: "moldura" | "tema" | "icone";
+  nome: string;
+  descricao: string;
+}
+
+/** Os itens de cada degrau, na ordem do protótipo (moldura, tema, ícone).
+ * Só nomes: QUAIS itens cada estágio dá é o servidor que grava
+ * (`jornada_destravados`: `moldura_estagio_N`, `tema_…`, `icone_…`). */
+const ITENS_POR_DEGRAU: ItemDestravado[][] = [
+  [],
+  [
+    { tipo: "moldura", nome: "Moldura suave", descricao: "Para o seu avatar" },
+    { tipo: "tema", nome: "Tema Blush", descricao: "Um tom mais claro" },
+    { tipo: "icone", nome: "Ícone Glow", descricao: "Troque nos Ajustes" },
+  ],
+  [
+    {
+      tipo: "moldura",
+      nome: "Moldura ouro rosé",
+      descricao: "Para o seu avatar",
+    },
+    {
+      tipo: "tema",
+      nome: "Tema Veludo",
+      descricao: "Um tom mais fundo da sua cor",
+    },
+    { tipo: "icone", nome: "Ícone Faísca", descricao: "Troque nos Ajustes" },
+  ],
+  [
+    {
+      tipo: "moldura",
+      nome: "Moldura champanhe",
+      descricao: "Para o seu avatar",
+    },
+    { tipo: "tema", nome: "Tema Aurora", descricao: "Fundos com brilho suave" },
+    { tipo: "icone", nome: "Ícone Flor", descricao: "Troque nos Ajustes" },
+  ],
+  [
+    {
+      tipo: "moldura",
+      nome: "Moldura Icônica",
+      descricao: "Animada, para o seu avatar",
+    },
+    { tipo: "tema", nome: "Tema Noir", descricao: "Preto e dourado" },
+    { tipo: "icone", nome: "Ícone Coroa", descricao: "Troque nos Ajustes" },
+  ],
+];
+
+/** O que o estágio `nivel` dá. Depois da Icônica, cada nível dá a sua
+ * versão (Moldura Icônica II, Coroa II, Noir II…). */
+export function itensDoEstagio(nivel: number): ItemDestravado[] {
+  if (nivel < ITENS_POR_DEGRAU.length) return ITENS_POR_DEGRAU[nivel] ?? [];
+  const r = romano(nivel - ESTAGIOS.length + 2);
+  return [
+    {
+      tipo: "moldura",
+      nome: `Moldura Icônica ${r}`,
+      descricao: "Mais brilho a cada nível",
+    },
+    {
+      tipo: "icone",
+      nome: `Coroa ${r}`,
+      descricao: "Ícone do app, nos Ajustes",
+    },
+    { tipo: "tema", nome: `Noir ${r}`, descricao: "Novos detalhes dourados" },
+  ];
+}
+
+/** Os resumos em stories (protótipo: `slides()`). */
+export const RECAP = {
+  semNome: "Sem nome, sem logo. Seguro pra compartilhar.",
+  prosperar: NOME_PILAR.prosperar,
+  conectar: NOME_PILAR.conectar,
+  vezesGuardando: (n: number) =>
+    n === 1 ? "vez guardando dinheiro." : "vezes guardando dinheiro.",
+  futuro: "A você do futuro agradece.",
+  ateProximo: (falta: number, proximo: string) =>
+    `${numero(falta)} até ${proximo}`,
+  // semana
+  suaSemana: "Sua semana",
+  diasFortes: (n: number) => (n === 1 ? "dia forte." : "dias fortes."),
+  apareceu: "Você apareceu pra você, não só pro trabalho.",
+  mulheresAjudou: "mulheres disseram que sua dica ajudou.",
+  soVoceVe: "Só você vê esse número.",
+  glowNaSemana: `${NOME_GLOW} na semana`,
+  cadaUmDeles: "Cada um deles foi você cuidando de você.",
+  proximaSemana: "Próxima semana",
+  passoPequeno: "Um passo pequeno: planeje a segunda no domingo à noite.",
+  estaSemana: "Esta semana",
+  umPassoDeCada: (n: number) =>
+    `${numero(n)} ${plural(n, "dia forte", "dias fortes")}. Um passo de cada vez.`,
+  // mês
+  seuMes: (mes: number) => `Seu ${nomeMes(mes)}`,
+  diasFortesNoMes: (n: number) =>
+    n === 1 ? "dia forte no mês." : "dias fortes no mês.",
+  cadaUmNoMes: "Cada um foi você cuidando do seu negócio, e de você.",
+  capituloDe: (mes: number) => tituloCapitulo(mes),
+  entrouNaColecao: (enfeite: string) => `${enfeite} entrou na sua coleção.`,
+  enfeitesAteAgora: (n: number) => `${contagemEnfeites(n)} até agora.`,
+  missoesDe: (feitas: number, total: number) =>
+    `${numero(feitas)} de ${numero(total)}`,
+  missoesFeitas: "missões feitas.",
+  seNaoFechar: "Se não fechar, tudo bem. O mês fica em branco e nada é tirado.",
+  glowNoMes: `${NOME_GLOW} no mês`,
+  voceEstaEm: (estagio: string) => `Você está em ${estagio}.`,
+  mesQueVem: "Mês que vem",
+  capituloNovo: "Capítulo novo, 3 missões novas. No seu ritmo.",
+  esteMes: "Este mês",
+  diasCuidando: (n: number) =>
+    `${numero(n)} ${plural(n, "dia", "dias")} cuidando de mim.`,
+  // ano
+  seuAno: "Seu ano",
+  mesesNaJornada: "meses na sua Jornada.",
+  idasEVindas: "Com idas e vindas. É assim mesmo.",
+  suaColecao: "Sua coleção",
+  enfeites: "enfeites.",
+  mesesEmBrancoNaoTiraram: "Os meses em branco não tiraram nada.",
+  vezesAjudou: "vezes sua dica ajudou alguém.",
+  eProtegeu: (n: number) =>
+    `E ${numero(n)} disseram que ela as protegeu. Só você vê.`,
+  glow: NOME_GLOW,
+  nadaZera: "Nada zera. O ano que vem soma em cima.",
+  praGuardar: "Pra guardar",
+  meuAno: "Meu ano",
+  umAnoCuidando: "Um ano cuidando de mim. Passo a passo.",
+} as const;
+
 export const SUBTITULO_AJUSTES =
   "Tudo aqui é escolha sua. Nada da sua Jornada fica público se você não ligar.";
 
 /** A nota de cada seção (protótipo). */
-export const NOTA = {
-  estagio:
-    "Subir só soma. Nada do que você já tem é tirado, e depois da Icônica vêm Icônica II, III…",
-  selos: "Cada selo tem níveis. O próximo nível vem com o tempo, no seu ritmo.",
-  capitulo:
-    "Todo mês tem missões novas. Se não der, tudo bem: o mês fica em branco na coleção e nada é tirado.",
-  mesesEmBranco:
-    "Os meses tracejados ficaram em branco. Sem culpa: eles não voltam, mas também não tiram nada de você.",
-} as const;
+/** Texto com um trecho em negrito no meio: [antes, negrito, depois]. */
+export type TrechoComDestaque = readonly [string, string, string];
+
+export const NOTA: Record<
+  "estagio" | "selos" | "capitulo" | "mesesEmBranco",
+  TrechoComDestaque
+> = {
+  estagio: [
+    "Subir só soma. ",
+    "Nada do que você já tem é tirado",
+    ", e depois da Icônica vêm Icônica II, III…",
+  ],
+  selos: [
+    "Cada selo tem níveis. ",
+    "O próximo nível vem com o tempo",
+    ", no seu ritmo.",
+  ],
+  capitulo: [
+    "Todo mês tem missões novas. ",
+    "Se não der, tudo bem:",
+    " o mês fica em branco na coleção e nada é tirado.",
+  ],
+  mesesEmBranco: [
+    "Os meses tracejados ficaram em branco. ",
+    "Sem culpa:",
+    " eles não voltam, mas também não tiram nada de você.",
+  ],
+};
 
 /** Chip do capítulo: "completo ✓", "último dia", "5 dias". */
 export function prazoCapitulo(diasRestantes: number, fechado: boolean): string {

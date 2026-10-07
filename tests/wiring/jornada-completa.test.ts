@@ -95,8 +95,12 @@ describe("o app autenticado monta a Jornada dos caminhos reais", () => {
       ["JornadaColecao", "./JornadaColecao"],
       ["JornadaDinheiro", "./JornadaDinheiro"],
       ["JornadaPilares", "./JornadaPilares"],
-      ["JornadaResumos", "./resumos/JornadaResumos"],
       ["JornadaSelos", "./JornadaSelos"],
+      ["JornadaDestrava", "./JornadaDestrava"],
+      // Pixel do protótipo: os resumos são botões no fim da tela que abrem
+      // o resumo em stories; os ajustes são a folha da engrenagem.
+      ["BotoesDosResumos", "./resumos/JornadaResumos"],
+      ["JornadaRecap", "./resumos/JornadaResumos"],
       ["JornadaAjustes", "./JornadaAjustes"],
     ];
     for (const [nome, caminho] of secoes) {
@@ -113,14 +117,19 @@ describe("o app autenticado monta a Jornada dos caminhos reais", () => {
       ],
       ["components/jornada/JornadaScreen.tsx", /^\.\/useJornada$/],
       [
-        "components/jornada/resumos/JornadaResumos.tsx",
-        /^@\/components\/jornada\/useJornada$/,
-      ],
-      [
         "components/jornada/celebracao/ComemoracaoHost.tsx",
         /^@\/components\/jornada\/useJornada$/,
       ],
     ];
+    // Os resumos recebem o estado da tela (que lê o hook), sem um segundo
+    // caminho de dados: nada de ler o servidor por fora.
+    const tela = soCodigo(read("components/jornada/JornadaScreen.tsx"));
+    expect(tela).toMatch(/<BotoesDosResumos\s+estado=\{estado\}/);
+    expect(tela).toMatch(/<JornadaRecap\s+estado=\{estado\}/);
+    const resumos = soCodigo(
+      read("components/jornada/resumos/JornadaResumos.tsx")
+    );
+    expect(resumos).not.toMatch(/supabase|lojaDaUsuaria|transporte/);
     for (const [arquivo, caminho] of usam) {
       const imports = importsDe(soCodigo(read(arquivo)));
       expect(

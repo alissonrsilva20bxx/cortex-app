@@ -2,12 +2,13 @@
 
 import type { Preferencias } from "@/lib/jornada/estado";
 import {
+  AJUSTES_DA_JORNADA,
   DESCRICAO_PREFERENCIA,
   PREFERENCIAS,
-  SECAO,
   SUBTITULO_AJUSTES,
 } from "@/lib/jornada/textos";
-import { JornadaSecao } from "./JornadaPecas";
+import { cx } from "./JornadaPecas";
+import s from "./jornada.module.css";
 
 type Chave = "somLigado" | "modoDiscreto";
 
@@ -26,98 +27,58 @@ function trocar(chave: Chave, valor: boolean): Partial<Preferencias> {
 }
 
 /**
- * Ajustes da Jornada: Sons e Modo discreto. A chave só grava a preferência
- * (pelo `useJornada`); o que o Modo discreto muda nas telas é a J13.
- * "Mostrar no perfil" é opt-in de outra entrega: não aparece aqui.
+ * Ajustes da Jornada na folha do protótipo (engrenagem no topo da tela,
+ * `setHTML`): Sons e Modo discreto. A chave só grava a preferência (pelo
+ * `useJornada`). As outras linhas da folha do protótipo (comemorações
+ * calmas, selos no perfil, Jornada de Começo) não existem no app: ficam
+ * fora (listado na PR). "Mostrar no perfil" é opt-in de outra entrega.
  */
 export function JornadaAjustes({
+  aberto,
   preferencias,
   onMudar,
+  onFechar,
 }: {
+  aberto: boolean;
   preferencias: Preferencias;
   onMudar: (parcial: Partial<Preferencias>) => void;
+  onFechar: () => void;
 }) {
   const chaves: Chave[] = ["somLigado", "modoDiscreto"];
   return (
-    <JornadaSecao titulo={SECAO.ajustes} nota={SUBTITULO_AJUSTES}>
-      <ul className="flex flex-col">
-        {chaves.map((chave, i) => (
-          <li
-            key={chave}
-            className="flex items-center gap-3"
-            style={{
-              padding: "10px 0",
-              borderTop: i > 0 ? "1px solid var(--divider)" : undefined,
-            }}
-          >
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span
-                id={`jornada-ajuste-${chave}`}
-                className="font-bold"
-                style={{ fontSize: "14px" }}
-              >
-                {ROTULO[chave]}
-              </span>
-              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                {DESCRICAO[chave]}
-              </span>
-            </div>
-            <Chavinha
-              ligada={preferencias[chave]}
-              rotuloId={`jornada-ajuste-${chave}`}
-              onTrocar={() => onMudar(trocar(chave, !preferencias[chave]))}
-            />
-          </li>
-        ))}
-      </ul>
-    </JornadaSecao>
-  );
-}
-
-function Chavinha({
-  ligada,
-  rotuloId,
-  onTrocar,
-}: {
-  ligada: boolean;
-  rotuloId: string;
-  onTrocar: () => void;
-}) {
-  // Área de toque 48×44 (#198); o trilho que se vê continua 48×28, e a
-  // margem negativa não deixa a linha crescer.
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={ligada}
-      aria-labelledby={rotuloId}
-      onClick={onTrocar}
-      className="flex shrink-0 items-center"
-      style={{ width: "48px", height: "44px", margin: "-8px 0" }}
-    >
-      <span
-        aria-hidden
-        className="relative block transition-colors"
-        style={{
-          width: "48px",
-          height: "28px",
-          borderRadius: "var(--radius-pill)",
-          background: ligada ? "var(--j-progresso)" : "var(--j-trilho)",
-        }}
+    <div className={s.palco}>
+      <div
+        className={cx(s["sheet-wrap"], aberto && s.on)}
+        aria-hidden={!aberto}
       >
-        <span
-          className="absolute rounded-full transition-transform"
-          style={{
-            top: "3px",
-            left: "3px",
-            width: "22px",
-            height: "22px",
-            background: "var(--j-chave-botao)",
-            boxShadow: "var(--j-chave-sombra)",
-            transform: ligada ? "translateX(20px)" : "none",
-          }}
-        />
-      </span>
-    </button>
+        <div className={s.dim} onClick={onFechar} />
+        <div
+          className={s.sheet}
+          role="dialog"
+          aria-modal="true"
+          aria-label={AJUSTES_DA_JORNADA}
+        >
+          <div className={s.grab} />
+          <h3>{AJUSTES_DA_JORNADA}</h3>
+          <p className={s.sub}>{SUBTITULO_AJUSTES}</p>
+          {chaves.map((chave) => (
+            <label key={chave} className={s.sr}>
+              <div className={s.grow}>
+                <b>{ROTULO[chave]}</b>
+                <small>{DESCRICAO[chave]}</small>
+              </div>
+              <input
+                type="checkbox"
+                role="switch"
+                className={s.sw}
+                checked={preferencias[chave]}
+                tabIndex={aberto ? 0 : -1}
+                onChange={() => onMudar(trocar(chave, !preferencias[chave]))}
+              />
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

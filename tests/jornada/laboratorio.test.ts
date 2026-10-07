@@ -92,6 +92,12 @@ describe("os estados do laboratório são estados válidos", () => {
     expect(e.glowTotal).toBeLessThan(e.glowProximoEstagio);
   });
 
+  it('no exemplo (foto "Agora" do protótipo), a coleção ainda está vazia', () => {
+    const e = estadoJornadaExemplo(new Date(2026, 9, 15));
+    expect(e.colecao).toEqual([]);
+    expect(e.hoje).toBe("2026-10-15");
+  });
+
   it("os selos: o próximo corte sai dos cortes do servidor (0035 jornada_selos_def)", () => {
     const e = estadoJornadaExemplo();
     expect(e.selosProgresso?.planejadora).toEqual({ contador: 3, proximo: 10 });
@@ -114,6 +120,19 @@ describe("os estados do laboratório são estados válidos", () => {
     expect(sql).toContain(
       "('guardia',          'conectar',  'dica_protegeu',      5, 25, 100)"
     );
+  });
+
+  it('no ano (foto "Mês 14" do protótipo), 11 enfeites e 3 meses em branco', () => {
+    const e = estadoJornadaAno(new Date(2027, 11, 3));
+    expect(ehEstadoJornada(e)).toBe(true);
+    expect(e.colecao).toHaveLength(11);
+    const chaves = e.colecao.map((m) => `${m.ano}-${m.mes}`);
+    for (const branco of ["2026-12", "2027-3", "2027-8"])
+      expect(chaves).not.toContain(branco);
+    expect(chaves[0]).toBe("2026-10");
+    expect(chaves[chaves.length - 1]).toBe("2027-11");
+    expect(e.glowTotal).toBeGreaterThanOrEqual(e.glowInicioEstagio);
+    expect(e.glowTotal).toBeLessThan(e.glowProximoEstagio);
   });
 
   it("conta nova: Glow zero, nenhum selo, coleção e marcos vazios, nada feito no mês", () => {
@@ -143,7 +162,7 @@ describe("as missões do laboratório são as da spec §6 (as trincas do protót
   it.each(MESES.map((m, i) => [m, i + 1] as const))(
     "%s: a trinca escrita pelo textos.ts bate com a spec",
     (_nome, mes) => {
-      const e = estadoJornadaExemplo(new Date(2026, mes - 1, 15));
+      const e = estadoJornadaContaNova(new Date(2026, mes - 1, 15));
       expect(e.capitulo?.mes).toBe(mes);
       expect(
         e.capitulo?.missoes.map((m) => textoMissao(m.tipo, m.alvo))

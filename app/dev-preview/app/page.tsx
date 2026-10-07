@@ -21,6 +21,7 @@ import {
 } from "@/lib/jornada/cliente";
 import {
   criarTransporteJornadaLaboratorio,
+  estadoJornadaAno,
   estadoJornadaContaNova,
   estadoJornadaExemplo,
   prepararComemoracaoDeLaboratorio,
@@ -112,7 +113,9 @@ export default function DevPreviewApp() {
       criarTransporteJornadaLaboratorio(
         jornadaParam === "nova"
           ? estadoJornadaContaNova()
-          : estadoJornadaExemplo()
+          : jornadaParam === "ano"
+            ? estadoJornadaAno()
+            : estadoJornadaExemplo()
       )
     );
   }
@@ -620,6 +623,7 @@ export default function DevPreviewApp() {
       {jornadaAberta && (
         <JornadaScreen
           userId={usuario.id}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
           onVoltar={() => setJornadaAberta(false)}
         />
       )}

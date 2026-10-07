@@ -1,54 +1,79 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft } from "lucide-react";
 import {
+  AJUSTES_DA_JORNADA,
   CARREGANDO,
   MENSAGEM_ERRO,
+  PREFERENCIAS,
   VOLTAR,
   tituloJornada,
 } from "@/lib/jornada/textos";
+import type { TipoPeriodo } from "@/lib/jornada/estado";
 import { useJornada } from "./useJornada";
+import { Ic } from "./IconeJornada";
+import { cx } from "./JornadaPecas";
 import { JornadaAjustes } from "./JornadaAjustes";
 import { JornadaCapitulo } from "./JornadaCapitulo";
 import { JornadaColecao } from "./JornadaColecao";
+import { JornadaDestrava } from "./JornadaDestrava";
 import { JornadaDinheiro } from "./JornadaDinheiro";
 import { JornadaEstagio } from "./JornadaEstagio";
 import { JornadaPilares } from "./JornadaPilares";
-import { JornadaResumos } from "./resumos/JornadaResumos";
 import { JornadaSelos } from "./JornadaSelos";
+import { BotoesDosResumos, JornadaRecap } from "./resumos/JornadaResumos";
 import { hojeDoEstado } from "./progresso";
+import s from "./jornada.module.css";
 
 interface Props {
   userId: string;
+  /** Inicial do nome dela (a prévia da moldura em "Destrava em"). */
+  inicial: string;
   onVoltar: () => void;
 }
 
 /**
- * A tela "Sua Jornada" (J12, #162), no desenho do protótipo aprovado
- * (docs/jornada/referencias/prototipo-sua-jornada.html): estágio e Glow,
- * capítulo do mês, coleção, dinheiro, os 4 pilares, selos e os ajustes.
+ * A tela "Sua Jornada" no desenho EXATO do protótipo aprovado
+ * (docs/jornada/referencias/prototipo-sua-jornada.html, `journeyHTML`):
+ * barra de cima (voltar, título, Modo discreto, Ajustes), o estágio, o
+ * capítulo, a coleção, o dinheiro, os 4 pilares, os selos, o que destrava
+ * no próximo estágio e os botões dos resumos.
  *
  * Tudo vem do `useJornada`: nenhum número de Glow é decidido aqui e todo
  * texto vem de `lib/jornada/textos.ts`. Abre por cima do app (diálogo de
- * tela cheia, acima da barra de abas); Esc ou "Voltar" fecham. Carregando
- * e erro são discretos: uma linha, nunca um bloqueio. Nada daqui vai pro
- * perfil público.
+ * tela cheia, acima da barra de abas); Esc ou "Voltar" fecham.
+ *
+ * O que o protótipo tem e o app não guarda (os dias da semana um a um, a
+ * meta de dinheiro atual, a tabela "O que dá Glow") fica fora: está
+ * listado na PR, pra decisão do operador.
  */
-export function JornadaScreen({ userId, onVoltar }: Props) {
+export function JornadaScreen({ userId, inicial, onVoltar }: Props) {
   const { estado, carregando, erro, salvarPreferencias, registrarAbertura } =
     useJornada(userId);
   const [aparelho] = useState(() => new Date());
+  const [ajustesAbertos, setAjustesAbertos] = useState(false);
+  const [resumo, setResumo] = useState<TipoPeriodo | null>(null);
   const voltarRef = useRef<HTMLButtonElement>(null);
   // Guardado num ref: quem abre pode passar uma função nova a cada render
   // sem tirar o foco do "Voltar" de novo.
   const onVoltarRef = useRef(onVoltar);
   onVoltarRef.current = onVoltar;
 
+  // Esc fecha o que estiver por cima (folha de ajustes, resumo) antes da
+  // tela.
+  const camadaRef = useRef<(() => void) | null>(null);
+  camadaRef.current = ajustesAbertos
+    ? () => setAjustesAbertos(false)
+    : resumo
+      ? () => setResumo(null)
+      : null;
+
   useEffect(() => {
     voltarRef.current?.focus();
     const aoTeclar = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onVoltarRef.current();
+      if (e.key !== "Escape") return;
+      if (camadaRef.current) camadaRef.current();
+      else onVoltarRef.current();
     };
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
@@ -67,66 +92,65 @@ export function JornadaScreen({ userId, onVoltar }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      data-jornada-tela
       aria-labelledby="jornada-titulo"
-      className="fixed inset-0 z-[60] overflow-y-auto no-scrollbar"
-      style={{ background: "var(--j-tela-bg)", color: "var(--text)" }}
+      data-jornada-tela
+      className={cx(
+        s.raiz,
+        "fixed inset-0 z-[60] overflow-y-auto no-scrollbar"
+      )}
+      style={{ background: "var(--t-phbg)" }}
     >
-      <div
-        data-jornada-corpo
-        className="mx-auto flex max-w-md flex-col gap-[var(--space-section)] px-4 pb-10"
-        style={{
-          paddingTop:
-            "calc(var(--space-shell-top) + env(safe-area-inset-top, 0px))",
-        }}
-      >
-        <header className="flex items-center gap-2">
-          {/* Área de toque 44×44 (#198); o círculo que se vê continua 40×40,
-              e a margem negativa mantém o cabeçalho no mesmo lugar. */}
+      <div data-jornada-corpo className={cx(s.pad, "mx-auto max-w-md")}>
+        <div className={s.topbar}>
+          {/* Os círculos de 40px do protótipo; o toque é de 44px (#198),
+              com margem negativa pra nada sair do lugar. */}
           <button
             ref={voltarRef}
             type="button"
             onClick={onVoltar}
             aria-label={VOLTAR}
-            className="flex shrink-0 items-center justify-center rounded-full active:opacity-70"
-            style={{ width: "44px", height: "44px", margin: "-2px" }}
+            className={s.toque}
           >
-            <span
-              aria-hidden
-              className="flex items-center justify-center rounded-full"
-              style={{
-                width: "40px",
-                height: "40px",
-                background: "var(--j-card)",
-              }}
-            >
-              <ChevronLeft size={20} />
+            <span className={s.rb}>
+              <Ic n="chevl" s={20} />
             </span>
           </button>
-          <h1
-            id="jornada-titulo"
-            className="font-extrabold"
-            style={{ fontSize: "22px" }}
+          <h1 id="jornada-titulo">{tituloJornada(discreto)}</h1>
+          <button
+            type="button"
+            onClick={() => void salvarPreferencias({ modoDiscreto: !discreto })}
+            aria-label={PREFERENCIAS.modoDiscreto}
+            aria-pressed={discreto}
+            disabled={!estado}
+            className={s.toque}
           >
-            {tituloJornada(discreto)}
-          </h1>
-        </header>
+            <span className={cx(s.rb, discreto && s.on)}>
+              <Ic n={discreto ? "voloff" : "vol"} s={19} />
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAjustesAbertos(true)}
+            aria-label={AJUSTES_DA_JORNADA}
+            aria-haspopup="dialog"
+            disabled={!estado}
+            className={s.toque}
+          >
+            <span className={s.rb}>
+              <Ic n="gear" s={19} />
+            </span>
+          </button>
+        </div>
 
         {erro && (
-          <p
-            role="status"
-            style={{ fontSize: "12px", color: "var(--text-muted)" }}
-          >
+          <p role="status" className={s.lbl} style={{ fontSize: "12px" }}>
             {MENSAGEM_ERRO[erro]}
           </p>
         )}
 
         {!estado ? (
           carregando && (
-            <p
-              role="status"
-              style={{ fontSize: "13px", color: "var(--text-muted)" }}
-            >
+            <p role="status" className={s.lbl} style={{ fontSize: "13px" }}>
               {CARREGANDO}
             </p>
           )
@@ -139,15 +163,29 @@ export function JornadaScreen({ userId, onVoltar }: Props) {
             <JornadaColecao estado={estado} hoje={hoje} />
             <JornadaDinheiro estado={estado} />
             <JornadaPilares estado={estado} />
-            <JornadaResumos userId={userId} />
             <JornadaSelos estado={estado} />
-            <JornadaAjustes
-              preferencias={estado.preferencias}
-              onMudar={(parcial) => void salvarPreferencias(parcial)}
-            />
+            <JornadaDestrava estado={estado} inicial={inicial} />
+            <BotoesDosResumos estado={estado} hoje={hoje} onAbrir={setResumo} />
           </>
         )}
       </div>
+
+      {estado && (
+        <JornadaAjustes
+          aberto={ajustesAbertos}
+          preferencias={estado.preferencias}
+          onMudar={(parcial) => void salvarPreferencias(parcial)}
+          onFechar={() => setAjustesAbertos(false)}
+        />
+      )}
+      {estado && resumo && (
+        <JornadaRecap
+          estado={estado}
+          tipo={resumo}
+          hoje={hoje}
+          onFechar={() => setResumo(null)}
+        />
+      )}
     </div>
   );
 }

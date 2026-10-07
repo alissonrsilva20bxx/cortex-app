@@ -137,7 +137,7 @@ describe("app/page.tsx monta a Jornada no app autenticado", () => {
 
   it("a tela abre pelo card e o host monta uma vez, só com usuária logada", () => {
     expect(page).toMatch(
-      /\{usuario && jornadaAberta && \(\s*<JornadaScreen\s+userId=\{usuario\.id\}\s+onVoltar=\{\(\) => setJornadaAberta\(false\)\}/
+      /\{usuario && jornadaAberta && \(\s*<JornadaScreen\s+userId=\{usuario\.id\}\s+inicial=\{usuario\.nome\.trim\(\)\.charAt\(0\)\.toUpperCase\(\)\}\s+onVoltar=\{\(\) => setJornadaAberta\(false\)\}/
     );
     expect(page).toMatch(
       /\{usuario && <ComemoracaoHost userId=\{usuario\.id\} \/>\}/

@@ -1,75 +1,45 @@
 "use client";
 
-import { PILARES, type EstadoJornada, type Pilar } from "@/lib/jornada/estado";
+import { PILARES, type EstadoJornada } from "@/lib/jornada/estado";
 import {
+  DESCRICAO_PILAR,
   NOME_PILAR,
   SECAO,
-  SO_VOCE_VE,
-  glowTotal,
-  textoAjudou,
-  textoProtegeu,
+  emPorcento,
 } from "@/lib/jornada/textos";
-import { JornadaBarra, JornadaSecao } from "./JornadaPecas";
-
-const COR_DO_PILAR: Record<Pilar, string> = {
-  organizar: "var(--j-pilar-organizar)",
-  prosperar: "var(--j-pilar-prosperar)",
-  proteger: "var(--j-pilar-proteger)",
-  conectar: "var(--j-pilar-conectar)",
-};
+import { Anel } from "./JornadaPecas";
+import s from "./jornada.module.css";
 
 /**
- * Os 4 pilares: o Glow de cada um (do servidor) e a parte dele no total.
- * Embaixo, quantas disseram que a dica dela ajudou ou protegeu: só ela vê
- * (spec, decisão 12).
+ * "Seus 4 pilares" (protótipo: o anel de cada pilar com a porcentagem).
+ * O app guarda o Glow de cada pilar (spec §8); o anel mostra a parte do
+ * Glow total que veio de cada um. É o número que existe; o protótipo não
+ * define o que a porcentagem dele mede (listado na PR).
  */
 export function JornadaPilares({ estado }: { estado: EstadoJornada }) {
-  const total = estado.glowTotal;
-  const temRetorno = estado.ajudou > 0 || estado.protegeu > 0;
+  const total = PILARES.reduce((soma, p) => soma + estado.glowPorPilar[p], 0);
   return (
-    <JornadaSecao titulo={SECAO.pilares}>
-      <ul className="grid grid-cols-2 gap-3">
+    <section className={s.cx} style={{ gap: "14px" }}>
+      <div className={s.ch}>
+        <h3>{SECAO.pilares}</h3>
+      </div>
+      <div className={s.pil}>
         {PILARES.map((pilar) => {
-          const valor = estado.glowPorPilar[pilar];
+          const fracao = total > 0 ? estado.glowPorPilar[pilar] / total : 0;
           return (
-            <li
-              key={pilar}
-              className="flex flex-col gap-[6px]"
-              style={{
-                padding: "12px",
-                borderRadius: "var(--radius-sm)",
-                background: "var(--j-card-sub)",
-              }}
-            >
-              <span className="font-bold" style={{ fontSize: "13px" }}>
-                {NOME_PILAR[pilar]}
+            <div key={pilar} className={s.pi}>
+              <span className={s.rg}>
+                <Anel tamanho={50} traco={5} fracao={fracao} />
+                <span>{emPorcento(fracao)}</span>
               </span>
-              <span
-                className="tabular-nums"
-                style={{ fontSize: "12px", color: "var(--text-muted)" }}
-              >
-                {glowTotal(valor)}
-              </span>
-              <JornadaBarra
-                fracao={total > 0 ? valor / total : 0}
-                cor={COR_DO_PILAR[pilar]}
-              />
-            </li>
+              <div>
+                <b>{NOME_PILAR[pilar]}</b>
+                <small>{DESCRICAO_PILAR[pilar]}</small>
+              </div>
+            </div>
           );
         })}
-      </ul>
-      {temRetorno && (
-        <div
-          className="flex flex-col gap-1"
-          style={{ fontSize: "12px", color: "var(--text-muted)" }}
-        >
-          <span className="font-bold" style={{ color: "var(--text)" }}>
-            {SO_VOCE_VE}
-          </span>
-          {estado.ajudou > 0 && <span>{textoAjudou(estado.ajudou)}</span>}
-          {estado.protegeu > 0 && <span>{textoProtegeu(estado.protegeu)}</span>}
-        </div>
-      )}
-    </JornadaSecao>
+      </div>
+    </section>
   );
 }
