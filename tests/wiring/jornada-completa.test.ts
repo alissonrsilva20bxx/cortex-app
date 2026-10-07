@@ -84,7 +84,7 @@ describe("o app autenticado monta a Jornada dos caminhos reais", () => {
 
   it("a comemoração só monta com usuária logada (nunca por cima do PIN)", () => {
     expect(APP).toMatch(
-      /\{usuario && <ComemoracaoHost userId=\{usuario\.id\} \/>\}/
+      /\{usuario && \(\s*<ComemoracaoHost\s+userId=\{usuario\.id\}\s+inicial=\{usuario\.nome\.trim\(\)\.charAt\(0\)\.toUpperCase\(\)\}\s+onVerJornada=\{\(\) => setJornadaAberta\(true\)\}\s*\/>\s*\)\}/
     );
   });
 

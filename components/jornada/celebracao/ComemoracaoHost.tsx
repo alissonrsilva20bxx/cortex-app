@@ -33,7 +33,17 @@ function useMovimentoReduzido(): boolean {
   return reduzido;
 }
 
-export function ComemoracaoHost({ userId }: { userId: string }) {
+export function ComemoracaoHost({
+  userId,
+  inicial,
+  onVerJornada,
+}: {
+  userId: string;
+  /** Inicial dela (a moldura nos itens do estágio novo). */
+  inicial: string;
+  /** "Ver minha Jornada" no estágio novo: abre a tela da Jornada. */
+  onVerJornada?: () => void;
+}) {
   const { estado, fila, consumirComemoracao } = useJornada(userId);
   const movimentoReduzido = useMovimentoReduzido();
 
@@ -43,6 +53,8 @@ export function ComemoracaoHost({ userId }: { userId: string }) {
     <ComemoracaoPalco
       fila={fila}
       consumir={consumirComemoracao}
+      inicial={inicial}
+      onVerJornada={onVerJornada}
       ambiente={{
         somLigado: estado.preferencias.somLigado,
         modoDiscreto: estado.preferencias.modoDiscreto,

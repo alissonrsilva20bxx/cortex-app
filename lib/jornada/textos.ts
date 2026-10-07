@@ -320,12 +320,36 @@ export function textoMarco(marco: MarcoDinheiro): string {
 // ───────────────────────────── comemorações ──────────────────────────
 
 export const TITULO_COMEMORACAO = {
-  selo: "Selo novo",
-  estagio: "Você subiu de estágio",
+  selo: "Selo conquistado",
+  estagio: "Novo estágio desbloqueado",
   capitulo: "Capítulo fechado",
-  marco: "Marco de dinheiro",
+  marco: "Marco do seu dinheiro",
   meta: "Meta concluída",
 } as const;
+
+/** As comemorações grandes no texto do protótipo (`medal`, `stageUp`,
+ * `goalUp`, as medalhas douradas do capítulo e do marco). */
+export const COMEMORACAO = {
+  seloNivel: (nivel: number) => `Selo nível ${numero(nivel)}`,
+  novoNivelIconica: "Novo nível de Icônica",
+  capituloCompleto: (mes: number) => `${tituloCapitulo(mes)} completo`,
+  enfeiteNaColecao: (mes: number) =>
+    `Seu enfeite de ${nomeMes(mes)} entrou na coleção. Ele é seu pra sempre.`,
+  marcoApoio: "Somando todas as suas metas. Dinheiro de verdade, seu.",
+  metaVale: "Meta concluída é o que mais vale",
+  continuar: "Continuar",
+  verJornada: "Ver minha Jornada",
+} as const;
+
+/** A linha de baixo do estágio novo (protótipo: `stageUp`). */
+export function subEstagio(nivel: number): string {
+  const total = ESTAGIOS.length;
+  if (nivel < total - 1)
+    return `Estágio ${numero(nivel + 1)} de ${numero(total)} · você construiu isso, passo a passo.`;
+  if (nivel === total - 1)
+    return `Estágio ${numero(total)} de ${numero(total)} · depois vêm Icônica II, III… nada zera.`;
+  return `Icônica nível ${numero(nivel - total + 2)} · tudo o que você ganhou continua seu.`;
+}
 
 // ──────────────────────────── preferências ───────────────────────────
 

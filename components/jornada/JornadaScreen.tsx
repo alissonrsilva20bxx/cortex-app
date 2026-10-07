@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AJUSTES_DA_JORNADA,
   CARREGANDO,
@@ -90,13 +91,14 @@ export function JornadaScreen({ userId, inicial, onVoltar }: Props) {
 
   return (
     <div
+      // Não é modal: a barra de abas fica por cima e continua usável (no
+      // protótipo, tocar numa aba sai da Jornada).
       role="dialog"
-      aria-modal="true"
       aria-labelledby="jornada-titulo"
       data-jornada-tela
       className={cx(
         s.raiz,
-        "fixed inset-0 z-[60] overflow-y-auto no-scrollbar"
+        "fixed inset-0 z-[45] overflow-y-auto no-scrollbar"
       )}
       style={{ background: "var(--t-phbg)" }}
     >
@@ -170,22 +172,30 @@ export function JornadaScreen({ userId, inicial, onVoltar }: Props) {
         )}
       </div>
 
-      {estado && (
-        <JornadaAjustes
-          aberto={ajustesAbertos}
-          preferencias={estado.preferencias}
-          onMudar={(parcial) => void salvarPreferencias(parcial)}
-          onFechar={() => setAjustesAbertos(false)}
-        />
-      )}
-      {estado && resumo && (
-        <JornadaRecap
-          estado={estado}
-          tipo={resumo}
-          hoje={hoje}
-          onFechar={() => setResumo(null)}
-        />
-      )}
+      {/* Folha e resumo cobrem a barra de abas (no protótipo, ficam por cima
+          dela): moram no body, fora do empilhamento da tela, que fica
+          ABAIXO da barra. */}
+      {estado &&
+        createPortal(
+          <JornadaAjustes
+            aberto={ajustesAbertos}
+            preferencias={estado.preferencias}
+            onMudar={(parcial) => void salvarPreferencias(parcial)}
+            onFechar={() => setAjustesAbertos(false)}
+          />,
+          document.body
+        )}
+      {estado &&
+        resumo &&
+        createPortal(
+          <JornadaRecap
+            estado={estado}
+            tipo={resumo}
+            hoje={hoje}
+            onFechar={() => setResumo(null)}
+          />,
+          document.body
+        )}
     </div>
   );
 }

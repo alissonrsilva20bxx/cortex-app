@@ -140,7 +140,7 @@ describe("app/page.tsx monta a Jornada no app autenticado", () => {
       /\{usuario && jornadaAberta && \(\s*<JornadaScreen\s+userId=\{usuario\.id\}\s+inicial=\{usuario\.nome\.trim\(\)\.charAt\(0\)\.toUpperCase\(\)\}\s+onVoltar=\{\(\) => setJornadaAberta\(false\)\}/
     );
     expect(page).toMatch(
-      /\{usuario && <ComemoracaoHost userId=\{usuario\.id\} \/>\}/
+      /\{usuario && \(\s*<ComemoracaoHost\s+userId=\{usuario\.id\}\s+inicial=\{usuario\.nome\.trim\(\)\.charAt\(0\)\.toUpperCase\(\)\}\s+onVerJornada=\{\(\) => setJornadaAberta\(true\)\}\s*\/>\s*\)\}/
     );
     expect(page.match(/<ComemoracaoHost/g)).toHaveLength(1);
     expect(page.match(/<JornadaCard/g)).toHaveLength(1);

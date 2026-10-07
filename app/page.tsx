@@ -390,6 +390,9 @@ export default function Page() {
 
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
+    // A barra fica por cima da Sua Jornada (protótipo): tocar numa aba fecha
+    // a Jornada e vai pra aba.
+    setJornadaAberta(false);
     if (tab === activeTab) {
       // Tocar de novo na aba ativa = gesto nativo do iOS: na Rede, com
       // uma subtela aberta, volta pra raiz (Feed); em qualquer outro caso
@@ -733,7 +736,13 @@ export default function Page() {
           onVoltar={() => setJornadaAberta(false)}
         />
       )}
-      {usuario && <ComemoracaoHost userId={usuario.id} />}
+      {usuario && (
+        <ComemoracaoHost
+          userId={usuario.id}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
+          onVerJornada={() => setJornadaAberta(true)}
+        />
+      )}
 
       {usuario && (
         <>

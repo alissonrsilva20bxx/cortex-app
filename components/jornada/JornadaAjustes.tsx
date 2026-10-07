@@ -46,7 +46,7 @@ export function JornadaAjustes({
 }) {
   const chaves: Chave[] = ["somLigado", "modoDiscreto"];
   return (
-    <div className={s.palco}>
+    <div className={cx(s.raiz, s.palco)}>
       <div
         className={cx(s["sheet-wrap"], aberto && s.on)}
         aria-hidden={!aberto}

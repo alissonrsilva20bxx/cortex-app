@@ -305,7 +305,9 @@ describe("prefers-reduced-motion: sem animação grande", () => {
   });
 
   it("o CSS desliga as animações em prefers-reduced-motion", () => {
-    expect(read(`${DIR}/Comemoracao.module.css`)).toMatch(
+    // Pixel do protótipo: as comemorações usam o CSS da Jornada, com a
+    // mesma regra de movimento reduzido do protótipo.
+    expect(read("components/jornada/jornada.module.css")).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*animation-duration: 0\.01s/
     );
   });
@@ -546,6 +548,13 @@ describe("nenhum texto visível fora de lib/jornada/textos.ts", () => {
       textos.nomeEnfeite(10),
       textos.textoMarco(500),
       ...[5, 20, 50, 100].map(textos.glowGanho),
+      // Pixel do protótipo: as linhas do selo, do estágio, do capítulo e do
+      // marco (todas de textos.ts).
+      textos.COMEMORACAO.seloNivel(2),
+      textos.COMEMORACAO.capituloCompleto(10),
+      textos.COMEMORACAO.enfeiteNaColecao(10),
+      textos.COMEMORACAO.marcoApoio,
+      ...[0, 1, 2, 3, 4, 5].map(textos.subEstagio),
     ]);
     const casos = [
       ...TIPOS.map((t) => c(t)),

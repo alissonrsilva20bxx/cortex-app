@@ -181,6 +181,7 @@ const normSeletor = (s: string) =>
     .replace(/#ovBadge/g, ".ovSelo")
     .replace(/#ovStage/g, ".ovEstagio")
     .replace(/#ovRecap/g, ".ovRecap")
+    .replace(/#fx\b/g, ".fx")
     .replace(/\s*([>,+~])\s*/g, "$1")
     .replace(/\s+/g, " ")
     .trim();

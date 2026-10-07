@@ -21,7 +21,9 @@ import {
   LIMITE_DO_DIA,
   ROTULO_ACAO,
   SELO,
+  COMEMORACAO,
   TITULO_COMEMORACAO,
+  subEstagio,
   glowGanho,
   nomeEnfeite,
   nomeEstagio,
@@ -230,7 +232,11 @@ export function textosDaComemoracao(
           : SELO[c.selo].nome
         : "";
       return {
-        chamada: TITULO_COMEMORACAO.selo,
+        // Protótipo: "Selo conquistado"; nos níveis II e III, "Selo nível N".
+        chamada:
+          (c.nivel ?? 1) > 1
+            ? COMEMORACAO.seloNivel(c.nivel ?? 1)
+            : TITULO_COMEMORACAO.selo,
         titulo,
         // A descrição de cada selo fala do nível I (como no protótipo):
         // nos níveis II e III ela não se aplica (#199).
@@ -241,22 +247,31 @@ export function textosDaComemoracao(
         glow,
       };
     }
-    case "estagio":
+    case "estagio": {
+      const nivel = c.estagio ?? 0;
       return {
-        chamada: TITULO_COMEMORACAO.estagio,
-        titulo: nomeEstagio(c.estagio ?? 0),
-        apoio: "",
+        // Depois da Icônica: "Novo nível de Icônica" (protótipo).
+        chamada:
+          nivel > ULTIMO_ESTAGIO_DA_TRILHA
+            ? COMEMORACAO.novoNivelIconica
+            : TITULO_COMEMORACAO.estagio,
+        titulo: nomeEstagio(nivel),
+        apoio: discreto ? "" : subEstagio(nivel),
         glow,
       };
+    }
     case "capitulo":
       return {
         chamada: c.capitulo
-          ? tituloCapitulo(c.capitulo.mes)
+          ? COMEMORACAO.capituloCompleto(c.capitulo.mes)
           : TITULO_COMEMORACAO.capitulo,
         titulo: c.capitulo
           ? nomeEnfeite(c.capitulo.mes)
           : TITULO_COMEMORACAO.capitulo,
-        apoio: "",
+        apoio:
+          c.capitulo && !discreto
+            ? COMEMORACAO.enfeiteNaColecao(c.capitulo.mes)
+            : "",
         glow,
       };
     case "marco":
@@ -265,15 +280,17 @@ export function textosDaComemoracao(
         // Discreto: sem valor de dinheiro na tela.
         titulo:
           c.marco && !discreto ? textoMarco(c.marco) : TITULO_COMEMORACAO.marco,
-        apoio: "",
+        apoio: discreto ? "" : COMEMORACAO.marcoApoio,
         glow,
       };
     case "meta":
-      // O servidor não manda o nome da meta: o título já diz tudo, sem
-      // repetir na linha de cima.
+      // O servidor não manda o nome da meta nem o valor (o protótipo mostra
+      // "Fundo Viagem" e "€ 300 guardados de verdade"): a linha de cima diz
+      // "Meta concluída" e o nome fica vazio. Depende de decisão do operador
+      // (PR #208): não muda até o servidor mandar esses dados.
       return {
-        chamada: "",
-        titulo: TITULO_COMEMORACAO.meta,
+        chamada: TITULO_COMEMORACAO.meta,
+        titulo: "",
         apoio: "",
         glow,
       };
@@ -284,3 +301,6 @@ export function textosDaComemoracao(
 export function tituloDoAviso(t: TextosComemoracao): string {
   return t.titulo || t.chamada;
 }
+
+/** O último degrau da trilha (Icônica); depois dele vêm os níveis. */
+const ULTIMO_ESTAGIO_DA_TRILHA = 4;

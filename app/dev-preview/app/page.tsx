@@ -303,6 +303,9 @@ export default function DevPreviewApp() {
 
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
+    // A barra fica por cima da Sua Jornada (protótipo): tocar numa aba fecha
+    // a Jornada e vai pra aba.
+    setJornadaAberta(false);
     // Mesmo gesto da rota real (app/page.tsx): tocar de novo na aba ativa
     // volta a Rede pra raiz ou rola a aba pro topo.
     if (tab === activeTab) {
@@ -627,7 +630,11 @@ export default function DevPreviewApp() {
           onVoltar={() => setJornadaAberta(false)}
         />
       )}
-      <ComemoracaoHost userId={usuario.id} />
+      <ComemoracaoHost
+        userId={usuario.id}
+        inicial={usuario.nome.trim().charAt(0).toUpperCase()}
+        onVerJornada={() => setJornadaAberta(true)}
+      />
 
       <JobForm
         open={jobFormOpen}
