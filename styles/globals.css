@@ -1813,6 +1813,18 @@ select:focus-visible,
     color-mix(in srgb, var(--t-mut) 45%, transparent);
 }
 
+/* ── Fundo da Rede (pixel da tela Rede, layout E) ───────────────────
+   A referência usa `--t-redebg`, que é BRANCO no claro e o fundo do tema
+   no escuro -- diferente do `--bg` da casca (#f5f5f7 no claro). Como é a
+   tela inteira, a diferença pesava mais que qualquer outro elemento.
+   Só a Rede usa; nenhuma outra tela muda. */
+:root {
+  --rede-bg: var(--bg);
+}
+[data-mode="light"] {
+  --rede-bg: #ffffff;
+}
+
 /* ── Sua Jornada (J12, #162) ────────────────────────────────────────
    Tokens `--j-*` do card do Início e da tela da Jornada. Nenhuma cor nova:
    cada um aponta pra um token que já existe e já varia por tema (8) e por
@@ -1846,16 +1858,4 @@ select:focus-visible,
   --j-feito-texto: var(--success-text);
   --j-chave-botao: #fff;
   --j-chave-sombra: 0 1px 3px rgba(0, 0, 0, 0.25);
-}
-
-/* ── Fundo da Rede (pixel da tela Rede, layout E) ───────────────────
-   A referência usa `--t-redebg`, que é BRANCO no claro e o fundo do tema
-   no escuro -- diferente do `--bg` da casca (#f5f5f7 no claro). Como é a
-   tela inteira, a diferença pesava mais que qualquer outro elemento.
-   Só a Rede usa; nenhuma outra tela muda. */
-:root {
-  --rede-bg: var(--bg);
-}
-[data-mode="light"] {
-  --rede-bg: #ffffff;
 }
