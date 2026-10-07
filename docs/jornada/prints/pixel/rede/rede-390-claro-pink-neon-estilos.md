@@ -2,15 +2,15 @@
 
 - mockup: `5-telas-8-temas-claro-escuro.html`
 - app: `http://localhost:3107/dev-preview/app`
-- pareados 87 · divergem 62 · só no mockup 26 · só no app 493
-- impacto total: **74.627**
+- pareados 91 · divergem 62 · só no mockup 22 · só no app 471
+- impacto total: **78.114**
 - famílias no mockup: plus jakarta sans (27)
-- famílias no app: plus jakarta sans (165)
+- famílias no app: plus jakarta sans (146)
 
 Ordem por impacto = (soma das diferenças normalizadas) × √(área relativa).
 Em cada célula: **mockup** → app.
 
-## Só os elementos com texto (17)
+## Só os elementos com texto (18)
 
 | impacto | texto | propriedade | mockup → app |
 | ------- | ----- | ----------- | ------------ |
@@ -23,10 +23,6 @@ Em cada célula: **mockup** → app.
 | 5.804 | “[foto do post]” | lineHeight | `18px` → `22.5px` |
 | 5.804 | “[foto do post]” | color | `rgb(29, 63, 122)` → `rgb(15, 15, 15)` |
 | 5.804 | “[foto do post]” | backgroundColor | `rgb(230, 239, 253)` → `rgb(253, 227, 236)` |
-| 2.498 | “A” | fontSize | `11px` → `18px` |
-| 2.498 | “A” | lineHeight | `16.5px` → `27px` |
-| 2.498 | “A” | color | `rgb(59, 42, 122)` → `rgb(255, 255, 255)` |
-| 2.498 | “A” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 | 1.966 | “Postar” | gap | `6px` → `normal` |
 | 1.966 | “Postar” | largura | `62px` → `34.5px` |
 | 1.966 | “Postar” | altura | `84.5px` → `16.5px` |
@@ -35,6 +31,14 @@ Em cada célula: **mockup** → app.
 | 1.699 | “Miguel” | gap | `6px` → `normal` |
 | 1.699 | “Miguel” | largura | `282px` → `45.1px` |
 | 1.699 | “Miguel” | altura | `21px` → `20px` |
+| 1.631 | “A” | fontSize | `11px` → `15px` |
+| 1.631 | “A” | lineHeight | `16.5px` → `22.5px` |
+| 1.631 | “A” | color | `rgb(59, 42, 122)` → `color(srgb 0.345176 0.313098 0.45749)` |
+| 1.631 | “A” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 1.565 | “Juliana” | fontWeight | `700` → `600` |
+| 1.565 | “Juliana” | lineHeight | `21px` → `20px` |
+| 1.565 | “Juliana” | largura | `282px` → `44.9px` |
+| 1.565 | “Juliana” | altura | `21px` → `20px` |
 | 1.31 | “Rede” | largura | `214px` → `58.8px` |
 | 1.162 | “M” | fontSize | `15px` → `17.6px` |
 | 1.162 | “M” | fontWeight | `800` → `700` |
@@ -42,20 +46,18 @@ Em cada célula: **mockup** → app.
 | 1.162 | “M” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 | 1.162 | “M” | largura | `38px` → `44px` |
 | 1.162 | “M” | altura | `38px` → `44px` |
-| 0.95 | “Juliana” | fontSize | `14px` → `15px` |
-| 0.95 | “Juliana” | fontWeight | `700` → `400` |
-| 0.95 | “Juliana” | lineHeight | `21px` → `22.5px` |
-| 0.95 | “Juliana” | gap | `normal` → `8px` |
-| 0.95 | “Juliana” | largura | `282px` → `276px` |
-| 0.95 | “Juliana” | altura | `21px` → `23px` |
+| 1.162 | “J” | fontSize | `15px` → `17.6px` |
+| 1.162 | “J” | fontWeight | `800` → `700` |
+| 1.162 | “J” | lineHeight | `22.5px` → `26.4px` |
+| 1.162 | “J” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 1.162 | “J” | largura | `38px` → `44px` |
+| 1.162 | “J” | altura | `38px` → `44px` |
 | 0.883 | “Amiga 1” | fontSize | `11px` → `15px` |
 | 0.883 | “Amiga 1” | lineHeight | `16.5px` → `22.5px` |
 | 0.883 | “Amiga 2” | fontSize | `11px` → `15px` |
 | 0.883 | “Amiga 2” | lineHeight | `16.5px` → `22.5px` |
 | 0.883 | “Amiga 3” | fontSize | `11px` → `15px` |
 | 0.883 | “Amiga 3” | lineHeight | `16.5px` → `22.5px` |
-| 0.883 | “Amiga 4” | fontSize | `11px` → `15px` |
-| 0.883 | “Amiga 4” | lineHeight | `16.5px` → `22.5px` |
 
 ## Todos os elementos
 
@@ -75,64 +77,63 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | lineHeight | `18px` → `22.5px` |
 |  |  |  |  | color | `rgb(29, 63, 122)` → `rgb(15, 15, 15)` |
 |  |  |  |  | backgroundColor | `rgb(230, 239, 253)` → `rgb(253, 227, 236)` |
-| 5 | 4.546 | nav | 16,762 · 288x60 | backgroundColor | `rgba(255, 255, 255, 0.74)` → `rgba(0, 0, 0, 0)` |
+| 5 | 5.406 | article | 0,686 · 390x439 | altura | `438.5px` → `483.5px` |
+| 6 | 4.546 | nav | 16,762 · 288x60 | backgroundColor | `rgba(255, 255, 255, 0.74)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | borderRadius | `30px 30px 30px 30px` → `0px 0px 0px 0px` |
 |  |  |  |  | boxShadow | `rgba(17, 17, 20, 0.14) 0px 10px 30px 0px` → `none` |
-| 6 | 2.498 | span “A” | 97,81 · 52x52 | fontSize | `11px` → `18px` |
-|  |  |  |  | lineHeight | `16.5px` → `27px` |
-|  |  |  |  | color | `rgb(59, 42, 122)` → `rgb(255, 255, 255)` |
-|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 | 7 | 1.966 | div “Postar” | 16,76 · 62x85 | gap | `6px` → `normal` |
 |  |  |  |  | largura | `62px` → `34.5px` |
 |  |  |  |  | altura | `84.5px` → `16.5px` |
-| 8 | 1.862 | article | 0,686 · 390x439 | altura | `438.5px` → `454px` |
-| 9 | 1.837 | span | 16,76 · 62x62 | fontSize | `11px` → `15px` |
+| 8 | 1.837 | span | 16,76 · 62x62 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 10 | 1.837 | span | 92,76 · 62x62 | fontSize | `11px` → `15px` |
+| 9 | 1.837 | span | 92,76 · 62x62 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 11 | 1.837 | span | 168,76 · 62x62 | fontSize | `11px` → `15px` |
+| 10 | 1.837 | span | 168,76 · 62x62 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 12 | 1.837 | span | 244,76 · 62x62 | fontSize | `11px` → `15px` |
+| 11 | 1.837 | span | 244,76 · 62x62 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 13 | 1.837 | span | 320,76 · 62x62 | fontSize | `11px` → `15px` |
+| 12 | 1.837 | span | 320,76 · 62x62 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 14 | 1.77 | span | 314,762 · 60x60 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
+| 13 | 1.77 | span | 314,762 · 60x60 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 15 | 1.699 | div “Miguel” | 64,228 · 282x21 | fontWeight | `700` → `600` |
+| 14 | 1.699 | div “Miguel” | 64,228 · 282x21 | fontWeight | `700` → `600` |
 |  |  |  |  | lineHeight | `21px` → `20px` |
 |  |  |  |  | gap | `6px` → `normal` |
 |  |  |  |  | largura | `282px` → `45.1px` |
 |  |  |  |  | altura | `21px` → `20px` |
-| 16 | 1.688 | div | 0,76 · 390x85 | largura | `390px` → `358px` |
-| 17 | 1.422 | span | 334,22 · 40x40 | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
+| 15 | 1.688 | div | 0,76 · 390x85 | largura | `390px` → `358px` |
+| 16 | 1.631 | span “A” | 97,81 · 52x52 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
+|  |  |  |  | color | `rgb(59, 42, 122)` → `color(srgb 0.345176 0.313098 0.45749)` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 17 | 1.565 | div “Juliana” | 64,686 · 282x21 | fontWeight | `700` → `600` |
+|  |  |  |  | lineHeight | `21px` → `20px` |
+|  |  |  |  | largura | `282px` → `44.9px` |
+|  |  |  |  | altura | `21px` → `20px` |
+| 18 | 1.422 | span | 334,22 · 40x40 | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `40px` → `44px` |
 |  |  |  |  | altura | `40px` → `44px` |
-| 18 | 1.31 | h1 “Rede” | 16,29 · 214x26 | largura | `214px` → `58.8px` |
-| 19 | 1.2 | div | 0,175 · 390x39 | largura | `390px` → `358px` |
+| 19 | 1.31 | h1 “Rede” | 16,29 · 214x26 | largura | `214px` → `58.8px` |
+| 20 | 1.2 | div | 0,175 · 390x39 | largura | `390px` → `358px` |
 |  |  |  |  | altura | `39px` → `40.5px` |
-| 20 | 1.162 | span “M” | 16,228 · 38x38 | fontSize | `15px` → `17.6px` |
+| 21 | 1.162 | span “M” | 16,228 · 38x38 | fontSize | `15px` → `17.6px` |
 |  |  |  |  | fontWeight | `800` → `700` |
 |  |  |  |  | lineHeight | `22.5px` → `26.4px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `38px` → `44px` |
 |  |  |  |  | altura | `38px` → `44px` |
-| 21 | 1.127 | div | 0,1078 · 390x20 | fontSize | `13px` → `15px` |
-|  |  |  |  | lineHeight | `19.5px` → `22.5px` |
-|  |  |  |  | padding | `0px 16px 0px 16px` → `8px 0px 0px 0px` |
-|  |  |  |  | gap | `normal` → `5px` |
-|  |  |  |  | altura | `19.5px` → `14px` |
-| 22 | 0.95 | div “Juliana” | 64,686 · 282x21 | fontSize | `14px` → `15px` |
-|  |  |  |  | fontWeight | `700` → `400` |
-|  |  |  |  | lineHeight | `21px` → `22.5px` |
-|  |  |  |  | gap | `normal` → `8px` |
-|  |  |  |  | largura | `282px` → `276px` |
-|  |  |  |  | altura | `21px` → `23px` |
+| 22 | 1.162 | span “J” | 16,686 · 38x38 | fontSize | `15px` → `17.6px` |
+|  |  |  |  | fontWeight | `800` → `700` |
+|  |  |  |  | lineHeight | `22.5px` → `26.4px` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+|  |  |  |  | largura | `38px` → `44px` |
+|  |  |  |  | altura | `38px` → `44px` |
 | 23 | 0.883 | div “Amiga 1” | 92,76 · 62x85 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 | 24 | 0.883 | div “Amiga 2” | 168,76 · 62x85 | fontSize | `11px` → `15px` |
@@ -175,19 +176,19 @@ Em cada célula: **mockup** → app.
 | 43 | 0.212 | div | 0,686 · 390x38 | altura | `38px` → `44px` |
 | 44 | 0.169 | div | 0,586 · 390x24 | altura | `24px` → `18px` |
 | 45 | 0.169 | div | 0,1044 · 390x24 | altura | `24px` → `18px` |
-| 46 | 0.119 | path | 98,588 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 46 | 0.147 | path | 98,588 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20px` → `18px` |
 |  |  |  |  | altura | `20px` → `18px` |
-| 47 | 0.119 | path | 98,1046 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 47 | 0.147 | path | 98,1046 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20px` → `18px` |
 |  |  |  |  | altura | `20px` → `18px` |
-| 48 | 0.108 | path | 18,589 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 48 | 0.136 | path | 18,589 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20.8px` → `18px` |
-| 49 | 0.108 | path | 18,1047 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 49 | 0.136 | path | 18,1047 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20.8px` → `18px` |
-| 50 | 0.091 | path | 59,591 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 50 | 0.115 | path | 59,591 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | altura | `15.9px` → `18px` |
-| 51 | 0.091 | path | 59,1049 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 51 | 0.115 | path | 59,1049 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | altura | `15.9px` → `18px` |
 | 52 | 0.086 | svg | 356,238 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
 | 53 | 0.086 | svg | 356,696 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |

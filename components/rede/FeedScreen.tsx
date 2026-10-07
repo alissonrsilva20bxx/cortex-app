@@ -331,7 +331,15 @@ export function FeedScreen({
           sangra). A casca do app dá `px-4` e `--space-shell-top` a TODAS as
           telas, então aqui a margem negativa devolve a borda e o topo só
           para esta tela, sem mexer na casca compartilhada. */}
-      <div className="pb-4" style={{ margin: "-20px -16px 0" }}>
+      <div
+        className="pb-4"
+        style={{
+          margin: "-20px -16px 0",
+          // Fundo da tela como a referência pinta (`--t-redebg`).
+          background: "var(--rede-bg)",
+          minHeight: "100vh",
+        }}
+      >
         {/* Os 16px voltam para CADA bloco: a referência sangra só a foto do
             post. Sem isso o título, a fileira, as abas e os cards encostavam
             na borda. */}
