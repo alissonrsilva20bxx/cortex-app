@@ -424,7 +424,9 @@ describe("Pixel (mockup vence) — contraste dos valores do mockup, listado", ()
       expect(src, arquivo).toContain(
         'import { AvatarAjustes, BotaoNovo } from "@/components/ui/cabecalho";'
       );
-      expect(src, arquivo).toMatch(/<BotaoNovo onClick=\{(onNovo|acaoNovo)\}>Novo<\/BotaoNovo>/);
+      expect(src, arquivo).toMatch(
+        /<BotaoNovo onClick=\{(onNovo|acaoNovo)\}>Novo<\/BotaoNovo>/
+      );
     }
     expect(read("components/home/HeroCard.tsx")).toMatch(
       /background: "var\(--t-soft\)",\s*color: "var\(--t-deep\)",/

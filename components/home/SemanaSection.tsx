@@ -16,7 +16,6 @@ interface Props {
   onGoToAgenda: () => void;
 }
 
-
 /**
  * Seção "Esta semana" da Início (Jornada J02, mockup
  * `5-telas-8-temas-claro-escuro.html`): de hoje até domingo, um dia por

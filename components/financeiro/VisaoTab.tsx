@@ -89,9 +89,7 @@ export function VisaoTab({ jobs, despesas, receitas, onExtrato }: PropsVisao) {
         <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 800 }}>
           Recentes
         </h2>
-        {onExtrato && (
-          <LinkSecao onClick={onExtrato}>Extrato ›</LinkSecao>
-        )}
+        {onExtrato && <LinkSecao onClick={onExtrato}>Extrato ›</LinkSecao>}
       </div>
       <div style={CARD}>
         {recentes.length === 0 ? (

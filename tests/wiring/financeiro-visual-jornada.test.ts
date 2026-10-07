@@ -158,7 +158,9 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
 
   it("FinanceiroHeroCard: o ticket médio é só leitura (faturamento ÷ atendimentos do mês)", () => {
     // Card "Ticket médio" do mockup: divide o que já existia em lib/finance.
-    expect(hero).toContain("const atendimentosMes = monthConcludedCount(jobs, now);");
+    expect(hero).toContain(
+      "const atendimentosMes = monthConcludedCount(jobs, now);"
+    );
     expect(hero).toMatch(
       /atendimentosMes > 0\s*\?\s*Math\.round\(monthEarnings\(jobs, now\) \/ atendimentosMes\)\s*:\s*null/
     );
