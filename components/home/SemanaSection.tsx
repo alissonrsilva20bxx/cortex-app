@@ -5,7 +5,7 @@ import { formatBRL } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
 import {
-  diasRestantesDaSemana,
+  diasComAtendimentoDaSemana,
   formatHora,
   rotuloDiaCurto,
 } from "./inicioAgenda";
@@ -18,12 +18,13 @@ interface Props {
 
 /**
  * Seção "Esta semana" da Início (Jornada J02, mockup
- * `5-telas-8-temas-claro-escuro.html`): de hoje até domingo, um dia por
- * linha; dia sem atendimento aparece como "Dia livre". O atalho
+ * `5-telas-8-temas-claro-escuro.html`): de hoje até domingo, só os dias
+ * com atendimento, um atendimento por linha. Semana sem nenhum atendimento
+ * mostra uma linha "Semana livre". O atalho
  * "Agenda ›" leva à aba Agenda.
  */
 export function SemanaSection({ jobs, onGoToAgenda }: Props) {
-  const dias = diasRestantesDaSemana(jobs);
+  const dias = diasComAtendimentoDaSemana(jobs);
   // Valores do mockup normativo (tela Início, "Esta semana").
   const linhaStyle = {
     display: "flex",
@@ -63,6 +64,13 @@ export function SemanaSection({ jobs, onGoToAgenda }: Props) {
       </div>
 
       <InicioCard style={{ padding: "6px 16px" }}>
+        {dias.length === 0 && (
+          <div
+            style={{ ...linhaStyle, fontSize: "13px", color: "var(--t-mut)" }}
+          >
+            Semana livre
+          </div>
+        )}
         {dias.map((dia, i) => {
           const borda = i < dias.length - 1 ? BORDA : undefined;
           const rotulo = (
@@ -78,23 +86,6 @@ export function SemanaSection({ jobs, onGoToAgenda }: Props) {
               {rotuloDiaCurto(dia.data)}
             </span>
           );
-
-          if (dia.jobs.length === 0) {
-            return (
-              <div key={dia.data} style={{ ...linhaStyle, ...borda }}>
-                {rotulo}
-                <div
-                  style={{
-                    flexGrow: 1,
-                    fontSize: "13px",
-                    color: "var(--t-mut)",
-                  }}
-                >
-                  Dia livre
-                </div>
-              </div>
-            );
-          }
 
           return (
             <Fragment key={dia.data}>

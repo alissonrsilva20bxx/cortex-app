@@ -81,6 +81,19 @@ export function diasRestantesDaSemana(
   return dias;
 }
 
+/**
+ * Só os dias de hoje até domingo que têm atendimento (a "Esta semana" do
+ * mockup normativo lista dias com agenda, não a semana inteira). Nenhum
+ * atendimento some: são os mesmos dias de `diasRestantesDaSemana`, sem os
+ * vazios.
+ */
+export function diasComAtendimentoDaSemana(
+  jobs: Job[],
+  ref: Date = new Date()
+): DiaDaSemana[] {
+  return diasRestantesDaSemana(jobs, ref).filter((d) => d.jobs.length > 0);
+}
+
 /** Atendimentos ativos depois desta semana, em ordem, até `limite` (6,
  * como a lista "Próximos atendimentos" do mockup normativo). */
 export function atendimentosDepoisDaSemana(

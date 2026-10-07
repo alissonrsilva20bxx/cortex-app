@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { Job } from "@/lib/types";
 import {
   atendimentosDepoisDaSemana,
+  diasComAtendimentoDaSemana,
   diasRestantesDaSemana,
   fimDaSemana,
   formatHora,
@@ -103,7 +104,11 @@ describe("J02 — os dois títulos de seção do mockup", () => {
     const src = read("components/home/SemanaSection.tsx");
     expect(src).toMatch(/<h2[^>]*>\s*Esta semana\s*<\/h2>/);
     expect(src).toMatch(/onClick=\{onGoToAgenda\}[\s\S]{0,300}Agenda ›/);
-    expect(src).toContain("Dia livre");
+    // Pixel (decisão do operador): só os dias com atendimento; semana sem
+    // nenhum atendimento mostra "Semana livre".
+    expect(src).toContain("const dias = diasComAtendimentoDaSemana(jobs);");
+    expect(src).toMatch(/dias\.length === 0 && \([\s\S]{0,200}Semana livre/);
+    expect(src).not.toContain("Dia livre");
   });
 
   it('"Próximos atendimentos" é o <h2> de ProximosAtendimentos', () => {
@@ -277,6 +282,20 @@ describe("J02 — inicioAgenda: arranjo dos atendimentos (sem cálculo novo)", (
     const sexta = dias.find((d) => d.data === "2026-09-25")!;
     expect(sexta.jobs.map((j) => j.id)).toEqual(["a", "b"]);
     expect(dias.find((d) => d.data === "2026-09-24")!.jobs).toEqual([]);
+  });
+
+  it("'Esta semana' lista só os dias com atendimento, sem perder nenhum", () => {
+    const jobs = [
+      job({ id: "sex2", data: "2026-09-25", hora: "16:00" }),
+      job({ id: "sex1", data: "2026-09-25", hora: "09:30" }),
+      job({ id: "dom", data: "2026-09-27" }),
+      job({ id: "cancelado", data: "2026-09-24", status: "cancelado" }),
+      job({ id: "depois", data: "2026-09-28" }),
+    ];
+    const dias = diasComAtendimentoDaSemana(jobs, REF);
+    expect(dias.map((d) => d.data)).toEqual(["2026-09-25", "2026-09-27"]);
+    expect(dias[0].jobs.map((j) => j.id)).toEqual(["sex1", "sex2"]);
+    expect(diasComAtendimentoDaSemana([], REF)).toEqual([]);
   });
 
   it("'Próximos atendimentos' começa depois desta semana, em ordem, com limite", () => {
