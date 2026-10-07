@@ -11,10 +11,13 @@ import type { ReactNode } from "react";
 function Svg({
   size,
   strokeWidth,
+  stroke = "currentColor",
   children,
 }: {
   size: number;
   strokeWidth: number;
+  /** `ic(n, s, sw, c)` do protótipo: a cor vai no atributo `stroke`. */
+  stroke?: string;
   children: ReactNode;
 }) {
   return (
@@ -23,7 +26,7 @@ function Svg({
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
+      stroke={stroke}
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -150,9 +153,11 @@ export function IconeDoEnfeite({ mes }: { mes: number }) {
   );
 }
 
+/** `ic('chev', 20, 2, 'var(--t-mut)')`: o traço em --t-mut pelo atributo, a
+ * cor do elemento continua a do texto (--t-ink). */
 export function IconeSeta() {
   return (
-    <Svg size={20} strokeWidth={2}>
+    <Svg size={20} strokeWidth={2} stroke="var(--t-mut)">
       {PATHS.chev}
     </Svg>
   );

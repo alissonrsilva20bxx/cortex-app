@@ -156,3 +156,16 @@ export function destinoDoProximoPasso(acao: AcaoDoProximoPasso): {
   if (acao === "comprovante_cofre") return { aba: "cofre" };
   return { aba: "jobs" };
 }
+
+export type Bolinha = "forte" | "descanso" | "hoje" | "vazia";
+
+/** As 7 bolinhas do card (segunda a domingo), da marca de cada dia que o
+ * servidor manda (`semana.dias`, 0036): a marca vence; sem marca, hoje é
+ * "hoje" e o resto "vazia" (protótipo: `w || (i === S.today ? 'today' : '')`).
+ * Sem `semana` (servidor antigo), não há bolinhas. */
+export function bolinhasDaSemana(estado: EstadoJornada): Bolinha[] {
+  const dias = estado.semana?.dias;
+  if (!dias || dias.length !== 7) return [];
+  const hoje = indiceDeHojeNaSemana(estado);
+  return dias.map((marca, i) => marca ?? (i === hoje ? "hoje" : "vazia"));
+}

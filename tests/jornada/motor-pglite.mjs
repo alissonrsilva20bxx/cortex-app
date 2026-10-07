@@ -76,11 +76,13 @@ log(
 );
 if (falhas) process.exit(1);
 // Na ordem, até a última: senão a reaplicação da 0035 desfaz o motor da 0036
-// e os casos abaixo testariam a versão antiga.
+// e os casos abaixo testariam a versão antiga. A 0038 (embrulho com
+// feitasHoje) também tem de voltar por cima, e ser idempotente.
 for (const f of [
   "0034_jornada_contadores.sql",
   "0035_jornada_rpcs.sql",
   "0036_jornada_prototipo.sql",
+  "0038_jornada_feitas_hoje.sql",
   "0039_jornada_dia_forte.sql",
 ]) {
   try {
@@ -837,6 +839,40 @@ const execAnon = await db.query(`
 espera(
   execAnon.rows.length === 0,
   `anon não executa nenhuma função jornada_* (${execAnon.rows.map((x) => x.f).join() || "nenhuma"})`
+);
+
+// 0038: o que ela já fez HOJE, só ações com regra (o "Próximo passo" do card).
+const FH = "f0f0f0f0-0000-4000-8000-0000000000f0";
+await db.query(`insert into auth.users (id) values ('${FH}')`);
+const feitas = async (dia) =>
+  (
+    await um(
+      `select private.jornada_estado_de('${FH}', '${dia}'::date) -> 'feitasHoje' as f`
+    )
+  ).f;
+espera(
+  JSON.stringify(await feitas("2026-10-02")) === "{}",
+  "feitasHoje começa vazio"
+);
+await db.query(
+  `select private.jornada_aplicar('${FH}', 'guardar_meta', '2026-10-02'::date, 'feitas0001')`
+);
+await db.query(
+  `select private.jornada_aplicar('${FH}', 'despesa', '2026-10-02'::date, 'feitas0002')`
+);
+await db.query(
+  `select private.jornada_aplicar('${FH}', 'despesa', '2026-10-02'::date, 'feitas0003')`
+);
+const feitasHoje = await feitas("2026-10-02");
+espera(
+  feitasHoje.guardar_meta === 1 &&
+    feitasHoje.despesa === 2 &&
+    Object.keys(feitasHoje).length === 2,
+  `feitasHoje = ações de hoje, sem linhas de controle (${JSON.stringify(feitasHoje)})`
+);
+espera(
+  JSON.stringify(await feitas("2026-10-03")) === "{}",
+  "feitasHoje zera no dia seguinte"
 );
 
 log(ok ? "\nRESULTADO: TUDO PASSOU" : "\nRESULTADO: HOUVE FALHA");

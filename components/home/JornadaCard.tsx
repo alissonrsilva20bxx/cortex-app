@@ -10,14 +10,15 @@ import {
   IconeSeta,
 } from "@/components/jornada/jornadaIcones";
 import {
+  bolinhasDaSemana,
   contadorDaSemana,
   faltaProProximo,
   fracaoDoEstagio,
   indiceDeHojeNaSemana,
   missoesFeitas,
   proximoPasso,
+  type Bolinha as TipoDaBolinha,
 } from "@/components/jornada/progresso";
-import type { MarcaDoDia } from "@/lib/jornada/estado";
 import {
   ABRIR_JORNADA,
   LETRAS_DA_SEMANA,
@@ -55,7 +56,7 @@ const ICONE_DO_PASSO: Record<AcaoDoProximoPasso, string> = {
 
 /** Uma bolinha da semana (`.dot` do protótipo): forte, descanso, hoje ou
  * vazia. A vazia muda no escuro (classe em globals.css). */
-function Bolinha({ marca, hoje }: { marca: MarcaDoDia; hoje: boolean }) {
+function Bolinha({ tipo }: { tipo: TipoDaBolinha }) {
   const base: CSSProperties = {
     width: "30px",
     height: "30px",
@@ -65,13 +66,13 @@ function Bolinha({ marca, hoje }: { marca: MarcaDoDia; hoje: boolean }) {
     justifyContent: "center",
     color: "#fff",
   };
-  if (marca === "forte")
+  if (tipo === "forte")
     return (
       <span style={{ ...base, background: "var(--t-acc)" }}>
         <IconeDoPrototipo nome="check" tamanho={15} traco={3} />
       </span>
     );
-  if (marca === "descanso")
+  if (tipo === "descanso")
     return (
       <span
         style={{ ...base, background: "var(--t-soft)", color: "var(--t-deep)" }}
@@ -79,7 +80,7 @@ function Bolinha({ marca, hoje }: { marca: MarcaDoDia; hoje: boolean }) {
         <IconeDoPrototipo nome="moon" tamanho={13} traco={2.4} />
       </span>
     );
-  if (hoje)
+  if (tipo === "hoje")
     return (
       <span
         style={{
@@ -200,7 +201,7 @@ export function JornadaCard({ userId, onAbrir, onProximoPasso }: Props) {
   const capitulo = estado.capitulo;
   const ritmoCompleto = contadorDaSemana(estado, "firme") > 0;
   const dias = diasFortesDeTres(contadorDaSemana(estado, "dias_fortes"));
-  const marcas = estado.semana?.dias ?? [];
+  const bolinhas = bolinhasDaSemana(estado);
   const hoje = indiceDeHojeNaSemana(estado);
   const passo = proximoPasso(estado);
 
@@ -232,6 +233,9 @@ export function JornadaCard({ userId, onAbrir, onProximoPasso }: Props) {
         // O protótipo não define line-height (fica "normal"); o Início
         // herda 1,5 do body (mockup das 5 telas).
         lineHeight: "normal",
+        // O .ph do protótipo herda 16px do navegador; o Início herda 15px do
+        // body (mockup das 5 telas).
+        fontSize: "16px",
         color: "var(--t-ink)",
         background:
           "radial-gradient(120% 90% at right top, color-mix(in srgb, var(--t-acc) 16%, transparent), transparent 60%), var(--t-card)",
@@ -315,15 +319,13 @@ export function JornadaCard({ userId, onAbrir, onProximoPasso }: Props) {
             </span>
           </span>
         </span>
-        <span style={{ color: "var(--t-mut)" }}>
-          <IconeSeta />
-        </span>
+        <IconeSeta />
       </div>
 
-      {marcas.length === 7 && (
+      {bolinhas.length === 7 && (
         // `weekHTML(false)`: segunda a domingo, a bolinha e a letra.
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          {marcas.map((marca, i) => (
+          {bolinhas.map((tipo, i) => (
             <div
               key={i}
               style={{
@@ -336,7 +338,7 @@ export function JornadaCard({ userId, onAbrir, onProximoPasso }: Props) {
                 color: i === hoje ? "var(--t-deep)" : "var(--t-mut)",
               }}
             >
-              <Bolinha marca={marca} hoje={i === hoje} />
+              <Bolinha tipo={tipo} />
               {LETRAS_DA_SEMANA[i]}
             </div>
           ))}

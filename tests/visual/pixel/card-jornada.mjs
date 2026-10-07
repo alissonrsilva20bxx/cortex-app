@@ -34,7 +34,12 @@ const OUT = process.env.PX_OUT ?? `${process.env.TEMP ?? "."}/w2-pixel/card`;
 mkdirSync(OUT, { recursive: true });
 const ALT = { 390: 844, 430: 932 };
 const HOJE = new Date(2026, 9, 2, 10, 0, 0); // sexta, 02/10/2026: o S.date do protótipo
-const browser = await chromium.launch({ executablePath: CHROME });
+// Rasterização em software: com a da GPU, a ponta de um traço da borda
+// tracejada do enfeite variava 1 pixel conforme a combinação anterior do lote.
+const browser = await chromium.launch({
+  executablePath: CHROME,
+  args: ["--disable-gpu", "--disable-gpu-rasterization"],
+});
 
 async function proto(w, md, tm, alvo = null) {
   const ctx = await browser.newContext({
@@ -57,7 +62,7 @@ async function proto(w, md, tm, alvo = null) {
   await p.evaluate(() => document.fonts.ready);
   await p.addStyleTag({
     content:
-      "*,*::before,*::after{animation:none!important;transition:none!important}.ph,.phone{transform:none!important}.scr{overflow:visible!important}" +
+      "*,*::before,*::after{animation:none!important;transition:none!important}.ph,.phone{transform:none!important}.ph{border-radius:0!important;overflow:visible!important;isolation:auto!important;box-shadow:none!important}.scr{overflow:visible!important}" +
       (SEM ? ".jcard .week,.jcard .next{display:none!important}" : ""),
   });
   await p.waitForTimeout(400);
@@ -123,15 +128,11 @@ async function app(w, md, tm) {
   await p.evaluate(() => document.fonts.ready);
   const el = p.getByRole("button", { name: "Abrir sua Jornada" }).first();
   await el.waitFor({ timeout: 20000 });
-  await el.scrollIntoViewIfNeeded();
+  // Sem rolar: o card cabe na tela em 390 e em 430. Rolar 1px mudava a
+  // posição do card no documento (a do protótipo é sem rolagem), e a borda
+  // tracejada do enfeite saía com 1 pixel de diferença.
+  await p.evaluate(() => window.scrollTo(0, 0));
   await p.waitForTimeout(500);
-  // Card numa coordenada fracionária (ex.: y = 244,5 em 430): rola a fração
-  // pra ele cair num pixel inteiro, como no protótipo.
-  await p.evaluate(() => {
-    const c = document.querySelector('[aria-label="Abrir sua Jornada"]');
-    const f = c.getBoundingClientRect().y % 1;
-    if (f) window.scrollBy(0, f);
-  });
   // O app reaplica o tema depois de hidratar: força de novo antes do print.
   await p.evaluate(
     ([tm, md]) => {

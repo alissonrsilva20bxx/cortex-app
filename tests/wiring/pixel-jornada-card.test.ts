@@ -11,10 +11,12 @@ import {
   enfeiteEmPartes,
 } from "../../lib/jornada/textos";
 import {
+  bolinhasDaSemana,
   destinoDoProximoPasso,
   indiceDeHojeNaSemana,
   proximoPasso,
 } from "../../components/jornada/progresso";
+import { ehEstadoJornada } from "../../lib/jornada/estado";
 import { estadoJornadaExemplo } from "../../lib/mockJornada";
 import type { EstadoJornada } from "../../lib/jornada/estado";
 
@@ -176,14 +178,22 @@ describe("Pixel card da Jornada — medidas do protótipo (.jcard)", () => {
     expect(ICONES).toMatch(/<Svg size=\{13\} strokeWidth=\{2\.2\}>/);
   });
 
-  it("a seta: 20px, traço 2, cor --t-mut", () => {
+  it("a seta: 20px, traço 2, traço em --t-mut pelo atributo stroke (como ic())", () => {
     expect(PROTO).toMatch(/ic\('chev', 20, 2, 'var\(--t-mut\)'\)/);
+    expect(PROTO).toMatch(
+      /stroke="' \+ sw \+|fill="none" stroke="' \+ c \+ '"/
+    );
     expect(ICONES).toMatch(
-      /<Svg size=\{20\} strokeWidth=\{2\}>\s*\{PATHS\.chev\}/
+      /<Svg size=\{20\} strokeWidth=\{2\} stroke="var\(--t-mut\)">\s*\{PATHS\.chev\}/
     );
-    expect(CARD).toMatch(
-      /<span style=\{\{ color: "var\(--t-mut\)" \}\}>\s*<IconeSeta \/>/
-    );
+    // Sem embrulho com color: o elemento herda --t-ink, como no protótipo.
+    expect(CARD).not.toMatch(/color: "var\(--t-mut\)" \}\}>\s*<IconeSeta/);
+    expect(CARD).toContain("<IconeSeta />");
+  });
+
+  it("a raiz do card tem 16px de fonte (o .ph do protótipo herda 16px)", () => {
+    expect(PROTO).not.toMatch(/\.ph\{[^}]*font-size/);
+    expect(estiloCom('padding: "16px 16px 14px"')).toContain("fontSize:16px");
   });
 });
 
@@ -545,5 +555,67 @@ describe("Pixel card da Jornada — semana e próximo passo (ordem do operador)"
       expect(read(pagina)).toMatch(
         /onProximoPasso=\{\(acao\) => \{\s*const destino = destinoDoProximoPasso\(acao\);\s*handleTabChange\(destino\.aba\);\s*if \(destino\.financeiro\)\s*setFinanceiroFocusTab\(destino\.financeiro\);/
       );
+  });
+
+  it("as bolinhas saem de semana.dias do servidor (fresh() do protótipo: week e today)", () => {
+    // week:['strong', 'rest', 'strong', null, null, null, null], today:4
+    const week = PROTO.match(/week:\[([^\]]+)\]/)![1]
+      .split(",")
+      .map((x) => x.trim().replace(/'/g, ""))
+      .map((x) =>
+        x === "strong" ? "forte" : x === "rest" ? "descanso" : null
+      );
+    const hojeP = Number(PROTO.match(/today:(\d+)/)![1]);
+    const esperado = week.map((m, i) => m ?? (i === hojeP ? "hoje" : "vazia"));
+    const lab = estadoJornadaExemplo(new Date(2026, 9, 2));
+    expect(lab.semana?.dias).toEqual(week);
+    expect(bolinhasDaSemana(lab)).toEqual(esperado);
+    // Outra semana do servidor: as bolinhas acompanham.
+    expect(
+      bolinhasDaSemana({
+        ...lab,
+        semana: {
+          dias: [null, null, "descanso", "forte", "forte", null, null],
+        },
+      })
+    ).toEqual([
+      "vazia",
+      "vazia",
+      "descanso",
+      "forte",
+      "forte",
+      "vazia",
+      "vazia",
+    ]);
+    expect(bolinhasDaSemana({ ...lab, semana: undefined })).toEqual([]);
+    // O card desenha exatamente essas bolinhas.
+    expect(CARD).toMatch(/const bolinhas = bolinhasDaSemana\(estado\);/);
+    expect(CARD).toMatch(
+      /bolinhas\.map\(\(tipo, i\) =>[\s\S]{0,600}<Bolinha tipo=\{tipo\} \/>/
+    );
+  });
+
+  it("feitasHoje só aceita ações de verdade (nada de linha de controle do servidor)", () => {
+    const lab = estadoJornadaExemplo(new Date(2026, 9, 2));
+    expect(
+      ehEstadoJornada({ ...lab, feitasHoje: { guardar_meta: 1, despesa: 2 } })
+    ).toBe(true);
+    expect(ehEstadoJornada({ ...lab, feitasHoje: { dica_ajudou: 1 } })).toBe(
+      true
+    );
+    expect(ehEstadoJornada({ ...lab, feitasHoje: { dia_na_jornada: 1 } })).toBe(
+      false
+    );
+    expect(ehEstadoJornada({ ...lab, feitasHoje: { despesa: "2" } })).toBe(
+      false
+    );
+    const sql = read("supabase/migrations/0038_jornada_feitas_hoje.sql");
+    expect(sql).toMatch(
+      /and exists \(select 1 from private\.jornada_regra\(a\.acao\)\)/
+    );
+    // Idempotente: o rename só na primeira vez.
+    expect(sql).toMatch(
+      /if not exists \([\s\S]*?p\.proname = 'jornada_estado_base'[\s\S]*?\) then\s*alter function private\.jornada_estado_de\(uuid, date\)\s*rename to jornada_estado_base;/
+    );
   });
 });
