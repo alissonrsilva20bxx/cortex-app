@@ -13,7 +13,11 @@
 --
 -- Numeração: 0037 e 0038 ficam com a #209 (jobs.pago_em, feitasHoje).
 --
--- Só muda private.jornada_aplicar (a mesma da 0036 com o bloco do dia forte
+-- Privacidade (revisão da #208): as marcas de semanas anteriores saem
+-- também quando ela só ABRE a Jornada (public.jornada_estado), não só quando
+-- registra uma ação; a leitura passa a ser volatile por isso.
+--
+-- Só muda private.jornada_aplicar e public.jornada_estado (a mesma da 0036 com o bloco do dia forte
 -- trocado). Nada de tabela, coluna nem permissão nova.
 
 create or replace function private.jornada_aplicar(
@@ -398,3 +402,35 @@ $$;
 
 revoke all on function private.jornada_aplicar(uuid, text, date, text)
   from public, anon, authenticated, service_role;
+
+-- A leitura do estado também apaga as marcas de semanas anteriores (só as
+-- da própria usuária, achada por auth.uid()).
+create or replace function public.jornada_estado(
+  p_fuso text default null,
+  p_deslocamento_min integer default null
+)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_hoje date;
+begin
+  if v_uid is null then
+    raise exception 'jornada: sem sessão' using errcode = '42501';
+  end if;
+  v_hoje := private.jornada_hoje(v_uid, p_fuso, p_deslocamento_min, false);
+  delete from public.jornada_semana_dias d
+  where d.user_id = v_uid
+    and d.dia < v_hoje - (extract(isodow from v_hoje)::integer - 1);
+  return private.jornada_estado_de(v_uid, v_hoje);
+end;
+$$;
+
+revoke all on function public.jornada_estado(text, integer)
+  from public, anon, authenticated, service_role;
+grant execute on function public.jornada_estado(text, integer)
+  to authenticated;

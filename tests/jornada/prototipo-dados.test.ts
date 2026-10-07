@@ -262,14 +262,31 @@ describe("0036 — o ritmo da semana guarda só a marca da semana corrente", () 
     );
     // Nada de "3 ações com Glow" (a regra antiga da 0035/0036).
     expect(motor).not.toMatch(/v_fortes_hoje/);
-    // A 0039 só redefine o motor: nada de tabela nem permissão nova.
-    expect(SQL39).not.toMatch(/create table|alter table|grant /i);
+    // A 0039 só redefine o motor e a leitura: nada de tabela nova, e a única
+    // permissão é a mesma de antes da RPC de leitura (só authenticated).
+    expect(SQL39).not.toMatch(/create table|alter table/i);
+    expect(SQL39.match(/grant [^;]+;/gi)).toEqual([
+      "grant execute on function public.jornada_estado(text, integer)\n  to authenticated;",
+    ]);
   });
 
   it("descanso não apaga um dia forte", () => {
     const motor = corpo("private.jornada_aplicar");
     expect(motor).toMatch(
       /values \(p_user, p_hoje, 'descanso'\)\s+on conflict \(user_id, dia\) do nothing;/
+    );
+  });
+
+  it("abrir a Jornada (só ler o estado) também apaga as marcas de semanas anteriores (0039)", () => {
+    const i = SQL39.lastIndexOf(
+      "create or replace function public.jornada_estado("
+    );
+    expect(i).toBeGreaterThan(-1);
+    const rpc = SQL39.slice(i, SQL39.indexOf("\n$$;", i));
+    // A leitura escreve (apaga): não pode ser stable.
+    expect(rpc).toMatch(/\nvolatile\nsecurity definer\nset search_path = ''\n/);
+    expect(rpc).toMatch(
+      /delete from public\.jornada_semana_dias d\s+where d\.user_id = v_uid\s+and d\.dia < v_hoje - \(extract\(isodow from v_hoje\)::integer - 1\);\s+return private\.jornada_estado_de\(v_uid, v_hoje\);/
     );
   });
 

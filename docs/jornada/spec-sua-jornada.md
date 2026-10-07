@@ -219,7 +219,8 @@ em que ela termina.
   desligados por padrão), Jornada de Começo (opcional, desligada por padrão) e
   **Comemorações: Calma** (0036; só confirmações pequenas e silenciosas).
 - **A marca de cada dia da semana corrente** (0036, §3 "Ritmo da semana"): forte ou
-  descanso, só da semana em curso. A semana virou, as marcas somem.
+  descanso, só da semana em curso. A semana virou, as marcas somem: na primeira ação da
+  semana nova **ou na primeira vez que ela abre a Jornada** (0039), o que vier antes.
 - **Fuso horário** dela, para as viradas de dia/semana/mês.
 
 ### NÃO guardado, nunca

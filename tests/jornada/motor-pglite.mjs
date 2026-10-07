@@ -525,6 +525,22 @@ espera(
   (await marcas(E)) === "12:forte,13:forte,14:forte",
   "descanso depois não desfaz o dia forte"
 );
+// Privacidade (0039): só ABRIR a Jornada (public.jornada_estado) já apaga
+// as marcas de semanas anteriores, sem precisar de uma ação nova.
+await db.exec(
+  `insert into public.jornada_semana_dias (user_id, dia, marca) values ('${E}', '2020-01-06', 'forte')`
+);
+const antesDaLeitura = await marcas(E);
+await como("authenticated", E, () =>
+  db.query("select public.jornada_estado(null, null)")
+);
+const depoisDaLeitura = await marcas(E);
+espera(
+  antesDaLeitura.startsWith("06:forte,") &&
+    !depoisDaLeitura.includes("06:forte") &&
+    depoisDaLeitura === "12:forte,13:forte,14:forte",
+  "abrir a Jornada apaga as marcas de semanas anteriores (as da semana corrente ficam)"
+);
 espera(
   await um(
     `select nivel from public.jornada_selos where user_id = '${E}' and selo = 'semana_firme'`
