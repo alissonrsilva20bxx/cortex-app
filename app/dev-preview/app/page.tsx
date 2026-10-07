@@ -15,11 +15,16 @@ import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
 import { JornadaCard } from "@/components/home/JornadaCard";
 import { JornadaScreen } from "@/components/jornada/JornadaScreen";
 import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
-import { usarTransporteDeLaboratorio } from "@/lib/jornada/cliente";
+import {
+  lojaDaUsuaria,
+  usarTransporteDeLaboratorio,
+} from "@/lib/jornada/cliente";
 import {
   criarTransporteJornadaLaboratorio,
   estadoJornadaContaNova,
   estadoJornadaExemplo,
+  prepararComemoracaoDeLaboratorio,
+  type DemoDeComemoracao,
 } from "@/lib/mockJornada";
 import { JobsTab } from "@/components/jobs/JobsTab";
 import { JobForm } from "@/components/jobs/JobForm";
@@ -213,7 +218,17 @@ export default function DevPreviewApp() {
       setActiveTab("home");
       setTourOpen(true);
     };
+    // "Sua Jornada": toca a mesma comemoração que o botão de demonstração do
+    // protótipo (selo | estagio | meta), pelo caminho de verdade: o próximo
+    // registro do laboratório devolve a fila e o palco toca.
+    (
+      w as unknown as Record<string, (demo: DemoDeComemoracao) => void>
+    ).__previewComemoracao = (demo) => {
+      const { acao } = prepararComemoracaoDeLaboratorio(demo);
+      void lojaDaUsuaria(MOCK_APP_USUARIO.id).registrar(acao);
+    };
     return () => {
+      delete w.__previewComemoracao;
       delete w.__previewLock;
       delete w.__previewUnlock;
       delete w.__previewTour;

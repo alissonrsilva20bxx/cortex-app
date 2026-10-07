@@ -67,11 +67,13 @@ export function JornadaScreen({ userId, onVoltar }: Props) {
     <div
       role="dialog"
       aria-modal="true"
+      data-jornada-tela
       aria-labelledby="jornada-titulo"
       className="fixed inset-0 z-[60] overflow-y-auto no-scrollbar"
       style={{ background: "var(--j-tela-bg)", color: "var(--text)" }}
     >
       <div
+        data-jornada-corpo
         className="mx-auto flex max-w-md flex-col gap-[var(--space-section)] px-4 pb-10"
         style={{
           paddingTop:

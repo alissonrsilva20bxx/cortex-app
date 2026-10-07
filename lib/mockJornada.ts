@@ -120,6 +120,11 @@ function periodos(
 }
 
 /** As preferências da foto "Agora": tudo opt-in desligado, som ligado. */
+/** A usuária do protótipo ("Oi, Bella"): o nome do laboratório da Jornada
+ * em `?jornada=agora` e `?jornada=ano` (as outras telas seguem com a
+ * usuária dos mockups delas). */
+export const NOME_DO_PROTOTIPO = "Bella";
+
 const PREFERENCIAS_DO_PROTOTIPO = {
   somLigado: true,
   modoDiscreto: false,
