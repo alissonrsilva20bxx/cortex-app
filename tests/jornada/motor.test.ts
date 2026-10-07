@@ -40,7 +40,12 @@ const ler = (arquivo: string) =>
 
 const spec = ler("docs/jornada/spec-sua-jornada.md");
 const sql0034 = ler("supabase/migrations/0034_jornada_contadores.sql");
-const sql0035 = ler("supabase/migrations/0035_jornada_rpcs.sql");
+// A 0036 (ordem do operador: protótipo idêntico) redefine algumas funções
+// da 0035. O teste lê a definição que vale: a ÚLTIMA de cada função.
+const sql0035 =
+  ler("supabase/migrations/0035_jornada_rpcs.sql") +
+  "\n" +
+  ler("supabase/migrations/0036_jornada_prototipo.sql");
 const servidor = ler("lib/jornada/servidor.ts");
 
 /** Linhas de tabela markdown de uma seção da spec ("## 3." até a próxima "## "). */
@@ -61,7 +66,7 @@ function linhasDaSecao(numero: number): string[][] {
 
 /** Corpo de uma função SQL: de "create or replace function nome(" até "$$;". */
 function corpoDaFuncao(sql: string, nome: string): string {
-  const inicio = sql.indexOf(`create or replace function ${nome}(`);
+  const inicio = sql.lastIndexOf(`create or replace function ${nome}(`);
   expect(inicio, `função ${nome} existe`).toBeGreaterThanOrEqual(0);
   const abre = sql.indexOf("$$", inicio);
   const fecha = sql.indexOf("$$;", abre + 2);
@@ -121,26 +126,30 @@ describe("J10 contrato: números do motor = spec", () => {
     for (const [acao, esperado] of daSpec) {
       expect(doSql.get(acao), acao).toEqual(esperado);
     }
-    // Além das 9 da spec, só abrir_jornada (0 Glow, contador do selo
-    // "Primeiros passos", §5).
-    expect([...doSql.keys()].filter((k) => !daSpec.has(k))).toEqual([
-      "abrir_jornada",
-    ]);
-    expect(doSql.get("abrir_jornada")?.glow).toBe(0);
+    // Além das 9 da spec com Glow, só as de 0 Glow: abrir_jornada (contador
+    // do selo "Primeiros passos", §5) e as duas da Jornada de Começo (0036).
+    const sem = ["abrir_jornada", "criar_pin", "ver_resumo"];
+    expect([...doSql.keys()].filter((k) => !daSpec.has(k))).toEqual(sem);
+    for (const a of sem) expect(doSql.get(a)?.glow, a).toBe(0);
   });
 
   it("§3: prêmios de uma vez (meta +100, marco +50, capítulo +40, selo 20/30/50)", () => {
     const motor = corpoDaFuncao(sql0035, "private.jornada_aplicar");
+    // 0036: os prêmios saem de private.jornada_premio (um lugar só).
     expect(motor).toContain(
-      "perform private.jornada_somar_glow(p_user, 'prosperar', 100);"
+      "perform private.jornada_somar_glow(p_user, 'prosperar', private.jornada_premio('meta'));"
     );
     expect(motor).toContain(
-      "perform private.jornada_somar_glow(p_user, 'prosperar', 50);"
+      "perform private.jornada_somar_glow(p_user, 'prosperar', private.jornada_premio('marco'));"
     );
     // Capítulo vai só pro total (pilar nulo).
     expect(motor).toContain(
-      "perform private.jornada_somar_glow(p_user, null, 40);"
+      "perform private.jornada_somar_glow(p_user, null, private.jornada_premio('capitulo'));"
     );
+    const premio = corpoDaFuncao(sql0035, "private.jornada_premio");
+    expect(premio).toContain("when 'capitulo' then 40");
+    expect(premio).toContain("when 'meta' then 100");
+    expect(premio).toContain("when 'marco' then 50");
     expect(corpoDaFuncao(sql0035, "private.jornada_glow_nivel")).toContain(
       "when 1 then 20 when 2 then 30 when 3 then 50"
     );
@@ -225,31 +234,18 @@ describe("J10 contrato: números do motor = spec", () => {
         "dica_ajudou_ou_protegeu",
       ],
     ];
-    const meses = [
-      "Janeiro",
-      "Fevereiro",
-      "Março",
-      "Abril",
-      "Maio",
-      "Junho",
-      "Julho",
-      "Agosto",
-      "Setembro",
-      "Outubro",
-      "Novembro",
-      "Dezembro",
-    ];
+    // Ordem do operador (0036): as 3 trincas do protótipo, por mês % 3.
     const daSpec: string[] = [];
-    for (const [mes, , ...trinca] of linhasDaSecao(6)) {
-      const m = meses.indexOf(mes) + 1;
-      if (m === 0) continue;
-      trinca.slice(0, 3).forEach((texto, i) => {
+    for (const [trinca, , ...missoes] of linhasDaSecao(6)) {
+      const t = Number(trinca) - 1;
+      if (!(t >= 0 && t <= 2)) continue;
+      missoes.slice(0, 3).forEach((texto, i) => {
         const par = missao.find(([re]) => re.test(texto));
         expect(par, `missão reconhecida: "${texto}"`).toBeDefined();
-        daSpec.push(`${m}/${i + 1}/${par![1]}/${texto.match(par![0])![1]}`);
+        daSpec.push(`${t}/${i + 1}/${par![1]}/${texto.match(par![0])![1]}`);
       });
     }
-    expect(daSpec).toHaveLength(36);
+    expect(daSpec).toHaveLength(9);
 
     const doSql = [
       ...corpoDaFuncao(sql0035, "private.jornada_missoes").matchAll(
@@ -257,6 +253,10 @@ describe("J10 contrato: números do motor = spec", () => {
       ),
     ].map((m) => `${m[1]}/${m[2]}/${m[3]}/${m[4]}`);
     expect(doSql).toEqual(daSpec);
+    // A trinca do mês é a do protótipo: (mês - 1) % 3.
+    expect(corpoDaFuncao(sql0035, "private.jornada_missoes")).toContain(
+      "where m.trinca = (p_mes - 1) % 3"
+    );
   });
 });
 
@@ -307,7 +307,10 @@ describe("J10 contrato: ordem da fila", () => {
     const doSql = [...missoes.matchAll(/\('[a-z_]+', '([a-z_]+)'\)/g)].map(
       (m) => m[1]
     );
-    expect([...doSql].sort()).toEqual([...tiposTs].sort());
+    // 0036: as trincas do protótipo usam 7 dos 10 tipos; todo tipo que o
+    // servidor manda existe no cliente (que tem texto pros 10).
+    expect(doSql.length).toBeGreaterThan(0);
+    for (const t of doSql) expect(tiposTs, t).toContain(t);
   });
 });
 

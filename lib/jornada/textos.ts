@@ -116,6 +116,8 @@ export const ROTULO_ACAO: Record<Acao, string> = {
   descanso: "Dia de descanso garantido",
   atendimento: "Dia ativo",
   abrir_jornada: "Você abriu sua Jornada",
+  criar_pin: "PIN criado",
+  ver_resumo: "Resumo visto",
 };
 
 /** "Isso me ajudou" / "Isso me protegeu": creditadas pelo servidor à autora. */

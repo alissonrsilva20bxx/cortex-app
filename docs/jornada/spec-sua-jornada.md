@@ -42,7 +42,10 @@ comunidade e marcos de dinheiro).
 15. **Jornada de Começo** (7 dias) pra contas novas, opcional pras testers.
 16. **O app guarda só contadores e selos. Nunca um diário do que ela fez em cada dia.** Isso
     é privacidade, não economia de espaço: um histórico diário detalhado seria uma linha do
-    tempo do trabalho dela.
+    tempo do trabalho dela. **Exceção (ordem do operador, 0036):** o "Ritmo da semana" do
+    protótipo guarda **uma marca por dia, só da semana corrente** — forte, descanso ou
+    nada —, sem nada do que foi feito; as marcas da semana anterior são apagadas na
+    primeira chamada da semana nova (§11).
 17. Idioma e moeda: PT-BR com `€`. Trocar idioma/moeda é decisão **futura** e está fora da
     Fase 2 — mas tudo nasce **traduzível**: todo texto e todo símbolo de moeda moram num
     lugar só (`lib/jornada/textos.ts`), nunca espalhados pelos componentes.
@@ -73,6 +76,8 @@ Passou do limite do dia, a ação registra normal (o contador sobe), só não ga
 | "Isso me ajudou" (recebido numa dica dela) | +5 | 5x | Conectar |
 | "Isso me protegeu" (recebido numa dica dela) | +5 | 5x | Conectar |
 | Registrar atendimento | **0** | — | — (só marca o dia como ativo, 1x/dia) |
+| Criar o PIN (Jornada de Começo) | **0** | — | — (só marca o passo) |
+| Ver o primeiro resumo (Jornada de Começo) | **0** | — | — (só marca o passo) |
 
 **Prêmios de uma vez** (não entram no limite diário):
 
@@ -93,6 +98,9 @@ sem prêmios de uma vez, é 140. Com um dia bom a cada dois, Icônica (3.000) ch
 - **Dia forte:** dia em que **3 ou mais ações deram Glow** (contando cada vez que deu Glow,
   dentro do limite). **Atendimento não conta**, e ação que passou do limite também não.
 - **Semana firme:** semana (segunda a domingo) com **3 ou mais dias fortes**.
+- **Ritmo da semana (0036):** cada dia da semana corrente tem uma marca — **forte** quando
+  vira dia forte, **descanso** quando ela tira o descanso e o dia ainda não é forte (um dia
+  forte continua forte), ou nada. É o que as bolinhas do protótipo mostram.
 
 ---
 
@@ -139,30 +147,29 @@ Glow máximo somando todos os selos: 8 × 100 + 3 × 20 = **860**.
 
 ## 6. Capítulo do mês — as 3 missões de cada mês
 
-Cada mês tem uma trinca **própria** (nenhuma se repete). Fechou as 3 → enfeite do mês na
-coleção + 40 Glow. Não fechou → o mês fica em branco na coleção e nada é tirado.
+**Ordem do operador (0036):** as missões são as **3 trincas do protótipo** aprovado
+(`CH_SETS`), escolhidas pelo mês: janeiro, abril, julho e outubro usam a 1ª; fevereiro,
+maio, agosto e novembro a 2ª; março, junho, setembro e dezembro a 3ª. O enfeite continua
+o do mês. Fechou as 3 → enfeite do mês na coleção + 40 Glow. Não fechou → o mês fica em
+branco na coleção e nada é tirado.
 
 Regras das missões:
+
 - **Nenhuma missão é de volume de trabalho.** Atendimento e receita não entram em missão.
   Só organizar, guardar, proteger, descansar e conectar.
-- **No máximo 1 das 3 missões de cada mês depende de outras pessoas** (as de comunidade,
-  marcadas com ◆). As outras duas dependem só dela.
+- **No máximo 1 das 3 missões de cada trinca depende de outras pessoas** (as de
+  comunidade, marcadas com ◆). As outras duas dependem só dela.
 - O progresso conta só o que aconteceu **dentro do mês**, pelos contadores do mês (§8).
 
-| Mês | Enfeite | Missão 1 | Missão 2 | Missão 3 |
+| Trinca | Meses | Missão 1 | Missão 2 | Missão 3 |
 | --- | ------- | -------- | -------- | -------- |
-| Janeiro | Faísca de janeiro | Planejar 8 dias | Lançar 10 despesas | Tirar 2 descansos |
-| Fevereiro | Coração de fevereiro | Guardar dinheiro em 3 semanas | Guardar 4 comprovantes no Cofre | ◆ Sua dica ajudar 2 vezes |
-| Março | Broto de março | Planejar 6 dias | Ter 10 dias fortes | Guardar 3 comprovantes no Cofre |
-| Abril | Luz de abril | Guardar dinheiro em 4 semanas | Lançar 12 despesas | Tirar 2 descansos |
-| Maio | Paleta de maio | Guardar 5 comprovantes no Cofre | Planejar 8 dias | ◆ Sua dica proteger alguém 1 vez |
-| Junho | Sol de junho | Tirar 3 descansos | Guardar dinheiro em 3 semanas | Ter 2 semanas firmes |
-| Julho | Onda de julho | Lançar 10 despesas | Planejar 6 dias | Ter 12 dias fortes |
-| Agosto | Moeda de agosto | Guardar dinheiro em 4 semanas | Guardar 5 comprovantes no Cofre | Tirar 2 descansos |
-| Setembro | Sino de setembro | Planejar 8 dias | Ter 3 semanas firmes | ◆ Sua dica ajudar 3 vezes |
-| Outubro | Lua de outubro | Tirar 3 descansos | Lançar 12 despesas | Guardar 4 comprovantes no Cofre |
-| Novembro | Folha de novembro | Guardar dinheiro em 4 semanas | Planejar 6 dias | Ter 10 dias fortes |
-| Dezembro | Estrela de dezembro | Tirar 3 descansos | Guardar dinheiro em 2 semanas | ◆ Sua dica ajudar ou proteger 2 vezes |
+| 1 | jan, abr, jul, out | Planejar 8 dias | Guardar dinheiro em 3 semanas | Tirar 2 descansos |
+| 2 | fev, mai, ago, nov | Guardar 4 comprovantes no Cofre | Lançar 10 despesas | Ter 12 dias fortes |
+| 3 | mar, jun, set, dez | Guardar dinheiro em 4 semanas | Planejar 6 dias | ◆ Sua dica ajudar 3 vezes |
+
+Os enfeites, mês a mês: Faísca de janeiro, Coração de fevereiro, Broto de março, Luz de
+abril, Paleta de maio, Sol de junho, Onda de julho, Moeda de agosto, Sino de setembro, Lua
+de outubro, Folha de novembro, Estrela de dezembro.
 
 "Guardar dinheiro em N semanas" = N semanas diferentes do mês (segunda a domingo) com pelo
 menos um valor guardado numa meta. Semana que atravessa a virada do mês conta para o mês
@@ -205,7 +212,10 @@ em que ela termina.
 - **Marcos de dinheiro alcançados** (quais dos 4).
 - **Itens destravados** por estágio.
 - **Preferências:** som, Modo discreto, estágio e selos no perfil público (opt-in,
-  desligados por padrão), Jornada de Começo.
+  desligados por padrão), Jornada de Começo (opcional, desligada por padrão) e
+  **Comemorações: Calma** (0036; só confirmações pequenas e silenciosas).
+- **A marca de cada dia da semana corrente** (0036, §3 "Ritmo da semana"): forte ou
+  descanso, só da semana em curso. A semana virou, as marcas somem.
 - **Fuso horário** dela, para as viradas de dia/semana/mês.
 
 ### NÃO guardado, nunca
@@ -217,6 +227,26 @@ em que ela termina.
 - Nenhuma identidade nos contadores de "Isso me ajudou" / "Isso me protegeu": só o número,
   visível só para a autora.
 - O estágio não é guardado à parte (é calculado do Glow total).
+
+### O que o estado manda para as telas (0036, ordem do operador)
+
+Tudo calculado no servidor, a partir do que já está guardado — nenhum número do protótipo
+fica escrito no cliente:
+
+- **A semana:** a marca de cada dia (segunda a domingo).
+- **O Glow de cada ação** (Glow, limite do dia e pilar, a tabela da §3) e os **prêmios de
+  uma vez** (capítulo, meta, marco e o Glow de cada nível de selo): a tabela "O que dá
+  Glow" e as notas do protótipo.
+- **O progresso de cada selo:** o contador de vida inteira e o corte do próximo nível
+  (o "3/10" do protótipo; nada quando já está no nível máximo).
+- **O dinheiro:** a meta em aberto mais antiga (nome, alvo, quanto já tem), o total
+  guardado e quantas metas ela já concluiu — das metas de verdade dela (§7).
+- **A porcentagem de cada pilar:** a regra do protótipo — cada Glow do pilar soma 1/160
+  (no Conectar, 1/125: cada dica, 4%), até 100%.
+- **A Jornada de Começo:** os 7 passos do protótipo, feitos ou não, lidos do que ela já
+  fez (PIN criado, uma meta criada, planejou, guardou um comprovante, postou na Rede,
+  tirou um descanso, viu um resumo).
+- **A comemoração de meta** leva o nome e o valor da meta concluída e a próxima meta.
 
 ### Onde a decisão acontece
 
@@ -246,3 +276,17 @@ a partir do usuário autenticado. O cliente só registra a ação e mostra o res
 | **J14** (#164) | Resumos da semana, do mês e do ano. |
 | **J15** (#165) | Ligar o motor às ações reais do app (despesa, receita, meta, Cofre, descanso, atendimento, dicas). |
 | **J16** (#166) | Regressão e smoke autenticado da Jornada. |
+
+---
+
+## 11. Ordem do operador — protótipo idêntico (0036)
+
+O operador mandou a tela, os resumos e as comemorações ficarem **idênticos** ao protótipo
+aprovado, com os números vindos do servidor de verdade, e autorizou rever esta spec onde
+o protótipo exigir. O que mudou por essa ordem (migration
+`supabase/migrations/0036_jornada_prototipo.sql`):
+
+1. Decisão 16: a exceção das marcas da semana corrente (§3, §8).
+2. §3: duas ações sem Glow da Jornada de Começo (criar o PIN, ver o primeiro resumo).
+3. §6: as 3 trincas do protótipo no lugar das 12 trincas mensais.
+4. §8: o que o estado manda para as telas e a preferência "Comemorações: Calma".

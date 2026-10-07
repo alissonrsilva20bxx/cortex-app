@@ -229,13 +229,15 @@ describe("#200 — no laboratório, semana, mês e ano têm números próprios",
 
   it("o Glow do ano é o total dela, e o mês bate com o capítulo de outubro", () => {
     expect(ano.contadores.glow).toBe(e.glowTotal);
-    // Outubro (spec §6): tirar descansos, lançar despesas, comprovantes.
-    const progresso = Object.fromEntries(
-      e.capitulo!.missoes.map((m) => [m.tipo, m.progresso])
-    );
-    expect(mes.contadores.descanso).toBe(progresso.tirar_descansos);
-    expect(mes.contadores.despesa).toBe(progresso.lancar_despesas);
-    expect(mes.contadores.comprovante_cofre).toBe(progresso.comprovantes_cofre);
+    // Outubro (spec §6, trinca 1 do protótipo): planejar 8 dias, guardar
+    // dinheiro em 3 semanas, 2 descansos.
+    const doContador: Record<string, string> = {
+      planejar_dias: "planejar",
+      guardar_semanas: "semanas_guardou",
+      tirar_descansos: "descanso",
+    };
+    for (const m of e.capitulo!.missoes)
+      expect(mes.contadores[doContador[m.tipo]] ?? 0, m.tipo).toBe(m.progresso);
   });
 
   it("a semana fechada com 3 dias fortes foi firme", () => {

@@ -264,7 +264,7 @@ describe("J14 — a tela abre o resumo, e as abas trocam", () => {
   });
 
   it("cada aba troca para o próprio período, não para um fixo", () => {
-    expect(container).toMatch(/onClick=\{\(\) => setAba\(tipo\)\}/);
+    expect(container).toMatch(/onClick=\{\(\) => \{\s*setAba\(tipo\);/);
     expect(container).not.toMatch(/setAba\("(semana|mes|ano)"\)/);
   });
 

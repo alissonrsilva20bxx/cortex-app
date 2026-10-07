@@ -95,6 +95,15 @@ const LIGACOES = [
     chamada: 'if (criado.valorAtual > 0) void registrar("guardar_meta");',
     vezes: 2,
   },
+  {
+    // Jornada de Começo (0036): criar o PIN, depois de salvo.
+    acao: "criar_pin",
+    arquivo: "components/pin/PinSetup.tsx",
+    hook: "const { registrar } = useJornada(userId);",
+    depoisDe: 'setError("Não foi possível salvar o PIN. Tente novamente.");',
+    chamada: 'void registrar("criar_pin");',
+    vezes: 1,
+  },
 ] as const;
 
 /** Ações da spec §3 que NÃO existem hoje no app (listadas no PR). */
@@ -177,6 +186,7 @@ describe("cada ação da spec chama o registro certo, depois da ação principal
       const ok =
         ligadas.has(a) ||
         a === "abrir_jornada" ||
+        a === "ver_resumo" ||
         (NAO_EXISTEM_NO_APP as readonly string[]).includes(a);
       expect(ok, a).toBe(true);
     }
@@ -184,6 +194,15 @@ describe("cada ação da spec chama o registro certo, depois da ação principal
     expect(soCodigo(read("components/jornada/JornadaScreen.tsx"))).toMatch(
       /void registrarAbertura\(\)/
     );
+    // ver_resumo (Jornada de Começo, 0036) também é da tela: ao abrir um
+    // resumo, no toque (nunca num efeito).
+    const resumos = soCodigo(
+      read("components/jornada/resumos/JornadaResumos.tsx")
+    );
+    expect(resumos).toMatch(
+      /onClick=\{\(\) => \{\s*setAba\(tipo\);\s*void registrar\("ver_resumo"\);/
+    );
+    expect(resumos.match(/registrar\("ver_resumo"\)/g)).toHaveLength(1);
   });
 
   it("ninguém registra as dicas nem as ações que não existem no app", () => {

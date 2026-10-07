@@ -19,6 +19,9 @@
 
 import type {
   Capitulo,
+  Comemoracao,
+  ProgressoDoSelo,
+  SeloId,
   EstadoJornada,
   MesDaColecao,
   Missao,
@@ -27,69 +30,25 @@ import type {
   TransporteJornada,
 } from "@/lib/jornada/estado";
 
-/** As trincas da spec §6, mês a mês (1 = janeiro). */
-const TRINCAS: Record<number, [TipoMissao, number][]> = {
-  1: [
+/** As 3 trincas de missões (0036, as do protótipo, CH_SETS), por mês % 3:
+ * igual a private.jornada_missoes. */
+const TRINCAS: [TipoMissao, number][][] = [
+  [
     ["planejar_dias", 8],
-    ["lancar_despesas", 10],
+    ["guardar_semanas", 3],
     ["tirar_descansos", 2],
   ],
-  2: [
-    ["guardar_semanas", 3],
+  [
     ["comprovantes_cofre", 4],
-    ["dica_ajudou", 2],
-  ],
-  3: [
-    ["planejar_dias", 6],
-    ["dias_fortes", 10],
-    ["comprovantes_cofre", 3],
-  ],
-  4: [
-    ["guardar_semanas", 4],
-    ["lancar_despesas", 12],
-    ["tirar_descansos", 2],
-  ],
-  5: [
-    ["comprovantes_cofre", 5],
-    ["planejar_dias", 8],
-    ["dica_protegeu", 1],
-  ],
-  6: [
-    ["tirar_descansos", 3],
-    ["guardar_semanas", 3],
-    ["semanas_firmes", 2],
-  ],
-  7: [
     ["lancar_despesas", 10],
-    ["planejar_dias", 6],
     ["dias_fortes", 12],
   ],
-  8: [
-    ["guardar_semanas", 4],
-    ["comprovantes_cofre", 5],
-    ["tirar_descansos", 2],
-  ],
-  9: [
-    ["planejar_dias", 8],
-    ["semanas_firmes", 3],
-    ["dica_ajudou", 3],
-  ],
-  10: [
-    ["tirar_descansos", 3],
-    ["lancar_despesas", 12],
-    ["comprovantes_cofre", 4],
-  ],
-  11: [
+  [
     ["guardar_semanas", 4],
     ["planejar_dias", 6],
-    ["dias_fortes", 10],
+    ["dica_ajudou", 3],
   ],
-  12: [
-    ["tirar_descansos", 3],
-    ["guardar_semanas", 2],
-    ["dica_ajudou_ou_protegeu", 2],
-  ],
-};
+];
 
 function iso(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -110,9 +69,13 @@ function mesAntes(agora: Date, n: number): MesDaColecao {
   return { ano: d.getFullYear(), mes: d.getMonth() + 1 };
 }
 
-function capitulo(agora: Date, progresso: number[]): Capitulo {
+function capitulo(
+  agora: Date,
+  progresso: number[],
+  trinca: [TipoMissao, number][] = TRINCAS[agora.getMonth() % 3]
+): Capitulo {
   const mes = agora.getMonth() + 1;
-  const missoes: Missao[] = TRINCAS[mes].map(([tipo, alvo], i) => ({
+  const missoes: Missao[] = trinca.map(([tipo, alvo], i) => ({
     tipo,
     alvo,
     progresso: Math.min(progresso[i] ?? 0, alvo),
@@ -133,6 +96,12 @@ function periodos(
   ano: Record<string, number> | null = null
 ): Periodos {
   const primeiroDoMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+  // A semana pode começar no mês anterior (sexta 02/10 do protótipo: semana
+  // de 28/09, com mais Glow que outubro). Quando ela começa dentro do mês,
+  // o mês contém a semana: nenhum contador do mês fica menor.
+  if (mes && semana && segunda(agora) >= primeiroDoMes)
+    for (const [k, v] of Object.entries(semana))
+      mes = { ...mes, [k]: Math.max(mes[k] ?? 0, v) };
   const primeiroDoAno = new Date(agora.getFullYear(), 0, 1);
   const semanaPassada = segunda(agora);
   semanaPassada.setDate(semanaPassada.getDate() - 7);
@@ -150,11 +119,76 @@ function periodos(
   };
 }
 
-/** Uma usuária com algumas semanas de Jornada. */
+/** As preferências da foto "Agora": tudo opt-in desligado, som ligado. */
+const PREFERENCIAS_DO_PROTOTIPO = {
+  somLigado: true,
+  modoDiscreto: false,
+  mostrarNoPerfil: false,
+  estagioNoPerfil: false,
+  selosNoPerfil: false,
+  comemoracoesCalmas: false,
+  jornadaComeco: false,
+};
+
+/** O que o servidor manda igual pra toda usuária (a regra, 0035/0036). */
+const DO_SERVIDOR: Pick<EstadoJornada, "glowPorAcao" | "premios"> = {
+  glowPorAcao: {
+    planejar: { glow: 5, limite: 1, pilar: "organizar" },
+    despesa: { glow: 5, limite: 3, pilar: "organizar" },
+    receita: { glow: 5, limite: 3, pilar: "organizar" },
+    guardar_meta: { glow: 15, limite: 1, pilar: "prosperar" },
+    comprovante_cofre: { glow: 10, limite: 3, pilar: "proteger" },
+    descanso: { glow: 10, limite: 1, pilar: "proteger" },
+    dica_ajudou: { glow: 5, limite: 5, pilar: "conectar" },
+    dica_protegeu: { glow: 5, limite: 5, pilar: "conectar" },
+  },
+  premios: { capitulo: 40, meta: 100, marco: 50, seloNivel: [20, 30, 50] },
+};
+
+/** Os cortes de cada selo (0035 `jornada_selos_def`): o laboratório monta o
+ * "próximo nível" igual o servidor. */
+const CORTES: Record<SeloId, number[]> = {
+  primeiros_passos: [1],
+  planejadora: [1, 10, 50],
+  mao_amiga: [1, 25, 100],
+  semana_firme: [1, 4, 12],
+  rumo_a_meta: [1, 10, 50],
+  tudo_guardado: [1, 20, 100],
+  descansar_conta: [1, 8, 24],
+  guardia: [5, 25, 100],
+  em_casa: [1],
+  mes_a_mes: [1, 3, 6],
+  um_ano: [1],
+};
+
+function progressoDosSelos(
+  contadores: Partial<Record<SeloId, number>>
+): Record<SeloId, ProgressoDoSelo> {
+  const out = {} as Record<SeloId, ProgressoDoSelo>;
+  for (const selo of Object.keys(CORTES) as SeloId[]) {
+    const contador = contadores[selo] ?? 0;
+    const nivel = CORTES[selo].filter((c) => contador >= c).length;
+    out[selo] = { contador, proximo: CORTES[selo][nivel] ?? null };
+  }
+  return out;
+}
+
+/**
+ * A usuária de exemplo = a foto "Agora" do protótipo aprovado
+ * (docs/jornada/referencias/prototipo-sua-jornada.html, `fresh()`): 305
+ * Glow, Em movimento, o capítulo do mês com 2/8, 1/3 e 0/2, coleção vazia,
+ * nenhum marco, os selos que o contador dela dá (Primeiros passos,
+ * Planejadora e Mão amiga), 14 "me ajudou" e 4 "me protegeu". Semana com 2
+ * dias fortes e 85 Glow; mês com 2 dias fortes e 40 Glow.
+ */
 export function estadoJornadaExemplo(agora: Date = new Date()): EstadoJornada {
   return {
     glowTotal: 305,
-    glowPorPilar: { organizar: 140, prosperar: 60, proteger: 70, conectar: 35 },
+    // O Glow de cada pilar que dá, pela regra do servidor (0036), as
+    // porcentagens da foto: 72%, 38%, 55% e 46%. A foto do protótipo não
+    // fecha a soma com o total (305); o servidor de verdade também não
+    // fecha quando há prêmio de capítulo (Glow sem pilar).
+    glowPorPilar: { organizar: 115, prosperar: 61, proteger: 88, conectar: 57 },
     estagio: 1,
     glowInicioEstagio: 100,
     glowProximoEstagio: 400,
@@ -162,50 +196,138 @@ export function estadoJornadaExemplo(agora: Date = new Date()): EstadoJornada {
       primeiros_passos: 1,
       planejadora: 1,
       mao_amiga: 1,
-      tudo_guardado: 1,
     },
-    capitulo: capitulo(agora, [2, 5, 1]),
-    // Um mês fechado na coleção, o seguinte em branco e o atual em aberto.
-    colecao: [mesAntes(agora, 2)],
-    marcos: [500],
+    capitulo: capitulo(agora, [2, 1, 0], TRINCAS[agora.getMonth() % 3]),
+    colecao: [],
+    marcos: [],
     ajudou: 14,
     protegeu: 4,
-    preferencias: {
-      somLigado: true,
-      modoDiscreto: false,
-      mostrarNoPerfil: false,
-    },
+    preferencias: { ...PREFERENCIAS_DO_PROTOTIPO },
     hoje: iso(agora),
     destravados: [],
+    ...DO_SERVIDOR,
+    // week:['strong', 'rest', 'strong', null, null, null, null]
+    semana: { dias: ["forte", "descanso", "forte", null, null, null, null] },
+    selosProgresso: progressoDosSelos({
+      primeiros_passos: 1,
+      planejadora: 3,
+      mao_amiga: 14,
+      guardia: 4,
+    }),
+    dinheiro: {
+      meta: { nome: "Fundo Viagem", alvo: 300, atual: 120 },
+      totalGuardado: 120,
+      metasConcluidas: 0,
+    },
+    pilares: { organizar: 72, prosperar: 38, proteger: 55, conectar: 46 },
+    // starterDone:[1, 1, 0, 0, 0, 0, 0]
+    comeco: { passos: [true, true, false, false, false, false, false] },
     periodos: periodos(
       agora,
-      { dias_fortes: 2, despesa: 4, glow: 45 },
+      { dias_fortes: 2, despesa: 2, planejar: 1, glow: 85 },
       { dias_fortes: 3, despesa: 6, firme: 1, glow: 80 },
-      // Mês: bate com o capítulo (2 descansos, 5 despesas, 1 comprovante).
+      // Mês: bate com o capítulo (2 dias planejados, 1 semana guardando).
       {
-        dias_fortes: 5,
-        despesa: 5,
-        receita: 2,
+        dias_fortes: 2,
+        despesa: 2,
+        planejar: 2,
+        semanas_guardou: 1,
+        glow: 40,
+      },
+      // Ano: tudo desde o começo dela (o Glow do ano = o total).
+      {
+        dias_fortes: 9,
+        despesa: 12,
+        receita: 4,
         planejar: 3,
         descanso: 2,
-        comprovante_cofre: 1,
-        semanas_firmes: 1,
-        glow: 120,
-      },
-      // Ano: tudo o que ela fez desde o começo (o Glow do ano = o total).
-      {
-        dias_fortes: 14,
-        despesa: 22,
-        receita: 9,
-        planejar: 8,
-        guardar_meta: 2,
-        descanso: 5,
-        comprovante_cofre: 4,
         dica_ajudou: 14,
         dica_protegeu: 4,
-        semanas_firmes: 2,
-        semanas_guardou: 2,
+        semanas_guardou: 1,
         glow: 305,
+      }
+    ),
+  };
+}
+
+/**
+ * A foto "Mês 14" do protótipo (`SNAPS.m14`): o que o resumo do ANO mostra.
+ * 03/12/2027, 5.220 Glow (Icônica II), 11 enfeites e 3 meses em branco
+ * (dezembro/26, março/27, agosto/27), 103 "me ajudou", 27 "me protegeu".
+ * Abre com `/dev-preview/app?jornada=ano`.
+ */
+export function estadoJornadaAno(agora: Date = new Date()): EstadoJornada {
+  const brancos = new Set(["2026-12", "2027-3", "2027-8"]);
+  const colecao: MesDaColecao[] = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(2026, 9 + i, 1);
+    const chave = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    if (!brancos.has(chave))
+      colecao.push({ ano: d.getFullYear(), mes: d.getMonth() + 1 });
+  }
+  return {
+    ...estadoJornadaExemplo(agora),
+    glowTotal: 5220,
+    glowPorPilar: {
+      organizar: 1900,
+      prosperar: 1500,
+      proteger: 1100,
+      conectar: 720,
+    },
+    estagio: 5,
+    glowInicioEstagio: 4500,
+    glowProximoEstagio: 6000,
+    selos: {
+      primeiros_passos: 1,
+      planejadora: 3,
+      mao_amiga: 3,
+      semana_firme: 3,
+      rumo_a_meta: 3,
+      tudo_guardado: 3,
+      descansar_conta: 3,
+      guardia: 2,
+      em_casa: 1,
+      mes_a_mes: 3,
+      um_ano: 1,
+    },
+    selosProgresso: progressoDosSelos({
+      primeiros_passos: 1,
+      planejadora: 118,
+      mao_amiga: 103,
+      semana_firme: 31,
+      rumo_a_meta: 104,
+      tudo_guardado: 121,
+      descansar_conta: 30,
+      guardia: 27,
+      em_casa: 1,
+      mes_a_mes: 14,
+      um_ano: 1,
+    }),
+    // WK = ['strong', 'rest', 'strong', 'strong', null, null, null]
+    semana: { dias: ["forte", "descanso", "forte", "forte", null, null, null] },
+    dinheiro: {
+      meta: { nome: "Entrada do apartamento", alvo: 5000, atual: 900 },
+      totalGuardado: 4200,
+      metasConcluidas: 4,
+    },
+    pilares: { organizar: 90, prosperar: 84, proteger: 78, conectar: 80 },
+    capitulo: capitulo(agora, [1, 2, 1], TRINCAS[agora.getMonth() % 3]),
+    colecao,
+    marcos: [500, 1000, 2500],
+    ajudou: 103,
+    protegeu: 27,
+    hoje: iso(agora),
+    periodos: periodos(
+      agora,
+      { dias_fortes: 3, glow: 65 },
+      null,
+      { dias_fortes: 3, glow: 40 },
+      {
+        dias_fortes: 140,
+        guardar_meta: 104,
+        dica_ajudou: 103,
+        dica_protegeu: 27,
+        glow: 5220,
       }
     ),
   };
@@ -227,15 +349,91 @@ export function estadoJornadaContaNova(
     marcos: [],
     ajudou: 0,
     protegeu: 0,
-    preferencias: {
-      somLigado: true,
-      modoDiscreto: false,
-      mostrarNoPerfil: false,
-    },
+    preferencias: { ...PREFERENCIAS_DO_PROTOTIPO },
     hoje: iso(agora),
     destravados: [],
+    ...DO_SERVIDOR,
+    semana: { dias: [null, null, null, null, null, null, null] },
+    selosProgresso: progressoDosSelos({}),
+    dinheiro: { meta: null, totalGuardado: 0, metasConcluidas: 0 },
+    pilares: { organizar: 0, prosperar: 0, proteger: 0, conectar: 0 },
+    comeco: { passos: [false, false, false, false, false, false, false] },
     periodos: periodos(agora, null, null),
   };
+}
+
+/**
+ * Comemorações que o PRÓXIMO registro do laboratório devolve (o servidor
+ * de verdade decide isso; aqui é só pra ver cada comemoração na tela e
+ * medir contra o protótipo). Usado por `window.__previewComemoracao` em
+ * app/dev-preview/app/page.tsx.
+ */
+let comemoracoesDoLaboratorio: Comemoracao[] = [];
+let contadorDoLaboratorio = 0;
+
+export type DemoDeComemoracao = "selo" | "estagio" | "meta";
+
+/** As mesmas sequências dos botões de demonstração do protótipo
+ * (docs/jornada/referencias/prototipo-sua-jornada.html): a ação, depois o
+ * que ela destrava, na ordem do servidor (pequena → selo → estágio → meta). */
+export function prepararComemoracaoDeLaboratorio(demo: DemoDeComemoracao): {
+  acao: "guardar_meta" | "planejar";
+} {
+  const id = () => `lab-${++contadorDoLaboratorio}`;
+  const pequena = (
+    acao: "guardar_meta" | "planejar",
+    glow: number
+  ): Comemoracao => ({
+    id: id(),
+    tipo: "pequena",
+    acao,
+    glow,
+    ganhou: true,
+    pilar: acao === "planejar" ? "organizar" : "prosperar",
+  });
+  const rumoAMeta: Comemoracao = {
+    id: id(),
+    tipo: "selo",
+    selo: "rumo_a_meta",
+    nivel: 1,
+    glow: 20,
+    ganhou: true,
+    pilar: "prosperar",
+  };
+  if (demo === "selo") {
+    comemoracoesDoLaboratorio = [pequena("guardar_meta", 15), rumoAMeta];
+    return { acao: "guardar_meta" };
+  }
+  if (demo === "estagio") {
+    comemoracoesDoLaboratorio = [
+      pequena("planejar", 5),
+      {
+        id: id(),
+        tipo: "estagio",
+        estagio: 2,
+        de: 1,
+        glow: 0,
+        ganhou: true,
+        itens: ["icone_estagio_2", "moldura_estagio_2", "tema_estagio_2"],
+      },
+    ];
+    return { acao: "planejar" };
+  }
+  comemoracoesDoLaboratorio = [
+    pequena("guardar_meta", 15),
+    rumoAMeta,
+    {
+      id: id(),
+      tipo: "meta",
+      glow: 100,
+      ganhou: true,
+      pilar: "prosperar",
+      nome: "Fundo Viagem",
+      valor: 300,
+      proxima: "Reserva de emergência",
+    },
+  ];
+  return { acao: "guardar_meta" };
 }
 
 /** Transporte de laboratório: devolve o estado e grava preferências em memória. */
@@ -248,7 +446,15 @@ export function criarTransporteJornadaLaboratorio(
       return estado;
     },
     async registrar() {
-      return { estado, comemoracoes: [] };
+      const comemoracoes = comemoracoesDoLaboratorio;
+      comemoracoesDoLaboratorio = [];
+      // Só com uma comemoração preparada (__previewComemoracao): o Glow dela
+      // entra no total, como no protótipo (305 → 340 com o selo). Sem nada
+      // preparado, o laboratório não mexe no Glow (ele não é o motor).
+      const ganho = comemoracoes.reduce((soma, c) => soma + c.glow, 0);
+      if (ganho > 0)
+        estado = { ...estado, glowTotal: estado.glowTotal + ganho };
+      return { estado, comemoracoes };
     },
     async salvarPreferencias(parcial) {
       estado = {
