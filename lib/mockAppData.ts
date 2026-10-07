@@ -38,6 +38,7 @@ export function buildMockAppSeed(opts?: {
       hora: "14:00",
       valor: 180,
       modalidade: "presencial",
+      // Pixel (mockup Início/Agenda): "14h00 · Studio Miguel".
       local: "Studio Miguel",
       status: "agendado",
       observacoes: null,
@@ -46,6 +47,8 @@ export function buildMockAppSeed(opts?: {
     {
       id: "job-2",
       user_id: uid,
+      // Pixel (mockup "Próximos atendimentos"): "Juliana Prado · Seg 28 ·
+      // 09h00 · R$ 150" e os 5 seguintes, iguais aos do mockup.
       cliente_nome: "Juliana Prado",
       data: daysFromNow(5),
       hora: "09:00",
@@ -224,8 +227,9 @@ export function buildMockAppSeed(opts?: {
     {
       id: "desp-1",
       user_id: uid,
-      descricao: "Esmaltes e produtos",
-      valor: 120,
+      // Pixel (mockup Financeiro A): "Material de trabalho -R$ 64, 18 set."
+      descricao: "Material de trabalho",
+      valor: 64,
       categoria: "equipamentos",
       data: daysFromNow(-5),
       criado_em: daysFromNow(-5),
@@ -242,17 +246,20 @@ export function buildMockAppSeed(opts?: {
     {
       id: "desp-3",
       user_id: uid,
-      descricao: "Impulsionar post no Instagram",
-      valor: 50,
-      categoria: "marketing",
-      data: daysFromNow(-8),
-      criado_em: daysFromNow(-8),
+      // Pixel (mockup): "Estacionamento -R$ 18, 16 set."
+      descricao: "Estacionamento",
+      valor: 18,
+      categoria: "transporte",
+      data: daysFromNow(-7),
+      criado_em: daysFromNow(-7),
     },
     {
       id: "desp-4",
       user_id: uid,
+      // Pixel: o mockup conta 6 saídas somando R$ 313 e mostra 5; esta é
+      // a 6ª (valor que fecha a soma, fora da tela).
       descricao: "Alicate de cutícula novo",
-      valor: 80,
+      valor: 69,
       categoria: "ferramentas",
       data: daysFromNow(-15),
       criado_em: daysFromNow(-15),
@@ -267,6 +274,17 @@ export function buildMockAppSeed(opts?: {
       criado_em: daysFromNow(-1),
     },
   ];
+
+  // Pixel (mockup): "Internet -R$ 99, 10 set."
+  despesas.push({
+    id: "desp-6",
+    user_id: uid,
+    descricao: "Internet",
+    valor: 99,
+    categoria: "internet",
+    data: daysFromNow(-13),
+    criado_em: daysFromNow(-13),
+  });
 
   const receitas_avulsas = [
     {

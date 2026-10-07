@@ -2,7 +2,6 @@
 
 import { formatBRL } from "@/lib/finance";
 import type { Job, Despesa, ReceitaAvulsa } from "@/lib/types";
-import { FinCard } from "./FinCard";
 
 interface Movement {
   id: string;
@@ -83,49 +82,86 @@ function rotuloData(data: string, maiusculo: boolean): string {
 
 /**
  * Valor com sinal no texto: entrada x saída nunca depende só da cor
- * (acessibilidade, regra do J04).
+ * (acessibilidade, regra do J04). Cores do mockup (`--t-green`/`--t-red`).
  */
 function Valor({ m, tamanho }: { m: Movement; tamanho: string }) {
   return (
-    <strong
-      className="font-extrabold tabular-nums shrink-0"
+    <span
       style={{
         fontSize: tamanho,
-        // #175: verde/vermelho de texto pequeno, com 4,5:1 nos 8 temas.
-        color: m.positive ? "var(--success-text)" : "var(--danger-text)",
+        fontWeight: 800,
+        color: m.positive ? "var(--t-green)" : "var(--t-red)",
       }}
     >
       {m.positive ? "+" : "-"}
       {formatBRL(m.valor)}
-    </strong>
+    </span>
   );
 }
 
 const divisor = (i: number, total: number) =>
-  i < total - 1 ? { borderBottom: "1px solid var(--card-border)" } : undefined;
+  i < total - 1 ? { borderBottom: "1px solid var(--t-line)" } : undefined;
+
+const CARD = {
+  background: "var(--t-card)",
+  borderRadius: "20px",
+  padding: "4px 16px",
+} as const;
+
+interface PropsVisao extends Props {
+  /** "Extrato ›": leva pras listas completas (sub-abas, abaixo). */
+  onExtrato?: () => void;
+}
 
 /**
- * Sub-aba Visão no visual novo (Jornada J04, mockup
- * `5-telas-8-temas-claro-escuro.html`): "Recentes" (as 3 movimentações
- * mais novas) e "Mais lançamentos" (as seguintes). Mesmas movimentações de
- * antes (`buildMovements`: atendimentos concluídos + receitas + despesas,
- * por data, as 10 mais recentes). Linhas só de leitura.
+ * Recentes e Mais lançamentos do Financeiro A, iguais ao mockup normativo
+ * (docs/jornada/referencias/5-telas-8-temas-claro-escuro.html): valores de
+ * estilo copiados de lá, cores pelas variáveis `--t-*`. Mesmas
+ * movimentações de antes (`buildMovements`: atendimentos concluídos +
+ * receitas + despesas, por data, as 10 mais recentes). Linhas só de
+ * leitura. Devolve os blocos soltos: o espaçamento entre eles é o `gap`
+ * de 12px da coluna do FinanceiroTab, como no mockup.
  */
-export function VisaoTab({ jobs, despesas, receitas }: Props) {
+export function VisaoTab({ jobs, despesas, receitas, onExtrato }: PropsVisao) {
   const movements = buildMovements(jobs, despesas, receitas);
   const recentes = movements.slice(0, QTD_RECENTES);
   const mais = movements.slice(QTD_RECENTES);
 
   return (
-    <div className="flex flex-col gap-3">
-      <h2 className="font-extrabold" style={{ fontSize: "15px" }}>
-        Recentes
-      </h2>
-      <FinCard style={{ padding: "4px 16px" }}>
+    <>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "4px",
+        }}
+      >
+        <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 800 }}>
+          Recentes
+        </h2>
+        {onExtrato && (
+          <button
+            type="button"
+            onClick={onExtrato}
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "var(--t-deep)",
+              background: "none",
+              border: 0,
+              padding: 0,
+            }}
+          >
+            Extrato ›
+          </button>
+        )}
+      </div>
+      <div style={CARD}>
         {recentes.length === 0 ? (
           <p
-            className="text-sm text-center py-8"
-            style={{ color: "var(--text-muted)" }}
+            className="text-center py-8"
+            style={{ fontSize: "13px", color: "var(--t-mut)" }}
           >
             Nenhuma movimentação ainda.
           </p>
@@ -133,74 +169,94 @@ export function VisaoTab({ jobs, despesas, receitas }: Props) {
           recentes.map((m, i) => (
             <div
               key={m.id}
-              className="flex items-center gap-3"
-              style={{ padding: "11px 0", ...divisor(i, recentes.length) }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "11px 0",
+                ...divisor(i, recentes.length),
+              }}
             >
               <span
-                className="font-bold shrink-0"
                 style={{
-                  width: "48px",
+                  width: "44px",
+                  flexShrink: 0,
                   whiteSpace: "nowrap",
                   fontSize: "11px",
-                  color: "var(--text-muted)",
+                  fontWeight: 700,
+                  color: "var(--t-mut)",
                 }}
               >
                 {rotuloData(m.data, true)}
               </span>
-              <p
-                className="flex-1 min-w-0 font-bold truncate"
-                style={{ fontSize: "13px" }}
+              <div
+                className="truncate"
+                style={{
+                  flexGrow: 1,
+                  minWidth: 0,
+                  fontSize: "13px",
+                  fontWeight: 700,
+                }}
               >
                 {m.desc}
-              </p>
+              </div>
               <Valor m={m} tamanho="13px" />
             </div>
           ))
         )}
-      </FinCard>
+      </div>
 
       {mais.length > 0 && (
         <>
-          <h2 className="font-extrabold mt-1.5" style={{ fontSize: "15px" }}>
+          <h2 style={{ margin: "6px 0 0", fontSize: "15px", fontWeight: 800 }}>
             Mais lançamentos
           </h2>
-          <FinCard style={{ padding: "4px 16px" }}>
+          <section style={CARD}>
             {mais.map((m, i) => (
               <div
                 key={m.id}
-                className="flex items-center gap-3 py-3"
-                style={divisor(i, mais.length)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "12px 0",
+                  ...divisor(i, mais.length),
+                }}
               >
                 <span
-                  className="grid place-items-center shrink-0 font-extrabold"
                   style={{
                     width: "40px",
                     height: "40px",
-                    borderRadius: "var(--radius-sm)",
-                    background: "var(--accent-tint)",
-                    color: "var(--accent-deep)",
+                    flexShrink: 0,
+                    borderRadius: "12px",
+                    background: "var(--t-soft)",
+                    color: "var(--t-deep)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
                   }}
                   aria-hidden
                 >
                   {m.desc.charAt(0).toUpperCase()}
                 </span>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="font-bold truncate"
-                    style={{ fontSize: "14px" }}
+                <div style={{ flexGrow: 1, minWidth: 0 }}>
+                  <div
+                    className="truncate"
+                    style={{ fontSize: "14px", fontWeight: 700 }}
                   >
                     {m.desc}
-                  </p>
-                  <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  </div>
+                  <div style={{ fontSize: "11px", color: "var(--t-mut)" }}>
                     {rotuloData(m.data, false)}
-                  </p>
+                  </div>
                 </div>
                 <Valor m={m} tamanho="14px" />
               </div>
             ))}
-          </FinCard>
+          </section>
         </>
       )}
-    </div>
+    </>
   );
 }

@@ -59,19 +59,25 @@ describe("J04 — os componentes reais estão montados", () => {
     const hero = src.match(/<FinanceiroHeroCard\b[^>]*?\/>/);
     expect(hero).not.toBeNull();
     expect(hero![0]).toContain("metas={metas}");
+    // Pixel (mockup Financeiro A): a Visão está sempre na tela, logo
+    // abaixo dos cards, e o "Extrato ›" leva às listas completas.
     expect(src).toMatch(
-      /tab === "visao" && \(\s*<VisaoTab jobs=\{jobs\} despesas=\{despesas\} receitas=\{receitas\} \/>/
+      /<VisaoTab\s+jobs=\{jobs\}\s+despesas=\{despesas\}\s+receitas=\{receitas\}\s+onExtrato=\{\(\) =>\s+detalhesRef\.current\?\.scrollIntoView\(/
     );
+    expect(src).not.toMatch(/tab === "visao" && \(/);
+    expect(src).toMatch(/ref=\{detalhesRef\}/);
   });
 
   for (const arquivo of [
     "components/financeiro/FinanceiroHeroCard.tsx",
     "components/financeiro/VisaoTab.tsx",
   ]) {
-    it(`${arquivo} usa a superfície única FinCard`, () => {
+    it(`${arquivo} usa a superfície de card do mockup (--t-card, raio 20)`, () => {
+      // Pixel (mockup vence): o card é o do mockup normativo, com os
+      // tokens --t-* em globals.css; o FinCard (--card-solid) saiu daqui.
       const src = read(arquivo);
-      expect(src).toMatch(/^import \{ FinCard \} from "\.\/FinCard";$/m);
-      expect(src).toContain("<FinCard");
+      expect(src).toMatch(/background:\s*"var\(--t-card\)"/);
+      expect(src).toMatch(/borderRadius:\s*"20px"/);
       expect(src).not.toMatch(/background:\s*"var\(--card-solid\)"/);
     });
   }
@@ -125,7 +131,10 @@ describe("J04 — entrada x saída nunca só pela cor", () => {
       read("components/financeiro/FinanceiroHeroCard.tsx")
     );
     expect(src).toMatch(
-      /\{variacaoPct >= 0 \? "\+" : ""\}\s*\{Math\.round\(variacaoPct\)\}% vs \{mesAnterior\}/
+      /\{sobe \? "\+" : ""\}\s*\{Math\.round\(variacaoPct\)\}% vs \{mesAnterior\}/
+    );
+    expect(src).toContain(
+      "const sobe = variacaoPct !== null && variacaoPct >= 0;"
     );
   });
 });
@@ -142,9 +151,18 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     expect(args.length).toBeGreaterThan(0);
     for (const a of args) {
       expect(a, `formatBRL(${a})`).toMatch(
-        /^(saldo|totalEntradaMes|totalDespMes|metaMes)$/
+        /^(saldo|totalEntradaMes|totalDespMes|metaMes|ticketMedio)$/
       );
     }
+  });
+
+  it("FinanceiroHeroCard: o ticket médio é só leitura (faturamento ÷ atendimentos do mês)", () => {
+    // Card "Ticket médio" do mockup: divide o que já existia em lib/finance.
+    expect(hero).toContain("const atendimentosMes = monthConcludedCount(jobs, now);");
+    expect(hero).toMatch(
+      /atendimentosMes > 0\s*\?\s*Math\.round\(monthEarnings\(jobs, now\) \/ atendimentosMes\)\s*:\s*null/
+    );
+    expect(hero).toContain("{formatBRL(ticketMedio)}");
   });
 
   it("FinanceiroHeroCard: cada valor exibido recebe o seu total, não outro total real", () => {

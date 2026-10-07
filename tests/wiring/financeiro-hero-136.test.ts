@@ -25,20 +25,26 @@ function read(relPath: string): string {
 const financeiroTabSrc = read("components/financeiro/FinanceiroTab.tsx");
 
 describe("Card-herói de saldo fica acima das 4 sub-abas, sempre visível (composição aprovada)", () => {
-  it("FinanceiroHeroCard é renderizado antes do SegmentedControl das sub-abas, fora do switch por sub-aba", () => {
+  it("FinanceiroHeroCard é renderizado antes da Visão e do SegmentedControl das sub-abas, fora do switch por sub-aba", () => {
+    // Pixel (mockup normativo Financeiro A): hero no topo, depois a Visão
+    // (Recentes + Mais lançamentos, sempre visível), e só abaixo o gráfico
+    // e o seletor das sub-abas.
     const heroIdx = financeiroTabSrc.indexOf("<FinanceiroHeroCard");
-    // Índice do USO em JSX, não do import no topo do arquivo — o import
-    // também contém a palavra "SegmentedControl", então buscamos a tag
-    // de abertura seguida de `className="mb-5"` (o uso real, único).
+    const visaoIdx = financeiroTabSrc.indexOf("<VisaoTab");
+    // Índice do USO em JSX, não do import no topo do arquivo.
     const segmentedIdx = financeiroTabSrc.search(
-      /<SegmentedControl\r?\n\s*className="mb-5"/
+      /<SegmentedControl\r?\n(\s*\/\/.*\r?\n)?\s*minTouchTarget\r?\n\s*options=\{TABS\}/
     );
-    const visaoIdx = financeiroTabSrc.indexOf('tab === "visao"');
+    const entradasIdx = financeiroTabSrc.indexOf('tab === "entradas" && (');
     expect(heroIdx).toBeGreaterThan(-1);
-    expect(segmentedIdx).toBeGreaterThan(-1);
     expect(visaoIdx).toBeGreaterThan(-1);
-    expect(heroIdx).toBeLessThan(segmentedIdx);
-    expect(segmentedIdx).toBeLessThan(visaoIdx);
+    expect(segmentedIdx).toBeGreaterThan(-1);
+    expect(entradasIdx).toBeGreaterThan(-1);
+    expect(heroIdx).toBeLessThan(visaoIdx);
+    expect(visaoIdx).toBeLessThan(segmentedIdx);
+    expect(segmentedIdx).toBeLessThan(entradasIdx);
+    // A Visão não depende da sub-aba (o mockup sempre a mostra).
+    expect(financeiroTabSrc).not.toMatch(/tab === "visao" && \(/);
   });
 
   it("o hero recebe dado real (jobs/receitas/despesas/totais/saldo), nunca props fabricadas", () => {
@@ -138,7 +144,7 @@ describe("Estado de erro (issue #136) — distinto de vazio, preserva dado exist
   });
 
   it("as 4 sub-abas e o hero continuam funcionando fora dos dois estados de erro (não foram quebrados pela mudança)", () => {
-    expect(financeiroTabSrc).toContain("<VisaoTab jobs={jobs}");
+    expect(financeiroTabSrc).toMatch(/<VisaoTab\s+jobs=\{jobs\}/);
     expect(financeiroTabSrc).toContain("<EntradasTab");
     expect(financeiroTabSrc).toContain("<SaidasTab");
     expect(financeiroTabSrc).toContain("<MetasTab");

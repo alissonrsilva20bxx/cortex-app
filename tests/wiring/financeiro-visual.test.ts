@@ -63,25 +63,10 @@ describe("FinanceiroTab.tsx keeps the 4 real sub-tabs, no reduction to a single 
 describe("FinanceiroHeroCard.tsx (issue #136) uses real data/calculations, never a hardcoded lab value", () => {
   const src = read("components/financeiro/FinanceiroHeroCard.tsx");
 
-  it("computes the chart from real lib/finance.ts calls, not a static dataset", () => {
-    expect(src).toContain("buildChartData(");
-    expect(src).toContain("last30DaysSpark(");
-  });
-
   it("formats every displayed value through formatBRL(prop), never a literal currency string", () => {
     expect(src).toContain("formatBRL(totalEntradaMes");
     expect(src).toContain("formatBRL(totalDespMes");
     expect(src).toContain("formatBRL(saldo");
-  });
-
-  it("uses the line-chart component (AreaSparkline, gradient fill + var(--accent), no hardcoded pink) as the 'area' preference option", () => {
-    expect(src).toContain("<AreaSparkline");
-    expect(src).not.toMatch(/#ff2d78|#ff4f85|#ff376e/i);
-  });
-
-  it("preserves the real bar/area chart preference (chartType prop) — never forces line-only, dropping the 'Barras' option", () => {
-    expect(src).toContain("<MiniBarChart");
-    expect(src).toMatch(/chartType\s*===\s*"area"/);
   });
 
   it("does not contain any of the lab's hardcoded FinanceScreen numbers/text", () => {
@@ -112,6 +97,40 @@ describe("FinanceiroHeroCard.tsx (issue #136) uses real data/calculations, never
     // A prose mention in a comment (explaining the decision) is fine;
     // an actual className="section-label" usage is not.
     expect(src).not.toMatch(/className=["'{].*section-label/);
+  });
+});
+
+describe("FinanceiroGrafico.tsx (pixel) keeps the real chart preference below the mockup content", () => {
+  // O mockup normativo do Financeiro A não tem gráfico: ele saiu do hero e
+  // mora no FinanceiroGrafico, abaixo dos lançamentos, com os mesmos dados.
+  const src = read("components/financeiro/FinanceiroGrafico.tsx");
+  const tab = read("components/financeiro/FinanceiroTab.tsx");
+
+  it("FinanceiroTab mounts FinanceiroGrafico with the real Ajustes preference", () => {
+    expect(tab).toMatch(
+      /^import \{ FinanceiroGrafico \} from "\.\/FinanceiroGrafico";$/m
+    );
+    expect(tab).toMatch(
+      /<FinanceiroGrafico\s+jobs=\{jobs\}\s+receitas=\{receitas\}\s+chartType=\{chartType\}/
+    );
+  });
+
+  it("computes the chart from real lib/finance.ts calls, not a static dataset", () => {
+    expect(src).toContain("buildChartData(jobs, receitas, chartPeriod)");
+    expect(src).toContain("last30DaysSpark(jobs, receitas)");
+  });
+
+  it("preserves the real bar/area chart preference (chartType prop) — never forces line-only, dropping the 'Barras' option", () => {
+    expect(src).toMatch(
+      /chartType === "area" \? \(\s*<Area data=\{sparkData\} \/>\s*\) : chartData\.length > 0 \? \(\s*<Barras data=\{chartData\} \/>/
+    );
+  });
+
+  it("uses the mockup tokens (--t-acc line/bars, --t-soft track), no hardcoded pink", () => {
+    expect(src).toMatch(/stroke="var\(--t-acc\)"/);
+    expect(src).toMatch(/background: "var\(--t-acc\)"/);
+    expect(src).toMatch(/background: "var\(--t-soft\)"/);
+    expect(src).not.toMatch(/#ff2d78|#ff4f85|#ff376e/i);
   });
 });
 
