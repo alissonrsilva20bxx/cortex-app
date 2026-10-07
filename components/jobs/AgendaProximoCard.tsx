@@ -62,9 +62,11 @@ export function AgendaProximoCard({ job, onOpen }: Props) {
               fontSize: "11px",
               fontWeight: 700,
               padding: "3px 9px",
-              // #175: --text sobre o acento ficava abaixo de 4,5:1.
-              background: "var(--accent-fill)",
-              color: "var(--on-accent)",
+              // Pixel do mockup: texto --text sobre o acento (--t-ink sobre
+              // --t-acc). Volta a valer sobre o ajuste de contraste do #175;
+              // os temas em que fica abaixo de 4,5:1 estão listados no PR.
+              background: "var(--accent)",
+              color: "var(--text)",
             }}
           >
             {countdown}
@@ -77,8 +79,9 @@ export function AgendaProximoCard({ job, onOpen }: Props) {
           <button
             type="button"
             onClick={() => onOpen(job)}
-            className="text-left active:opacity-70"
-            style={{ minHeight: "44px" }}
+            // Nome e linha de baixo como no mockup: 12px entre eles.
+            className="flex flex-col text-left active:opacity-70"
+            style={{ minHeight: "44px", gap: "12px" }}
           >
             <span
               className="block truncate"
@@ -103,18 +106,21 @@ export function AgendaProximoCard({ job, onOpen }: Props) {
             className="flex items-center justify-between gap-2"
             style={{ marginTop: "4px" }}
           >
-            <span
-              className="tabular-nums"
-              style={{ fontSize: "20px", fontWeight: 800 }}
-            >
+            {/* Sem tabular-nums: o mockup usa os dígitos proporcionais. */}
+            <span style={{ fontSize: "20px", fontWeight: 800 }}>
               {formatBRL(job.valor, 2)}
             </span>
+            {/* Toque de 44px sem crescer a linha (30px no mockup). */}
             <button
               type="button"
               disabled
               aria-disabled="true"
-              className="disabled:opacity-50"
-              style={{ fontSize: "12px", fontWeight: 700, minHeight: "44px" }}
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                minHeight: "44px",
+                margin: "-7px 0",
+              }}
             >
               Lembrar cliente ›
             </button>

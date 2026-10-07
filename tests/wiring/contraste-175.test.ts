@@ -254,8 +254,11 @@ describe("#175 — os componentes da issue usam os tokens novos", () => {
       ],
     ],
     [
+      // Pixel do mockup (decisão do operador): a pílula "em 2 dias" volta
+      // ao valor do mockup (--t-ink sobre --t-acc), mesmo onde fica abaixo
+      // de 4,5:1. Os temas que reprovam estão listados no PR, pra decisão.
       "components/jobs/AgendaProximoCard.tsx",
-      [/background: "var\(--accent-fill\)",\s*color: "var\(--on-accent\)",/],
+      [/background: "var\(--accent\)",\s*color: "var\(--text\)",/],
     ],
     [
       "components/ui/FilterChips.tsx",

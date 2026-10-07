@@ -8,6 +8,7 @@ import {
   BOTTOM_NAV_DURATION_MS,
   BOTTOM_NAV_EASE,
   BOTTOM_NAV_EDGE,
+  BOTTOM_NAV_OFFSET,
   getBottomNavCompactStyle,
 } from "@/lib/bottomNavCompactStyle";
 
@@ -298,13 +299,12 @@ export function FAB({
           // e acomoda os mesmos px que ela, na mesma curva.
           width: `${navStyle.fabSize}px`,
           height: `${navStyle.fabSize}px`,
-          bottom: `calc(${18 - navStyle.translateY}px + env(safe-area-inset-bottom, 0px))`,
+          bottom: `calc(${BOTTOM_NAV_OFFSET - navStyle.translateY}px + env(safe-area-inset-bottom, 0px))`,
           right: `${BOTTOM_NAV_EDGE}px`,
           transition: `width ${motion}, height ${motion}, bottom ${motion}, opacity 300ms ease, transform 150ms ease`,
           background: "var(--accent)",
-          // Fundação Visual (#142): elevação direcional como `.addButton` do
-          // protótipo, não o halo difuso de --glow.
-          boxShadow: "0 10px 26px rgb(var(--accent-rgb) / 0.25)",
+          // Sombra do "+" do mockup aprovado (`.bar .plus`, --t-plus-sh).
+          boxShadow: "0 8px 20px var(--fab-shadow)",
           opacity: obstructed ? 0.28 : 1,
           pointerEvents: obstructed ? "none" : "auto",
         }}
@@ -313,9 +313,9 @@ export function FAB({
             botão anulava o `active:scale-90` (estilo inline vence classe) e
             o toque no FAB não dava feedback nenhum. */}
         <Plus
-          size={22}
+          size={24}
           color="white"
-          strokeWidth={2.5}
+          strokeWidth={2.6}
           style={{
             transform: open ? "rotate(45deg)" : "rotate(0deg)",
             transition: "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)",

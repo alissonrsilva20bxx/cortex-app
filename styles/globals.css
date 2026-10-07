@@ -648,18 +648,13 @@
 /* ── Base ───────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;
-  /* Fonte nativa do sistema para a interface (spec de lançamento,
-     decisão aprovada em 05/08/2026). --font-display existe só por
-     compatibilidade com quem ainda referencia a variável (nenhum h1/h2/h3
-     do app principal deve usá-la -- ver Fundação Visual #142 abaixo: o
-     protótipo aprovado não troca de família tipográfica em nenhum
-     título, então a regra global que forçava Plus Jakarta Sans foi
-     removida). Reservada só para uso pontual de marca fora do app
-     principal (login/onboarding), se algum dia decidido à parte. */
-  font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  font-feature-settings: "cv11", "ss01";
+  /* Fonte da interface = a do mockup aprovado das 5 telas
+     (docs/jornada/referencias/5-telas-8-temas-claro-escuro.html: `.ph`
+     usa 'Plus Jakarta Sans', system-ui, sans-serif, sem ajuste de
+     glifos). Pixel do mockup: substitui a decisão de 05/08/2026 (fonte
+     nativa do sistema) e os "cv11"/"ss01", que o mockup não usa. A fonte
+     vem do next/font em app/layout.tsx (--font-jakarta). */
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
   --font-display: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
 }
 
@@ -1067,6 +1062,180 @@ select:focus-visible,
 }
 [data-theme="midnight"] {
   --accent-fill: color-mix(in srgb, var(--accent) 98%, #000);
+}
+
+/* ── Pixel do mockup (5 telas, layout A/C/A/C/E) ────────────────────
+   O operador exigiu as 5 telas IGUAIS ao mockup aprovado
+   (docs/jornada/referencias/5-telas-8-temas-claro-escuro.html): onde o
+   app e o mockup diferem, vale o mockup, inclusive sobre as cores
+   semânticas e o cinza de apoio que o app tinha ajustado antes (#142,
+   #175, #183). Os valores abaixo são os `--t-*` do mockup, tema a tema e
+   modo a modo, só pros tokens que divergiam; o resto já batia (J01).
+     --text-muted   <- --t-mut      --divider    <- --t-line
+     --body-bg      <- --t-phbg     --success/--danger/--info (claro)
+     --glass, --glass-border, --glass-shadow <- --t-glass*  (barra pílula)
+     --fab-shadow   <- --t-plus-sh  (o "+")
+   Contraste: o que o mockup reprova em 4,5:1 está listado no PR.
+   O claro usa :root[data-mode="light"] (especificidade maior) porque os
+   blocos de tema escuro logo abaixo têm a mesma de [data-mode]. */
+:root[data-mode="light"] {
+  --text-muted: #6b6b74;
+  --divider: #ececf0;
+  --body-bg: #f5f5f7;
+  --success: #0f8a52;
+  --success-rgb: 15 138 82;
+  --danger: #e0364f;
+  --danger-rgb: 224 54 79;
+  --info: #1d4ed8;
+  --info-rgb: 29 78 216;
+  --glass: rgba(255, 255, 255, 0.74);
+  --glass-border: rgba(17, 17, 20, 0.07);
+  --glass-shadow: rgba(17, 17, 20, 0.14);
+}
+:root,
+[data-theme="grafite"] {
+  --text-muted: #9a9a9a;
+  --divider: #363638;
+  --body-bg:
+    radial-gradient(
+      130% 42% at 50% -6%,
+      rgba(161, 161, 170, 0.2),
+      transparent 70%
+    ),
+    #09090b;
+  --glass: rgba(32, 32, 34, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --fab-shadow: rgba(161, 161, 170, 0.4);
+}
+[data-theme="pink-neon"] {
+  --text-muted: #9a8f96;
+  --divider: #3a2832;
+  --body-bg:
+    radial-gradient(
+      130% 42% at 50% -6%,
+      rgba(255, 45, 120, 0.2),
+      transparent 70%
+    ),
+    #0a0007;
+  --glass: rgba(37, 18, 28, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --fab-shadow: rgba(255, 45, 120, 0.4);
+}
+[data-theme="purple"] {
+  --text-muted: #928b9f;
+  --divider: #312a40;
+  --body-bg:
+    radial-gradient(
+      130% 42% at 50% -6%,
+      rgba(155, 92, 246, 0.2),
+      transparent 70%
+    ),
+    #050010;
+  --glass: rgba(28, 21, 43, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --fab-shadow: rgba(155, 92, 246, 0.4);
+}
+[data-theme="crimson"] {
+  --text-muted: #9f8b8f;
+  --divider: #3e262a;
+  --body-bg:
+    radial-gradient(
+      130% 42% at 50% -6%,
+      rgba(220, 20, 60, 0.2),
+      transparent 70%
+    ),
+    #0e0002;
+  --glass: rgba(40, 17, 20, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --fab-shadow: rgba(220, 20, 60, 0.4);
+}
+[data-theme="ocean"] {
+  --text-muted: #86a3a3;
+  --divider: #254646;
+  --body-bg:
+    radial-gradient(
+      130% 42% at 50% -6%,
+      rgba(0, 206, 209, 0.2),
+      transparent 70%
+    ),
+    #001a1a;
+  --glass: rgba(16, 49, 49, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --fab-shadow: rgba(0, 206, 209, 0.4);
+}
+[data-theme="gold"] {
+  --text-muted: #9e988a;
+  --divider: #3e3626;
+  --body-bg:
+    radial-gradient(
+      130% 42% at 50% -6%,
+      rgba(245, 158, 11, 0.2),
+      transparent 70%
+    ),
+    #0d0900;
+  --glass: rgba(40, 32, 17, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --fab-shadow: rgba(245, 158, 11, 0.4);
+}
+[data-theme="emerald"] {
+  --text-muted: #86a398;
+  --divider: #264537;
+  --body-bg:
+    radial-gradient(
+      130% 42% at 50% -6%,
+      rgba(16, 185, 129, 0.2),
+      transparent 70%
+    ),
+    #001a0d;
+  --glass: rgba(17, 48, 34, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --fab-shadow: rgba(16, 185, 129, 0.4);
+}
+[data-theme="midnight"] {
+  --text-muted: #9091a3;
+  --divider: #2c2c47;
+  --body-bg:
+    radial-gradient(
+      130% 42% at 50% -6%,
+      rgba(99, 102, 241, 0.2),
+      transparent 70%
+    ),
+    #02021a;
+  --glass: rgba(22, 22, 51, 0.74);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.45);
+  --fab-shadow: rgba(99, 102, 241, 0.4);
+}
+[data-mode="light"][data-theme="grafite"] {
+  --fab-shadow: rgba(113, 113, 122, 0.35);
+}
+[data-mode="light"][data-theme="pink-neon"] {
+  --fab-shadow: rgba(255, 45, 120, 0.35);
+}
+[data-mode="light"][data-theme="purple"] {
+  --fab-shadow: rgba(155, 92, 246, 0.35);
+}
+[data-mode="light"][data-theme="crimson"] {
+  --fab-shadow: rgba(220, 20, 60, 0.35);
+}
+[data-mode="light"][data-theme="ocean"] {
+  --fab-shadow: rgba(0, 154, 156, 0.35);
+}
+[data-mode="light"][data-theme="gold"] {
+  --fab-shadow: rgba(194, 120, 3, 0.35);
+}
+[data-mode="light"][data-theme="emerald"] {
+  --fab-shadow: rgba(5, 150, 105, 0.35);
+}
+[data-mode="light"][data-theme="midnight"] {
+  --fab-shadow: rgba(99, 102, 241, 0.35);
 }
 
 /* ── Sua Jornada (J12, #162) ────────────────────────────────────────
