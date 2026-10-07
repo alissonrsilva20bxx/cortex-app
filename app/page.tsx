@@ -694,6 +694,7 @@ export default function Page() {
             activeTab={activeTab}
             onChange={handleTabChange}
             holdOpen={fabOpen || tourOpen}
+            pilulaDaJornada={jornadaAberta}
             renderFab={
               // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
               // de convite a pílula ocupa a linha toda.

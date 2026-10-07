@@ -466,3 +466,37 @@ describe("Pixel Jornada — a ordem da tela é a do journeyHTML", () => {
     );
   });
 });
+
+describe("Pixel Jornada — a barra de abas com a Jornada aberta (430)", () => {
+  const MOCKUP = read(
+    "docs/jornada/referencias/5-telas-8-temas-claro-escuro.html"
+  );
+  const NAV = read("components/BottomNav.tsx");
+  const ESTILO = read("lib/bottomNavCompactStyle.ts");
+  const num = (nome: string) =>
+    Number(ESTILO.match(new RegExp(`export const ${nome} = (\\d+);`))![1]);
+
+  it("o protótipo da Jornada estica a pílula; o mockup das 5 telas a fixa em 288", () => {
+    expect(CSS_PROTO).toMatch(
+      /\.bar\{position:absolute;bottom:22px;left:16px;right:16px;/
+    );
+    expect(CSS_PROTO).toMatch(/\.bar \.pill\{[^}]*width:calc\(100% - 70px\)/);
+    expect(CSS_PROTO).toMatch(/\.bar \.plus\{[^}]*width:60px;height:60px/);
+    expect(MOCKUP).toMatch(/\.b2 \.pill \{[^}]*width:288px/);
+  });
+
+  it('com a Jornada aberta, a pílula = a linha menos o "+" (16+16+60+10 = 102); em 390 dá os 288 do mockup', () => {
+    const tira =
+      num("BOTTOM_NAV_EDGE") * 2 +
+      num("BOTTOM_NAV_FAB_SIZE") +
+      num("BOTTOM_NAV_GAP");
+    // calc(100% - 70px) dentro de uma linha com 16px de cada lado.
+    expect(tira).toBe(16 * 2 + 70);
+    expect(390 - tira).toBe(num("BOTTOM_NAV_PILL_WIDTH"));
+    expect(NAV).toMatch(
+      /: pilulaDaJornada\s+\? `calc\(100vw - \$\{BOTTOM_NAV_EDGE \* 2 \+ BOTTOM_NAV_FAB_SIZE \+ BOTTOM_NAV_GAP\}px\)`\s+: `\$\{BOTTOM_NAV_PILL_WIDTH\}px`/
+    );
+    for (const pagina of ["app/page.tsx", "app/dev-preview/app/page.tsx"])
+      expect(read(pagina), pagina).toContain("pilulaDaJornada={jornadaAberta}");
+  });
+});
