@@ -275,7 +275,7 @@ async function capturarPrototipo(browser, { estado, tema, modo, largura }) {
   }
   await congelar(page);
   const el = page.locator("#ph");
-  const png = await el.screenshot({ timeout: 120000 });
+  const png = await recortar(page, el, "protótipo");
   const estilos = await page.evaluate(COLETAR, ["#ph", PROPS]);
   const secoes =
     estado === "tela"
@@ -313,6 +313,27 @@ async function capturarPrototipo(browser, { estado, tema, modo, largura }) {
  *    concluída" (#ovStage.p5);
  *  - semana / mes / ano: o resumo em stories (#ovRecap.on).
  */
+/**
+ * Recorte de um elemento só com as linhas INTEIRAS dele. O screenshot de
+ * elemento arredonda a altura pra cima (3232,4 → 3233): a última linha
+ * seria o que está atrás do elemento (a página do protótipo, o fundo do
+ * app), que não é de nenhuma das duas telas. As alturas vão pro log.
+ */
+async function recortar(page, alvo, nome) {
+  const b = await alvo.boundingBox();
+  console.log(`altura ${nome}: ${b.height.toFixed(2)}px`);
+  return page.screenshot({
+    timeout: 120000,
+    fullPage: true,
+    clip: {
+      x: b.x,
+      y: b.y,
+      width: Math.floor(b.width),
+      height: Math.floor(b.height),
+    },
+  });
+}
+
 async function acionarPrototipo(page, estado) {
   const esperar = (sel) => page.waitForSelector(sel, { timeout: 20000 });
   if (estado === "semana") {
@@ -433,7 +454,7 @@ async function capturarApp(browser, baseUrl, { estado, tema, modo, largura }) {
   await congelar(page);
   const png =
     estado === "tela"
-      ? await alvo.screenshot({ timeout: 120000 })
+      ? await recortar(page, alvo, "app")
       : await page.screenshot({ timeout: 120000 });
   const estilos = await page.evaluate(COLETAR, [
     estado === "tela" ? "[data-jornada-tela]" : "body",
