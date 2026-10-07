@@ -550,17 +550,17 @@ export function CofreTab({
                 </div>
               </div>
               <div className="grid grid-cols-3" style={{ gap: "8px" }}>
-                <div className="tabular-nums" style={STAT_STYLE}>
+                <div style={STAT_STYLE}>
                   <div style={STAT_VALOR_STYLE}>{files.length}</div>
                   <div style={STAT_LABEL_STYLE}>
                     {files.length === 1 ? "arquivo" : "arquivos"}
                   </div>
                 </div>
-                <div className="tabular-nums" style={STAT_STYLE}>
+                <div style={STAT_STYLE}>
                   <div style={STAT_VALOR_STYLE}>{formatTamanho(usado)}</div>
                   <div style={STAT_LABEL_STYLE}>usado</div>
                 </div>
-                <div className="tabular-nums" style={STAT_STYLE}>
+                <div style={STAT_STYLE}>
                   <div style={STAT_VALOR_STYLE}>{ultimo ?? "—"}</div>
                   <div style={STAT_LABEL_STYLE}>último</div>
                 </div>

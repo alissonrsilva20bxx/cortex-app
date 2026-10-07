@@ -54,4 +54,7 @@ for (const [t,y,h,w] of M) {
   console.log(t.padEnd(36), String(y).padStart(6), String(h).padStart(6), String(w).padStart(6), "|",
     a?String(a[0]).padStart(6):"   ---", a?String(a[1]).padStart(6):"  ---", a?String(a[2]).padStart(6):"  ---", "|", String(dy).padStart(6));
 }
+console.log("\n--- textos do app sem par no mockup ---");
+const mset = new Set(M.map(([t])=>t));
+for (const [t,y] of A) if (!mset.has(t) && y < 900) console.log(String(y).padStart(7), t);
 await b.close();
