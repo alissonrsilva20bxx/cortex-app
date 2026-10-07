@@ -19,6 +19,7 @@ import { NotasSection } from "./NotasSection";
 import { AgendaProximoCard } from "./AgendaProximoCard";
 import { AgendaAcoes } from "./AgendaAcoes";
 import { IconeBusca, IconeSino } from "./agendaIcones";
+import { BotaoRedondo } from "@/components/ui/cabecalho";
 import { EstaSemanaSection, ProximasSemanasSection } from "./AgendaListas";
 import {
   addDays,
@@ -454,21 +455,9 @@ export function JobsTab({
           { rotulo: "Buscar", Icone: IconeBusca },
           { rotulo: "Notificações", Icone: IconeSino },
         ].map(({ rotulo, Icone }) => (
-          <button
-            key={rotulo}
-            type="button"
-            disabled
-            aria-label={rotulo}
-            className="flex shrink-0 items-center justify-center rounded-full"
-            style={{
-              width: "40px",
-              height: "40px",
-              background: "var(--card-solid)",
-              color: "var(--text)",
-            }}
-          >
+          <BotaoRedondo key={rotulo} rotulo={rotulo}>
             <Icone size={20} />
-          </button>
+          </BotaoRedondo>
         ))}
       </div>
 

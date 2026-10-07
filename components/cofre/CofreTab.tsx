@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Shield, Search, LockKeyhole, Upload } from "lucide-react";
+import { BotaoRedondo, IconeCadeado } from "@/components/ui/cabecalho";
+import { IconeBusca } from "@/components/jobs/agendaIcones";
 import { supabase } from "@/lib/supabase";
 import { FilterChips } from "@/components/ui/FilterChips";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -388,8 +390,10 @@ export function CofreTab({
         {/* Cabeçalho (J05) — "Cofre" grande e em negrito forte, como o
             mockup (24px/800), com o botão de busca à direita. A busca é a
             mesma de antes (filtro local por nome, sem rede); o botão só
-            mostra/esconde o campo. O cadeado do mockup não entra: seria
-            uma ação nova ("travar agora") que o app não tem. */}
+            mostra/esconde o campo. O cadeado do mockup entra desabilitado
+            (pixel do mockup): "travar agora" não existe no app (J05: não
+            criar ação nova). Botões nas medidas do mockup
+            (components/ui/cabecalho). */}
         <div className="flex items-center" style={{ gap: "10px" }}>
           <h1
             className="flex-1"
@@ -397,26 +401,22 @@ export function CofreTab({
               fontSize: "24px",
               fontWeight: 800,
               letterSpacing: "-0.5px",
+              lineHeight: 1.1,
               color: "var(--text)",
             }}
           >
             Cofre
           </h1>
-          <button
-            type="button"
+          <BotaoRedondo
+            rotulo="Buscar arquivos"
             onClick={() => setBuscaAberta((v) => !v)}
-            aria-label="Buscar arquivos"
-            aria-expanded={buscaVisivel}
-            className="flex items-center justify-center rounded-full active:opacity-70"
-            style={{
-              width: "44px",
-              height: "44px",
-              background: "var(--card-solid)",
-              color: "var(--text)",
-            }}
+            expandido={buscaVisivel}
           >
-            <Search size={18} />
-          </button>
+            <IconeBusca size={20} />
+          </BotaoRedondo>
+          <BotaoRedondo rotulo="Travar o Cofre">
+            <IconeCadeado size={20} />
+          </BotaoRedondo>
         </div>
 
         {/* Busca — o mesmo filtro client-side de antes, sobre o array

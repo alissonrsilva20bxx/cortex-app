@@ -622,6 +622,11 @@ export default function Page() {
                 onInnerTabChange={setFinInnerTab}
                 onAddDespesa={() => setDespesaFormOpen(true)}
                 onAddReceita={() => setReceitaFormOpen(true)}
+                avatar={{
+                  inicial: usuario.nome.trim().charAt(0).toUpperCase(),
+                  foto: fotoRede || usuario.avatarUrl,
+                  onOpenAjustes: () => handleTabChange("ajustes"),
+                }}
                 objetivos={objetivos}
                 onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
                 onToggleObjetivo={handleToggleObjetivo}

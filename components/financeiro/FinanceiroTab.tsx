@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { AlertCircle, Plus } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import { AvatarAjustes, BotaoNovo } from "@/components/ui/cabecalho";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -53,6 +54,8 @@ interface Props {
   onInnerTabChange?: (tab: string) => void;
   onAddDespesa?: () => void;
   onAddReceita?: () => void;
+  /** Avatar do cabeçalho (como o do Início): abre Ajustes. Pixel do mockup. */
+  avatar?: { inicial: string; foto?: string | null; onOpenAjustes: () => void };
   objetivos: Objetivo[];
   onObjetivoAdded: () => void;
   onToggleObjetivo: (id: string, done: boolean) => Promise<void>;
@@ -78,6 +81,7 @@ export function FinanceiroTab({
   onInnerTabChange,
   onAddDespesa,
   onAddReceita,
+  avatar,
   objetivos,
   onObjetivoAdded,
   onToggleObjetivo,
@@ -259,15 +263,22 @@ export function FinanceiroTab({
   return (
     <div className="pb-4">
       {/* Cabeçalho no visual novo (Jornada J04, mockup
-          5-telas-8-temas-claro-escuro.html): "Financeiro" com o mês por
-          extenso embaixo e o botão "Novo" à direita. O avatar do mockup
-          não está aqui: ele abre Ajustes, e essa ligação mora em
-          app/page.tsx, fora do escopo deste ticket. */}
+          5-telas-8-temas-claro-escuro.html): avatar (abre Ajustes, como no
+          Início), "Financeiro" com o mês por extenso embaixo e o botão
+          "Novo" à direita, nas medidas do mockup (components/ui/cabecalho). */}
       <div className="flex items-center gap-3 mb-4">
+        {avatar && (
+          <AvatarAjustes
+            inicial={avatar.inicial}
+            foto={avatar.foto}
+            onClick={avatar.onOpenAjustes}
+            aria-label="Abrir Ajustes"
+          />
+        )}
         <div className="min-w-0 flex-grow">
           <h1
             className="font-extrabold truncate"
-            style={{ fontSize: "17px", lineHeight: 1.3, color: "var(--text)" }}
+            style={{ fontSize: "17px", lineHeight: 1.5, color: "var(--text)" }}
           >
             Financeiro
           </h1>
@@ -275,25 +286,7 @@ export function FinanceiroTab({
             {monthYearLabel}
           </p>
         </div>
-        {acaoNovo && (
-          <button
-            type="button"
-            onClick={acaoNovo}
-            data-fab-avoid
-            className="flex items-center gap-1.5 shrink-0 rounded-full font-bold transition-opacity active:opacity-80"
-            style={{
-              minHeight: "44px",
-              padding: "0 14px",
-              fontSize: "13px",
-              // #175: texto e fundo de acento com contraste de 4,5:1.
-              background: "var(--accent-fill)",
-              color: "var(--on-accent)",
-            }}
-          >
-            <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
-            Novo
-          </button>
-        )}
+        {acaoNovo && <BotaoNovo onClick={acaoNovo}>Novo</BotaoNovo>}
       </div>
 
       {/* Falha ao revalidar com dado já carregado — mesmo padrão visual

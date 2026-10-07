@@ -244,6 +244,55 @@ describe('o "+" da Rede é o "Postar" do mockup, sem ação nova', () => {
   });
 });
 
+describe("cabeçalhos nas medidas do mockup (Início, Financeiro, Cofre, Agenda)", () => {
+  const cab = read("components/ui/cabecalho.tsx");
+
+  it('o "+ Novo" tem 38px, raio 19, 13px, e o desenho do mockup', () => {
+    expect(MOCKUP).toMatch(
+      /height: ?38px; ?padding: ?0 14px; ?border-radius: ?19px;[^"]*font-size: ?13px; ?font-weight: ?700/
+    );
+    expect(cab).toMatch(
+      /height: "38px",\s*padding: "0 14px",\s*gap: "6px",\s*fontSize: "13px",/
+    );
+  });
+
+  it("o botão redondo tem 40px e o avatar 42px, com toque de 44px", () => {
+    expect(cab).toMatch(
+      /width: "40px",\s*height: "40px",\s*background: "var\(--card-solid\)"/
+    );
+    expect(cab).toMatch(
+      /width: "42px",\s*height: "42px",\s*background: "var\(--accent-tint\)"/
+    );
+    expect((cab.match(/width: "44px", height: "44px"/g) ?? []).length).toBe(2);
+  });
+
+  it.each([
+    [
+      "components/home/GreetingHeader.tsx",
+      /<AvatarAjustes[\s\S]*<BotaoNovo onClick=\{onNovo\}>/,
+    ],
+    [
+      "components/financeiro/FinanceiroTab.tsx",
+      /<AvatarAjustes[\s\S]*<BotaoNovo onClick=\{acaoNovo\}>/,
+    ],
+    [
+      "components/cofre/CofreTab.tsx",
+      /<BotaoRedondo[\s\S]*rotulo="Buscar arquivos"[\s\S]*<BotaoRedondo rotulo="Travar o Cofre">/,
+    ],
+  ])("%s usa as peças do mockup", (arquivo, padrao) => {
+    expect(read(arquivo)).toMatch(padrao);
+  });
+
+  it.each(["app/page.tsx", "app/dev-preview/app/page.tsx"])(
+    "%s: o avatar do Financeiro abre Ajustes, como o do Início",
+    (pagina) => {
+      expect(read(pagina)).toMatch(
+        /avatar=\{\{[\s\S]{0,200}onOpenAjustes: \(\) => handleTabChange\("ajustes"\),/
+      );
+    }
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Ícones: o traço exato do mockup
 // ---------------------------------------------------------------------------
@@ -289,7 +338,11 @@ describe("a Agenda na ordem do mockup", () => {
   it("cabeçalho com busca e sino desabilitados (não existem no app)", () => {
     expect(tab).toMatch(/rotulo: "Buscar", Icone: IconeBusca/);
     expect(tab).toMatch(/rotulo: "Notificações", Icone: IconeSino/);
-    expect(tab).toMatch(/key=\{rotulo\}\s*type="button"\s*disabled/);
+    // Sem onClick = desabilitado (BotaoRedondo, components/ui/cabecalho).
+    expect(tab).toMatch(/<BotaoRedondo key=\{rotulo\} rotulo=\{rotulo\}>/);
+    expect(read("components/ui/cabecalho.tsx")).toMatch(
+      /disabled=\{!onClick\}/
+    );
   });
 
   it("das listas pra baixo: Esta semana, Próximas semanas e só depois a navegação de semana e o dia", () => {

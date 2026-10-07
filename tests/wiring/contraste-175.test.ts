@@ -239,12 +239,12 @@ describe("#175 — a paleta dos temas não mudou", () => {
 describe("#175 — os componentes da issue usam os tokens novos", () => {
   const casosFonte: Array<[string, RegExp[]]> = [
     [
-      "components/home/GreetingHeader.tsx",
-      [/background: "var\(--accent-fill\)",\s*color: "var\(--on-accent\)",/],
-    ],
-    [
-      "components/financeiro/FinanceiroTab.tsx",
-      [/background: "var\(--accent-fill\)",\s*color: "var\(--on-accent\)",/],
+      // Pixel do mockup (decisão do operador): o "+ Novo" do Início e do
+      // Financeiro volta ao valor do mockup (branco sobre --t-acc), num
+      // componente só (components/ui/cabecalho.tsx). Os temas que ficam
+      // abaixo de 4,5:1 estão listados no PR, pra decisão.
+      "components/ui/cabecalho.tsx",
+      [/background: "var\(--accent\)",\s*color: "#fff",/],
     ],
     [
       "components/ui/SegmentedControl.tsx",
