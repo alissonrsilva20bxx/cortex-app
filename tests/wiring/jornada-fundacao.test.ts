@@ -192,10 +192,12 @@ describe("J01 — casca usa os tokens de ritmo, não números soltos", () => {
     expect(lab).not.toMatch(/calc\(24px \+ env\(safe-area-inset-top/);
   });
 
-  it("Início: espaço entre seções vem de --space-section, sem mt-6 dobrando o do cabeçalho", () => {
+  it("Início: espaço entre seções é o do mockup normativo (gap 12, 18 abaixo do cabeçalho), sem mt-6 dobrando", () => {
+    // Pixel (mockup vence): o mockup do Início A usa gap 12px entre os
+    // blocos e 18px entre o cabeçalho e o primeiro card.
     for (const src of [page, lab]) {
       expect(src).toMatch(
-        /grid grid-cols-\[minmax\(0,1fr\)\] gap-\[var\(--space-section\)\]/
+        /className="grid grid-cols-\[minmax\(0,1fr\)\]"\s+style=\{\{ gap: "12px", marginTop: "18px" \}\}/
       );
       expect(src).not.toMatch(/mt-6 grid grid-cols-\[minmax\(0,1fr\)\]/);
     }

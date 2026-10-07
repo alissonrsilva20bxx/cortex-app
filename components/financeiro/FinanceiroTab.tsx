@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { AlertCircle } from "lucide-react";
 import { AvatarAjustes, BotaoNovo } from "@/components/ui/cabecalho";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +9,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { calcEarnings } from "@/lib/finance";
 import { DEFAULT_METAS } from "./constants";
 import { FinanceiroHeroCard } from "./FinanceiroHeroCard";
+import { FinanceiroGrafico } from "./FinanceiroGrafico";
 import { VisaoTab } from "./VisaoTab";
 import { EntradasTab } from "./EntradasTab";
 import { SaidasTab } from "./SaidasTab";
@@ -95,6 +96,8 @@ export function FinanceiroTab({
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<InnerTab>("visao");
   const monthYearLabel = useMemo(getMonthYearLabel, []);
+  // "Extrato ›" (mockup) leva até as listas completas, abaixo do gráfico.
+  const detalhesRef = useRef<HTMLDivElement>(null);
 
   // Estado de erro (issue #136, mesmo padrão já estabelecido em
   // JobsTab.tsx/Agenda #135 — RedeTab.tsx antes disso): distingue "falha
@@ -261,12 +264,16 @@ export function FinanceiroTab({
   }
 
   return (
-    <div className="pb-4">
-      {/* Cabeçalho no visual novo (Jornada J04, mockup
-          5-telas-8-temas-claro-escuro.html): avatar (abre Ajustes, como no
-          Início), "Financeiro" com o mês por extenso embaixo e o botão
-          "Novo" à direita, nas medidas do mockup (components/ui/cabecalho). */}
-      <div className="flex items-center gap-3 mb-4">
+    <div
+      className="pb-4"
+      style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+    >
+      {/* Cabeçalho do mockup Financeiro A (5-telas-8-temas-claro-escuro.html):
+          avatar 42px (abre Ajustes, como no Início), "Financeiro" 17px/800
+          com o mês em 12px embaixo, e o "Novo" de 38px. Avatar e "Novo" são
+          as peças da casca (components/ui/cabecalho): desenho do mockup,
+          toque de 44px. */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         {avatar && (
           <AvatarAjustes
             inicial={avatar.inicial}
@@ -275,16 +282,16 @@ export function FinanceiroTab({
             aria-label="Abrir Ajustes"
           />
         )}
-        <div className="min-w-0 flex-grow">
+        <div style={{ flexGrow: 1, minWidth: 0 }}>
           <h1
-            className="font-extrabold truncate"
-            style={{ fontSize: "17px", lineHeight: 1.5, color: "var(--text)" }}
+            className="truncate"
+            style={{ margin: 0, fontSize: "17px", fontWeight: 800 }}
           >
             Financeiro
           </h1>
-          <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+          <div style={{ fontSize: "12px", color: "var(--t-mut)" }}>
             {monthYearLabel}
-          </p>
+          </div>
         </div>
         {acaoNovo && <BotaoNovo onClick={acaoNovo}>Novo</BotaoNovo>}
       </div>
@@ -385,50 +392,78 @@ export function FinanceiroTab({
             totalDespMes={totalDespMes}
             saldo={saldo}
             metas={metas}
-            chartType={chartType}
           />
 
-          <SegmentedControl
-            className="mb-5"
-            // #174: abas internas com alvo de toque de 44px.
-            minTouchTarget
-            options={TABS}
-            value={tab}
-            onChange={changeTab}
+          {/* Visão do mockup (Recentes + Mais lançamentos): sempre visível,
+              logo abaixo dos cards, como no Financeiro A. */}
+          <VisaoTab
+            jobs={jobs}
+            despesas={despesas}
+            receitas={receitas}
+            onExtrato={() =>
+              detalhesRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              })
+            }
           />
 
-          {tab === "visao" && (
-            <VisaoTab jobs={jobs} despesas={despesas} receitas={receitas} />
-          )}
-          {tab === "entradas" && (
-            <EntradasTab
+          {/* Fora do mockup, preservado: o gráfico (preferência de Ajustes)
+              e as listas completas com exclusão (Entradas, Saídas, Metas).
+              Ficam abaixo do que o mockup mostra. */}
+          <div
+            ref={detalhesRef}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              marginTop: "6px",
+            }}
+          >
+            <FinanceiroGrafico
               jobs={jobs}
               receitas={receitas}
-              totalEntradaMes={totalEntradaMes}
-              onAddReceita={onAddReceita}
-              onDeleteReceita={deleteReceita}
+              chartType={chartType}
             />
-          )}
-          {tab === "saidas" && (
-            <SaidasTab
-              despesas={despesas}
-              despMes={despMes}
-              totalDespMes={totalDespMes}
-              onAddDespesa={onAddDespesa}
-              onDeleteDespesa={deleteDespesa}
+
+            <SegmentedControl
+              // #174: abas internas com alvo de toque de 44px.
+              minTouchTarget
+              options={TABS}
+              value={tab}
+              onChange={changeTab}
             />
-          )}
-          {tab === "metas" && (
-            <MetasTab
-              jobs={jobs}
-              receitas={receitas}
-              metas={metas}
-              objetivos={objetivos}
-              userId={userId}
-              onObjetivoAdded={onObjetivoAdded}
-              onToggleObjetivo={onToggleObjetivo}
-            />
-          )}
+
+            {tab === "entradas" && (
+              <EntradasTab
+                jobs={jobs}
+                receitas={receitas}
+                totalEntradaMes={totalEntradaMes}
+                onAddReceita={onAddReceita}
+                onDeleteReceita={deleteReceita}
+              />
+            )}
+            {tab === "saidas" && (
+              <SaidasTab
+                despesas={despesas}
+                despMes={despMes}
+                totalDespMes={totalDespMes}
+                onAddDespesa={onAddDespesa}
+                onDeleteDespesa={deleteDespesa}
+              />
+            )}
+            {tab === "metas" && (
+              <MetasTab
+                jobs={jobs}
+                receitas={receitas}
+                metas={metas}
+                objetivos={objetivos}
+                userId={userId}
+                onObjetivoAdded={onObjetivoAdded}
+                onToggleObjetivo={onToggleObjetivo}
+              />
+            )}
+          </div>
         </>
       )}
     </div>

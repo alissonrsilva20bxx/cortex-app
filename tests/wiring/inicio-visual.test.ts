@@ -91,7 +91,10 @@ describe("the Início component files on disk carry the T2 visual rewrite", () =
     // destaque e "<nome> · <dia curto>", como no mockup aprovado.
     const src = read("components/home/NextJobCard.tsx");
     expect(src).toContain("{formatHora(job.hora)}");
-    expect(src).toMatch(/\{job\.clienteNome\} · \{rotuloDiaCurto\(job\.data\)/);
+    // Pixel (mockup normativo): só o primeiro nome, dia curto em minúsculas.
+    expect(src).toMatch(
+      /\{job\.clienteNome\.split\(" "\)\[0\]\} ·\{" "\}\s*\{rotuloDiaCurto\(job\.data\)\.toLowerCase\(\)\}/
+    );
   });
 });
 
@@ -144,11 +147,11 @@ describe("the Início component files carry the #131 visual-review correction (r
       expect(src, file).not.toMatch(/background:\s*"var\(--card-solid\)"/);
     }
     expect(read("components/home/InicioCard.tsx")).toContain(
-      'background: tom === "cofre" ? "var(--hero-bg)" : "var(--card-solid)"'
+      'background: tom === "cofre" ? "var(--t-hero)" : "var(--t-card)"'
     );
   });
 
-  it("the Início lists divide rows with --card-border, not a magic value", () => {
+  it("the Início lists divide rows with the mockup line token (--t-line), not a magic value", () => {
     // Jornada J02 (#152): o bloco interno do NextJobCard saiu junto com o card antigo;
     // as linhas novas ("Esta semana", "Próximos atendimentos") seguem a
     // mesma regra de borda neutra.
@@ -157,7 +160,7 @@ describe("the Início component files carry the #131 visual-review correction (r
       "components/home/ProximosAtendimentos.tsx",
     ]) {
       expect(read(file), file).toMatch(
-        /borderBottom:\s*"1px solid var\(--card-border\)"/
+        /borderBottom:\s*"1px solid var\(--t-line\)"/
       );
     }
   });

@@ -97,11 +97,11 @@ describe("HeroCard — o card principal inteiro dispara onGoToFinanceiro", () =>
     );
   });
 
-  it("cores do card principal são temáticas (var(--accent)/--accent-tint), nunca o rosa fixo do protótipo (#ff2d78, decisão da Fase 1/#124)", () => {
-    // Jornada J02 (#152): sem o CTA, a regra vale pra barra e a pílula do
-    // card -- sempre tokens do tema, nunca hex fixo.
-    expect(heroCardSrc).toMatch(/background:\s*"var\(--accent\)"/);
-    expect(heroCardSrc).toMatch(/background:\s*"var\(--accent-tint\)"/);
+  it("cores do card principal são as do mockup normativo (--t-*), nunca o rosa fixo do protótipo (#ff2d78)", () => {
+    // Pixel (mockup vence): barra e pílula do card do Início usam os
+    // tokens do mockup (--t-acc / --t-soft) -- sempre do tema, nunca hex.
+    expect(heroCardSrc).toMatch(/background:\s*"var\(--t-acc\)"/);
+    expect(heroCardSrc).toMatch(/background:\s*"var\(--t-soft\)"/);
     expect(heroCardSrc).not.toMatch(/#ff2d78|#ff376e/i);
   });
 });

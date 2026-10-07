@@ -9,13 +9,12 @@ import {
   formatHora,
   rotuloDiaCurto,
 } from "./inicioAgenda";
+import { LinkSecao } from "@/components/ui/LinkSecao";
 
 interface Props {
   jobs: Job[];
   onGoToAgenda: () => void;
 }
-
-const linha = "flex items-center gap-3 py-3";
 
 /**
  * Seção "Esta semana" da Início (Jornada J02, mockup
@@ -25,42 +24,42 @@ const linha = "flex items-center gap-3 py-3";
  */
 export function SemanaSection({ jobs, onGoToAgenda }: Props) {
   const dias = diasRestantesDaSemana(jobs);
+  // Valores do mockup normativo (tela Início, "Esta semana").
+  const linhaStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    padding: "12px 0",
+  } as const;
+  const BORDA = { borderBottom: "1px solid var(--t-line)" } as const;
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <h2 className="font-extrabold" style={{ fontSize: "15px" }}>
+    <section style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "8px",
+        }}
+      >
+        <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 800 }}>
           Esta semana
         </h2>
-        <button
-          type="button"
-          onClick={onGoToAgenda}
-          className="font-bold"
-          style={{
-            fontSize: "12px",
-            color: "var(--accent-deep)",
-            minHeight: "44px",
-            padding: "0 4px",
-          }}
-        >
-          Agenda ›
-        </button>
+        <LinkSecao onClick={onGoToAgenda}>Agenda ›</LinkSecao>
       </div>
 
       <InicioCard style={{ padding: "6px 16px" }}>
         {dias.map((dia, i) => {
-          const borda =
-            i < dias.length - 1
-              ? { borderBottom: "1px solid var(--card-border)" }
-              : undefined;
+          const borda = i < dias.length - 1 ? BORDA : undefined;
           const rotulo = (
             <span
-              className="font-bold shrink-0"
               style={{
-                width: "48px",
-                whiteSpace: "nowrap",
+                width: "40px",
+                flexShrink: 0,
                 fontSize: "12px",
-                color: "var(--text-muted)",
+                fontWeight: 700,
+                color: "var(--t-mut)",
               }}
             >
               {rotuloDiaCurto(dia.data)}
@@ -69,14 +68,17 @@ export function SemanaSection({ jobs, onGoToAgenda }: Props) {
 
           if (dia.jobs.length === 0) {
             return (
-              <div key={dia.data} className={linha} style={borda}>
+              <div key={dia.data} style={{ ...linhaStyle, ...borda }}>
                 {rotulo}
-                <span
-                  className="flex-grow"
-                  style={{ fontSize: "13px", color: "var(--text-muted)" }}
+                <div
+                  style={{
+                    flexGrow: 1,
+                    fontSize: "13px",
+                    color: "var(--t-mut)",
+                  }}
                 >
                   Dia livre
-                </span>
+                </div>
               </div>
             );
           }
@@ -86,38 +88,40 @@ export function SemanaSection({ jobs, onGoToAgenda }: Props) {
               {dia.jobs.map((job, j) => (
                 <div
                   key={job.id}
-                  className={linha}
-                  style={
-                    j < dia.jobs.length - 1
-                      ? { borderBottom: "1px solid var(--card-border)" }
-                      : borda
-                  }
+                  style={{
+                    ...linhaStyle,
+                    ...(j < dia.jobs.length - 1 ? BORDA : borda),
+                  }}
                 >
                   {j === 0 ? (
                     rotulo
                   ) : (
-                    <span className="shrink-0" style={{ width: "48px" }} />
+                    <span style={{ width: "40px", flexShrink: 0 }} />
                   )}
-                  <div className="min-w-0 flex-grow">
-                    <p
-                      className="font-bold truncate"
-                      style={{ fontSize: "14px" }}
+                  <div style={{ flexGrow: 1, minWidth: 0 }}>
+                    <div
+                      className="truncate"
+                      style={{ fontSize: "14px", fontWeight: 700 }}
                     >
                       {job.clienteNome}
-                    </p>
-                    <p
+                    </div>
+                    <div
                       className="truncate"
-                      style={{ fontSize: "11px", color: "var(--text-muted)" }}
+                      style={{ fontSize: "11px", color: "var(--t-mut)" }}
                     >
                       {formatHora(job.hora)} ·{" "}
                       {job.modalidade === "online"
                         ? "Online"
                         : (job.local ?? "Presencial")}
-                    </p>
+                    </div>
                   </div>
                   <span
-                    className="font-extrabold tabular-nums shrink-0"
-                    style={{ fontSize: "13px", color: "var(--accent-deep)" }}
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 800,
+                      color: "var(--t-deep)",
+                      flexShrink: 0,
+                    }}
                   >
                     {formatBRL(job.valor)}
                   </span>
