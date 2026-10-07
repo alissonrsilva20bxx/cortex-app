@@ -43,6 +43,13 @@ await p2.addStyleTag({content:"nextjs-portal{display:none!important}"});
 const m = p2.getByRole("button",{name:/Mostrar abas/}); if (await m.isVisible().catch(()=>false)) await m.click();
 await p2.getByRole("button",{name:NAV[tela], exact:true}).first().click();
 await p2.waitForTimeout(1200);
+// Mesmo esconde-aviso do comparar.mjs: sem isso o aviso do laboratório
+// empurra a Rede inteira ~158px e as medidas não valem.
+await p2.evaluate(() => {
+  for (const f of document.querySelectorAll("strong"))
+    if ((f.textContent||"").trim() === "Sessão de teste local indisponível.")
+      f.closest("div").style.display = "none";
+});
 await p2.evaluate(()=>window.scrollTo(0,0));
 const A = await p2.evaluate(COLETA, ["body"]);
 const mapa = new Map();

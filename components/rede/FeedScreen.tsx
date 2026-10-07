@@ -318,7 +318,12 @@ export function FeedScreen({
 
   return (
     <PullToRefresh onRefresh={onRefresh}>
-      <div className="pb-4">
+      {/* A referência desenha a Rede de ponta a ponta, com 22px no topo e
+          sem respiro lateral (cada bloco é que tem os 16px; a foto do post
+          sangra). A casca do app dá `px-4` e `--space-shell-top` a TODAS as
+          telas, então aqui a margem negativa devolve a borda e o topo só
+          para esta tela, sem mexer na casca compartilhada. */}
+      <div className="pb-4" style={{ margin: "-20px -16px 0" }}>
         <RedeHeader
           usuarioNome={usuario.nome}
           usuarioFotoUrl={usuarioFotoUrl}

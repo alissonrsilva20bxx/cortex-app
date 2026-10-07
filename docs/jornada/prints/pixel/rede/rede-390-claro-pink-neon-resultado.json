@@ -5,8 +5,8 @@
   "tema": "pink-neon",
   "layout": "E",
   "metrica": "pixelmatch YIQ, limiar 0.1",
-  "difPct": 41.3487,
-  "pixelsDiferentes": 544414,
+  "difPct": 46.2347,
+  "pixelsDiferentes": 608744,
   "tamanho": "780x1688",
   "mesmoTamanho": true,
   "reflowDoMockup": false,
@@ -19,22 +19,13 @@
         "plus jakarta sans": 155
       }
     },
-    "pareados": 51,
-    "comDivergencia": 29,
-    "semParNoMockup": 62,
-    "semParNoApp": 513,
-    "impactoTotal": 48.671,
+    "pareados": 54,
+    "comDivergencia": 31,
+    "semParNoMockup": 59,
+    "semParNoApp": 510,
+    "impactoTotal": 42.82,
     "comTextoDivergindo": 10,
     "pioresComTexto": [
-      {
-        "texto": "Rede",
-        "impacto": 2.149,
-        "difs": {
-          "lineHeight": "26.4px -> 36px",
-          "largura": "214px -> 58.8px",
-          "altura": "26.4px -> 36px"
-        }
-      },
       {
         "texto": "Postar",
         "impacto": 1.966,
@@ -56,6 +47,13 @@
         }
       },
       {
+        "texto": "Rede",
+        "impacto": 1.31,
+        "difs": {
+          "largura": "214px -> 58.8px"
+        }
+      },
+      {
         "texto": "M",
         "impacto": 1.162,
         "difs": {
@@ -68,26 +66,6 @@
         }
       },
       {
-        "texto": "há 3h",
-        "impacto": 1.03,
-        "difs": {
-          "fontSize": "11px -> 12px",
-          "lineHeight": "16.5px -> 16px",
-          "largura": "282px -> 238px",
-          "altura": "16.5px -> 16px"
-        }
-      },
-      {
-        "texto": "há 5h",
-        "impacto": 1.03,
-        "difs": {
-          "fontSize": "11px -> 12px",
-          "lineHeight": "16.5px -> 16px",
-          "largura": "282px -> 238px",
-          "altura": "16.5px -> 16px"
-        }
-      },
-      {
         "texto": "Conquista",
         "impacto": 0.825,
         "difs": {
@@ -97,6 +75,26 @@
           "backgroundColor": "rgb(227, 246, 236) -> rgba(15, 138, 82, 0.12)",
           "largura": "68.3px -> 78.4px",
           "altura": "21px -> 23px"
+        }
+      },
+      {
+        "texto": "há 3h",
+        "impacto": 0.396,
+        "difs": {
+          "fontSize": "11px -> 12px",
+          "lineHeight": "16.5px -> 16px",
+          "largura": "282px -> 270px",
+          "altura": "16.5px -> 16px"
+        }
+      },
+      {
+        "texto": "há 5h",
+        "impacto": 0.396,
+        "difs": {
+          "fontSize": "11px -> 12px",
+          "lineHeight": "16.5px -> 16px",
+          "largura": "282px -> 270px",
+          "altura": "16.5px -> 16px"
         }
       },
       {
@@ -136,15 +134,6 @@
         ]
       },
       {
-        "elemento": "h1 “Rede”",
-        "impacto": 2.149,
-        "propriedades": [
-          "lineHeight",
-          "largura",
-          "altura"
-        ]
-      },
-      {
         "elemento": "div “Postar”",
         "impacto": 1.966,
         "propriedades": [
@@ -177,6 +166,16 @@
           "fontWeight",
           "lineHeight",
           "gap",
+          "largura",
+          "altura"
+        ]
+      },
+      {
+        "elemento": "span",
+        "impacto": 1.422,
+        "propriedades": [
+          "backgroundColor",
+          "borderRadius",
           "largura",
           "altura"
         ]

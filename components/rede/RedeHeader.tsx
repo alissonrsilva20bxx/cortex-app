@@ -76,13 +76,20 @@ export function RedeHeader({
   onOpenMeuEspaco,
 }: Props) {
   return (
-    <div className="flex items-center justify-between gap-2" style={{ marginBottom: "14px" }}>
+    <div
+      className="flex items-center justify-between gap-2"
+      style={{ marginBottom: "14px" }}
+    >
       {/* Jornada J06 (mockup 5-telas-8-temas-claro-escuro.html, tela Rede):
           título 24px/800, -0.5px. */}
       <h2
         className="font-extrabold shrink-0"
         style={{
           fontSize: "24px",
+          // A referência não declara line-height no título: ele herda 1.1 do
+          // corpo da tela. No app a herança vinha de 1.5 (36px), o que
+          // empurrava o cabeçalho e tudo abaixo dele.
+          lineHeight: 1.1,
           letterSpacing: "-0.5px",
           color: "var(--text)",
         }}
