@@ -413,13 +413,19 @@ describe("Pixel (mockup vence) — contraste dos valores do mockup, listado", ()
   });
 
   it("Financeiro e Início usam os valores do mockup (não os tokens do #175)", () => {
+    // O "Novo" dos dois cabeçalhos é o BotaoNovo da casca (#204), com
+    // branco sobre o acento (o valor do mockup, travado no bloco #175
+    // acima pra components/ui/cabecalho.tsx).
     for (const arquivo of [
       "components/home/GreetingHeader.tsx",
       "components/financeiro/FinanceiroTab.tsx",
-    ])
-      expect(read(arquivo), arquivo).toMatch(
-        /background: "var\(--t-acc\)",\s*color: "#f{3,6}",/
+    ]) {
+      const src = read(arquivo);
+      expect(src, arquivo).toContain(
+        'import { AvatarAjustes, BotaoNovo } from "@/components/ui/cabecalho";'
       );
+      expect(src, arquivo).toMatch(/<BotaoNovo onClick=\{(onNovo|acaoNovo)\}>Novo<\/BotaoNovo>/);
+    }
     expect(read("components/home/HeroCard.tsx")).toMatch(
       /background: "var\(--t-soft\)",\s*color: "var\(--t-deep\)",/
     );

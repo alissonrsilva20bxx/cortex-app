@@ -9,6 +9,7 @@ import {
   formatHora,
   rotuloDiaCurto,
 } from "./inicioAgenda";
+import { LinkSecao } from "@/components/ui/LinkSecao";
 
 interface Props {
   jobs: Job[];
@@ -46,20 +47,7 @@ export function SemanaSection({ jobs, onGoToAgenda }: Props) {
         <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 800 }}>
           Esta semana
         </h2>
-        <button
-          type="button"
-          onClick={onGoToAgenda}
-          style={{
-            fontSize: "12px",
-            fontWeight: 700,
-            color: "var(--t-deep)",
-            background: "none",
-            border: 0,
-            padding: 0,
-          }}
-        >
-          Agenda ›
-        </button>
+        <LinkSecao onClick={onGoToAgenda}>Agenda ›</LinkSecao>
       </div>
 
       <InicioCard style={{ padding: "6px 16px" }}>
