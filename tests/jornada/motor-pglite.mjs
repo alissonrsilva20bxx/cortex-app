@@ -81,7 +81,7 @@ for (const f of [
   "0034_jornada_contadores.sql",
   "0035_jornada_rpcs.sql",
   "0036_jornada_prototipo.sql",
-  "0037_jornada_dia_forte.sql",
+  "0039_jornada_dia_forte.sql",
 ]) {
   try {
     await db.exec(readFileSync(join(DIR, f), "utf-8"));

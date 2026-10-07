@@ -27,11 +27,11 @@ const ler = (p: string) =>
 const PROTO = ler("docs/jornada/referencias/prototipo-sua-jornada.html");
 const JS = PROTO.slice(PROTO.indexOf("<script>"));
 const SQL = ler("supabase/migrations/0036_jornada_prototipo.sql");
-const SQL37 = ler("supabase/migrations/0037_jornada_dia_forte.sql");
+const SQL39 = ler("supabase/migrations/0039_jornada_dia_forte.sql");
 
-/** O corpo que vale de uma função (a 0037 redefine jornada_aplicar). */
+/** O corpo que vale de uma função (a 0039 redefine jornada_aplicar). */
 function corpo(nome: string): string {
-  const todo = SQL + SQL37;
+  const todo = SQL + SQL39;
   const i = todo.lastIndexOf(`create or replace function ${nome}(`);
   expect(i, nome).toBeGreaterThan(-1);
   return todo.slice(i, todo.indexOf("\n$$;", i));
@@ -178,7 +178,7 @@ describe("0036 — o estado manda o que o protótipo mostra", () => {
 describe("0036 — as RPCs públicas só agem sobre auth.uid()", () => {
   /** A definição que vale de uma função pública: a última nas migrations. */
   const SQL_TODO =
-    ler("supabase/migrations/0035_jornada_rpcs.sql") + SQL + SQL37;
+    ler("supabase/migrations/0035_jornada_rpcs.sql") + SQL + SQL39;
   function vigente(nome: string): string {
     const i = SQL_TODO.lastIndexOf(
       `create or replace function public.${nome}(`
@@ -242,7 +242,7 @@ describe("0036 — o ritmo da semana guarda só a marca da semana corrente", () 
     );
   });
 
-  it("dia forte como o protótipo (0037): a 1ª ação do dia que cuida do negócio, atendimento incluso", () => {
+  it("dia forte como o protótipo (0039): a 1ª ação do dia que cuida do negócio, atendimento incluso", () => {
     // Protótipo, act(): toda ação que não é descanso marca o dia forte; o
     // atendimento também ("Dia contado"); o descanso só marca se não for forte.
     expect(JS).toContain("S.client = true; S.week[S.today] = 'strong';");
@@ -262,8 +262,8 @@ describe("0036 — o ritmo da semana guarda só a marca da semana corrente", () 
     );
     // Nada de "3 ações com Glow" (a regra antiga da 0035/0036).
     expect(motor).not.toMatch(/v_fortes_hoje/);
-    // A 0037 só redefine o motor: nada de tabela nem permissão nova.
-    expect(SQL37).not.toMatch(/create table|alter table|grant /i);
+    // A 0039 só redefine o motor: nada de tabela nem permissão nova.
+    expect(SQL39).not.toMatch(/create table|alter table|grant /i);
   });
 
   it("descanso não apaga um dia forte", () => {

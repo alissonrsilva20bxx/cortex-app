@@ -1,4 +1,4 @@
--- 0037 — "Sua Jornada": o dia forte como o protótipo (ordem do operador).
+-- 0039 — "Sua Jornada": o dia forte como o protótipo (ordem do operador).
 --
 -- SÓ ESCRITA: esta migration não é aplicada por esta PR (nem em produção).
 --
@@ -10,6 +10,8 @@
 -- não contavam o atendimento): a bolinha da semana, o "N de 3 dias fortes",
 -- a missão "Ter 12 dias fortes" e a semana firme saíam diferentes da
 -- referência. O operador mandou ficar idêntico (spec §3 e §11).
+--
+-- Numeração: 0037 e 0038 ficam com a #209 (jobs.pago_em, feitasHoje).
 --
 -- Só muda private.jornada_aplicar (a mesma da 0036 com o bloco do dia forte
 -- trocado). Nada de tabela, coluna nem permissão nova.
