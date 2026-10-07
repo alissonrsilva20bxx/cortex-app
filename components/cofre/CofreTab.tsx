@@ -97,19 +97,21 @@ const rotuloCategoria = (cat: string) =>
   CATS.find((c) => c.id === cat)?.label ?? cat;
 
 /** Cada número da fileira do card "Protegido": valor grande em cima, rótulo embaixo. */
+/**
+ * Cada número da fileira do card "Protegido". A estrutura espelha a da
+ * referência: uma caixa com padding, e dentro dela um bloco com o valor e
+ * outro com o rótulo -- os dois herdando o line-height 1.5 da tela, como no
+ * mockup. Antes era um <p> só com line-height 1.2, o que deixava a caixa
+ * 8px mais baixa que a desenhada.
+ */
 const STAT_STYLE = {
   padding: "10px",
   borderRadius: "14px",
   background: "var(--hero-bg-2)",
-  fontSize: "17px",
-  fontWeight: 800,
-  lineHeight: 1.2,
 } as const;
+const STAT_VALOR_STYLE = { fontSize: "17px", fontWeight: 800 } as const;
 const STAT_LABEL_STYLE = {
-  display: "block",
-  marginTop: "2px",
   fontSize: "10px",
-  fontWeight: 400,
   color: "var(--hero-text-muted)",
 } as const;
 
@@ -496,17 +498,12 @@ export function CofreTab({
             dos tamanhos do storage e data do envio mais recente (traço com
             o Cofre vazio). Nenhuma cota ou porcentagem: não existe cota. */}
         {!loading && (
-          <GlassCard
-            radius="lg"
-            className="p-0"
-            style={{ border: "none", borderRadius: "26px" }}
-          >
-            {/* O fundo do hero mora neste div, não no GlassCard: no modo
-                claro, `.glass-card` (globals.css, compartilhado) força o
-                próprio fundo e sombra com `!important`, o que deixava o card
-                branco com o título branco por cima. O GlassCard continua
-                sendo a moldura do card (fixada pelos testes do #137). */}
-            <div
+          <>
+            {/* Sem GlassCard em volta: na referência o card do Cofre É esta
+                caixa escura, com o fundo e a sombra dela. O GlassCard punha
+                uma segunda camada de vidro branco e uma segunda sombra em
+                volta, que apareciam na borda e na comparação de pixel. */}
+            <section
               className="flex flex-col"
               style={{
                 padding: "22px",
@@ -548,27 +545,28 @@ export function CofreTab({
                   >
                     {pinHash
                       ? "Acesso protegido pelo seu PIN"
-                      : "Acesso protegido pela trava do app"}
+                      : "Trava do app ativa"}
                   </span>
                 </div>
               </div>
               <div className="grid grid-cols-3" style={{ gap: "8px" }}>
-                <p className="tabular-nums" style={STAT_STYLE}>
-                  {files.length}{" "}
-                  <span style={STAT_LABEL_STYLE}>
+                <div className="tabular-nums" style={STAT_STYLE}>
+                  <div style={STAT_VALOR_STYLE}>{files.length}</div>
+                  <div style={STAT_LABEL_STYLE}>
                     {files.length === 1 ? "arquivo" : "arquivos"}
-                  </span>
-                </p>
-                <p className="tabular-nums" style={STAT_STYLE}>
-                  {formatTamanho(usado)}{" "}
-                  <span style={STAT_LABEL_STYLE}>usado</span>
-                </p>
-                <p className="tabular-nums" style={STAT_STYLE}>
-                  {ultimo ?? "—"} <span style={STAT_LABEL_STYLE}>último</span>
-                </p>
+                  </div>
+                </div>
+                <div className="tabular-nums" style={STAT_STYLE}>
+                  <div style={STAT_VALOR_STYLE}>{formatTamanho(usado)}</div>
+                  <div style={STAT_LABEL_STYLE}>usado</div>
+                </div>
+                <div className="tabular-nums" style={STAT_STYLE}>
+                  <div style={STAT_VALOR_STYLE}>{ultimo ?? "—"}</div>
+                  <div style={STAT_LABEL_STYLE}>último</div>
+                </div>
               </div>
-            </div>
-          </GlassCard>
+            </section>
+          </>
         )}
 
         {/* Fileira de ações no desenho do mockup (layout C): "Enviar" e as

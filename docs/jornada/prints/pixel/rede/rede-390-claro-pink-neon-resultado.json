@@ -1,0 +1,193 @@
+{
+  "tela": "rede",
+  "largura": 390,
+  "modo": "claro",
+  "tema": "pink-neon",
+  "layout": "E",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "difPct": 41.3487,
+  "pixelsDiferentes": 544414,
+  "tamanho": "780x1688",
+  "mesmoTamanho": true,
+  "reflowDoMockup": false,
+  "estilos": {
+    "fontes": {
+      "mockup": {
+        "plus jakarta sans": 27
+      },
+      "app": {
+        "plus jakarta sans": 155
+      }
+    },
+    "pareados": 51,
+    "comDivergencia": 29,
+    "semParNoMockup": 62,
+    "semParNoApp": 513,
+    "impactoTotal": 48.671,
+    "comTextoDivergindo": 10,
+    "pioresComTexto": [
+      {
+        "texto": "Rede",
+        "impacto": 2.149,
+        "difs": {
+          "lineHeight": "26.4px -> 36px",
+          "largura": "214px -> 58.8px",
+          "altura": "26.4px -> 36px"
+        }
+      },
+      {
+        "texto": "Postar",
+        "impacto": 1.966,
+        "difs": {
+          "gap": "6px -> normal",
+          "largura": "62px -> 34.5px",
+          "altura": "84.5px -> 16.5px"
+        }
+      },
+      {
+        "texto": "Miguel",
+        "impacto": 1.699,
+        "difs": {
+          "fontWeight": "700 -> 600",
+          "lineHeight": "21px -> 20px",
+          "gap": "6px -> normal",
+          "largura": "282px -> 45.1px",
+          "altura": "21px -> 20px"
+        }
+      },
+      {
+        "texto": "M",
+        "impacto": 1.162,
+        "difs": {
+          "fontSize": "15px -> 17.6px",
+          "fontWeight": "800 -> 700",
+          "lineHeight": "22.5px -> 26.4px",
+          "borderRadius": "50% 50% 50% 50% -> 9999px 9999px 9999px 9999px",
+          "largura": "38px -> 44px",
+          "altura": "38px -> 44px"
+        }
+      },
+      {
+        "texto": "há 3h",
+        "impacto": 1.03,
+        "difs": {
+          "fontSize": "11px -> 12px",
+          "lineHeight": "16.5px -> 16px",
+          "largura": "282px -> 238px",
+          "altura": "16.5px -> 16px"
+        }
+      },
+      {
+        "texto": "há 5h",
+        "impacto": 1.03,
+        "difs": {
+          "fontSize": "11px -> 12px",
+          "lineHeight": "16.5px -> 16px",
+          "largura": "282px -> 238px",
+          "altura": "16.5px -> 16px"
+        }
+      },
+      {
+        "texto": "Conquista",
+        "impacto": 0.825,
+        "difs": {
+          "fontSize": "10px -> 12px",
+          "lineHeight": "15px -> 17px",
+          "color": "rgb(15, 138, 82) -> color(srgb 0.0588235 0.357882 0.221725)",
+          "backgroundColor": "rgb(227, 246, 236) -> rgba(15, 138, 82, 0.12)",
+          "largura": "68.3px -> 78.4px",
+          "altura": "21px -> 23px"
+        }
+      },
+      {
+        "texto": "Para você",
+        "impacto": 0.253,
+        "difs": {
+          "padding": "8px 0px 8px 0px -> 0px 0px 0px 0px",
+          "altura": "39px -> 44px"
+        }
+      }
+    ],
+    "piores": [
+      {
+        "elemento": "div",
+        "impacto": 9.361,
+        "propriedades": [
+          "backgroundColor"
+        ]
+      },
+      {
+        "elemento": "div",
+        "impacto": 7.623,
+        "propriedades": [
+          "backgroundColor",
+          "borderRadius",
+          "boxShadow",
+          "largura"
+        ]
+      },
+      {
+        "elemento": "nav",
+        "impacto": 4.546,
+        "propriedades": [
+          "backgroundColor",
+          "borderRadius",
+          "boxShadow"
+        ]
+      },
+      {
+        "elemento": "h1 “Rede”",
+        "impacto": 2.149,
+        "propriedades": [
+          "lineHeight",
+          "largura",
+          "altura"
+        ]
+      },
+      {
+        "elemento": "div “Postar”",
+        "impacto": 1.966,
+        "propriedades": [
+          "gap",
+          "largura",
+          "altura"
+        ]
+      },
+      {
+        "elemento": "span",
+        "impacto": 1.837,
+        "propriedades": [
+          "fontSize",
+          "lineHeight",
+          "borderRadius"
+        ]
+      },
+      {
+        "elemento": "span",
+        "impacto": 1.77,
+        "propriedades": [
+          "color",
+          "borderRadius"
+        ]
+      },
+      {
+        "elemento": "div “Miguel”",
+        "impacto": 1.699,
+        "propriedades": [
+          "fontWeight",
+          "lineHeight",
+          "gap",
+          "largura",
+          "altura"
+        ]
+      }
+    ]
+  },
+  "erros": [
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML."
+  ]
+}

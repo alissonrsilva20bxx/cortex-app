@@ -129,7 +129,9 @@ export function SecaoCofre({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="flex flex-col" style={{ gap: "12px" }}>
+    // 16px entre o título e a lista: na referência os dois são irmãos da
+    // coluna da tela, que tem `gap: 16px`.
+    <section id={id} className="flex flex-col" style={{ gap: "16px" }}>
       <div className="flex items-center justify-between">
         <h2 style={SECTION_TITLE_STYLE}>{titulo}</h2>
         {verTudo && (
@@ -140,7 +142,13 @@ export function SecaoCofre({
               fontSize: "12px",
               fontWeight: 700,
               color: "var(--accent-deep)",
+              // Alvo de toque de 44px sem crescer a linha: a margem negativa
+              // devolve a altura de 18px que a referência desenha. Com os 44
+              // ocupando espaço de verdade, o `items-center` empurrava o
+              // título "Recentes" 10,8px para baixo e a lista inteira 17,5px
+              // junto. Mesma receita do #198/#204.
               minHeight: "44px",
+              margin: "-13px 0",
             }}
           >
             Ver tudo ›

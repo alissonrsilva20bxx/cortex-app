@@ -643,46 +643,53 @@ export function buildMockAppSeed(opts?: {
     },
   ];
 
+  // Os 5 arquivos são os da referência (tela Cofre, layout C): mesmo nome,
+  // mesma categoria, mesmo tamanho impresso e mesma data. Com o relógio em
+  // 23/09/2026, "Recentes" (os 4 mais novos) sai exatamente como a tela
+  // desenhada. O 5º existe para o contador do card bater com os "5
+  // arquivos" da referência -- e o tamanho dele é o que falta para o total
+  // fechar em "1,3 MB", porque a soma dos tamanhos que a própria referência
+  // imprime não dá esse total (contradição dela, listada no PR).
   const cofreFiles = [
     {
       path: `${uid}/comprovantes/recibo-renata-ferreira.jpg`,
       name: "recibo-renata-ferreira.jpg",
       categoria: "comprovantes",
-      size: 245_000,
+      size: 244_736, // 239 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-3),
-    },
-    {
-      path: `${uid}/comprovantes/recibo-camila-duarte.jpg`,
-      name: "recibo-camila-duarte.jpg",
-      categoria: "comprovantes",
-      size: 198_000,
-      mimeType: "image/jpeg",
-      createdAt: daysFromNow(-30),
+      createdAt: daysFromNow(-4), // 19 de set.
     },
     {
       path: `${uid}/conversas/print-combinado-marcos.png`,
       name: "print-combinado-marcos.png",
       categoria: "conversas",
-      size: 312_000,
+      size: 312_320, // 305 KB
       mimeType: "image/png",
-      createdAt: daysFromNow(-5),
-    },
-    {
-      path: `${uid}/documentos/contrato-parceria-studio.pdf`,
-      name: "contrato-parceria-studio.pdf",
-      categoria: "documentos",
-      size: 540_000,
-      mimeType: "application/pdf",
-      createdAt: daysFromNow(-40),
+      createdAt: daysFromNow(-6), // 17 de set.
     },
     {
       path: `${uid}/pessoal/lembrete-consulta.jpg`,
       name: "lembrete-consulta.jpg",
       categoria: "pessoal",
-      size: 88_000,
+      size: 88_064, // 86 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-12),
+      createdAt: daysFromNow(-13), // 10 de set.
+    },
+    {
+      path: `${uid}/comprovantes/recibo-camila-duarte.jpg`,
+      name: "recibo-camila-duarte.jpg",
+      categoria: "comprovantes",
+      size: 197_632, // 193 KB
+      mimeType: "image/jpeg",
+      createdAt: daysFromNow(-31), // 23 de ago.
+    },
+    {
+      path: `${uid}/pessoal/rg-frente.jpg`,
+      name: "rg-frente.jpg",
+      categoria: "pessoal",
+      size: 520_000, // fecha o total do card em 1,3 MB
+      mimeType: "image/jpeg",
+      createdAt: daysFromNow(-43), // 11 de ago.
     },
     // Fotos dos posts da Rede (principal + miniatura) -- sem blobUrl, o
     // mock serve o placeholder SVG; o que importa é o path existir p/ assinar.

@@ -1,0 +1,137 @@
+{
+  "quando": "2026-10-07T14:32:08.298Z",
+  "baseUrl": "http://localhost:3107",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "relogio": "2026-09-23T13:00:00.000Z",
+  "meta": "difPct < 0,5",
+  "resultados": [
+    {
+      "tela": "cofre",
+      "largura": 390,
+      "modo": "claro",
+      "tema": "pink-neon",
+      "layout": "C",
+      "metrica": "pixelmatch YIQ, limiar 0.1",
+      "difPct": 2.108,
+      "pixelsDiferentes": 27755,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true,
+      "reflowDoMockup": false,
+      "estilos": {
+        "fontes": {
+          "mockup": {
+            "plus jakarta sans": 32
+          },
+          "app": {
+            "plus jakarta sans": 100
+          }
+        },
+        "pareados": 154,
+        "comDivergencia": 65,
+        "semParNoMockup": 18,
+        "semParNoApp": 187,
+        "impactoTotal": 72.585,
+        "comTextoDivergindo": 3,
+        "pioresComTexto": [
+          {
+            "texto": "Todos os arquivos",
+            "impacto": 1.721,
+            "difs": {
+              "gap": "10px -> normal",
+              "largura": "358px -> 131.1px"
+            }
+          },
+          {
+            "texto": "Ver tudo ›",
+            "impacto": 0.241,
+            "difs": {
+              "altura": "18px -> 44px"
+            }
+          },
+          {
+            "texto": "Recentes",
+            "impacto": 0.069,
+            "difs": {
+              "gap": "10px -> normal"
+            }
+          }
+        ],
+        "piores": [
+          {
+            "elemento": "div",
+            "impacto": 30.137,
+            "propriedades": [
+              "backgroundColor",
+              "padding",
+              "gap",
+              "altura"
+            ]
+          },
+          {
+            "elemento": "div",
+            "impacto": 9.092,
+            "propriedades": [
+              "backgroundColor"
+            ]
+          },
+          {
+            "elemento": "div",
+            "impacto": 7.623,
+            "propriedades": [
+              "backgroundColor",
+              "borderRadius",
+              "boxShadow",
+              "largura"
+            ]
+          },
+          {
+            "elemento": "section",
+            "impacto": 5.389,
+            "propriedades": [
+              "altura"
+            ]
+          },
+          {
+            "elemento": "nav",
+            "impacto": 4.546,
+            "propriedades": [
+              "backgroundColor",
+              "borderRadius",
+              "boxShadow"
+            ]
+          },
+          {
+            "elemento": "span",
+            "impacto": 1.77,
+            "propriedades": [
+              "color",
+              "borderRadius"
+            ]
+          },
+          {
+            "elemento": "h2 “Todos os arquivos”",
+            "impacto": 1.721,
+            "propriedades": [
+              "gap",
+              "largura"
+            ]
+          },
+          {
+            "elemento": "span",
+            "impacto": 0.85,
+            "propriedades": [
+              "borderRadius"
+            ]
+          }
+        ]
+      },
+      "erros": [
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML."
+      ]
+    }
+  ]
+}
