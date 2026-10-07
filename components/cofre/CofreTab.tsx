@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Shield, Search, LockKeyhole, Upload } from "lucide-react";
+import {
+  Shield,
+  Search,
+  Upload,
+  FileText,
+  MessageCircle,
+  Folder,
+  User,
+  LayoutGrid,
+} from "lucide-react";
 import { BotaoRedondo, IconeCadeado } from "@/components/ui/cabecalho";
 import { IconeBusca } from "@/components/jobs/agendaIcones";
 import { supabase } from "@/lib/supabase";
@@ -52,6 +61,38 @@ const CAT_RGB: Record<string, string> = {
   pessoal: "192 132 252",
 };
 const catRgb = (cat: string) => CAT_RGB[cat] ?? "var(--accent-rgb)";
+
+/**
+ * Fileira de ações do mockup (layout C): azulejos redondos de 56px com o
+ * rótulo de 11px/600 embaixo, numa grade de 4 colunas com 8px de intervalo.
+ * Substitui o botão "Enviar" de largura inteira e os chips de categoria.
+ * A ordem das 4 primeiras é a do mockup; "Pessoal" e "Todos" existem só no
+ * app (há dado real em Pessoal) e caem na segunda linha, com o mesmo
+ * desenho -- nada deixa de ser alcançável.
+ */
+const AZULEJO = {
+  width: "56px",
+  height: "56px",
+  borderRadius: "50%",
+  background: "var(--card-solid)",
+  color: "var(--accent-deep)",
+} as const;
+const AZULEJO_ROTULO = { fontSize: "11px", fontWeight: 600 } as const;
+const ICONE_CATEGORIA: Record<Categoria, typeof FileText> = {
+  comprovantes: FileText,
+  conversas: MessageCircle,
+  documentos: Folder,
+  pessoal: User,
+  todos: LayoutGrid,
+};
+/** A ordem do mockup primeiro; o que só existe no app vem depois. */
+const ORDEM_AZULEJOS: Categoria[] = [
+  "comprovantes",
+  "conversas",
+  "documentos",
+  "pessoal",
+  "todos",
+];
 const rotuloCategoria = (cat: string) =>
   CATS.find((c) => c.id === cat)?.label ?? cat;
 
@@ -68,7 +109,7 @@ const STAT_LABEL_STYLE = {
   display: "block",
   marginTop: "2px",
   fontSize: "10px",
-  fontWeight: 500,
+  fontWeight: 400,
   color: "var(--hero-text-muted)",
 } as const;
 
@@ -400,6 +441,10 @@ export function CofreTab({
             style={{
               fontSize: "24px",
               fontWeight: 800,
+              // O mockup não declara line-height no h1: ele herda 1.1 do
+              // .ph (26,4px). No app a herança vem do body (1.5 = 36px), o
+              // que empurrava todo o resto da tela 10px para baixo.
+              lineHeight: 1.1,
               letterSpacing: "-0.5px",
               lineHeight: 1.1,
               color: "var(--text)",
@@ -462,45 +507,45 @@ export function CofreTab({
                 branco com o título branco por cima. O GlassCard continua
                 sendo a moldura do card (fixada pelos testes do #137). */}
             <div
-              className="flex flex-col p-5"
+              className="flex flex-col"
               style={{
-                gap: "14px",
+                padding: "22px",
+                gap: "12px",
                 background: "var(--hero-bg)",
                 borderRadius: "26px",
                 boxShadow: "0 14px 30px var(--hero-shadow)",
                 color: "#fff",
               }}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center" style={{ gap: "14px" }}>
                 <div
-                  className="grid place-items-center rounded-full shrink-0"
+                  className="grid place-items-center shrink-0"
                   style={{
-                    width: "72px",
-                    height: "72px",
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "16px",
                     background: "rgb(var(--accent-rgb))",
                     color: "var(--text)",
                   }}
                 >
-                  <Shield size={34} />
+                  <Shield size={26} />
                 </div>
                 <div className="min-w-0">
                   <h2
-                    style={{
-                      fontSize: "23px",
-                      fontWeight: 800,
-                      letterSpacing: "-0.03em",
-                    }}
+                    style={{ fontSize: "22px", fontWeight: 800 }}
                   >
                     Protegido
                   </h2>
                   <span
-                    className="mt-1 flex items-center gap-1.5"
+                    className="block"
                     style={{
+                      // O mockup põe a linha de proteção colada no título,
+                      // sem margem e sem ícone -- o `mt-1` mais o cadeado
+                      // esticavam o hero e empurravam a tela toda.
                       fontSize: "12px",
                       color: "var(--hero-text-muted)",
                     }}
                   >
-                    <LockKeyhole size={16} className="shrink-0" />
                     {pinHash
                       ? "Acesso protegido pelo seu PIN"
                       : "Acesso protegido pela trava do app"}
@@ -511,9 +556,7 @@ export function CofreTab({
                 <p className="tabular-nums" style={STAT_STYLE}>
                   {files.length}{" "}
                   <span style={STAT_LABEL_STYLE}>
-                    {files.length === 1
-                      ? "arquivo armazenado"
-                      : "arquivos armazenados"}
+                    {files.length === 1 ? "arquivo" : "arquivos"}
                   </span>
                 </p>
                 <p className="tabular-nums" style={STAT_STYLE}>
@@ -528,39 +571,71 @@ export function CofreTab({
           </GlassCard>
         )}
 
-        {/* "Enviar" em destaque (J05). Abre o mesmo UploadSheet do "+",
-            que mora na página, FORA da trava do Cofre. Não dá pra abrir um
-            UploadSheet daqui de dentro: o seletor de arquivo do sistema tira
-            o foco da janela, o Cofre trava na hora (proteção, sem período de
-            graça) e o sheet sumiria junto com o conteúdo. Por isso o botão
-            depende de `onEnviar` vir da página; sem ele, fica desabilitado
-            com o rótulo certo em vez de virar um envio que se perde. */}
-        <button
-          type="button"
-          onClick={onEnviar}
-          disabled={!onEnviar}
-          className="flex items-center justify-center gap-2 rounded-2xl font-bold active:opacity-80 disabled:opacity-50"
+        {/* Fileira de ações no desenho do mockup (layout C): "Enviar" e as
+            categorias viram azulejos redondos de 56px com rótulo de 11px/600,
+            numa grade de 4 colunas. O "Enviar" deixou de ser botão rosa de
+            largura inteira; o UploadSheet que ele abre continua morando na
+            página, FORA da trava do Cofre -- o seletor de arquivo do sistema
+            tira o foco da janela e o Cofre trava na hora, então o sheet
+            precisa sobreviver a isso. Sem `onEnviar` o azulejo fica
+            desabilitado em vez de virar um envio que se perde.
+            Alvo de toque: o azulejo inteiro tem 80px de altura (56 do círculo
+            + 8 de intervalo + a linha do rótulo), acima dos 44 exigidos. */}
+        <div
+          className="grid no-scrollbar"
           style={{
-            minHeight: "44px",
-            padding: "12px 16px",
-            fontSize: "14px",
-            background: "var(--accent)",
-            color: "var(--text)",
+            gap: "8px",
+            // O mockup desenha 4 colunas iguais. O app tem 6 azulejos (há
+            // dado real em "Pessoal" e "Todos" é o estado padrão), então a
+            // fileira vira uma linha que desliza: os 4 primeiros caem
+            // exatamente onde o mockup os põe e nada deixa de ser
+            // alcançável -- uma segunda linha empurraria a tela inteira.
+            gridAutoFlow: "column",
+            gridAutoColumns: "calc((100% - 24px) / 4)",
+            overflowX: "auto",
+            scrollSnapType: "x proximity",
           }}
         >
-          <Upload size={18} />
-          Enviar
-        </button>
-
-        {/* Chips de categoria — as 4 categorias reais do app mais "Todos"
-            (o mockup mostra 3, mas existe dado em "Pessoal"). 44px de alvo
-            de toque (achado P1-6; ver components/ui/FilterChips.tsx). */}
-        <FilterChips
-          options={CATS}
-          value={filter}
-          onChange={setFilter}
-          minTouchTarget
-        />
+          <button
+            type="button"
+            onClick={onEnviar}
+            disabled={!onEnviar}
+            className="flex flex-col items-center active:opacity-70 disabled:opacity-50"
+            style={{ gap: "8px", ...AZULEJO_ROTULO }}
+          >
+            <span className="grid place-items-center" style={AZULEJO}>
+              <Upload size={22} />
+            </span>
+            Enviar
+          </button>
+          {ORDEM_AZULEJOS.map((id) => {
+            const Icone = ICONE_CATEGORIA[id];
+            const ativo = filter === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={ativo}
+                onClick={() => setFilter(id)}
+                className="flex flex-col items-center active:opacity-70"
+                style={{ gap: "8px", ...AZULEJO_ROTULO }}
+              >
+                <span
+                  className="grid place-items-center"
+                  style={{
+                    ...AZULEJO,
+                    // Selecionado: o círculo ganha a tinta do acento. O
+                    // desenho (tamanho, raio, rótulo) não muda.
+                    background: ativo ? "var(--accent-tint)" : AZULEJO.background,
+                  }}
+                >
+                  <Icone size={22} />
+                </span>
+                {rotuloCategoria(id)}
+              </button>
+            );
+          })}
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-12">
