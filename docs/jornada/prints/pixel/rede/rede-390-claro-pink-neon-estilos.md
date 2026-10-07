@@ -2,8 +2,8 @@
 
 - mockup: `5-telas-8-temas-claro-escuro.html`
 - app: `http://localhost:3107/dev-preview/app`
-- pareados 91 · divergem 62 · só no mockup 22 · só no app 471
-- impacto total: **78.114**
+- pareados 91 · divergem 63 · só no mockup 22 · só no app 471
+- impacto total: **76.822**
 - famílias no mockup: plus jakarta sans (27)
 - famílias no app: plus jakarta sans (146)
 
@@ -40,18 +40,16 @@ Em cada célula: **mockup** → app.
 | 1.565 | “Juliana” | largura | `282px` → `44.9px` |
 | 1.565 | “Juliana” | altura | `21px` → `20px` |
 | 1.31 | “Rede” | largura | `214px` → `58.8px` |
-| 1.162 | “M” | fontSize | `15px` → `17.6px` |
-| 1.162 | “M” | fontWeight | `800` → `700` |
-| 1.162 | “M” | lineHeight | `22.5px` → `26.4px` |
-| 1.162 | “M” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 1.162 | “M” | largura | `38px` → `44px` |
-| 1.162 | “M” | altura | `38px` → `44px` |
-| 1.162 | “J” | fontSize | `15px` → `17.6px` |
-| 1.162 | “J” | fontWeight | `800` → `700` |
-| 1.162 | “J” | lineHeight | `22.5px` → `26.4px` |
-| 1.162 | “J” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 1.162 | “J” | largura | `38px` → `44px` |
-| 1.162 | “J” | altura | `38px` → `44px` |
+| 0.911 | “M” | fontWeight | `800` → `700` |
+| 0.911 | “M” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 0.911 | “M” | padding | `0px 0px 0px 0px` → `3px 3px 3px 3px` |
+| 0.911 | “M” | largura | `38px` → `44px` |
+| 0.911 | “M” | altura | `38px` → `44px` |
+| 0.911 | “J” | fontWeight | `800` → `700` |
+| 0.911 | “J” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 0.911 | “J” | padding | `0px 0px 0px 0px` → `3px 3px 3px 3px` |
+| 0.911 | “J” | largura | `38px` → `44px` |
+| 0.911 | “J” | altura | `38px` → `44px` |
 | 0.883 | “Amiga 1” | fontSize | `11px` → `15px` |
 | 0.883 | “Amiga 1” | lineHeight | `16.5px` → `22.5px` |
 | 0.883 | “Amiga 2” | fontSize | `11px` → `15px` |
@@ -77,7 +75,7 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | lineHeight | `18px` → `22.5px` |
 |  |  |  |  | color | `rgb(29, 63, 122)` → `rgb(15, 15, 15)` |
 |  |  |  |  | backgroundColor | `rgb(230, 239, 253)` → `rgb(253, 227, 236)` |
-| 5 | 5.406 | article | 0,686 · 390x439 | altura | `438.5px` → `483.5px` |
+| 5 | 5.046 | article | 0,686 · 390x439 | altura | `438.5px` → `480.5px` |
 | 6 | 4.546 | nav | 16,762 · 288x60 | backgroundColor | `rgba(255, 255, 255, 0.74)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | borderRadius | `30px 30px 30px 30px` → `0px 0px 0px 0px` |
 |  |  |  |  | boxShadow | `rgba(17, 17, 20, 0.14) 0px 10px 30px 0px` → `none` |
@@ -122,16 +120,14 @@ Em cada célula: **mockup** → app.
 | 19 | 1.31 | h1 “Rede” | 16,29 · 214x26 | largura | `214px` → `58.8px` |
 | 20 | 1.2 | div | 0,175 · 390x39 | largura | `390px` → `358px` |
 |  |  |  |  | altura | `39px` → `40.5px` |
-| 21 | 1.162 | span “M” | 16,228 · 38x38 | fontSize | `15px` → `17.6px` |
-|  |  |  |  | fontWeight | `800` → `700` |
-|  |  |  |  | lineHeight | `22.5px` → `26.4px` |
+| 21 | 0.911 | span “M” | 16,228 · 38x38 | fontWeight | `800` → `700` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `3px 3px 3px 3px` |
 |  |  |  |  | largura | `38px` → `44px` |
 |  |  |  |  | altura | `38px` → `44px` |
-| 22 | 1.162 | span “J” | 16,686 · 38x38 | fontSize | `15px` → `17.6px` |
-|  |  |  |  | fontWeight | `800` → `700` |
-|  |  |  |  | lineHeight | `22.5px` → `26.4px` |
+| 22 | 0.911 | span “J” | 16,686 · 38x38 | fontWeight | `800` → `700` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `3px 3px 3px 3px` |
 |  |  |  |  | largura | `38px` → `44px` |
 |  |  |  |  | altura | `38px` → `44px` |
 | 23 | 0.883 | div “Amiga 1” | 92,76 · 62x85 | fontSize | `11px` → `15px` |
@@ -157,48 +153,45 @@ Em cada célula: **mockup** → app.
 | 34 | 0.697 | span | 286,22 · 40x40 | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 | 35 | 0.363 | div | 0,22 · 390x40 | gap | `8px` → `normal` |
 |  |  |  |  | altura | `40px` → `44px` |
-| 36 | 0.29 | svg | 332,780 · 24x24 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
-| 37 | 0.284 | div | 64,228 · 282x38 | largura | `282px` → `276px` |
-|  |  |  |  | altura | `37.5px` → `41px` |
-| 38 | 0.284 | div | 64,686 · 282x38 | largura | `282px` → `276px` |
-|  |  |  |  | altura | `37.5px` → `41px` |
-| 39 | 0.277 | div “há 3h” | 64,249 · 282x17 | fontSize | `11px` → `12px` |
-|  |  |  |  | lineHeight | `16.5px` → `16px` |
-|  |  |  |  | largura | `282px` → `276px` |
-|  |  |  |  | altura | `16.5px` → `16px` |
-| 40 | 0.277 | div “há 5h” | 64,707 · 282x17 | fontSize | `11px` → `12px` |
-|  |  |  |  | lineHeight | `16.5px` → `16px` |
-|  |  |  |  | largura | `282px` → `276px` |
-|  |  |  |  | altura | `16.5px` → `16px` |
-| 41 | 0.268 | svg | 36,96 · 22x22 | fontSize | `11px` → `15px` |
+| 36 | 0.36 | article | 0,228 · 390x439 | altura | `438.5px` → `435.5px` |
+| 37 | 0.29 | svg | 332,780 · 24x24 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
+| 38 | 0.268 | svg | 36,96 · 22x22 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
-| 42 | 0.212 | div | 0,228 · 390x38 | altura | `38px` → `44px` |
-| 43 | 0.212 | div | 0,686 · 390x38 | altura | `38px` → `44px` |
-| 44 | 0.169 | div | 0,586 · 390x24 | altura | `24px` → `18px` |
-| 45 | 0.169 | div | 0,1044 · 390x24 | altura | `24px` → `18px` |
-| 46 | 0.147 | path | 98,588 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 39 | 0.169 | div | 0,586 · 390x24 | altura | `24px` → `18px` |
+| 40 | 0.169 | div | 0,1044 · 390x24 | altura | `24px` → `18px` |
+| 41 | 0.159 | div “há 3h” | 64,249 · 282x17 | fontSize | `11px` → `12px` |
+|  |  |  |  | lineHeight | `16.5px` → `16px` |
+|  |  |  |  | altura | `16.5px` → `16px` |
+| 42 | 0.159 | div “há 5h” | 64,707 · 282x17 | fontSize | `11px` → `12px` |
+|  |  |  |  | lineHeight | `16.5px` → `16px` |
+|  |  |  |  | altura | `16.5px` → `16px` |
+| 43 | 0.147 | path | 98,588 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20px` → `18px` |
 |  |  |  |  | altura | `20px` → `18px` |
-| 47 | 0.147 | path | 98,1046 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 44 | 0.147 | path | 98,1046 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20px` → `18px` |
 |  |  |  |  | altura | `20px` → `18px` |
-| 48 | 0.136 | path | 18,589 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 45 | 0.136 | path | 18,589 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20.8px` → `18px` |
-| 49 | 0.136 | path | 18,1047 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 46 | 0.136 | path | 18,1047 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20.8px` → `18px` |
-| 50 | 0.115 | path | 59,591 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 47 | 0.131 | path | 59,591 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+|  |  |  |  | largura | `18px` → `14.3px` |
+|  |  |  |  | altura | `15.9px` → `14.3px` |
+| 48 | 0.115 | path | 59,1049 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | altura | `15.9px` → `18px` |
-| 51 | 0.115 | path | 59,1049 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
-|  |  |  |  | altura | `15.9px` → `18px` |
-| 52 | 0.086 | svg | 356,238 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 53 | 0.086 | svg | 356,696 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 54 | 0.077 | span “Amigas” | 105,175 · 51x38 | altura | `38px` → `44px` |
-| 55 | 0.074 | span “Para você” | 16,175 · 67x39 | altura | `39px` → `44px` |
-| 56 | 0.016 | path | 299,34 · 15x13 | largura | `15px` → `15.8px` |
+| 49 | 0.106 | div | 0,228 · 390x38 | altura | `38px` → `41px` |
+| 50 | 0.106 | div | 0,686 · 390x38 | altura | `38px` → `41px` |
+| 51 | 0.105 | div | 64,228 · 282x38 | altura | `37.5px` → `41px` |
+| 52 | 0.105 | div | 64,686 · 282x38 | altura | `37.5px` → `41px` |
+| 53 | 0.086 | svg | 356,238 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 54 | 0.086 | svg | 356,696 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 55 | 0.077 | span “Amigas” | 105,175 · 51x38 | altura | `38px` → `44px` |
+| 56 | 0.074 | span “Para você” | 16,175 · 67x39 | altura | `39px` → `44px` |
+| 57 | 0.016 | path | 299,34 · 15x13 | largura | `15px` → `15.8px` |
 |  |  |  |  | altura | `12.5px` → `15.8px` |
-| 57 | 0.007 | circle | 359,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 58 | 0.007 | circle | 364,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 59 | 0.007 | circle | 370,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 60 | 0.007 | circle | 359,704 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 58 | 0.007 | circle | 359,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 59 | 0.007 | circle | 364,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 60 | 0.007 | circle | 370,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
 
-_(2 elementos de impacto menor omitidos)_
+_(3 elementos de impacto menor omitidos)_

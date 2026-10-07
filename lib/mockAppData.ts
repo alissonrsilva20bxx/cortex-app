@@ -438,16 +438,6 @@ export function buildMockAppSeed(opts?: {
       criado_em: daysFromNow(-18),
       atualizado_em: daysFromNow(-2),
     },
-    {
-      user_id: FRIEND_ID,
-      nome_exibicao: "Marina Alves",
-      cor_avatar: "#ec4899",
-      bio: "Extensão de cílios",
-      avatar_url: null,
-      area_atuacao: "Cílios",
-      criado_em: daysFromNow(-30),
-      atualizado_em: daysFromNow(-5),
-    },
     // As 4 da fileira da referência (tela Rede): mesmo nome, mesma inicial
     // e a mesma cor de avatar que ela desenha.
     {
@@ -470,6 +460,16 @@ export function buildMockAppSeed(opts?: {
       criado_em: daysFromNow(-29 + i),
       atualizado_em: daysFromNow(-4),
     })),
+    {
+      user_id: FRIEND_ID,
+      nome_exibicao: "Marina Alves",
+      cor_avatar: "#ec4899",
+      bio: "Extensão de cílios",
+      avatar_url: null,
+      area_atuacao: "Cílios",
+      criado_em: daysFromNow(-30),
+      atualizado_em: daysFromNow(-5),
+    },
   ];
   // 15 posts -- o suficiente pra exercitar a paginação do feed
   // (FEED_PAGE_SIZE = 10: página 1 cheia + página 2 com resto, `hasMore`
@@ -771,23 +771,17 @@ export function buildMockAppSeed(opts?: {
       rede_amizades: [
         // Marina aceita (era "pendente": a solicitação em aberto fazia
         // nascer um bloco que a referência não tem, acima da dobra).
+        // Marina é a amizade MAIS ANTIGA de propósito: a fileira do topo
+        // mostra as mais recentes primeiro, e a referência desenha as 4
+        // "Amiga N" nas quatro primeiras posições. Marina fica depois
+        // delas, alcançável deslizando.
         {
-          id: "mock-amizade-marina",
-          solicitante_id: FRIEND_ID,
+          id: "mock-amizade-juliana",
+          solicitante_id: "mock-amiga-juliana",
           destinatario_id: uid,
           status: "aceita",
-          criado_em: daysFromNow(-10),
-          respondido_em: daysFromNow(-9),
-        },
-        {
-          user_id: "mock-amiga-juliana",
-          nome_exibicao: "Juliana",
-          cor_avatar: "#f59e0b",
-          bio: "",
-          avatar_url: null,
-          area_atuacao: "",
           criado_em: daysFromNow(-26),
-          atualizado_em: daysFromNow(-3),
+          respondido_em: daysFromNow(-25),
         },
         ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
           id: `mock-amizade-${a.id}`,
@@ -797,6 +791,14 @@ export function buildMockAppSeed(opts?: {
           criado_em: daysFromNow(-28 + i),
           respondido_em: daysFromNow(-27 + i),
         })),
+        {
+          id: "mock-amizade-marina",
+          solicitante_id: FRIEND_ID,
+          destinatario_id: uid,
+          status: "aceita",
+          criado_em: daysFromNow(-60),
+          respondido_em: daysFromNow(-59),
+        },
       ],
       rede_conversas: [],
       rede_conversas_participantes: [],
