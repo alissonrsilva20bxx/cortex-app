@@ -147,6 +147,28 @@ export function medirPixels({
   };
 }
 
+/**
+ * Geometria do recorte do mockup, em pixels INTEIROS.
+ *
+ * O `.ph` fica no meio de uma página rolável, então depois de posicioná-lo a
+ * caixa dele cai quase sempre numa coordenada fracionária (ex.: y = 212,5).
+ * O recorte por elemento arredonda essa caixa para fora e devolve **1px a
+ * mais** de altura -- o mockup saía 780×1690 onde o app saía 780×1688, e aí
+ * toda linha abaixo do primeiro pixel ficava deslocada e a união de tamanhos
+ * contava uma faixa inteira como diferente.
+ *
+ * Por isso a posição é truncada para inteiro e o tamanho é IMPOSTO: a altura
+ * e a largura vêm do que a tela deve ter, não do que a caixa mediu.
+ */
+export function clipDoRecorte({ caixa, largura, altura }) {
+  return {
+    x: Math.floor(caixa.x),
+    y: Math.floor(caixa.y),
+    width: largura,
+    height: altura,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Estilo: o que medimos e quanto cada diferença pesa
 // ---------------------------------------------------------------------------
@@ -743,6 +765,9 @@ async function principal() {
           }
         }
         ph.scrollIntoView({ block: "center" });
+        // Posição inteira: o scrollIntoView costuma parar numa fração, e o
+        // recorte herdaria essa fração como 1px a mais.
+        window.scrollTo(Math.round(window.scrollX), Math.round(window.scrollY));
         return { ok: true, reflow: larg !== mockLarg };
       },
       [tela, MODO_CSS, tema, largura, LARGURA_DO_MOCKUP, OPC.inteira]
@@ -904,12 +929,32 @@ async function principal() {
     const mock = await abrirMockup({ ...OPC, tela });
     await irParaAba(app.page, tela, OPC.tema);
 
-    const pngMock = await mock.el.screenshot();
+    // Recorte com geometria inteira e tamanho imposto (ver clipDoRecorte).
+    const caixa = await mock.el.boundingBox();
+    const alturaAlvo = OPC.inteira
+      ? Math.round(caixa.height)
+      : ALTURA[OPC.largura];
+    const pngMock = await mock.page.screenshot({
+      clip: clipDoRecorte({
+        caixa,
+        largura: OPC.largura,
+        altura: alturaAlvo,
+      }),
+    });
     const pngApp = await app.page.screenshot({ fullPage: OPC.inteira });
     writeFileSync(join(dir, `${nome}-mockup.png`), pngMock);
     writeFileSync(join(dir, `${nome}-app.png`), pngApp);
 
     const d = await diffDePixel(lona, pngMock, pngApp, OPC.limiar);
+    // Tamanho diferente aqui é defeito de captura, não divergência de
+    // desenho: a união contaria uma faixa inteira como diferente e o número
+    // sairia inflado em silêncio. Em `--inteira` as alturas são de conteúdo
+    // e podem mesmo diferir, então a guarda não vale.
+    if (!OPC.inteira && !d.mesmoTamanho)
+      throw new Error(
+        `recorte de tamanhos diferentes em ${nome}: o diff saiu ${d.largura}x${d.altura}. ` +
+          "Mockup e app precisam sair do mesmo tamanho -- confira o clip do recorte."
+      );
     writeFileSync(join(dir, `${nome}-diff.png`), Buffer.from(d.png, "base64"));
 
     let cmp = null;

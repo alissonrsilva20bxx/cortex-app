@@ -21,6 +21,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   chaveDeTexto,
+  clipDoRecorte,
   comparar,
   corEmRgb,
   diferenca,
@@ -291,6 +292,91 @@ describe("impacto", () => {
     expect(r.comDivergencia).toBe(2);
     expect(r.comTextoDivergindo).toBe(1);
     expect(r.pioresComTexto[0].texto).toBe("letra");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Recorte: mockup e app têm de sair do mesmo tamanho
+// ---------------------------------------------------------------------------
+
+describe("recorte do mockup", () => {
+  it("impõe o tamanho da tela, não o que a caixa mediu", () => {
+    // A caixa vem fracionária do scrollIntoView; sem impor o tamanho, o
+    // recorte saía 1px mais alto que o do app (780x1690 contra 780x1688).
+    const c = clipDoRecorte({
+      caixa: { x: 254.5, y: 212.5, width: 390, height: 844.5 },
+      largura: 390,
+      altura: 844,
+    });
+    expect(c.width).toBe(390);
+    expect(c.height).toBe(844);
+  });
+
+  it("a posição vira inteira", () => {
+    const c = clipDoRecorte({
+      caixa: { x: 254.5, y: 212.9, width: 390, height: 844 },
+      largura: 390,
+      altura: 844,
+    });
+    expect(Number.isInteger(c.x)).toBe(true);
+    expect(Number.isInteger(c.y)).toBe(true);
+    expect(c.x).toBe(254);
+    expect(c.y).toBe(212);
+  });
+
+  it("qualquer fração de caixa dá o MESMO tamanho que o print do app", () => {
+    // O app é a viewport: 390x844 cravados. O recorte do mockup tem de bater
+    // com isso venha a caixa com a fração que vier.
+    const APP = { largura: 390, altura: 844 };
+    for (const fracao of [0, 0.1, 0.25, 0.5, 0.75, 0.99]) {
+      const c = clipDoRecorte({
+        caixa: {
+          x: 10 + fracao,
+          y: 200 + fracao,
+          width: 390 + fracao,
+          height: 844 + fracao,
+        },
+        largura: APP.largura,
+        altura: APP.altura,
+      });
+      expect(c.width).toBe(APP.largura);
+      expect(c.height).toBe(APP.altura);
+    }
+  });
+
+  it("serve para 430 também", () => {
+    const c = clipDoRecorte({
+      caixa: { x: 0.5, y: 0.5, width: 430.5, height: 932.5 },
+      largura: 430,
+      altura: 932,
+    });
+    expect(c.width).toBe(430);
+    expect(c.height).toBe(932);
+  });
+
+  it("dois recortes do mesmo tamanho não acusam diferença de tamanho", () => {
+    // É a guarda que a ferramenta usa: tamanho diferente é defeito de
+    // captura, não divergência de desenho.
+    const igual = medirPixels({
+      a: lona(8, 8, [10, 10, 10]),
+      b: lona(8, 8, [10, 10, 10]),
+      larguraA: 8,
+      alturaA: 8,
+      larguraB: 8,
+      alturaB: 8,
+    });
+    expect(igual.mesmoTamanho).toBe(true);
+    const umPixelAMais = medirPixels({
+      a: lona(8, 8, [10, 10, 10]),
+      b: lona(8, 9, [10, 10, 10]),
+      larguraA: 8,
+      alturaA: 8,
+      larguraB: 8,
+      alturaB: 9,
+    });
+    expect(umPixelAMais.mesmoTamanho).toBe(false);
+    // E a faixa de 1px sozinha já conta como diferente: por isso a guarda.
+    expect(umPixelAMais.diferentes).toBe(8);
   });
 });
 
