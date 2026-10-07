@@ -450,6 +450,16 @@ export function buildMockAppSeed(opts?: {
     },
     // As 4 da fileira da referência (tela Rede): mesmo nome, mesma inicial
     // e a mesma cor de avatar que ela desenha.
+    {
+      user_id: "mock-amiga-juliana",
+      nome_exibicao: "Juliana",
+      cor_avatar: "#f59e0b",
+      bio: "",
+      avatar_url: null,
+      area_atuacao: "",
+      criado_em: daysFromNow(-26),
+      atualizado_em: daysFromNow(-3),
+    },
     ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
       user_id: a.id,
       nome_exibicao: a.nome,
@@ -479,12 +489,13 @@ export function buildMockAppSeed(opts?: {
       texto: "Fechei a agenda da semana inteira! 🎉",
       h: 3,
     },
+    // 2º artigo da referência: Juliana, há 5h.
     {
       id: "rede-post-4",
-      autor: uid,
+      autor: "mock-amiga-juliana",
       categoria: "conquista",
       texto: "Antes e depois da cliente de hoje 💅 deslizem pro lado",
-      h: 6,
+      h: 5,
     },
     {
       id: "rede-post-5",
@@ -644,9 +655,23 @@ export function buildMockAppSeed(opts?: {
     foto("rede-post-4", uid, 2, "1300x1000", 6),
   ];
   const rede_post_fotos = fotosDef.map((f) => f.row);
+  // 12 curtidas no 1º post e 8 no 2º: é o que a referência imprime.
+  const curtidoras = [
+    FRIEND_ID,
+    "mock-amiga-juliana",
+    ...AMIGAS_DA_REFERENCIA.map((a) => a.id),
+  ];
+  const curtidasDe = (postId: string, quantas: number) =>
+    Array.from({ length: quantas }, (_, i) => ({
+      post_id: postId,
+      user_id:
+        i < curtidoras.length ? curtidoras[i] : `mock-curtidora-${postId}-${i}`,
+      criado_em: hoursAgoIso(2 + i),
+    }));
   const rede_curtidas = [
     { post_id: "rede-post-2", user_id: uid, criado_em: hoursAgoIso(20) },
-    { post_id: "rede-post-1", user_id: FRIEND_ID, criado_em: hoursAgoIso(2) },
+    ...curtidasDe("rede-post-1", 12),
+    ...curtidasDe("rede-post-4", 8),
   ];
   const rede_comentarios = [
     {
@@ -753,6 +778,16 @@ export function buildMockAppSeed(opts?: {
           status: "aceita",
           criado_em: daysFromNow(-10),
           respondido_em: daysFromNow(-9),
+        },
+        {
+          user_id: "mock-amiga-juliana",
+          nome_exibicao: "Juliana",
+          cor_avatar: "#f59e0b",
+          bio: "",
+          avatar_url: null,
+          area_atuacao: "",
+          criado_em: daysFromNow(-26),
+          atualizado_em: daysFromNow(-3),
         },
         ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
           id: `mock-amizade-${a.id}`,

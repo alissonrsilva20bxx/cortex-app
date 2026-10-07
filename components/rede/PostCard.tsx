@@ -38,19 +38,18 @@ function ActionButton({
     <button
       onClick={onClick}
       aria-label={label}
-      className="flex items-center gap-1.5 pr-2 transition-opacity active:opacity-60"
+      className="flex items-center transition-opacity active:opacity-60"
       style={{
-        paddingTop: 13,
-        paddingBottom: 13,
-        marginTop: -13,
-        marginBottom: -13,
-        color: active ? activeColor : "var(--text-muted)",
+        // Alvo de toque de 44 com o ícone de 24 da referência: o padding
+        // cresce e a margem negativa devolve a altura desenhada.
+        paddingTop: 10,
+        paddingBottom: 10,
+        marginTop: -10,
+        marginBottom: -10,
+        color: active ? activeColor : "var(--accent-deep)",
       }}
     >
       {icon}
-      {count !== undefined && (
-        <span className="text-xs font-semibold tabular-nums">{count}</span>
-      )}
     </button>
   );
 }
@@ -146,7 +145,6 @@ export function PostCard({
                 fill={post.curtidoPorMim ? "var(--danger)" : "none"}
               />
             }
-            count={post.curtidas}
             active={post.curtidoPorMim}
             activeColor="var(--danger)"
             onClick={() => onToggleLike(post.id)}
@@ -154,7 +152,6 @@ export function PostCard({
           />
           <ActionButton
             icon={<MessageCircle size={18} />}
-            count={post.comentariosCount}
             onClick={() => onComment(post)}
             label="Comentar"
           />

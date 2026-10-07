@@ -372,7 +372,10 @@ export function FeedScreen({
           fiado a `AmigasScreen` em RedeTab.tsx — nenhuma lógica nova, só
           garante o caminho permanente que os blocos contextuais abaixo não
           garantem sozinhos. */}
-        <div className="space-y-3 mt-3">
+        {/* A referência separa os artigos por 6px e não dá respiro antes do
+            primeiro: o `mt-3` e o `space-y-3` do cartão antigo somavam 24px
+            e empurravam o post inteiro. */}
+        <div className="flex flex-col" style={{ gap: "6px" }}>
           {/* Skeleton só em cache miss de verdade -- com posts cacheados em
             tela, um refresh em 2º plano (`loading` ainda true) NÃO volta pro
             skeleton, e uma falha de rede NÃO cobre o conteúdo com o erro
