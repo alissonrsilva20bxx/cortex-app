@@ -1,5 +1,5 @@
 {
-  "quando": "2026-10-07T14:44:26.761Z",
+  "quando": "2026-10-07T16:11:17.323Z",
   "baseUrl": "http://localhost:3107",
   "metrica": "pixelmatch YIQ, limiar 0.1",
   "relogio": "2026-09-23T13:00:00.000Z",
@@ -33,8 +33,8 @@
       "tema": "pink-neon",
       "layout": "E",
       "metrica": "pixelmatch YIQ, limiar 0.1",
-      "difPct": 46.2347,
-      "pixelsDiferentes": 608744,
+      "difPct": 45.901,
+      "pixelsDiferentes": 604351,
       "tamanho": "780x1688",
       "mesmoTamanho": true,
       "reflowDoMockup": false,

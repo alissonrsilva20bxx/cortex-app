@@ -450,7 +450,6 @@ export function CofreTab({
               // que empurrava todo o resto da tela 10px para baixo.
               lineHeight: 1.1,
               letterSpacing: "-0.5px",
-              lineHeight: 1.1,
               color: "var(--text)",
             }}
           >

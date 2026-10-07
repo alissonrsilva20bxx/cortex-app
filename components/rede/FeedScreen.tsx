@@ -324,7 +324,11 @@ export function FeedScreen({
           telas, então aqui a margem negativa devolve a borda e o topo só
           para esta tela, sem mexer na casca compartilhada. */}
       <div className="pb-4" style={{ margin: "-20px -16px 0" }}>
-        <RedeHeader
+        {/* Os 16px voltam para CADA bloco: a referência sangra só a foto do
+            post. Sem isso o título, a fileira, as abas e os cards encostavam
+            na borda. */}
+        <div style={{ padding: "0 16px" }}>
+          <RedeHeader
           usuarioNome={usuario.nome}
           usuarioFotoUrl={usuarioFotoUrl}
           unreadChats={unreadChats}
@@ -332,18 +336,21 @@ export function FeedScreen({
           onSearch={onOpenSearch}
           onOpenNotifs={onOpenNotifs}
           onOpenChat={onOpenChat}
-          onOpenMeuEspaco={onOpenMeuEspaco}
-        />
+            onOpenMeuEspaco={onOpenMeuEspaco}
+          />
+        </div>
 
         {/* Jornada J06: a entrada do composer virou o "Postar" da fileira
             de amigas (mesmo onOpenComposer), como no mockup. */}
-        <FileiraAmigas
-          amigas={montado ? amigas : []}
-          onPostar={onOpenComposer}
-          onOpenAmiga={onOpenAutor}
-        />
+        <div style={{ padding: "0 16px" }}>
+          <FileiraAmigas
+            amigas={montado ? amigas : []}
+            onPostar={onOpenComposer}
+            onOpenAmiga={onOpenAutor}
+          />
 
-        <AbasFeed segmento={segmento} onChange={onSegmentoChange} />
+          <AbasFeed segmento={segmento} onChange={onSegmentoChange} />
+        </div>
 
         {/* Entrada fixa pra Amigas/Solicitações/Descobrir — como no protótipo
           (linha própria logo abaixo dos tabs, sempre visível). Achado T20/#127:
@@ -357,12 +364,14 @@ export function FeedScreen({
           fiado a `AmigasScreen` em RedeTab.tsx — nenhuma lógica nova, só
           garante o caminho permanente que os blocos contextuais abaixo não
           garantem sozinhos. */}
-        <ContextualBlock
-          icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
-          title="Amigas"
-          subtitle="Solicitações e descobrir pessoas"
-          onClick={onOpenAmigas}
-        />
+        <div style={{ padding: "0 16px" }}>
+          <ContextualBlock
+            icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
+            title="Amigas"
+            subtitle="Solicitações e descobrir pessoas"
+            onClick={onOpenAmigas}
+          />
+        </div>
 
         <div className="space-y-3 mt-3">
           {/* Skeleton só em cache miss de verdade -- com posts cacheados em
