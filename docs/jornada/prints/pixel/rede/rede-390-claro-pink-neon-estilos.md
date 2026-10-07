@@ -2,18 +2,30 @@
 
 - mockup: `5-telas-8-temas-claro-escuro.html`
 - app: `http://localhost:3107/dev-preview/app`
-- pareados 54 · divergem 31 · só no mockup 59 · só no app 510
-- impacto total: **42.82**
+- pareados 65 · divergem 42 · só no mockup 48 · só no app 515
+- impacto total: **61.472**
 - famílias no mockup: plus jakarta sans (27)
-- famílias no app: plus jakarta sans (155)
+- famílias no app: plus jakarta sans (165)
 
 Ordem por impacto = (soma das diferenças normalizadas) × √(área relativa).
 Em cada célula: **mockup** → app.
 
-## Só os elementos com texto (10)
+## Só os elementos com texto (17)
 
 | impacto | texto | propriedade | mockup → app |
 | ------- | ----- | ----------- | ------------ |
+| 2.498 | “A” | fontSize | `11px` → `18px` |
+| 2.498 | “A” | lineHeight | `16.5px` → `27px` |
+| 2.498 | “A” | color | `rgb(59, 42, 122)` → `rgb(255, 255, 255)` |
+| 2.498 | “A” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 2.02 | “J” | fontWeight | `800` → `400` |
+| 2.02 | “J” | color | `rgb(255, 255, 255)` → `rgb(107, 107, 116)` |
+| 2.02 | “J” | backgroundColor | `rgb(245, 158, 11)` → `rgba(0, 0, 0, 0)` |
+| 2.02 | “J” | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
+| 2.02 | “J” | padding | `0px 0px 0px 0px` → `13px 8px 13px 0px` |
+| 2.02 | “J” | gap | `normal` → `6px` |
+| 2.02 | “J” | largura | `38px` → `39.2px` |
+| 2.02 | “J” | altura | `38px` → `44px` |
 | 1.966 | “Postar” | gap | `6px` → `normal` |
 | 1.966 | “Postar” | largura | `62px` → `34.5px` |
 | 1.966 | “Postar” | altura | `84.5px` → `16.5px` |
@@ -29,25 +41,25 @@ Em cada célula: **mockup** → app.
 | 1.162 | “M” | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 | 1.162 | “M” | largura | `38px` → `44px` |
 | 1.162 | “M” | altura | `38px` → `44px` |
+| 0.933 | “Primeira semana com a agenda cheia” | fontSize | `14px` → `15px` |
+| 0.933 | “Primeira semana com a agenda cheia” | lineHeight | `21px` → `22.5px` |
+| 0.933 | “Primeira semana com a agenda cheia” | padding | `0px 16px 0px 16px` → `8px 0px 0px 0px` |
+| 0.933 | “Primeira semana com a agenda cheia” | gap | `normal` → `5px` |
+| 0.933 | “Primeira semana com a agenda cheia” | altura | `21px` → `14px` |
+| 0.883 | “Amiga 1” | fontSize | `11px` → `15px` |
+| 0.883 | “Amiga 1” | lineHeight | `16.5px` → `22.5px` |
+| 0.883 | “Amiga 2” | fontSize | `11px` → `15px` |
+| 0.883 | “Amiga 2” | lineHeight | `16.5px` → `22.5px` |
+| 0.883 | “Amiga 3” | fontSize | `11px` → `15px` |
+| 0.883 | “Amiga 3” | lineHeight | `16.5px` → `22.5px` |
+| 0.883 | “Amiga 4” | fontSize | `11px` → `15px` |
+| 0.883 | “Amiga 4” | lineHeight | `16.5px` → `22.5px` |
 | 0.825 | “Conquista” | fontSize | `10px` → `12px` |
 | 0.825 | “Conquista” | lineHeight | `15px` → `17px` |
 | 0.825 | “Conquista” | color | `rgb(15, 138, 82)` → `color(srgb 0.0588235 0.357882 0.221725)` |
 | 0.825 | “Conquista” | backgroundColor | `rgb(227, 246, 236)` → `rgba(15, 138, 82, 0.12)` |
 | 0.825 | “Conquista” | largura | `68.3px` → `78.4px` |
 | 0.825 | “Conquista” | altura | `21px` → `23px` |
-| 0.396 | “há 3h” | fontSize | `11px` → `12px` |
-| 0.396 | “há 3h” | lineHeight | `16.5px` → `16px` |
-| 0.396 | “há 3h” | largura | `282px` → `270px` |
-| 0.396 | “há 3h” | altura | `16.5px` → `16px` |
-| 0.396 | “há 5h” | fontSize | `11px` → `12px` |
-| 0.396 | “há 5h” | lineHeight | `16.5px` → `16px` |
-| 0.396 | “há 5h” | largura | `282px` → `270px` |
-| 0.396 | “há 5h” | altura | `16.5px` → `16px` |
-| 0.253 | “Para você” | padding | `8px 0px 8px 0px` → `0px 0px 0px 0px` |
-| 0.253 | “Para você” | altura | `39px` → `44px` |
-| 0.23 | “Amigas” | padding | `8px 0px 8px 0px` → `0px 0px 0px 0px` |
-| 0.23 | “Amigas” | altura | `38px` → `44px` |
-| 0.044 | “Miguel” | lineHeight | `21px` → `22.75px` |
 
 ## Todos os elementos
 
@@ -61,73 +73,106 @@ Em cada célula: **mockup** → app.
 | 3 | 4.546 | nav | 16,762 · 288x60 | backgroundColor | `rgba(255, 255, 255, 0.74)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | borderRadius | `30px 30px 30px 30px` → `0px 0px 0px 0px` |
 |  |  |  |  | boxShadow | `rgba(17, 17, 20, 0.14) 0px 10px 30px 0px` → `none` |
-| 4 | 1.966 | div “Postar” | 16,76 · 62x85 | gap | `6px` → `normal` |
+| 4 | 2.498 | span “A” | 97,81 · 52x52 | fontSize | `11px` → `18px` |
+|  |  |  |  | lineHeight | `16.5px` → `27px` |
+|  |  |  |  | color | `rgb(59, 42, 122)` → `rgb(255, 255, 255)` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 5 | 2.02 | span “J” | 16,686 · 38x38 | fontWeight | `800` → `400` |
+|  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(107, 107, 116)` |
+|  |  |  |  | backgroundColor | `rgb(245, 158, 11)` → `rgba(0, 0, 0, 0)` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `13px 8px 13px 0px` |
+|  |  |  |  | gap | `normal` → `6px` |
+|  |  |  |  | largura | `38px` → `39.2px` |
+|  |  |  |  | altura | `38px` → `44px` |
+| 6 | 1.966 | div “Postar” | 16,76 · 62x85 | gap | `6px` → `normal` |
 |  |  |  |  | largura | `62px` → `34.5px` |
 |  |  |  |  | altura | `84.5px` → `16.5px` |
-| 5 | 1.837 | span | 16,76 · 62x62 | fontSize | `11px` → `15px` |
+| 7 | 1.837 | span | 16,76 · 62x62 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 6 | 1.77 | span | 314,762 · 60x60 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
+| 8 | 1.837 | span | 92,76 · 62x62 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-| 7 | 1.699 | div “Miguel” | 64,228 · 282x21 | fontWeight | `700` → `600` |
+| 9 | 1.837 | span | 168,76 · 62x62 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 10 | 1.837 | span | 244,76 · 62x62 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 11 | 1.837 | span | 320,76 · 62x62 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 12 | 1.77 | span | 314,762 · 60x60 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 13 | 1.699 | div “Miguel” | 64,228 · 282x21 | fontWeight | `700` → `600` |
 |  |  |  |  | lineHeight | `21px` → `20px` |
 |  |  |  |  | gap | `6px` → `normal` |
 |  |  |  |  | largura | `282px` → `45.1px` |
 |  |  |  |  | altura | `21px` → `20px` |
-| 8 | 1.422 | span | 238,22 · 40x40 | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
+| 14 | 1.688 | div | 0,76 · 390x85 | largura | `390px` → `358px` |
+| 15 | 1.422 | span | 334,22 · 40x40 | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `40px` → `44px` |
 |  |  |  |  | altura | `40px` → `44px` |
-| 9 | 1.422 | span | 286,22 · 40x40 | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
-|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-|  |  |  |  | largura | `40px` → `44px` |
-|  |  |  |  | altura | `40px` → `44px` |
-| 10 | 1.422 | span | 334,22 · 40x40 | backgroundColor | `rgb(244, 244, 246)` → `rgba(0, 0, 0, 0)` |
-|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
-|  |  |  |  | largura | `40px` → `44px` |
-|  |  |  |  | altura | `40px` → `44px` |
-| 11 | 1.31 | h1 “Rede” | 16,29 · 214x26 | largura | `214px` → `58.8px` |
-| 12 | 1.162 | span “M” | 16,228 · 38x38 | fontSize | `15px` → `17.6px` |
+| 16 | 1.31 | h1 “Rede” | 16,29 · 214x26 | largura | `214px` → `58.8px` |
+| 17 | 1.2 | div | 0,175 · 390x39 | largura | `390px` → `358px` |
+|  |  |  |  | altura | `39px` → `40.5px` |
+| 18 | 1.162 | span “M” | 16,228 · 38x38 | fontSize | `15px` → `17.6px` |
 |  |  |  |  | fontWeight | `800` → `700` |
 |  |  |  |  | lineHeight | `22.5px` → `26.4px` |
 |  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
 |  |  |  |  | largura | `38px` → `44px` |
 |  |  |  |  | altura | `38px` → `44px` |
-| 13 | 0.85 | span | 249,771 · 54x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 14 | 0.825 | span “Conquista” | 116,228 · 68x21 | fontSize | `10px` → `12px` |
+| 19 | 1.09 | div | 64,228 · 282x38 | largura | `282px` → `246px` |
+|  |  |  |  | altura | `37.5px` → `38px` |
+| 20 | 0.933 | div “Primeira semana com a agenda cheia” | 0,1104 · 390x21 | fontSize | `14px` → `15px` |
+|  |  |  |  | lineHeight | `21px` → `22.5px` |
+|  |  |  |  | padding | `0px 16px 0px 16px` → `8px 0px 0px 0px` |
+|  |  |  |  | gap | `normal` → `5px` |
+|  |  |  |  | altura | `21px` → `14px` |
+| 21 | 0.883 | div “Amiga 1” | 92,76 · 62x85 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
+| 22 | 0.883 | div “Amiga 2” | 168,76 · 62x85 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
+| 23 | 0.883 | div “Amiga 3” | 244,76 · 62x85 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
+| 24 | 0.883 | div “Amiga 4” | 320,76 · 62x85 | fontSize | `11px` → `15px` |
+|  |  |  |  | lineHeight | `16.5px` → `22.5px` |
+| 25 | 0.85 | span | 249,771 · 54x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 26 | 0.825 | span “Conquista” | 116,228 · 68x21 | fontSize | `10px` → `12px` |
 |  |  |  |  | lineHeight | `15px` → `17px` |
 |  |  |  |  | color | `rgb(15, 138, 82)` → `color(srgb 0.0588235 0.357882 0.221725)` |
 |  |  |  |  | backgroundColor | `rgb(227, 246, 236)` → `rgba(15, 138, 82, 0.12)` |
 |  |  |  |  | largura | `68.3px` → `78.4px` |
 |  |  |  |  | altura | `21px` → `23px` |
-| 15 | 0.784 | span | 23,771 · 46x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 16 | 0.784 | span | 80,771 · 46x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 17 | 0.784 | span | 138,771 · 46x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 18 | 0.784 | span | 196,771 · 46x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
-| 19 | 0.396 | div “há 3h” | 64,249 · 282x17 | fontSize | `11px` → `12px` |
+| 27 | 0.784 | span | 23,771 · 46x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 28 | 0.784 | span | 80,771 · 46x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 29 | 0.784 | span | 138,771 · 46x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 30 | 0.784 | span | 196,771 · 46x44 | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 31 | 0.697 | span | 238,22 · 40x40 | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 32 | 0.697 | span | 286,22 · 40x40 | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 33 | 0.513 | div “Fechei a agenda da semana inteira!” | 0,645 · 390x21 | fontSize | `14px` → `15px` |
+|  |  |  |  | lineHeight | `21px` → `22.5px` |
+|  |  |  |  | gap | `normal` → `16px` |
+|  |  |  |  | altura | `21px` → `18px` |
+| 34 | 0.363 | div | 0,22 · 390x40 | gap | `8px` → `normal` |
+|  |  |  |  | altura | `40px` → `44px` |
+| 35 | 0.29 | svg | 332,780 · 24x24 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
+| 36 | 0.277 | div “há 3h” | 64,249 · 282x17 | fontSize | `11px` → `12px` |
 |  |  |  |  | lineHeight | `16.5px` → `16px` |
-|  |  |  |  | largura | `282px` → `270px` |
+|  |  |  |  | largura | `282px` → `276px` |
 |  |  |  |  | altura | `16.5px` → `16px` |
-| 20 | 0.396 | div “há 5h” | 64,707 · 282x17 | fontSize | `11px` → `12px` |
+| 37 | 0.277 | div “há 5h” | 64,707 · 282x17 | fontSize | `11px` → `12px` |
 |  |  |  |  | lineHeight | `16.5px` → `16px` |
-|  |  |  |  | largura | `282px` → `270px` |
+|  |  |  |  | largura | `282px` → `276px` |
 |  |  |  |  | altura | `16.5px` → `16px` |
-| 21 | 0.29 | svg | 332,780 · 24x24 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
-| 22 | 0.268 | svg | 36,96 · 22x22 | fontSize | `11px` → `15px` |
+| 38 | 0.268 | svg | 36,96 · 22x22 | fontSize | `11px` → `15px` |
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
-| 23 | 0.253 | span “Para você” | 16,175 · 67x39 | padding | `8px 0px 8px 0px` → `0px 0px 0px 0px` |
-|  |  |  |  | altura | `39px` → `44px` |
-| 24 | 0.23 | span “Amigas” | 105,175 · 51x38 | padding | `8px 0px 8px 0px` → `0px 0px 0px 0px` |
-|  |  |  |  | altura | `38px` → `44px` |
-| 25 | 0.179 | div | 0,175 · 390x39 | altura | `39px` → `44px` |
-| 26 | 0.145 | div | 0,22 · 390x40 | altura | `40px` → `44px` |
-| 27 | 0.134 | div | 64,228 · 282x38 | largura | `282px` → `278px` |
-|  |  |  |  | altura | `37.5px` → `38px` |
-| 28 | 0.107 | svg | 356,238 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 39 | 0.107 | svg | 356,238 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
 |  |  |  |  | largura | `18px` → `16px` |
 |  |  |  |  | altura | `18px` → `16px` |
-| 29 | 0.044 | strong “Miguel” | 16,646 · 46x18 | lineHeight | `21px` → `22.75px` |
-| 30 | 0.016 | path | 299,34 · 15x13 | largura | `15px` → `15.8px` |
+| 40 | 0.077 | span “Amigas” | 105,175 · 51x38 | altura | `38px` → `44px` |
+| 41 | 0.074 | span “Para você” | 16,175 · 67x39 | altura | `39px` → `44px` |
+| 42 | 0.016 | path | 299,34 · 15x13 | largura | `15px` → `15.8px` |
 |  |  |  |  | altura | `12.5px` → `15.8px` |
-| 31 | 0.011 | circle | 251,35 · 12x12 | largura | `11.7px` → `13.3px` |
-|  |  |  |  | altura | `11.7px` → `13.3px` |

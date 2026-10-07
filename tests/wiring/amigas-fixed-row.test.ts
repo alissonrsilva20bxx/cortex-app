@@ -60,6 +60,9 @@ describe("FeedScreen — linha fixa de Amigas é incondicional (fora do items.ma
 
   it("a linha fixa não é envolvida por nenhuma guarda de tamanho (items/posts/visiblePosts/discover) — a tag de abertura <ContextualBlock> vem logo depois da SegmentedControl fechar, sem condicional entre as duas", () => {
     // Indentação livre: o feed inteiro fica dentro do <PullToRefresh>.
+    // A tag ganhou um <div> de 16px em volta no pixel da Rede (cada bloco
+    // tem o próprio respiro; só a foto sangra), então o que importa é que
+    // nada CONDICIONAL entre no meio -- a guarda que este teste protege.
     const openTagIdx = feedScreenSrc.search(
       /<ContextualBlock\n\s*icon=\{<Users2/
     );
@@ -72,11 +75,14 @@ describe("FeedScreen — linha fixa de Amigas é incondicional (fora do items.ma
       segmentedControlCloseIdx + 2,
       openTagIdx
     );
-    // Só pode haver espaço em branco e comentários JSX ({/* ... */}) entre o
-    // fechamento da SegmentedControl e a abertura do bloco fixo. Removendo
-    // os comentários, não pode sobrar nenhum `{` de condicional/ternário.
-    const withoutComments = between.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
-    expect(withoutComments.trim()).toBe("");
+    // Entre o fechamento da SegmentedControl e a abertura do bloco fixo só
+    // pode haver espaço, comentários JSX e tags de LAYOUT (o <div> de 16px
+    // que o pixel da Rede trouxe). O que não pode é condicional: removidos
+    // comentários e tags, não sobra nenhum `{` -- é essa a garantia do
+    // achado T20/#127, que o bloco é incondicional.
+    const semComentarios = between.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+    const semTags = semComentarios.replace(/<\/?[A-Za-z][^>]*>/g, "");
+    expect(semTags).not.toMatch(/\{/);
   });
 
   it("a lógica de intercalação original (queue/blocks por posts[1,4,6]) continua existindo — a correção somou, não substituiu", () => {
