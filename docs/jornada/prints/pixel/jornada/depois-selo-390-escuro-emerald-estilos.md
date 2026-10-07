@@ -1,0 +1,416 @@
+# Estilos: selo-390-escuro-emerald
+
+- mockup: `prototipo-sua-jornada.html`
+- app: `http://localhost:3103/dev-preview/app`
+- pareados 222 · divergem 117 · só no mockup 493 · só no app 375
+- impacto total: **205.72**
+- famílias no mockup: plus jakarta sans (222)
+- famílias no app: plus jakarta sans (206)
+
+Ordem por impacto = (soma das diferenças normalizadas) × √(área relativa).
+Em cada célula: **mockup** → app.
+
+## Só os elementos com texto (34)
+
+| impacto | texto | propriedade | mockup → app |
+| ------- | ----- | ----------- | ------------ |
+| 5.513 | “Concluir uma meta vale , e cada marco . É dinhei” | fontSize | `12px` → `15px` |
+| 5.513 | “Concluir uma meta vale , e cada marco . É dinhei” | lineHeight | `18px` → `22.5px` |
+| 5.513 | “Concluir uma meta vale , e cada marco . É dinhei” | color | `rgb(134, 163, 152)` → `rgb(224, 255, 244)` |
+| 5.513 | “Concluir uma meta vale , e cada marco . É dinhei” | backgroundColor | `rgb(20, 47, 34)` → `rgba(0, 0, 0, 0)` |
+| 5.513 | “Concluir uma meta vale , e cada marco . É dinhei” | borderRadius | `14px 14px 14px 14px` → `0px 0px 0px 0px` |
+| 5.513 | “Concluir uma meta vale , e cada marco . É dinhei” | padding | `10px 12px 10px 12px` → `0px 0px 0px 0px` |
+| 5.513 | “Concluir uma meta vale , e cada marco . É dinhei” | largura | `326px` → `348px` |
+| 5.513 | “Concluir uma meta vale , e cada marco . É dinhei” | altura | `56px` → `66px` |
+| 4.264 | “Em movimento” | fontSize | `19px` → `9.5px` |
+| 4.264 | “Em movimento” | fontWeight | `800` → `700` |
+| 4.264 | “Em movimento” | letterSpacing | `-0.3px` → `normal` |
+| 4.264 | “Em movimento” | lineHeight | `22.8px` → `11.4px` |
+| 4.264 | “Em movimento” | color | `rgb(224, 255, 244)` → `rgb(255, 255, 255)` |
+| 4.264 | “Em movimento” | gap | `normal` → `6px` |
+| 4.264 | “Em movimento” | largura | `226px` → `56px` |
+| 4.264 | “Em movimento” | altura | `22.8px` → `54.8px` |
+| 4.104 | “Registrar atendimento” | fontSize | `13.5px` → `16px` |
+| 4.104 | “Registrar atendimento” | fontWeight | `800` → `600` |
+| 4.104 | “Registrar atendimento” | lineHeight | `normal` → `24px` |
+| 4.104 | “Registrar atendimento” | color | `rgb(224, 255, 244)` → `rgb(255, 255, 255)` |
+| 4.104 | “Registrar atendimento” | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(16, 185, 129)` |
+| 4.104 | “Registrar atendimento” | borderRadius | `0px 0px 0px 0px` → `16px 16px 16px 16px` |
+| 4.104 | “Registrar atendimento” | padding | `0px 0px 0px 0px` → `14px 0px 14px 0px` |
+| 4.104 | “Registrar atendimento” | largura | `144px` → `348px` |
+| 4.104 | “Registrar atendimento” | altura | `34px` → `52px` |
+| 3.241 | “€ 430” | fontSize | `36px` → `11px` |
+| 3.241 | “€ 430” | letterSpacing | `-1px` → `normal` |
+| 3.241 | “€ 430” | color | `rgb(224, 255, 244)` → `rgb(134, 163, 152)` |
+| 3.241 | “€ 430” | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(20, 47, 34)` |
+| 3.241 | “€ 430” | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
+| 3.241 | “€ 430” | padding | `0px 0px 0px 0px` → `8px 2px 8px 2px` |
+| 3.241 | “€ 430” | gap | `normal` → `4px` |
+| 3.241 | “€ 430” | largura | `100.2px` → `77px` |
+| 3.241 | “€ 430” | altura | `45px` → `46px` |
+| 3.233 | “Em movimento” | fontSize | `9.5px` → `18px` |
+| 3.233 | “Em movimento” | fontWeight | `700` → `800` |
+| 3.233 | “Em movimento” | lineHeight | `11.4px` → `27px` |
+| 3.233 | “Em movimento” | color | `rgb(255, 255, 255)` → `rgb(224, 255, 244)` |
+| 3.233 | “Em movimento” | gap | `6px` → `normal` |
+| 3.233 | “Em movimento” | largura | `56px` → `226px` |
+| 3.233 | “Em movimento” | altura | `54.8px` → `27px` |
+| 2.429 | “Sua Jornada” | fontSize | `20px` → `11px` |
+| 2.429 | “Sua Jornada” | fontWeight | `800` → `600` |
+| 2.429 | “Sua Jornada” | letterSpacing | `-0.4px` → `normal` |
+| 2.429 | “Sua Jornada” | lineHeight | `normal` → `16.5px` |
+| 2.429 | “Sua Jornada” | color | `rgb(224, 255, 244)` → `rgb(134, 163, 152)` |
+| 2.429 | “Sua Jornada” | largura | `214px` → `226px` |
+| 2.429 | “Sua Jornada” | altura | `25px` → `16.5px` |
+| 1.954 | “Sua Jornada” | fontSize | `10px` → `20px` |
+| 1.954 | “Sua Jornada” | letterSpacing | `0.9px` → `-0.4px` |
+| 1.954 | “Sua Jornada” | textTransform | `uppercase` → `none` |
+| 1.954 | “Sua Jornada” | color | `rgb(58, 206, 153)` → `rgb(224, 255, 244)` |
+| 1.954 | “Sua Jornada” | largura | `226px` → `214px` |
+| 1.954 | “Sua Jornada” | altura | `12px` → `25px` |
+| 1.859 | “Novo” | fontSize | `16px` → `13px` |
+| 1.859 | “Novo” | fontWeight | `400` → `700` |
+| 1.859 | “Novo” | lineHeight | `normal` → `19.5px` |
+| 1.859 | “Novo” | borderRadius | `19px 19px 19px 19px` → `9999px 9999px 9999px 9999px` |
+| 1.859 | “Novo” | largura | `90.7px` → `83.7px` |
+| 1.767 | “Tudo o que você registra aqui é só seu. O Glow p” | fontSize | `12.5px` → `15px` |
+| 1.767 | “Tudo o que você registra aqui é só seu. O Glow p” | lineHeight | `18.125px` → `22.5px` |
+| 1.767 | “Tudo o que você registra aqui é só seu. O Glow p” | color | `rgb(134, 163, 152)` → `rgb(224, 255, 244)` |
+| 1.767 | “Tudo o que você registra aqui é só seu. O Glow p” | largura | `354px` → `356px` |
+| 1.767 | “Tudo o que você registra aqui é só seu. O Glow p” | altura | `36.3px` → `44px` |
+| 1.548 | “Mostrar selos no perfil” | fontSize | `14px` → `16px` |
+| 1.548 | “Mostrar selos no perfil” | fontWeight | `800` → `400` |
+| 1.548 | “Mostrar selos no perfil” | gap | `normal` → `8px` |
+| 1.548 | “Mostrar selos no perfil” | largura | `296px` → `326px` |
+| 1.548 | “Mostrar selos no perfil” | altura | `18px` → `19px` |
+| 1.074 | “B” | fontSize | `18px` → `15px` |
+| 1.074 | “B” | lineHeight | `normal` → `22.5px` |
+| 1.074 | “B” | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
+| 1.074 | “B” | largura | `42px` → `40px` |
+| 1.074 | “B” | altura | `42px` → `40px` |
+| 0.949 | “Rumo à meta” | color | `rgb(224, 255, 244)` → `rgb(134, 163, 152)` |
+| 0.949 | “Rumo à meta” | altura | `105.3px` → `89.8px` |
+
+## Todos os elementos
+
+| # | impacto | elemento | onde | propriedade | mockup → app |
+| - | ------- | -------- | ---- | ----------- | ------------ |
+| 1 | 19.515 | div | 0,0 · 390x3214 | altura | `3214.3px` → `2256.3px` |
+| 2 | 17.488 | div | 18,978 · 354x420 | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(17, 48, 34)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `22px 22px 22px 22px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `16px 16px 16px 16px` |
+|  |  |  |  | gap | `10px` → `14px` |
+|  |  |  |  | largura | `354px` → `358px` |
+|  |  |  |  | altura | `420px` → `292px` |
+| 3 | 12.123 | div | 0,874 · 390x597 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgb(17, 48, 34)` → `rgb(0, 26, 13)` |
+|  |  |  |  | borderRadius | `28px 28px 0px 0px` → `26px 26px 0px 0px` |
+|  |  |  |  | padding | `10px 18px 30px 18px` → `20px 16px 32px 16px` |
+|  |  |  |  | altura | `597px` → `649px` |
+| 4 | 11.878 | div | 0,872 · 390x556 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgb(17, 48, 34)` → `rgb(0, 26, 13)` |
+|  |  |  |  | borderRadius | `28px 28px 0px 0px` → `26px 26px 0px 0px` |
+|  |  |  |  | padding | `10px 18px 30px 18px` → `20px 16px 32px 16px` |
+|  |  |  |  | altura | `556.3px` → `503px` |
+| 5 | 10.459 | section | 16,1049 · 358x278 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgb(17, 48, 34)` → `rgba(0, 0, 0, 0)` |
+|  |  |  |  | borderRadius | `20px 20px 20px 20px` → `0px 0px 0px 0px` |
+|  |  |  |  | padding | `16px 16px 16px 16px` → `0px 0px 0px 0px` |
+|  |  |  |  | gap | `12px` → `8px` |
+|  |  |  |  | largura | `358px` → `356px` |
+|  |  |  |  | altura | `278px` → `290px` |
+| 6 | 6.514 | div | 16,762 · 358x60 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(17, 48, 34, 0.74)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `999px 999px 999px 999px` |
+|  |  |  |  | boxShadow | `none` → `rgba(0, 0, 0, 0.45) 0px 10px 30px 0px` |
+|  |  |  |  | largura | `358px` → `288px` |
+| 7 | 5.513 | div “Concluir uma meta vale , e cada marco . É dinhei” | 32,1255 · 326x56 | fontSize | `12px` → `15px` |
+|  |  |  |  | lineHeight | `18px` → `22.5px` |
+|  |  |  |  | color | `rgb(134, 163, 152)` → `rgb(224, 255, 244)` |
+|  |  |  |  | backgroundColor | `rgb(20, 47, 34)` → `rgba(0, 0, 0, 0)` |
+|  |  |  |  | borderRadius | `14px 14px 14px 14px` → `0px 0px 0px 0px` |
+|  |  |  |  | padding | `10px 12px 10px 12px` → `0px 0px 0px 0px` |
+|  |  |  |  | largura | `326px` → `348px` |
+|  |  |  |  | altura | `56px` → `66px` |
+| 8 | 5.315 | div | 18,980 · 354x461 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | gap | `normal` → `12px` |
+|  |  |  |  | largura | `354px` → `358px` |
+|  |  |  |  | altura | `460.8px` → `437.5px` |
+| 9 | 4.799 | div | 18,1191 · 296x52 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(16, 185, 129, 0.05)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 14px 12px 14px` |
+|  |  |  |  | largura | `296px` → `348px` |
+|  |  |  |  | altura | `52.2px` → `48.5px` |
+| 10 | 4.264 | div “Em movimento” | -1,276 · 226x23 | fontSize | `19px` → `9.5px` |
+|  |  |  |  | fontWeight | `800` → `700` |
+|  |  |  |  | letterSpacing | `-0.3px` → `normal` |
+|  |  |  |  | lineHeight | `22.8px` → `11.4px` |
+|  |  |  |  | color | `rgb(224, 255, 244)` → `rgb(255, 255, 255)` |
+|  |  |  |  | gap | `normal` → `6px` |
+|  |  |  |  | largura | `226px` → `56px` |
+|  |  |  |  | altura | `22.8px` → `54.8px` |
+| 11 | 4.104 | b “Registrar atendimento” | 32,1036 · 144x34 | fontSize | `13.5px` → `16px` |
+|  |  |  |  | fontWeight | `800` → `600` |
+|  |  |  |  | lineHeight | `normal` → `24px` |
+|  |  |  |  | color | `rgb(224, 255, 244)` → `rgb(255, 255, 255)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(16, 185, 129)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `16px 16px 16px 16px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `14px 0px 14px 0px` |
+|  |  |  |  | largura | `144px` → `348px` |
+|  |  |  |  | altura | `34px` → `52px` |
+| 12 | 3.772 | div | 32,1096 · 326x40 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(16, 185, 129, 0.05)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 14px 12px 14px` |
+|  |  |  |  | gap | `8px` → `normal` |
+|  |  |  |  | largura | `326px` → `348px` |
+|  |  |  |  | altura | `40px` → `48.5px` |
+| 13 | 3.552 | nav | 16,762 · 288x60 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgba(17, 48, 34, 0.74)` → `rgba(0, 0, 0, 0)` |
+|  |  |  |  | borderRadius | `30px 30px 30px 30px` → `0px 0px 0px 0px` |
+|  |  |  |  | boxShadow | `rgba(0, 0, 0, 0.45) 0px 10px 30px 0px` → `none` |
+| 14 | 3.484 | div | 0,0 · 390x844 | backgroundColor | `rgb(0, 26, 13)` → `rgba(0, 0, 0, 0)` |
+|  |  |  |  | boxShadow | `rgba(0, 0, 0, 0.12) -20px 0px 40px 0px` → `none` |
+| 15 | 3.436 | div | 18,1320 · 354x60 | fontSize | `16px` → `14px` |
+|  |  |  |  | fontWeight | `400` → `500` |
+|  |  |  |  | lineHeight | `normal` → `20px` |
+|  |  |  |  | backgroundColor | `rgb(20, 47, 34)` → `rgba(16, 185, 129, 0.05)` |
+|  |  |  |  | borderRadius | `14px 14px 14px 14px` → `12px 12px 12px 12px` |
+|  |  |  |  | padding | `10px 12px 10px 12px` → `12px 16px 12px 16px` |
+|  |  |  |  | gap | `10px` → `normal` |
+|  |  |  |  | largura | `354px` → `356px` |
+|  |  |  |  | altura | `60px` → `46px` |
+| 16 | 3.241 | span “€ 430” | -67,131 · 100x45 | fontSize | `36px` → `11px` |
+|  |  |  |  | letterSpacing | `-1px` → `normal` |
+|  |  |  |  | color | `rgb(224, 255, 244)` → `rgb(134, 163, 152)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(20, 47, 34)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `8px 2px 8px 2px` |
+|  |  |  |  | gap | `normal` → `4px` |
+|  |  |  |  | largura | `100.2px` → `77px` |
+|  |  |  |  | altura | `45px` → `46px` |
+| 17 | 3.233 | div “Em movimento” | 101,268 · 56x55 | fontSize | `9.5px` → `18px` |
+|  |  |  |  | fontWeight | `700` → `800` |
+|  |  |  |  | lineHeight | `11.4px` → `27px` |
+|  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(224, 255, 244)` |
+|  |  |  |  | gap | `6px` → `normal` |
+|  |  |  |  | largura | `56px` → `226px` |
+|  |  |  |  | altura | `54.8px` → `27px` |
+| 18 | 3.008 | div | 18,1113 · 192x52 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(16, 185, 129, 0.05)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 14px 12px 14px` |
+|  |  |  |  | largura | `192.4px` → `168px` |
+|  |  |  |  | altura | `52.2px` → `50.5px` |
+| 19 | 2.956 | span | 17,763 · 286x58 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 0px 12px 0px` |
+|  |  |  |  | gap | `normal` → `12px` |
+|  |  |  |  | largura | `286px` → `326px` |
+|  |  |  |  | altura | `58px` → `61px` |
+| 20 | 2.888 | div | 32,1388 · 157x50 | fontSize | `16px` → `14px` |
+|  |  |  |  | fontWeight | `400` → `500` |
+|  |  |  |  | lineHeight | `normal` → `20px` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(16, 185, 129, 0.05)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 16px 12px 16px` |
+|  |  |  |  | gap | `10px` → `normal` |
+|  |  |  |  | largura | `157px` → `172px` |
+|  |  |  |  | altura | `50px` → `48px` |
+| 21 | 2.888 | div | 201,1388 · 157x50 | fontSize | `16px` → `14px` |
+|  |  |  |  | fontWeight | `400` → `500` |
+|  |  |  |  | lineHeight | `normal` → `20px` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(16, 185, 129, 0.05)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `12px 12px 12px 12px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `12px 16px 12px 16px` |
+|  |  |  |  | gap | `10px` → `normal` |
+|  |  |  |  | largura | `157px` → `172px` |
+|  |  |  |  | altura | `50px` → `48px` |
+| 22 | 2.691 | div | 32,749 · 326x64 | backgroundColor | `rgb(20, 47, 34)` → `rgba(0, 0, 0, 0)` |
+|  |  |  |  | borderRadius | `14px 14px 14px 14px` → `0px 0px 0px 0px` |
+|  |  |  |  | padding | `10px 12px 10px 12px` → `0px 0px 0px 0px` |
+|  |  |  |  | altura | `64px` → `61px` |
+| 23 | 2.634 | span | 49,960 · 44x44 | fontSize | `10px` → `15px` |
+|  |  |  |  | fontWeight | `700` → `400` |
+|  |  |  |  | lineHeight | `12px` → `22.5px` |
+|  |  |  |  | color | `rgb(58, 206, 153)` → `rgb(224, 255, 244)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(16, 185, 129, 0.12)` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `10px 10px 10px 10px` |
+|  |  |  |  | largura | `44px` → `40px` |
+|  |  |  |  | altura | `44px` → `40px` |
+| 24 | 2.61 | label | 18,1255 · 354x61 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
+|  |  |  |  | gap | `12px` → `8px` |
+|  |  |  |  | largura | `354px` → `348px` |
+|  |  |  |  | altura | `61.1px` → `42px` |
+| 25 | 2.564 | span | 32,1450 · 50x50 | fontSize | `16px` → `11px` |
+|  |  |  |  | fontWeight | `400` → `700` |
+|  |  |  |  | lineHeight | `normal` → `13.75px` |
+|  |  |  |  | color | `rgb(224, 255, 244)` → `rgb(63, 90, 78)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(20, 47, 34)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | largura | `50px` → `58px` |
+|  |  |  |  | altura | `50px` → `58px` |
+| 26 | 2.564 | span | 201,1450 · 50x50 | fontSize | `16px` → `11px` |
+|  |  |  |  | fontWeight | `400` → `700` |
+|  |  |  |  | lineHeight | `normal` → `13.75px` |
+|  |  |  |  | color | `rgb(224, 255, 244)` → `rgb(63, 90, 78)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(20, 47, 34)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `50% 50% 50% 50%` |
+|  |  |  |  | largura | `50px` → `58px` |
+|  |  |  |  | altura | `50px` → `58px` |
+| 27 | 2.443 | div | 18,1101 · 354x76 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | largura | `354px` → `326px` |
+|  |  |  |  | altura | `76.2px` → `65px` |
+| 28 | 2.429 | h1 “Sua Jornada” | 64,28 · 214x25 | fontSize | `20px` → `11px` |
+|  |  |  |  | fontWeight | `800` → `600` |
+|  |  |  |  | letterSpacing | `-0.4px` → `normal` |
+|  |  |  |  | lineHeight | `normal` → `16.5px` |
+|  |  |  |  | color | `rgb(224, 255, 244)` → `rgb(134, 163, 152)` |
+|  |  |  |  | largura | `214px` → `226px` |
+|  |  |  |  | altura | `25px` → `16.5px` |
+| 29 | 2.305 | label | 18,980 · 354x60 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
+|  |  |  |  | gap | `12px` → `normal` |
+|  |  |  |  | largura | `354px` → `348px` |
+|  |  |  |  | altura | `60.1px` → `72.5px` |
+| 30 | 2.243 | label | 18,1178 · 354x77 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
+|  |  |  |  | gap | `12px` → `normal` |
+|  |  |  |  | largura | `354px` → `348px` |
+|  |  |  |  | altura | `77.2px` → `72.5px` |
+| 31 | 2.169 | div | 32,705 · 326x30 | fontSize | `13px` → `15px` |
+|  |  |  |  | fontWeight | `600` → `400` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | gap | `10px` → `normal` |
+|  |  |  |  | largura | `326px` → `358px` |
+|  |  |  |  | altura | `30px` → `22.5px` |
+| 32 | 2.11 | div | 32,960 · 326x61 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | gap | `12px 6px` → `normal` |
+|  |  |  |  | largura | `326px` → `348px` |
+|  |  |  |  | altura | `61px` → `72.5px` |
+| 33 | 1.954 | div “Sua Jornada” | -1,264 · 226x12 | fontSize | `10px` → `20px` |
+|  |  |  |  | letterSpacing | `0.9px` → `-0.4px` |
+|  |  |  |  | textTransform | `uppercase` → `none` |
+|  |  |  |  | color | `rgb(58, 206, 153)` → `rgb(224, 255, 244)` |
+|  |  |  |  | largura | `226px` → `214px` |
+|  |  |  |  | altura | `12px` → `25px` |
+| 34 | 1.927 | label | 18,1380 · 354x61 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | padding | `12px 0px 12px 0px` → `0px 0px 0px 0px` |
+|  |  |  |  | largura | `354px` → `356px` |
+|  |  |  |  | altura | `61.1px` → `48px` |
+| 35 | 1.859 | button “Novo” | 182,26 · 91x38 | fontSize | `16px` → `13px` |
+|  |  |  |  | fontWeight | `400` → `700` |
+|  |  |  |  | lineHeight | `normal` → `19.5px` |
+|  |  |  |  | borderRadius | `19px 19px 19px 19px` → `9999px 9999px 9999px 9999px` |
+|  |  |  |  | largura | `90.7px` → `83.7px` |
+| 36 | 1.772 | div | 32,1197 · 326x46 | fontSize | `16px` → `12px` |
+|  |  |  |  | color | `rgb(224, 255, 244)` → `rgb(134, 163, 152)` |
+|  |  |  |  | gap | `6px` → `4px` |
+|  |  |  |  | altura | `46px` → `53px` |
+| 37 | 1.767 | p “Tudo o que você registra aqui é só seu. O Glow p” | 18,928 · 354x36 | fontSize | `12.5px` → `15px` |
+|  |  |  |  | lineHeight | `18.125px` → `22.5px` |
+|  |  |  |  | color | `rgb(134, 163, 152)` → `rgb(224, 255, 244)` |
+|  |  |  |  | largura | `354px` → `356px` |
+|  |  |  |  | altura | `36.3px` → `44px` |
+| 38 | 1.548 | b “Mostrar selos no perfil” | 18,1268 · 296x18 | fontSize | `14px` → `16px` |
+|  |  |  |  | fontWeight | `800` → `400` |
+|  |  |  |  | gap | `normal` → `8px` |
+|  |  |  |  | largura | `296px` → `326px` |
+|  |  |  |  | altura | `18px` → `19px` |
+| 39 | 1.416 | div | 0,0 · 390x844 | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(10, 8, 14, 0.55)` |
+| 40 | 1.416 | div | 0,0 · 390x844 | backgroundColor | `rgba(10, 8, 14, 0.55)` → `rgba(0, 0, 0, 0)` |
+| 41 | 1.312 | button | 314,762 · 60x60 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(224, 255, 244)` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `9999px 9999px 9999px 9999px` |
+| 42 | 1.113 | span | 177,329 · 30x30 | fontSize | `10px` → `16px` |
+|  |  |  |  | fontWeight | `700` → `400` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `0px 0px 0px 0px` |
+|  |  |  |  | boxShadow | `color(srgb 0.52549 0.639216 0.596078 / 0.45) 0px 0px 0px 1.5px inset` → `none` |
+|  |  |  |  | largura | `30px` → `26.2px` |
+|  |  |  |  | altura | `30px` → `26.1px` |
+| 43 | 1.074 | span “B” | -85,24 · 42x42 | fontSize | `18px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | borderRadius | `50% 50% 50% 50%` → `12px 12px 12px 12px` |
+|  |  |  |  | largura | `42px` → `40px` |
+|  |  |  |  | altura | `42px` → `40px` |
+| 44 | 1.02 | button | 19,770 · 54x44 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 45 | 0.949 | div “Rumo à meta” | 143,1697 · 103x105 | color | `rgb(224, 255, 244)` → `rgb(134, 163, 152)` |
+|  |  |  |  | altura | `105.3px` → `89.8px` |
+| 46 | 0.941 | button | 80,770 · 46x44 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 47 | 0.941 | button | 137,770 · 46x44 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 48 | 0.941 | button | 194,770 · 46x44 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 49 | 0.941 | button | 251,770 · 46x44 | fontSize | `16px` → `15px` |
+|  |  |  |  | lineHeight | `normal` → `22.5px` |
+|  |  |  |  | borderRadius | `22px 22px 22px 22px` → `999px 999px 999px 999px` |
+| 50 | 0.927 | span | 55,1577 · 58x58 | color | `rgb(255, 255, 255)` → `rgb(63, 90, 78)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(20, 47, 34)` |
+|  |  |  |  | boxShadow | `color(srgb 0.0627451 0.72549 0.505882 / 0.4) 0px 6px 14px 0px, rgba(255, 255, 255, 0.35) 0px 0px 0px 3px inset` → `none` |
+| 51 | 0.927 | span | 166,1577 · 58x58 | color | `rgb(255, 255, 255)` → `rgb(63, 90, 78)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(20, 47, 34)` |
+|  |  |  |  | boxShadow | `color(srgb 0.0627451 0.72549 0.505882 / 0.4) 0px 6px 14px 0px, rgba(255, 255, 255, 0.35) 0px 0px 0px 3px inset` → `none` |
+| 52 | 0.927 | span | 277,1577 · 58x58 | color | `rgb(255, 255, 255)` → `rgb(63, 90, 78)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(20, 47, 34)` |
+|  |  |  |  | boxShadow | `color(srgb 0.0627451 0.72549 0.505882 / 0.4) 0px 6px 14px 0px, rgba(255, 255, 255, 0.35) 0px 0px 0px 3px inset` → `none` |
+| 53 | 0.922 | b “0 de 3” | 87,412 · 36x15 | fontSize | `12px` → `11px` |
+|  |  |  |  | fontWeight | `800` → `700` |
+|  |  |  |  | color | `rgb(224, 255, 244)` → `rgb(58, 206, 153)` |
+|  |  |  |  | backgroundColor | `rgba(0, 0, 0, 0)` → `rgb(17, 75, 53)` |
+|  |  |  |  | borderRadius | `0px 0px 0px 0px` → `999px 999px 999px 999px` |
+|  |  |  |  | padding | `0px 0px 0px 0px` → `3px 9px 3px 9px` |
+|  |  |  |  | largura | `35.5px` → `51.6px` |
+|  |  |  |  | altura | `15px` → `19px` |
+| 54 | 0.891 | b “3 de 3” | -69,384 · 34x15 | fontSize | `12px` → `20px` |
+|  |  |  |  | fontWeight | `900` → `800` |
+|  |  |  |  | lineHeight | `normal` → `30px` |
+|  |  |  |  | largura | `34.4px` → `142px` |
+|  |  |  |  | altura | `15px` → `30px` |
+| 55 | 0.853 | input | 326,996 · 46x28 | fontFamily | `arial` → `plus jakarta sans` |
+|  |  |  |  | fontSize | `13.3333px` → `16px` |
+|  |  |  |  | color | `rgb(0, 0, 0)` → `rgb(224, 255, 244)` |
+| 56 | 0.853 | input | 326,1057 · 46x28 | fontFamily | `arial` → `plus jakarta sans` |
+|  |  |  |  | fontSize | `13.3333px` → `16px` |
+|  |  |  |  | color | `rgb(0, 0, 0)` → `rgb(224, 255, 244)` |
+| 57 | 0.803 | i | 32,1148 · 140x8 | backgroundColor | `rgb(16, 185, 129)` → `rgb(17, 75, 53)` |
+|  |  |  |  | borderRadius | `4px 4px 4px 4px` → `999px 999px 999px 999px` |
+|  |  |  |  | largura | `140.2px` → `133px` |
+|  |  |  |  | altura | `8px` → `6px` |
+| 58 | 0.767 | span | 44,759 · 44x44 | fontSize | `16px` → `10px` |
+|  |  |  |  | fontWeight | `400` → `700` |
+|  |  |  |  | lineHeight | `normal` → `12px` |
+| 59 | 0.754 | span | 32,399 · 36x36 | fontSize | `10px` → `13px` |
+|  |  |  |  | fontWeight | `700` → `600` |
+|  |  |  |  | color | `rgb(255, 255, 255)` → `rgb(58, 206, 153)` |
+|  |  |  |  | backgroundColor | `rgb(16, 185, 129)` → `rgb(17, 75, 53)` |
+|  |  |  |  | largura | `36px` → `30px` |
+|  |  |  |  | altura | `36px` → `30px` |
+| 60 | 0.521 | b “Proteger” | 92,1460 · 92x16 | fontWeight | `800` → `700` |
+|  |  |  |  | largura | `92.3px` → `133px` |
+
+_(57 elementos de impacto menor omitidos)_
