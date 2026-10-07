@@ -70,8 +70,9 @@ describe("JobsTab monta a composição do mockup com os componentes novos", () =
   });
 
   it("segue a ordem do mockup: título, próximo, ações, tira, Esta semana, Próximas semanas", () => {
+    // O título agora divide a linha com a busca e o sino (pixel do mockup).
     const ordem = [
-      ">\n        Agenda\n      </h1>",
+      ">\n          Agenda\n        </h1>",
       "<AgendaProximoCard",
       "<AgendaAcoes",
       "{weekStrip.map(",
@@ -87,7 +88,7 @@ describe("JobsTab monta a composição do mockup com os componentes novos", () =
 
   it("o título Agenda é grande e em negrito forte (24px/800)", () => {
     expect(jobsTab).toMatch(
-      /fontSize: "24px",\s*fontWeight: 800,[\s\S]{0,120}Agenda\s*<\/h1>/
+      /fontSize: "24px",\s*fontWeight: 800,[\s\S]{0,160}Agenda\s*<\/h1>/
     );
   });
 
@@ -131,7 +132,8 @@ describe("As 4 ações ligam no que já existe", () => {
   });
 
   it('"Bloquear" não tem ação (não existe no app) e o botão sem ação fica desabilitado', () => {
-    expect(acoes).toMatch(/\{ label: "Bloquear", Icon: Ban \}/);
+    // Ícone com o traço do mockup (components/jobs/agendaIcones.tsx).
+    expect(acoes).toMatch(/\{ label: "Bloquear", Icon: IconeBloquear \}/);
     expect(acoes).toContain("disabled={!onClick}");
   });
 

@@ -196,6 +196,8 @@ export default function DevPreviewApp() {
   // Tour guiado (espelha app/page.tsx); `__previewTour()` abre direto.
   const [tourOpen, setTourOpen] = useState(false);
   const [redeAcesso, setRedeAcesso] = useState<RedeAcessoTour>("pendente");
+  // "+" da Rede (Postar): cada toque abre o compositor da Rede.
+  const [redePostar, setRedePostar] = useState(0);
   // Foto do perfil da Rede: o Início mostra a mesma (cai na da conta Google
   // quando a Rede não tem foto ou não está liberada).
   const [fotoRede, setFotoRede] = useState<string | null>(null);
@@ -304,6 +306,8 @@ export default function DevPreviewApp() {
       else setDespesaFormOpen(true);
     } else if (activeTab === "cofre") {
       setUploadOpen(true);
+    } else if (activeTab === "rede") {
+      setRedePostar((n) => n + 1);
     }
   }
 
@@ -485,6 +489,11 @@ export default function DevPreviewApp() {
             onInnerTabChange={setFinInnerTab}
             onAddDespesa={() => setDespesaFormOpen(true)}
             onAddReceita={() => setReceitaFormOpen(true)}
+            avatar={{
+              inicial: usuario.nome.trim().charAt(0).toUpperCase(),
+              foto: fotoRede || usuario.avatarUrl,
+              onOpenAjustes: () => handleTabChange("ajustes"),
+            }}
             objetivos={objetivos}
             onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
             onToggleObjetivo={handleToggleObjetivo}
@@ -526,6 +535,7 @@ export default function DevPreviewApp() {
             usuario={usuario}
             reselectSignal={redeReselect}
             onChatFocusChange={setChatComposerFocused}
+            postarSignal={redePostar}
             onAcessoChange={setRedeAcesso}
             onFotoPerfilChange={setFotoRede}
           />
@@ -555,16 +565,22 @@ export default function DevPreviewApp() {
             activeTab={activeTab}
             onChange={handleTabChange}
             holdOpen={fabOpen || tourOpen}
-            renderFab={(compact) => (
-              <FAB
-                activeTab={activeTab}
-                financeiroSubTab={finInnerTab}
-                open={fabOpen}
-                onToggle={() => setFabOpen((v) => !v)}
-                onAction={handleFabAction}
-                compact={compact}
-              />
-            )}
+            renderFab={
+              // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
+              // de convite a pílula ocupa a linha toda.
+              activeTab === "rede" && redeAcesso !== "liberado"
+                ? undefined
+                : (compact) => (
+                    <FAB
+                      activeTab={activeTab}
+                      financeiroSubTab={finInnerTab}
+                      open={fabOpen}
+                      onToggle={() => setFabOpen((v) => !v)}
+                      onAction={handleFabAction}
+                      compact={compact}
+                    />
+                  )
+            }
           />
         </>
       )}

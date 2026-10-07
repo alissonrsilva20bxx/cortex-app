@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Plus } from "lucide-react";
+import { AvatarAjustes, BotaoNovo } from "@/components/ui/cabecalho";
 import type { Usuario } from "@/lib/types";
 
 interface Props {
@@ -57,37 +57,20 @@ export function GreetingHeader({
 
   return (
     <div className="flex items-center gap-3">
-      {/* Avatar -- dado real (foto/inicial). 44px: o mockup desenha 42px,
-          mas o alvo de toque mínimo do app é 44×44. */}
-      <button
-        type="button"
+      {/* Avatar -- dado real (foto/inicial), 42px como o mockup, toque de
+          44px (components/ui/cabecalho.tsx). */}
+      <AvatarAjustes
+        inicial={firstName.charAt(0).toUpperCase()}
+        foto={foto}
         onClick={onOpenAjustes}
         aria-label="Abrir Ajustes"
         data-tour="home-ajustes"
-        className="relative flex items-center justify-center rounded-full shrink-0 overflow-hidden transition-opacity active:opacity-70"
-        style={{
-          width: "44px",
-          height: "44px",
-          background: "var(--accent-tint)",
-        }}
-      >
-        {foto ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={foto} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <span
-            className="font-extrabold"
-            style={{ fontSize: "16px", color: "var(--accent-deep)" }}
-          >
-            {firstName.charAt(0).toUpperCase()}
-          </span>
-        )}
-      </button>
+      />
 
       <div className="min-w-0 flex-grow">
         <h1
           className="truncate font-extrabold"
-          style={{ fontSize: "17px", lineHeight: 1.3, color: "var(--text)" }}
+          style={{ fontSize: "17px", lineHeight: 1.5, color: "var(--text)" }}
         >
           Olá, {firstName}
         </h1>
@@ -99,23 +82,7 @@ export function GreetingHeader({
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={onNovo}
-        data-fab-avoid
-        className="flex items-center gap-1.5 shrink-0 rounded-full font-bold transition-opacity active:opacity-80"
-        style={{
-          minHeight: "44px",
-          padding: "0 14px",
-          fontSize: "13px",
-          // #175: texto e fundo de acento com contraste de 4,5:1 nos 8 temas.
-          background: "var(--accent-fill)",
-          color: "var(--on-accent)",
-        }}
-      >
-        <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
-        Novo
-      </button>
+      <BotaoNovo onClick={onNovo}>Novo</BotaoNovo>
     </div>
   );
 }

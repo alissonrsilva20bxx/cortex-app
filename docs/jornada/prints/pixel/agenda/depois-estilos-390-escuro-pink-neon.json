@@ -1,0 +1,1980 @@
+{
+ "mockup": {
+  "textos": [
+   {
+    "t": "Agenda",
+    "fam": "Plus Jakarta Sans",
+    "tam": "24px",
+    "peso": "800",
+    "ls": "-0.5px",
+    "lh": "26.4px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     31,
+     258,
+     26
+    ]
+   },
+   {
+    "t": "Próximo atendimento",
+    "fam": "Plus Jakarta Sans",
+    "tam": "12px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "18px",
+    "cor": "rgba(255, 255, 255, 0.68)",
+    "caixa": [
+     38,
+     104,
+     125,
+     18
+    ]
+   },
+   {
+    "t": "em 2 dias",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     284,
+     102,
+     68,
+     23
+    ]
+   },
+   {
+    "t": "Renata Ferreira",
+    "fam": "Plus Jakarta Sans",
+    "tam": "26px",
+    "peso": "800",
+    "ls": "-0.5px",
+    "lh": "39px",
+    "cor": "rgb(255, 255, 255)",
+    "caixa": [
+     38,
+     137,
+     314,
+     39
+    ]
+   },
+   {
+    "t": "Sexta, 25 de setembro · 14h00 · Studio Miguel",
+    "fam": "Plus Jakarta Sans",
+    "tam": "13px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "19.5px",
+    "cor": "rgba(255, 255, 255, 0.68)",
+    "caixa": [
+     38,
+     188,
+     314,
+     20
+    ]
+   },
+   {
+    "t": "R$ 180,00",
+    "fam": "Plus Jakarta Sans",
+    "tam": "20px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "30px",
+    "cor": "rgb(255, 255, 255)",
+    "caixa": [
+     38,
+     223,
+     101,
+     30
+    ]
+   },
+   {
+    "t": "Lembrar cliente ›",
+    "fam": "Plus Jakarta Sans",
+    "tam": "12px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "18px",
+    "cor": "rgb(255, 255, 255)",
+    "caixa": [
+     254,
+     229,
+     98,
+     18
+    ]
+   },
+   {
+    "t": "Novo",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     291,
+     84,
+     81
+    ]
+   },
+   {
+    "t": "Bloquear",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     108,
+     291,
+     84,
+     81
+    ]
+   },
+   {
+    "t": "Resumo",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     199,
+     291,
+     84,
+     81
+    ]
+   },
+   {
+    "t": "Anotações",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     291,
+     291,
+     84,
+     81
+    ]
+   },
+   {
+    "t": "D",
+    "fam": "Plus Jakarta Sans",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "20",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     30,
+     414,
+     19,
+     23
+    ]
+   },
+   {
+    "t": "S",
+    "fam": "Plus Jakarta Sans",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     68,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "21",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     414,
+     15,
+     23
+    ]
+   },
+   {
+    "t": "T",
+    "fam": "Plus Jakarta Sans",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     120,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "22",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     134,
+     414,
+     18,
+     23
+    ]
+   },
+   {
+    "t": "Q",
+    "fam": "Plus Jakarta Sans",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     172,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "23",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     186,
+     414,
+     18,
+     23
+    ]
+   },
+   {
+    "t": "Q",
+    "fam": "Plus Jakarta Sans",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     223,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "24",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     237,
+     414,
+     19,
+     23
+    ]
+   },
+   {
+    "t": "S",
+    "fam": "Plus Jakarta Sans",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     275,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "25",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     290,
+     414,
+     18,
+     23
+    ]
+   },
+   {
+    "t": "S",
+    "fam": "Plus Jakarta Sans",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     327,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "26",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     342,
+     414,
+     18,
+     23
+    ]
+   },
+   {
+    "t": "Esta semana",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     462,
+     92,
+     23
+    ]
+   },
+   {
+    "t": "Ver tudo ›",
+    "fam": "Plus Jakarta Sans",
+    "tam": "12px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "18px",
+    "cor": "rgb(255, 82, 143)",
+    "caixa": [
+     318,
+     464,
+     57,
+     18
+    ]
+   },
+   {
+    "t": "Camila Duarte",
+    "fam": "Plus Jakarta Sans",
+    "tam": "14px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     517,
+     217,
+     21
+    ]
+   },
+   {
+    "t": "Dom 20 · 10h00 · Concluído",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(154, 143, 150)",
+    "caixa": [
+     84,
+     538,
+     217,
+     17
+    ]
+   },
+   {
+    "t": "R$ 120",
+    "fam": "Plus Jakarta Sans",
+    "tam": "14px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     313,
+     526,
+     45,
+     21
+    ]
+   },
+   {
+    "t": "Renata Ferreira",
+    "fam": "Plus Jakarta Sans",
+    "tam": "14px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     582,
+     217,
+     21
+    ]
+   },
+   {
+    "t": "Sex 25 · 14h00 · Agendado",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(154, 143, 150)",
+    "caixa": [
+     84,
+     603,
+     217,
+     17
+    ]
+   },
+   {
+    "t": "R$ 180",
+    "fam": "Plus Jakarta Sans",
+    "tam": "14px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     313,
+     591,
+     45,
+     21
+    ]
+   },
+   {
+    "t": "Próximas semanas",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     659,
+     358,
+     23
+    ]
+   },
+   {
+    "t": "J",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(255, 82, 143)",
+    "caixa": [
+     32,
+     714,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "Juliana Prado",
+    "fam": "Plus Jakarta Sans",
+    "tam": "14px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     715,
+     217,
+     21
+    ]
+   },
+   {
+    "t": "Seg 28 · 09h00",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(154, 143, 150)",
+    "caixa": [
+     84,
+     736,
+     217,
+     17
+    ]
+   },
+   {
+    "t": "R$ 150",
+    "fam": "Plus Jakarta Sans",
+    "tam": "14px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     313,
+     723,
+     45,
+     21
+    ]
+   },
+   {
+    "t": "B",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(255, 82, 143)",
+    "caixa": [
+     32,
+     779,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "Beatriz Lima",
+    "fam": "Plus Jakarta Sans",
+    "tam": "14px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     780,
+     213,
+     21
+    ]
+   },
+   {
+    "t": "Ter 29 · 15h30",
+    "fam": "Plus Jakarta Sans",
+    "tam": "11px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(154, 143, 150)",
+    "caixa": [
+     84,
+     801,
+     213,
+     17
+    ]
+   },
+   {
+    "t": "R$ 200",
+    "fam": "Plus Jakarta Sans",
+    "tam": "14px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     309,
+     788,
+     49,
+     21
+    ]
+   },
+   {
+    "t": "L",
+    "fam": "Plus Jakarta Sans",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(255, 82, 143)",
+    "caixa": [
+     32,
+     844,
+     40,
+     40
+    ]
+   }
+  ],
+  "caixas": [
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "50%",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     284,
+     24,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "50%",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     334,
+     24,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "Próximo atendimentoem 2 dias R",
+    "bg": "linear-gradient(150deg, rgb(108, 18, 52), rgb(47, 7, 24))",
+    "raio": "26px",
+    "pad": "22px",
+    "sombra": "rgba(0, 0, 0, 0.45) 0px 14px 30px 0px",
+    "caixa": [
+     16,
+     80,
+     358,
+     195
+    ]
+   },
+   {
+    "t": "em 2 dias",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "999px",
+    "pad": "3px 9px",
+    "sombra": "",
+    "caixa": [
+     284,
+     102,
+     68,
+     23
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "50%",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     30,
+     291,
+     56,
+     56
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "50%",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     121,
+     291,
+     56,
+     56
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "50%",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     213,
+     291,
+     56,
+     56
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "50%",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     304,
+     291,
+     56,
+     56
+    ]
+   },
+   {
+    "t": "D20",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     16,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "S21",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     68,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "T22",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     120,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "Q23",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     172,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "Q24",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     223,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "S25",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     275,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "S26",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     327,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "Camila DuarteDom 20 · 10h00 · ",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "20px",
+    "pad": "4px 16px",
+    "sombra": "",
+    "caixa": [
+     16,
+     500,
+     358,
+     137
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(44, 50, 43)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     516,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(81, 23, 46)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     581,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "JJuliana PradoSeg 28 · 09h00R$",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "20px",
+    "pad": "4px 16px",
+    "sombra": "",
+    "caixa": [
+     16,
+     698,
+     358,
+     397
+    ]
+   },
+   {
+    "t": "J",
+    "bg": "rgb(81, 23, 46)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     714,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "B",
+    "bg": "rgb(81, 23, 46)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     779,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "L",
+    "bg": "rgb(81, 23, 46)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     844,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgba(37, 18, 28, 0.74)",
+    "raio": "30px",
+    "pad": "0px",
+    "sombra": "rgba(0, 0, 0, 0.45) 0px 10px 30px 0px",
+    "caixa": [
+     16,
+     762,
+     288,
+     60
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "22px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     76,
+     771,
+     54,
+     44
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "50%",
+    "pad": "0px",
+    "sombra": "rgba(255, 45, 120, 0.4) 0px 8px 20px 0px",
+    "caixa": [
+     314,
+     762,
+     60,
+     60
+    ]
+   }
+  ]
+ },
+ "app": {
+  "textos": [
+   {
+    "t": "Agenda",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "24px",
+    "peso": "800",
+    "ls": "-0.5px",
+    "lh": "26.4px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     31,
+     258,
+     26
+    ]
+   },
+   {
+    "t": "Próximo atendimento",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "12px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "18px",
+    "cor": "rgba(255, 255, 255, 0.68)",
+    "caixa": [
+     38,
+     104,
+     125,
+     18
+    ]
+   },
+   {
+    "t": "em 2 dias",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     284,
+     102,
+     68,
+     23
+    ]
+   },
+   {
+    "t": "Renata Ferreira",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "26px",
+    "peso": "800",
+    "ls": "-0.5px",
+    "lh": "39px",
+    "cor": "rgb(255, 255, 255)",
+    "caixa": [
+     38,
+     137,
+     314,
+     39
+    ]
+   },
+   {
+    "t": "Sexta, 25 de setembro · 14h00 · Studio Miguel",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "13px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "19.5px",
+    "cor": "rgba(255, 255, 255, 0.68)",
+    "caixa": [
+     38,
+     188,
+     314,
+     20
+    ]
+   },
+   {
+    "t": "R$ 180,00",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "20px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "30px",
+    "cor": "rgb(255, 255, 255)",
+    "caixa": [
+     38,
+     223,
+     101,
+     30
+    ]
+   },
+   {
+    "t": "Lembrar cliente ›",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "12px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "18px",
+    "cor": "rgb(255, 255, 255)",
+    "caixa": [
+     254,
+     216,
+     98,
+     44
+    ]
+   },
+   {
+    "t": "Novo",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     291,
+     84,
+     81
+    ]
+   },
+   {
+    "t": "Bloquear",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     108,
+     291,
+     84,
+     81
+    ]
+   },
+   {
+    "t": "Resumo",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     199,
+     291,
+     84,
+     81
+    ]
+   },
+   {
+    "t": "Anotações",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     291,
+     291,
+     84,
+     81
+    ]
+   },
+   {
+    "t": "D",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     36,
+     397,
+     7,
+     15
+    ]
+   },
+   {
+    "t": "20",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     30,
+     414,
+     19,
+     23
+    ]
+   },
+   {
+    "t": "S",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     88,
+     397,
+     6,
+     15
+    ]
+   },
+   {
+    "t": "21",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     414,
+     15,
+     23
+    ]
+   },
+   {
+    "t": "T",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     140,
+     397,
+     5,
+     15
+    ]
+   },
+   {
+    "t": "22",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     134,
+     414,
+     18,
+     23
+    ]
+   },
+   {
+    "t": "Q",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     191,
+     397,
+     9,
+     15
+    ]
+   },
+   {
+    "t": "23",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     186,
+     414,
+     18,
+     23
+    ]
+   },
+   {
+    "t": "Q",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     242,
+     397,
+     9,
+     15
+    ]
+   },
+   {
+    "t": "24",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     237,
+     414,
+     19,
+     23
+    ]
+   },
+   {
+    "t": "S",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     295,
+     397,
+     6,
+     15
+    ]
+   },
+   {
+    "t": "25",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     290,
+     414,
+     18,
+     23
+    ]
+   },
+   {
+    "t": "S",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "10px",
+    "peso": "600",
+    "ls": "normal",
+    "lh": "15px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     347,
+     397,
+     6,
+     15
+    ]
+   },
+   {
+    "t": "26",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     342,
+     414,
+     18,
+     23
+    ]
+   },
+   {
+    "t": "Esta semana",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     462,
+     92,
+     23
+    ]
+   },
+   {
+    "t": "Ver tudo ›",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "12px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "18px",
+    "cor": "rgb(255, 82, 143)",
+    "caixa": [
+     318,
+     451,
+     57,
+     44
+    ]
+   },
+   {
+    "t": "Camila Duarte",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "14px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     517,
+     217,
+     21
+    ]
+   },
+   {
+    "t": "Dom 20 · 10h00 · Concluído",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(154, 143, 150)",
+    "caixa": [
+     84,
+     538,
+     217,
+     17
+    ]
+   },
+   {
+    "t": "R$ 120",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "14px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     313,
+     526,
+     45,
+     21
+    ]
+   },
+   {
+    "t": "Renata Ferreira",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "14px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     582,
+     217,
+     21
+    ]
+   },
+   {
+    "t": "Sex 25 · 14h00 · Agendado",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(154, 143, 150)",
+    "caixa": [
+     84,
+     603,
+     217,
+     17
+    ]
+   },
+   {
+    "t": "R$ 180",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "14px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     313,
+     591,
+     45,
+     21
+    ]
+   },
+   {
+    "t": "Próximas semanas",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     16,
+     659,
+     358,
+     23
+    ]
+   },
+   {
+    "t": "J",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(255, 82, 143)",
+    "caixa": [
+     32,
+     714,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "Juliana Prado",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "14px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     715,
+     217,
+     21
+    ]
+   },
+   {
+    "t": "Seg 28 · 09h00",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(154, 143, 150)",
+    "caixa": [
+     84,
+     736,
+     217,
+     17
+    ]
+   },
+   {
+    "t": "R$ 150",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "14px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     313,
+     723,
+     45,
+     21
+    ]
+   },
+   {
+    "t": "B",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(255, 82, 143)",
+    "caixa": [
+     32,
+     779,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "Beatriz Lima",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "14px",
+    "peso": "700",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     84,
+     780,
+     213,
+     21
+    ]
+   },
+   {
+    "t": "Ter 29 · 15h30",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "11px",
+    "peso": "400",
+    "ls": "normal",
+    "lh": "16.5px",
+    "cor": "rgb(154, 143, 150)",
+    "caixa": [
+     84,
+     801,
+     213,
+     17
+    ]
+   },
+   {
+    "t": "R$ 200",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "14px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "21px",
+    "cor": "rgb(250, 238, 245)",
+    "caixa": [
+     309,
+     788,
+     49,
+     21
+    ]
+   },
+   {
+    "t": "L",
+    "fam": "__Plus_Jakarta_Sans_a11773",
+    "tam": "15px",
+    "peso": "800",
+    "ls": "normal",
+    "lh": "22.5px",
+    "cor": "rgb(255, 82, 143)",
+    "caixa": [
+     32,
+     844,
+     40,
+     40
+    ]
+   }
+  ],
+  "caixas": [
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     284,
+     24,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     334,
+     24,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "Próximo atendimentoem 2 diasRe",
+    "bg": "linear-gradient(150deg, rgb(108, 18, 52), rgb(47, 7, 24))",
+    "raio": "26px",
+    "pad": "22px",
+    "sombra": "rgba(0, 0, 0, 0.45) 0px 14px 30px 0px",
+    "caixa": [
+     16,
+     80,
+     358,
+     195
+    ]
+   },
+   {
+    "t": "em 2 dias",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "9999px",
+    "pad": "3px 9px",
+    "sombra": "",
+    "caixa": [
+     284,
+     102,
+     68,
+     23
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     30,
+     291,
+     56,
+     56
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     121,
+     291,
+     56,
+     56
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     213,
+     291,
+     56,
+     56
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     304,
+     291,
+     56,
+     56
+    ]
+   },
+   {
+    "t": "D20",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     16,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     37,
+     436,
+     4,
+     4
+    ]
+   },
+   {
+    "t": "S21",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     68,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "T22",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     120,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "Q23",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     172,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "Q24",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     223,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "S25",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     275,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     297,
+     436,
+     4,
+     4
+    ]
+   },
+   {
+    "t": "S26",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "29px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     327,
+     388,
+     47,
+     58
+    ]
+   },
+   {
+    "t": "Camila DuarteDom 20 · 10h00 · ",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "20px",
+    "pad": "4px 16px",
+    "sombra": "",
+    "caixa": [
+     16,
+     500,
+     358,
+     137
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(44, 50, 43)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     516,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(81, 23, 46)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     581,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "JJuliana PradoSeg 28 · 09h00R$",
+    "bg": "rgb(37, 18, 28)",
+    "raio": "20px",
+    "pad": "4px 16px",
+    "sombra": "",
+    "caixa": [
+     16,
+     698,
+     358,
+     397
+    ]
+   },
+   {
+    "t": "J",
+    "bg": "rgb(81, 23, 46)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     714,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "B",
+    "bg": "rgb(81, 23, 46)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     779,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "L",
+    "bg": "rgb(81, 23, 46)",
+    "raio": "12px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     32,
+     844,
+     40,
+     40
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "9999px",
+    "pad": "0px",
+    "sombra": "rgba(255, 45, 120, 0.4) 0px 8px 20px 0px",
+    "caixa": [
+     314,
+     762,
+     60,
+     60
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgba(37, 18, 28, 0.74)",
+    "raio": "999px",
+    "pad": "0px",
+    "sombra": "rgba(0, 0, 0, 0.45) 0px 10px 30px 0px",
+    "caixa": [
+     16,
+     762,
+     288,
+     60
+    ]
+   },
+   {
+    "t": "",
+    "bg": "rgb(255, 45, 120)",
+    "raio": "999px",
+    "pad": "0px",
+    "sombra": "",
+    "caixa": [
+     76,
+     771,
+     54,
+     44
+    ]
+   }
+  ]
+ }
+}

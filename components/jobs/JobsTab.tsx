@@ -18,6 +18,8 @@ import { AgendaResumoSheet } from "./AgendaResumoSheet";
 import { NotasSection } from "./NotasSection";
 import { AgendaProximoCard } from "./AgendaProximoCard";
 import { AgendaAcoes } from "./AgendaAcoes";
+import { IconeBusca, IconeSino } from "./agendaIcones";
+import { BotaoRedondo } from "@/components/ui/cabecalho";
 import { EstaSemanaSection, ProximasSemanasSection } from "./AgendaListas";
 import {
   addDays,
@@ -381,9 +383,6 @@ export function JobsTab({
             box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
             transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .agenda-ratchet-day[data-selected="true"] {
-          transform: translateY(-3px) scale(1.035);
-        }
         .agenda-ratchet-day[data-selected="true"] .agenda-ratchet-number {
           animation: agenda-ratchet-tick 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -436,16 +435,31 @@ export function JobsTab({
           continua no painel do dia logo abaixo. A busca e o sino do mockup
           não entram: o ticket não pede e não há ação ligada a eles na
           Agenda. */}
-      <h1
-        style={{
-          fontSize: "24px",
-          fontWeight: 800,
-          letterSpacing: "-0.5px",
-          color: "var(--text)",
-        }}
-      >
-        Agenda
-      </h1>
+      <div className="flex items-center" style={{ gap: "10px" }}>
+        <h1
+          className="flex-grow"
+          style={{
+            fontSize: "24px",
+            fontWeight: 800,
+            letterSpacing: "-0.5px",
+            lineHeight: 1.1,
+            color: "var(--text)",
+          }}
+        >
+          Agenda
+        </h1>
+        {/* Busca e sino do mockup (pixel do mockup, layout C). A Agenda não
+            tem busca nem notificação ligadas: ficam desabilitados, como o
+            "Bloquear" (J03: não criar ação nova), e listados no PR. */}
+        {[
+          { rotulo: "Buscar", Icone: IconeBusca },
+          { rotulo: "Notificações", Icone: IconeSino },
+        ].map(({ rotulo, Icone }) => (
+          <BotaoRedondo key={rotulo} rotulo={rotulo}>
+            <Icone size={20} />
+          </BotaoRedondo>
+        ))}
+      </div>
 
       {/* Próximo atendimento em destaque (J03). Só depois da 1ª carga
           bem-sucedida: antes disso "nenhum agendado" seria mentira. */}
@@ -468,9 +482,99 @@ export function JobsTab({
       />
 
       <div>
+        {/* Tira da semana (J03) — 7 pílulas de 58px sobre `--card-solid`,
+            letra do dia em cima e número embaixo, como o mockup. Três
+            marcas independentes por dia: selecionado (fundo cheio no
+            acento; nasce em hoje, igual ao mockup), hoje-mas-não-
+            selecionado (anel de contorno) e ponto de compromisso (dias com
+            atendimento). Hoje e dia com atendimento nunca usam a mesma
+            marca. As datas vêm de `buildWeekStrip`, que segue a semana
+            real, inclusive na virada do mês. */}
+        <div className="grid grid-cols-7" style={{ gap: "5px" }}>
+          {weekStrip.map(({ iso, letter, day, hasJobs }) => {
+            const selected = iso === selectedDate;
+            const isToday = iso === today;
+            return (
+              <button
+                key={iso}
+                onClick={() => selectDay(iso)}
+                aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}`}
+                aria-pressed={selected}
+                data-selected={selected}
+                // Pixel do mockup: o dia escolhido não sobe nem brilha, e
+                // letra e número têm 2px entre si.
+                className="agenda-ratchet-day relative flex flex-col items-center justify-center"
+                style={{
+                  height: "58px",
+                  borderRadius: "29px",
+                  gap: "2px",
+                  background: selected ? "var(--accent)" : "var(--card-solid)",
+                  color: "var(--text)",
+                  border:
+                    isToday && !selected ? "1px solid var(--accent)" : "none",
+                }}
+              >
+                <span style={{ fontSize: "10px", fontWeight: 600 }}>
+                  {letter}
+                </span>
+                <strong
+                  className="agenda-ratchet-number"
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 800,
+                    color: isToday && !selected ? "var(--accent)" : undefined,
+                  }}
+                >
+                  {day}
+                </strong>
+                {/* Ponto de dia com atendimento (J03). Fora do fluxo, pra
+                    letra e número ficarem onde o mockup põe. */}
+                <span
+                  aria-hidden="true"
+                  className="absolute rounded-full"
+                  style={{
+                    bottom: "6px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "4px",
+                    height: "4px",
+                    background: hasJobs
+                      ? selected
+                        ? "var(--text)"
+                        : "var(--accent)"
+                      : "transparent",
+                  }}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* "Esta semana" e "Próximas semanas" (J03), na ordem do mockup.
+          Só com dado confirmado: na 1ª carga ou com o painel de erro
+          cheio, uma lista vazia seria uma afirmação falsa. Tocar numa
+          linha abre o mesmo detalhe da timeline (JobDetailSheet). */}
+      {hasLoadedOnce && (
+        <>
+          <EstaSemanaSection jobs={daSemana} onOpen={setDetailJob} />
+          <ProximasSemanasSection
+            jobs={proximasSemanas}
+            onOpen={setDetailJob}
+          />
+        </>
+      )}
+
+      {/* Explorar a agenda (pixel do mockup, layout C): o mockup não tem
+          navegação de semana, painel do dia nem filtro; a tela dele vai da
+          tira direto pra "Esta semana" e "Próximas semanas". Pra a tela ser
+          a do mockup sem tirar nada do que o app já faz, esses controles
+          descem pra cá, depois das listas. A tira lá em cima continua
+          escolhendo o dia; as setas daqui trocam a semana dela. */}
+      <div>
         {/* Navegação de semana — sem equivalente no mockup, que mostra
-            uma semana fixa. Necessária no app real (ver `goToWeek`).
-            Setas 44×44px. */}
+              uma semana fixa. Necessária no app real (ver `goToWeek`).
+              Setas 44×44px. */}
         <div className="flex items-center justify-between mb-2">
           <button
             onClick={() => goToWeek(-1)}
@@ -493,379 +597,306 @@ export function JobsTab({
           </button>
         </div>
 
-        {/* Tira da semana (J03) — 7 pílulas de 58px sobre `--card-solid`,
-            letra do dia em cima e número embaixo, como o mockup. Três
-            marcas independentes por dia: selecionado (fundo cheio no
-            acento; nasce em hoje, igual ao mockup), hoje-mas-não-
-            selecionado (anel de contorno) e ponto de compromisso (dias com
-            atendimento). Hoje e dia com atendimento nunca usam a mesma
-            marca. As datas vêm de `buildWeekStrip`, que segue a semana
-            real, inclusive na virada do mês. */}
-        <div className="grid grid-cols-7" style={{ gap: "5px" }}>
-          {weekStrip.map(({ iso, letter, day, hasJobs }) => {
-            const selected = iso === selectedDate;
-            const isToday = iso === today;
-            return (
-              <button
-                key={iso}
-                onClick={() => selectDay(iso)}
-                aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}`}
-                aria-pressed={selected}
-                data-selected={selected}
-                className="agenda-ratchet-day flex flex-col items-center justify-center"
-                style={{
-                  height: "58px",
-                  borderRadius: "29px",
-                  background: selected ? "var(--accent)" : "var(--card-solid)",
-                  color: "var(--text)",
-                  boxShadow: selected ? "var(--glow-sm)" : "none",
-                  border:
-                    isToday && !selected ? "1px solid var(--accent)" : "none",
-                }}
+        {/* Painel do dia selecionado — data por extenso + contagem real +
+            filtro de status (dado real preservado, escopado ao dia) +
+            timeline/estado vazio. Remonta a cada troca de dia (`key`) pra
+            tocar a animação. */}
+        <div
+          key={selectedDate}
+          data-direction={ratchetDirection}
+          className="agenda-ratchet-panel"
+        >
+          <div className="mb-2.5">
+            <div
+              className="flex items-center gap-2"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <CalendarDays size={14} />
+              <h2 className="font-medium" style={{ fontSize: "11px" }}>
+                {formatSelectedDateLabel(selectedDate)}
+              </h2>
+            </div>
+            {!initialLoading && !blockingError && (
+              <p
+                className="mt-1"
+                style={{ fontSize: "11px", color: "var(--text-muted)" }}
               >
-                <span style={{ fontSize: "10px", fontWeight: 600 }}>
-                  {letter}
-                </span>
-                <strong
-                  className="agenda-ratchet-number"
-                  style={{
-                    fontSize: "15px",
-                    fontWeight: 800,
-                    color: isToday && !selected ? "var(--accent)" : undefined,
-                  }}
-                >
-                  {day}
-                </strong>
-                <span
-                  className="rounded-full"
-                  style={{
-                    marginTop: "2px",
-                    width: "4px",
-                    height: "4px",
-                    background: hasJobs
-                      ? selected
-                        ? "var(--text)"
-                        : "var(--accent)"
-                      : "transparent",
-                  }}
-                />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Painel do dia selecionado — data por extenso + contagem real +
-          filtro de status (dado real preservado, escopado ao dia) +
-          timeline/estado vazio. Remonta a cada troca de dia (`key`) pra
-          tocar a animação. */}
-      <div
-        key={selectedDate}
-        data-direction={ratchetDirection}
-        className="agenda-ratchet-panel"
-      >
-        <div className="mb-2.5">
-          <div
-            className="flex items-center gap-2"
-            style={{ color: "var(--text-muted)" }}
-          >
-            <CalendarDays size={14} />
-            <h2 className="font-medium" style={{ fontSize: "11px" }}>
-              {formatSelectedDateLabel(selectedDate)}
-            </h2>
+                {selectedDayJobs.length === 0
+                  ? "Nenhum atendimento"
+                  : selectedDayJobs.length === 1
+                    ? "1 atendimento"
+                    : `${selectedDayJobs.length} atendimentos`}
+              </p>
+            )}
           </div>
-          {!initialLoading && !blockingError && (
-            <p
-              className="mt-1"
-              style={{ fontSize: "11px", color: "var(--text-muted)" }}
-            >
-              {selectedDayJobs.length === 0
-                ? "Nenhum atendimento"
-                : selectedDayJobs.length === 1
-                  ? "1 atendimento"
-                  : `${selectedDayJobs.length} atendimentos`}
-            </p>
-          )}
-        </div>
 
-        {/* Falha ao revalidar com dado já carregado (issue #135, revisão
-            pós-fechamento) — os dados antigos continuam abaixo intactos
-            (`jobs` nunca é zerado em erro, ver o efeito de fetch), só um
-            aviso não-bloqueante + "Tentar novamente". Mesmo padrão visual
-            do banner `offline` de ChatListScreen.tsx (Rede) — reaproveita
-            a linguagem já estabelecida no app pra esse tipo de aviso, em
-            vez de inventar uma nova. */}
-        {loadError && hasLoadedOnce && (
-          <div
-            className="flex items-center gap-2 px-3.5 py-2.5 mb-3 text-xs font-medium"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--danger)",
-              borderRadius: "var(--radius-lg)",
-              color: "var(--text-2)",
-            }}
-          >
-            <AlertCircle
-              size={14}
-              className="shrink-0"
-              style={{ color: "var(--danger)" }}
-            />
-            <span className="flex-1">
-              Não foi possível atualizar. Mostrando dados já carregados.
-            </span>
-            <button
-              onClick={retryLoadJobs}
-              disabled={loading}
-              className="font-bold shrink-0 active:opacity-70 disabled:opacity-50"
-              style={{ color: "var(--accent)" }}
-            >
-              {loading ? "Tentando…" : "Tentar novamente"}
-            </button>
-          </div>
-        )}
-
-        {blockingError ? (
-          // 1ª carga falhou, sem nenhum dado confirmado ainda — distinto
-          // de "carregou e o dia está vazio de verdade" (achado real da
-          // revisão: antes, `data ? ... : []` tratava as duas situações
-          // como idênticas, um silêncio que engana a usuária). Sem
-          // filtros/timeline/total aqui: não há dado nenhum pra filtrar
-          // ou somar ainda.
-          <GlassCard
-            radius="md"
-            className="flex flex-col items-center justify-center px-6 text-center"
-            style={{
-              backdropFilter: "none",
-              WebkitBackdropFilter: "none",
-              background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-              border: "1px solid var(--danger)",
-              minHeight: "160px",
-            }}
-          >
-            <AlertCircle size={22} style={{ color: "var(--danger)" }} />
-            <p
-              className="font-semibold mt-3"
-              style={{ fontSize: "12px", color: "var(--text)" }}
-            >
-              Não foi possível carregar sua agenda
-            </p>
-            <p
-              className="mt-1"
-              style={{ fontSize: "10px", color: "var(--text-muted)" }}
-            >
-              Verifique sua conexão e tente novamente.
-            </p>
-            <button
-              onClick={retryLoadJobs}
-              disabled={loading}
-              className="mt-4 px-4 rounded-xl text-xs font-bold active:opacity-70 disabled:opacity-50"
+          {/* Falha ao revalidar com dado já carregado (issue #135, revisão
+              pós-fechamento) — os dados antigos continuam abaixo intactos
+              (`jobs` nunca é zerado em erro, ver o efeito de fetch), só um
+              aviso não-bloqueante + "Tentar novamente". Mesmo padrão visual
+              do banner `offline` de ChatListScreen.tsx (Rede) — reaproveita
+              a linguagem já estabelecida no app pra esse tipo de aviso, em
+              vez de inventar uma nova. */}
+          {loadError && hasLoadedOnce && (
+            <div
+              className="flex items-center gap-2 px-3.5 py-2.5 mb-3 text-xs font-medium"
               style={{
-                minHeight: "44px",
-                color: "var(--accent)",
-                border: "1px solid var(--accent)",
+                background: "var(--surface)",
+                border: "1px solid var(--danger)",
+                borderRadius: "var(--radius-lg)",
+                color: "var(--text-2)",
               }}
             >
-              {loading ? "Tentando…" : "Tentar novamente"}
-            </button>
-          </GlassCard>
-        ) : (
-          <>
-            {/* Filtro de status — reimplementado localmente (não o
-                componente compartilhado `FilterChips`, usado também no
-                Cofre): o relatório de paridade encontrou que
-                `FilterChips` renderiza ~28px de altura, abaixo do alvo
-                mínimo de 44px, mas é compartilhado fora do escopo deste
-                ticket (mudar o componente afetaria o Cofre, "não amplie
-                para... outras abas"). Mesmo visual, só com alvo de toque
-                corrigido. */}
-            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar mb-3 mt-2.5">
-              {FILTERS.map(({ id, label }) => {
-                const active = filter === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setFilter(id)}
-                    aria-pressed={active}
-                    className="shrink-0 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center justify-center"
-                    style={{
-                      minHeight: "44px",
-                      background: active
-                        ? "rgb(var(--accent-rgb) / 0.18)"
-                        : "var(--surface)",
-                      border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-                      // #175: mesmo ajuste do FilterChips -- --accent sobre o
-                      // próprio tom ficava abaixo de 4,5:1.
-                      color: active
-                        ? "var(--accent-deep-2)"
-                        : "var(--text-muted)",
-                      boxShadow: active ? "var(--glow-sm)" : "none",
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {initialLoading ? (
-              <div className="flex justify-center pt-8">
-                <div
-                  className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-                  style={{ borderColor: "var(--accent)" }}
-                />
-              </div>
-            ) : selectedDayJobs.length === 0 ? (
-              // Fundação Visual (#142): style só com o `minHeight`
-              // genuinamente próprio deste card vazio — o resto vem do
-              // material neutro compartilhado de `.glass-card`
-              // (globals.css), mesma correção já feita em Início (achado
-              // #131) pro `SOLID_SURFACE_STYLE` com `border:
-              // var(--border-color)` tingido por tema.
-              <GlassCard
-                radius="md"
-                className="flex flex-col items-center justify-center px-6 text-center"
-                style={{ minHeight: "118px" }}
+              <AlertCircle
+                size={14}
+                className="shrink-0"
+                style={{ color: "var(--danger)" }}
+              />
+              <span className="flex-1">
+                Não foi possível atualizar. Mostrando dados já carregados.
+              </span>
+              <button
+                onClick={retryLoadJobs}
+                disabled={loading}
+                className="font-bold shrink-0 active:opacity-70 disabled:opacity-50"
+                style={{ color: "var(--accent)" }}
               >
-                <CalendarDays
-                  size={22}
-                  style={{ color: "var(--text-muted)" }}
-                />
-                <p
-                  className="font-semibold mt-3"
-                  style={{ fontSize: "12px", color: "var(--text)" }}
+                {loading ? "Tentando…" : "Tentar novamente"}
+              </button>
+            </div>
+          )}
+
+          {blockingError ? (
+            // 1ª carga falhou, sem nenhum dado confirmado ainda — distinto
+            // de "carregou e o dia está vazio de verdade" (achado real da
+            // revisão: antes, `data ? ... : []` tratava as duas situações
+            // como idênticas, um silêncio que engana a usuária). Sem
+            // filtros/timeline/total aqui: não há dado nenhum pra filtrar
+            // ou somar ainda.
+            <GlassCard
+              radius="md"
+              className="flex flex-col items-center justify-center px-6 text-center"
+              style={{
+                backdropFilter: "none",
+                WebkitBackdropFilter: "none",
+                background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+                border: "1px solid var(--danger)",
+                minHeight: "160px",
+              }}
+            >
+              <AlertCircle size={22} style={{ color: "var(--danger)" }} />
+              <p
+                className="font-semibold mt-3"
+                style={{ fontSize: "12px", color: "var(--text)" }}
+              >
+                Não foi possível carregar sua agenda
+              </p>
+              <p
+                className="mt-1"
+                style={{ fontSize: "10px", color: "var(--text-muted)" }}
+              >
+                Verifique sua conexão e tente novamente.
+              </p>
+              <button
+                onClick={retryLoadJobs}
+                disabled={loading}
+                className="mt-4 px-4 rounded-xl text-xs font-bold active:opacity-70 disabled:opacity-50"
+                style={{
+                  minHeight: "44px",
+                  color: "var(--accent)",
+                  border: "1px solid var(--accent)",
+                }}
+              >
+                {loading ? "Tentando…" : "Tentar novamente"}
+              </button>
+            </GlassCard>
+          ) : (
+            <>
+              {/* Filtro de status — reimplementado localmente (não o
+                  componente compartilhado `FilterChips`, usado também no
+                  Cofre): o relatório de paridade encontrou que
+                  `FilterChips` renderiza ~28px de altura, abaixo do alvo
+                  mínimo de 44px, mas é compartilhado fora do escopo deste
+                  ticket (mudar o componente afetaria o Cofre, "não amplie
+                  para... outras abas"). Mesmo visual, só com alvo de toque
+                  corrigido. */}
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar mb-3 mt-2.5">
+                {FILTERS.map(({ id, label }) => {
+                  const active = filter === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setFilter(id)}
+                      aria-pressed={active}
+                      className="shrink-0 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center justify-center"
+                      style={{
+                        minHeight: "44px",
+                        background: active
+                          ? "rgb(var(--accent-rgb) / 0.18)"
+                          : "var(--surface)",
+                        border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
+                        // #175: mesmo ajuste do FilterChips -- --accent sobre o
+                        // próprio tom ficava abaixo de 4,5:1.
+                        color: active
+                          ? "var(--accent-deep-2)"
+                          : "var(--text-muted)",
+                        boxShadow: active ? "var(--glow-sm)" : "none",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {initialLoading ? (
+                <div className="flex justify-center pt-8">
+                  <div
+                    className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+                    style={{ borderColor: "var(--accent)" }}
+                  />
+                </div>
+              ) : selectedDayJobs.length === 0 ? (
+                // Fundação Visual (#142): style só com o `minHeight`
+                // genuinamente próprio deste card vazio — o resto vem do
+                // material neutro compartilhado de `.glass-card`
+                // (globals.css), mesma correção já feita em Início (achado
+                // #131) pro `SOLID_SURFACE_STYLE` com `border:
+                // var(--border-color)` tingido por tema.
+                <GlassCard
+                  radius="md"
+                  className="flex flex-col items-center justify-center px-6 text-center"
+                  style={{ minHeight: "118px" }}
                 >
-                  Nenhum compromisso neste dia
-                </p>
-                <p
-                  className="mt-1"
-                  style={{ fontSize: "10px", color: "var(--text-muted)" }}
-                >
-                  {filter === "todos"
-                    ? "Toque no + para adicionar um atendimento."
-                    : `Nenhum atendimento "${filter}" neste dia.`}
-                </p>
-              </GlassCard>
-            ) : (
-              // Timeline por horário (issue #135, composição de
-              // /dev-preview/ios) — substitui a lista plana anterior. Linha
-              // vertical contínua + um ponto por atendimento + o card
-              // (JobCard, já sem a própria coluna de hora — ela mora aqui,
-              // fora do card) + indicador decorativo de lacuna entre
-              // atendimentos (ver `buildTimelineItems`).
-              <div className="relative">
-                <div
-                  className="absolute"
-                  style={{
-                    left: "40px",
-                    top: "6px",
-                    bottom: "6px",
-                    width: "1px",
-                    background: "var(--border-color)",
-                  }}
-                />
-                <div className="space-y-4">
-                  {timelineItems.map((item, i) =>
-                    item.kind === "job" ? (
-                      <div
-                        key={item.job.id}
-                        className="relative grid items-start gap-3"
-                        style={{ gridTemplateColumns: "34px 1fr" }}
-                      >
-                        <span
-                          className="font-semibold tabular-nums text-right"
+                  <CalendarDays
+                    size={22}
+                    style={{ color: "var(--text-muted)" }}
+                  />
+                  <p
+                    className="font-semibold mt-3"
+                    style={{ fontSize: "12px", color: "var(--text)" }}
+                  >
+                    Nenhum compromisso neste dia
+                  </p>
+                  <p
+                    className="mt-1"
+                    style={{ fontSize: "10px", color: "var(--text-muted)" }}
+                  >
+                    {filter === "todos"
+                      ? "Toque no + para adicionar um atendimento."
+                      : `Nenhum atendimento "${filter}" neste dia.`}
+                  </p>
+                </GlassCard>
+              ) : (
+                // Timeline por horário (issue #135, composição de
+                // /dev-preview/ios) — substitui a lista plana anterior. Linha
+                // vertical contínua + um ponto por atendimento + o card
+                // (JobCard, já sem a própria coluna de hora — ela mora aqui,
+                // fora do card) + indicador decorativo de lacuna entre
+                // atendimentos (ver `buildTimelineItems`).
+                <div className="relative">
+                  <div
+                    className="absolute"
+                    style={{
+                      left: "40px",
+                      top: "6px",
+                      bottom: "6px",
+                      width: "1px",
+                      background: "var(--border-color)",
+                    }}
+                  />
+                  <div className="space-y-4">
+                    {timelineItems.map((item, i) =>
+                      item.kind === "job" ? (
+                        <div
+                          key={item.job.id}
+                          className="relative grid items-start gap-3"
+                          style={{ gridTemplateColumns: "34px 1fr" }}
+                        >
+                          <span
+                            className="font-semibold tabular-nums text-right"
+                            style={{
+                              fontSize: "11px",
+                              color: "var(--text-muted)",
+                              paddingTop: "14px",
+                            }}
+                          >
+                            {formatHora(item.job.hora)}
+                          </span>
+                          <span
+                            className="absolute rounded-full"
+                            style={{
+                              // Centralizado na linha vertical (left: 40px, o
+                              // meio dos 12px de gap entre a coluna de hora e o
+                              // card — gap-3), nunca em cima da própria coluna
+                              // de hora (0–34px): sobrepor o texto era um bug
+                              // real, achado na validação visual desta ticket
+                              // (o "0" de "14h00" ficava escondido atrás do
+                              // ponto).
+                              left: "35px",
+                              top: "16px",
+                              width: "10px",
+                              height: "10px",
+                              background: "var(--accent)",
+                              boxShadow: "0 0 8px rgb(var(--accent-rgb) / 0.5)",
+                            }}
+                          />
+                          <GlassCard radius="md" className="p-3.5">
+                            <JobCard job={item.job} onClick={setDetailJob} />
+                          </GlassCard>
+                        </div>
+                      ) : (
+                        // Nota neutra, sem caixa/borda tracejada (que sugeriria
+                        // um slot reservável) — só uma linha de texto discreta
+                        // no fluxo: separação puramente visual, sem nenhuma
+                        // alegação sobre o espaço entre os dois atendimentos.
+                        <div
+                          key={`next-note-${i}`}
+                          className="flex items-center gap-2"
                           style={{
-                            fontSize: "11px",
+                            paddingLeft: "46px",
                             color: "var(--text-muted)",
-                            paddingTop: "14px",
                           }}
                         >
-                          {formatHora(item.job.hora)}
-                        </span>
-                        <span
-                          className="absolute rounded-full"
-                          style={{
-                            // Centralizado na linha vertical (left: 40px, o
-                            // meio dos 12px de gap entre a coluna de hora e o
-                            // card — gap-3), nunca em cima da própria coluna
-                            // de hora (0–34px): sobrepor o texto era um bug
-                            // real, achado na validação visual desta ticket
-                            // (o "0" de "14h00" ficava escondido atrás do
-                            // ponto).
-                            left: "35px",
-                            top: "16px",
-                            width: "10px",
-                            height: "10px",
-                            background: "var(--accent)",
-                            boxShadow: "0 0 8px rgb(var(--accent-rgb) / 0.5)",
-                          }}
-                        />
-                        <GlassCard radius="md" className="p-3.5">
-                          <JobCard job={item.job} onClick={setDetailJob} />
-                        </GlassCard>
-                      </div>
-                    ) : (
-                      // Nota neutra, sem caixa/borda tracejada (que sugeriria
-                      // um slot reservável) — só uma linha de texto discreta
-                      // no fluxo: separação puramente visual, sem nenhuma
-                      // alegação sobre o espaço entre os dois atendimentos.
-                      <div
-                        key={`next-note-${i}`}
-                        className="flex items-center gap-2"
-                        style={{
-                          paddingLeft: "46px",
-                          color: "var(--text-muted)",
-                        }}
-                      >
-                        <Clock3 size={12} className="shrink-0" />
-                        <span style={{ fontSize: "11px" }}>
-                          Próximo atendimento às {item.nextLabel}
-                        </span>
-                      </div>
-                    )
-                  )}
+                          <Clock3 size={12} className="shrink-0" />
+                          <span style={{ fontSize: "11px" }}>
+                            Próximo atendimento às {item.nextLabel}
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Total do dia — soma real dos atendimentos visíveis
-                (respeita o filtro ativo, mesmo dado que a timeline acima
-                mostra; nunca um valor de "previsão" separado que
-                incluiria atendimentos escondidos pelo filtro). Rótulo
-                muda conforme o dia selecionado seja hoje ou não —
-                "previsto hoje" só faz sentido pra hoje. */}
-            {!initialLoading && selectedDayJobs.length > 0 && (
-              <div
-                className="flex items-center justify-between mt-5 pt-4"
-                style={{ borderTop: "1px solid var(--border-color)" }}
-              >
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {isViewingToday ? "Total de hoje" : "Total do dia"}
-                </span>
-                <strong
-                  className="font-bold tabular-nums"
-                  style={{ fontSize: "20px", color: "var(--accent)" }}
+              {/* Total do dia — soma real dos atendimentos visíveis
+                  (respeita o filtro ativo, mesmo dado que a timeline acima
+                  mostra; nunca um valor de "previsão" separado que
+                  incluiria atendimentos escondidos pelo filtro). Rótulo
+                  muda conforme o dia selecionado seja hoje ou não —
+                  "previsto hoje" só faz sentido pra hoje. */}
+              {!initialLoading && selectedDayJobs.length > 0 && (
+                <div
+                  className="flex items-center justify-between mt-5 pt-4"
+                  style={{ borderTop: "1px solid var(--border-color)" }}
                 >
-                  {formatBRL(dayTotal, 2)}
-                </strong>
-              </div>
-            )}
-          </>
-        )}
+                  <span
+                    style={{ fontSize: "12px", color: "var(--text-muted)" }}
+                  >
+                    {isViewingToday ? "Total de hoje" : "Total do dia"}
+                  </span>
+                  <strong
+                    className="font-bold tabular-nums"
+                    style={{ fontSize: "20px", color: "var(--accent)" }}
+                  >
+                    {formatBRL(dayTotal, 2)}
+                  </strong>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
-
-      {/* "Esta semana" e "Próximas semanas" (J03), na ordem do mockup.
-          Só com dado confirmado: na 1ª carga ou com o painel de erro
-          cheio, uma lista vazia seria uma afirmação falsa. Tocar numa
-          linha abre o mesmo detalhe da timeline (JobDetailSheet). */}
-      {hasLoadedOnce && (
-        <>
-          <EstaSemanaSection jobs={daSemana} onOpen={setDetailJob} />
-          <ProximasSemanasSection
-            jobs={proximasSemanas}
-            onOpen={setDetailJob}
-          />
-        </>
-      )}
 
       <JobDetailSheet
         job={detailJob}

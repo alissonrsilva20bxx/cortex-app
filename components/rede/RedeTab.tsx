@@ -213,6 +213,8 @@ interface Props {
   /** Incrementa a cada toque na aba Rede já ativa: com subtela aberta,
    * volta pra raiz (Feed); já no Feed, rola suave pro topo. */
   reselectSignal?: number;
+  /** Incrementa a cada toque no "+" da Rede (Postar): abre o compositor. */
+  postarSignal?: number;
   /** Simula o teclado abrindo — repassado até a página, que esconde a BottomNav. */
   onChatFocusChange?: (focused: boolean) => void;
   /** Foto de perfil salva na Rede (null = perfil sem foto), pra o Início
@@ -224,6 +226,7 @@ export function RedeTab({
   usuario,
   active = true,
   reselectSignal,
+  postarSignal,
   onChatFocusChange,
   onFotoPerfilChange,
 }: Props) {
@@ -1000,6 +1003,15 @@ export function RedeTab({
 
   // ── Sheets ──
   const [composerOpen, setComposerOpen] = useState(false);
+
+  // O "+" da Rede (Postar, pixel do mockup) abre o mesmo compositor do
+  // "Postar" do feed. O valor inicial do sinal não é um toque.
+  const ultimoPostar = useRef(postarSignal);
+  useEffect(() => {
+    if (postarSignal === ultimoPostar.current) return;
+    ultimoPostar.current = postarSignal;
+    setComposerOpen(true);
+  }, [postarSignal]);
   const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
   const [menuPost, setMenuPost] = useState<FeedPost | null>(null);

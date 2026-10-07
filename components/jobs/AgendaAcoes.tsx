@@ -1,11 +1,16 @@
 "use client";
 
-import { Ban, BarChart3, MessageSquareText, Plus } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
+import {
+  IconeAnotacoes,
+  IconeBloquear,
+  IconeMais,
+  IconeResumo,
+} from "./agendaIcones";
 
 interface Acao {
   label: string;
-  Icon: LucideIcon;
+  Icon: ComponentType<{ size?: number }>;
   /** `undefined` = a ação não existe no app hoje; o botão fica desabilitado. */
   onClick?: () => void;
 }
@@ -31,10 +36,10 @@ interface Props {
  */
 export function AgendaAcoes({ onNovo, onResumo, onAnotacoes }: Props) {
   const acoes: Acao[] = [
-    { label: "Novo", Icon: Plus, onClick: onNovo },
-    { label: "Bloquear", Icon: Ban },
-    { label: "Resumo", Icon: BarChart3, onClick: onResumo },
-    { label: "Anotações", Icon: MessageSquareText, onClick: onAnotacoes },
+    { label: "Novo", Icon: IconeMais, onClick: onNovo },
+    { label: "Bloquear", Icon: IconeBloquear },
+    { label: "Resumo", Icon: IconeResumo, onClick: onResumo },
+    { label: "Anotações", Icon: IconeAnotacoes, onClick: onAnotacoes },
   ];
 
   return (
@@ -48,7 +53,9 @@ export function AgendaAcoes({ onNovo, onResumo, onAnotacoes }: Props) {
           type="button"
           onClick={onClick}
           disabled={!onClick}
-          className="flex flex-col items-center active:opacity-70 disabled:opacity-40"
+          // Sem esmaecer o desabilitado: o mockup mostra os 4 iguais (pixel
+          // do mockup, ver o PR). "Bloquear" continua sem ação (J03).
+          className="flex flex-col items-center active:opacity-70"
           style={{
             gap: "8px",
             fontSize: "11px",
@@ -65,7 +72,7 @@ export function AgendaAcoes({ onNovo, onResumo, onAnotacoes }: Props) {
               color: "var(--accent-deep)",
             }}
           >
-            <Icon size={22} strokeWidth={2} />
+            <Icon size={22} />
           </span>
           {label}
         </button>

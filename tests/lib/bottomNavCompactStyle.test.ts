@@ -3,7 +3,10 @@ import {
   BOTTOM_NAV_ACTIVE_WIDTH,
   BOTTOM_NAV_COMPACT,
   BOTTOM_NAV_EXPANDED,
+  BOTTOM_NAV_ITEM_WIDTH,
   BOTTOM_NAV_MIN_TOUCH_TARGET,
+  BOTTOM_NAV_OFFSET,
+  BOTTOM_NAV_PILL_WIDTH,
   getBottomNavCompactStyle,
 } from "../../lib/bottomNavCompactStyle";
 
@@ -55,10 +58,23 @@ describe("getBottomNavCompactStyle — pílula 2 'Recolhe pra aba atual'", () =>
     );
   });
 
-  it("deepens (not fades to invisible) the background when compact", () => {
-    expect(BOTTOM_NAV_COMPACT.backgroundOpacity).toBeGreaterThan(
-      BOTTOM_NAV_EXPANDED.backgroundOpacity
+  // Pixel do mockup aprovado das 5 telas (`.b2`): o vidro e a sombra são
+  // os mesmos aberta e recolhida (antes o fundo escurecia ao recolher).
+  it("usa a sombra do vidro do mockup, igual aberta e recolhida", () => {
+    expect(BOTTOM_NAV_EXPANDED.shadow).toBe("0 10px 30px var(--glass-shadow)");
+    expect(BOTTOM_NAV_COMPACT.shadow).toBe(BOTTOM_NAV_EXPANDED.shadow);
+  });
+
+  it("tem as medidas do mockup: pílula 288×60, abas 46 e 54, recolhida 50, a 22px do fundo", () => {
+    expect(BOTTOM_NAV_PILL_WIDTH).toBe(288);
+    expect(BOTTOM_NAV_EXPANDED.pillHeight).toBe(60);
+    expect(BOTTOM_NAV_ITEM_WIDTH).toBe(46);
+    expect(BOTTOM_NAV_ACTIVE_WIDTH).toBe(54);
+    expect(BOTTOM_NAV_COMPACT.pillHeight).toBe(50);
+    expect(BOTTOM_NAV_COMPACT.translateY).toBe(0);
+    expect(BOTTOM_NAV_OFFSET).toBe(22);
+    expect(BOTTOM_NAV_ITEM_WIDTH).toBeGreaterThanOrEqual(
+      BOTTOM_NAV_MIN_TOUCH_TARGET
     );
-    expect(BOTTOM_NAV_COMPACT.backgroundOpacity).toBeLessThanOrEqual(1);
   });
 });

@@ -1,25 +1,46 @@
 "use client";
 
-import { CalendarCheck, Check, Clock3, X } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { CalendarCheck, X } from "lucide-react";
+import type { ComponentType, ReactNode } from "react";
 import { formatBRL } from "@/lib/finance";
 import type { Job, JobStatus } from "@/lib/types";
 import { STATUS_META } from "./status";
 import { formatDiaCurto, formatHora, inicialDoNome } from "./agendaSemana";
+import { IconeAgendado, IconeConcluido } from "./agendaIcones";
 
 /** Ícone de cada status. Cor e rótulo continuam vindo de `STATUS_META`. */
-const STATUS_ICON: Record<JobStatus, LucideIcon> = {
-  agendado: Clock3,
-  confirmado: CalendarCheck,
-  concluído: Check,
-  cancelado: X,
+const STATUS_ICON: Record<JobStatus, ComponentType<{ size?: number }>> = {
+  // Agendado e concluído com o traço do mockup (layout C).
+  agendado: IconeAgendado,
+  confirmado: ({ size }) => <CalendarCheck size={size} strokeWidth={2} />,
+  concluído: IconeConcluido,
+  cancelado: ({ size }) => <X size={size} strokeWidth={2} />,
 };
+
+/**
+ * Cor da marca de cada status na lista, como o mockup (layout C):
+ * concluído em verde suave, agendado no tom do acento. Confirmado e
+ * cancelado não aparecem no mockup e seguem a cor do status.
+ */
+function corDaMarca(status: JobStatus): { fundo: string; cor: string } {
+  if (status === "concluído")
+    return { fundo: "var(--success-tint)", cor: "var(--success)" };
+  if (status === "agendado")
+    return { fundo: "var(--accent-tint)", cor: "var(--accent-deep)" };
+  const meta = STATUS_META[status];
+  return { fundo: `rgb(${meta.rgb} / 0.14)`, cor: meta.color };
+}
 
 const SECTION_TITLE_STYLE = {
   fontSize: "15px",
   fontWeight: 800,
   color: "var(--text)",
+} as const;
+
+/** "Próximas semanas" tem 6px a mais em cima, como no mockup. */
+const PROXIMAS_TITLE_STYLE = {
+  ...SECTION_TITLE_STYLE,
+  marginTop: "6px",
 } as const;
 
 const LIST_STYLE = {
@@ -82,7 +103,8 @@ function Linha({
         </span>
       </span>
       <strong
-        className="shrink-0 tabular-nums"
+        // Sem tabular-nums: o mockup usa os dígitos proporcionais.
+        className="shrink-0"
         style={{ fontSize: "14px", fontWeight: 800, color: "var(--text)" }}
       >
         {valor}
@@ -105,19 +127,20 @@ export function EstaSemanaSection({
   onOpen: (job: Job) => void;
 }) {
   return (
-    <section className="flex flex-col" style={{ gap: "12px" }}>
+    <section className="flex flex-col" style={{ gap: "16px" }}>
       <div className="flex items-center justify-between">
         <h2 style={SECTION_TITLE_STYLE}>Esta semana</h2>
+        {/* Sem esmaecer (pixel do mockup); toque de 44px sem crescer a linha. */}
         <button
           type="button"
           disabled
           aria-disabled="true"
-          className="disabled:opacity-50"
           style={{
             fontSize: "12px",
             fontWeight: 700,
             color: "var(--accent-deep)",
             minHeight: "44px",
+            margin: "-11px 0",
           }}
         >
           Ver tudo ›
@@ -130,6 +153,7 @@ export function EstaSemanaSection({
           jobs.map((job, i) => {
             const meta = STATUS_META[job.status];
             const Icon = STATUS_ICON[job.status];
+            const marca = corDaMarca(job.status);
             return (
               <Linha
                 key={job.id}
@@ -145,11 +169,11 @@ export function EstaSemanaSection({
                       width: "40px",
                       height: "40px",
                       borderRadius: "12px",
-                      background: `rgb(${meta.rgb} / 0.14)`,
-                      color: meta.color,
+                      background: marca.fundo,
+                      color: marca.cor,
                     }}
                   >
-                    <Icon size={18} strokeWidth={2.2} />
+                    <Icon size={18} />
                   </span>
                 }
               />
@@ -173,8 +197,8 @@ export function ProximasSemanasSection({
   onOpen: (job: Job) => void;
 }) {
   return (
-    <section className="flex flex-col" style={{ gap: "12px" }}>
-      <h2 style={SECTION_TITLE_STYLE}>Próximas semanas</h2>
+    <section className="flex flex-col" style={{ gap: "16px" }}>
+      <h2 style={PROXIMAS_TITLE_STYLE}>Próximas semanas</h2>
       <div style={LIST_STYLE}>
         {jobs.length === 0 ? (
           <ListaVazia />
