@@ -156,10 +156,13 @@ describe("VisaoTab.tsx (issue #136) — Movimentações recentes, 100% real, nev
   const src = read("components/financeiro/VisaoTab.tsx");
 
   it("merges real jobs concluídos + receitas + despesas, sorted by real date — never a static array", () => {
-    expect(src).toContain('.filter((j) => j.status === "concluído")');
-    expect(src).toContain("despesas.map((d) =>");
-    expect(src).toContain("receitas.map((r) =>");
-    expect(src).toContain(".sort((a, b) => b.data.localeCompare(a.data))");
+    // A conta mora em movimentos.ts (testável sem JSX); a VisaoTab só a usa.
+    expect(src).toContain('import { buildMovements, type Movement } from "./movimentos";');
+    const mov = read("components/financeiro/movimentos.ts");
+    expect(mov).toContain('.filter((j) => j.status === "concluído")');
+    expect(mov).toContain("despesas.map((d) =>");
+    expect(mov).toContain("receitas.map((r) =>");
+    expect(mov).toContain(".sort((a, b) => b.data.localeCompare(a.data))");
   });
 
   it("does not contain the lab's hardcoded movement rows", () => {
