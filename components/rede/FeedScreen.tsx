@@ -368,15 +368,6 @@ export function FeedScreen({
           fiado a `AmigasScreen` em RedeTab.tsx — nenhuma lógica nova, só
           garante o caminho permanente que os blocos contextuais abaixo não
           garantem sozinhos. */}
-        <div style={{ padding: "0 16px" }}>
-          <ContextualBlock
-            icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
-            title="Amigas"
-            subtitle="Solicitações e descobrir pessoas"
-            onClick={onOpenAmigas}
-          />
-        </div>
-
         <div className="space-y-3 mt-3">
           {/* Skeleton só em cache miss de verdade -- com posts cacheados em
             tela, um refresh em 2º plano (`loading` ainda true) NÃO volta pro
@@ -441,6 +432,21 @@ export function FeedScreen({
             {loadingMore ? "Carregando…" : "Carregar mais publicações"}
           </button>
         )}
+
+        {/* Entrada permanente pra Amigas/Solicitações/Descobrir (achado
+            T20/#127): continua INCONDICIONAL, então nunca some, nem com o
+            feed vazio ou curto -- que é o que o contrato exige. Mudou só o
+            lugar: por ordem do operador de 07/10/2026, o que a referência
+            não desenha fica abaixo da dobra dela, em vez de empurrar o feed
+            inteiro para baixo. Esconder não era permitido; mover, sim. */}
+        <div style={{ padding: "0 16px", marginTop: "16px" }}>
+          <ContextualBlock
+            icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
+            title="Amigas"
+            subtitle="Solicitações e descobrir pessoas"
+            onClick={onOpenAmigas}
+          />
+        </div>
       </div>
     </PullToRefresh>
   );
