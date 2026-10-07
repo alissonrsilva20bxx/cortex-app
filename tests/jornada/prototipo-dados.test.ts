@@ -3,9 +3,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ehEstadoJornada } from "../../lib/jornada/estado";
 import {
+  criarTransporteJornadaLaboratorio,
   estadoJornadaAno,
   estadoJornadaContaNova,
   estadoJornadaExemplo,
+  prepararComemoracaoDeLaboratorio,
 } from "../../lib/mockJornada";
 
 /**
@@ -25,12 +27,14 @@ const ler = (p: string) =>
 const PROTO = ler("docs/jornada/referencias/prototipo-sua-jornada.html");
 const JS = PROTO.slice(PROTO.indexOf("<script>"));
 const SQL = ler("supabase/migrations/0036_jornada_prototipo.sql");
+const SQL37 = ler("supabase/migrations/0037_jornada_dia_forte.sql");
 
-/** O corpo de uma função da 0036. */
+/** O corpo que vale de uma função (a 0037 redefine jornada_aplicar). */
 function corpo(nome: string): string {
-  const i = SQL.indexOf(`create or replace function ${nome}(`);
+  const todo = SQL + SQL37;
+  const i = todo.lastIndexOf(`create or replace function ${nome}(`);
   expect(i, nome).toBeGreaterThan(-1);
-  return SQL.slice(i, SQL.indexOf("\n$$;", i));
+  return todo.slice(i, todo.indexOf("\n$$;", i));
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +177,8 @@ describe("0036 — o estado manda o que o protótipo mostra", () => {
 
 describe("0036 — as RPCs públicas só agem sobre auth.uid()", () => {
   /** A definição que vale de uma função pública: a última nas migrations. */
-  const SQL_TODO = ler("supabase/migrations/0035_jornada_rpcs.sql") + SQL;
+  const SQL_TODO =
+    ler("supabase/migrations/0035_jornada_rpcs.sql") + SQL + SQL37;
   function vigente(nome: string): string {
     const i = SQL_TODO.lastIndexOf(
       `create or replace function public.${nome}(`
@@ -237,11 +242,32 @@ describe("0036 — o ritmo da semana guarda só a marca da semana corrente", () 
     );
   });
 
-  it("dia forte marca forte (por cima do descanso); descanso não apaga um dia forte", () => {
+  it("dia forte como o protótipo (0037): a 1ª ação do dia que cuida do negócio, atendimento incluso", () => {
+    // Protótipo, act(): toda ação que não é descanso marca o dia forte; o
+    // atendimento também ("Dia contado"); o descanso só marca se não for forte.
+    expect(JS).toContain("S.client = true; S.week[S.today] = 'strong';");
+    expect(JS).toContain(
+      "if (k === 'rest') { if (!was) S.week[S.today] = 'rest'; } else S.week[S.today] = 'strong';"
+    );
     const motor = corpo("private.jornada_aplicar");
     expect(motor).toMatch(
-      /values \(p_user, p_hoje, 'forte'\)\s+on conflict \(user_id, dia\) do update set marca = 'forte';/
+      /if p_acao in \('despesa', 'receita', 'planejar', 'guardar_meta',\s+'comprovante_cofre', 'atendimento'\) then/
     );
+    expect(motor).toMatch(
+      /values \(p_user, p_hoje, 'forte'\)\s+on conflict \(user_id, dia\) do update set marca = 'forte'\s+where d\.marca <> 'forte'\s+returning 1 into v_virou_forte;/
+    );
+    // Conta o dia forte (e a semana firme) uma vez, na hora em que vira.
+    expect(motor).toMatch(
+      /if v_virou_forte is not null then\s+perform private\.jornada_somar_periodo\(p_user, t, 'dias_fortes', 1\)/
+    );
+    // Nada de "3 ações com Glow" (a regra antiga da 0035/0036).
+    expect(motor).not.toMatch(/v_fortes_hoje/);
+    // A 0037 só redefine o motor: nada de tabela nem permissão nova.
+    expect(SQL37).not.toMatch(/create table|alter table|grant /i);
+  });
+
+  it("descanso não apaga um dia forte", () => {
+    const motor = corpo("private.jornada_aplicar");
     expect(motor).toMatch(
       /values \(p_user, p_hoje, 'descanso'\)\s+on conflict \(user_id, dia\) do nothing;/
     );
@@ -391,5 +417,51 @@ describe('0036 — o laboratório produz a foto "Agora" do protótipo', () => {
         limite: Number(m[2]),
       });
     }
+  });
+});
+
+describe("laboratório — o demo do selo muda o estado como o act('save') do protótipo", () => {
+  it("hoje vira forte, a semana guardando conta, a meta ganha € 10 e o Prosperar sobe Glow/160", async () => {
+    const act = JS.slice(
+      JS.indexOf("function act("),
+      JS.indexOf("function act(") + 2000
+    );
+    expect(act).toContain(
+      "if (k === 'save') { S.saved += 10; S.goalHave += 10; }"
+    );
+    expect(act).toContain(
+      "if (k === 'save' && !S.savedWk) { S.savedWk = true; chAdd('saveWk', Q); }"
+    );
+    expect(act).toContain(
+      "S.pil[A.pil] = Math.min(1, S.pil[A.pil] + A.pts / 160)"
+    );
+
+    const t = criarTransporteJornadaLaboratorio(
+      estadoJornadaExemplo(new Date(2026, 9, 2, 10, 0))
+    );
+    prepararComemoracaoDeLaboratorio("selo");
+    const { estado: e } = await t.registrar({} as never);
+    expect(e.glowTotal).toBe(305 + 15 + 20);
+    // Sexta 02/10 (S.today = 4) vira forte: 3 de 3, "Ritmo completo".
+    expect(e.semana?.dias).toEqual([
+      "forte",
+      "descanso",
+      "forte",
+      null,
+      "forte",
+      null,
+      null,
+    ]);
+    expect(
+      e.capitulo?.missoes.find((m) => m.tipo === "guardar_semanas")?.progresso
+    ).toBe(2);
+    expect(e.dinheiro?.meta?.atual).toBe(130);
+    expect(e.dinheiro?.totalGuardado).toBe(130);
+    // .38 + 15/160 = .47375 → 47%.
+    expect(e.pilares?.prosperar).toBe(Math.round((0.38 + 15 / 160) * 100));
+    expect(e.selos.rumo_a_meta).toBe(1);
+    // O próximo registro não repete o efeito.
+    const { estado: depois } = await t.registrar({} as never);
+    expect(depois.dinheiro?.meta?.atual).toBe(130);
   });
 });
