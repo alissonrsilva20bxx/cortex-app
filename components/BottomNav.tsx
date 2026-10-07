@@ -170,8 +170,9 @@ export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
           tabIndex={compact ? undefined : -1}
           className="absolute left-0 top-0 flex items-center justify-center rounded-full active:scale-90"
           style={{
-            width: `${navStyle.pillHeight - 2}px`,
-            height: `${navStyle.pillHeight - 2}px`,
+            // Mockup (`.mini`): 50×50 medido de dentro da borda.
+            width: `${navStyle.pillHeight}px`,
+            height: `${navStyle.pillHeight}px`,
             color: "var(--accent-deep)",
             opacity: compact ? 1 : 0,
             pointerEvents: compact ? "auto" : "none",
