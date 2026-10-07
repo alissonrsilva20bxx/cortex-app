@@ -109,7 +109,12 @@ describe("JobsTab monta a composição do mockup com os componentes novos", () =
     expect(jobsTab).toContain(
       'isToday && !selected ? "1px solid var(--accent)" : "none"'
     );
-    expect(jobsTab).toMatch(/background: hasJobs\s*\?/);
+    // Ordem do operador (pixel da Agenda): o ponto só fora da semana
+    // corrente -- a faixa do mockup não tem ponto.
+    expect(jobsTab).toMatch(/hasJobs && !naSemanaCorrente\s*\?/);
+    expect(jobsTab).toMatch(
+      /const naSemanaCorrente =\s*weekStart\.getTime\(\) === startOfWeek\(new Date\(\)\)\.getTime\(\);/
+    );
   });
 });
 

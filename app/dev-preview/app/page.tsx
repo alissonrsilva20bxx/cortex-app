@@ -269,6 +269,7 @@ export default function DevPreviewApp() {
             status: j.status as Job["status"],
             observacoes: (j.observacoes as string | null) ?? undefined,
             criadoEm: j.criado_em as string,
+            pagoEm: (j.pago_em as string | null | undefined) ?? null,
           }))
         );
       }

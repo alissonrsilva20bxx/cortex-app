@@ -196,8 +196,33 @@ describe("casca no visual do mockup", () => {
     const fab = read("components/FAB.tsx");
     expect(fab).toMatch(/boxShadow: "0 8px 20px var\(--fab-shadow\)"/);
     expect(fab).toMatch(/BOTTOM_NAV_OFFSET - navStyle\.translateY/);
+    // O "+" é o svg do mockup (`.plus svg`), não o Plus do lucide.
+    const plus = MOCKUP.match(
+      /<span class="plus"[^>]*><svg width="(\d+)"[^>]*stroke-width="([\d.]+)"[^>]*><path d="([^"]+)"\/>/
+    )!;
     expect(fab).toMatch(
-      /<Plus\s+size=\{24\}\s+color="white"\s+strokeWidth=\{2\.6\}/
+      new RegExp(
+        `width="${plus[1]}"[\\s\\S]{0,120}strokeWidth="${plus[2].replace(".", "\\.")}"`
+      )
+    );
+    expect(fab).toContain(`<path d="${plus[3]}" />`);
+  });
+
+  it("os ícones da pílula têm o traço do mockup (2; a ativa também)", () => {
+    const pilula = MOCKUP.slice(
+      MOCKUP.indexOf('<nav class="pill">'),
+      MOCKUP.indexOf("</nav>", MOCKUP.indexOf('<nav class="pill">'))
+    );
+    const tracos = new Set(
+      [
+        ...pilula.matchAll(
+          /<span class="it(?: on)?"[^>]*><svg[^>]*stroke-width="([\d.]+)"/g
+        ),
+      ].map((m) => m[1])
+    );
+    expect([...tracos]).toEqual(["2"]);
+    expect(read("components/BottomNav.tsx")).toMatch(
+      /<Icon size=\{22\} strokeWidth=\{2\} \/>/
     );
   });
 });

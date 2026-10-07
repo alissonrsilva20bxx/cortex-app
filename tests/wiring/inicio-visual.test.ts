@@ -79,7 +79,7 @@ describe("the Início component files on disk carry the T2 visual rewrite", () =
     // (5-telas-8-temas-claro-escuro.html, tela Início). Decisão da
     // coordenação: o mockup da Jornada vence o visual anterior.
     const src = read("components/home/GreetingHeader.tsx");
-    expect(src).toContain("Olá, {firstName}");
+    expect(src).toContain("{`Olá, ${firstName}`}");
     expect(src).toContain('fontSize: "17px"');
     expect(src).toContain('fontSize: "12px"');
     expect(src).toMatch(/onClick=\{onNovo\}[\s\S]{0,600}Novo/);
@@ -123,7 +123,7 @@ describe("the Início component files carry the #131 visual-review correction (r
     // mockup aprovado da Jornada: "Faturamento · <mês>", a pílula
     // "<n>% da meta" e o valor do mês em destaque.
     const src = read("components/home/HeroCard.tsx");
-    expect(src).toContain("Faturamento · {p.monthLabel}");
+    expect(src).toContain("{`Faturamento · ${p.monthLabel}`}");
     expect(src).toContain("{Math.round(p.pct)}% da meta");
     expect(src).toContain("{formatBRL(p.earned)}");
     expect(src).toContain('fontSize: "36px"');

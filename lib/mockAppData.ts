@@ -84,6 +84,9 @@ export function buildMockAppSeed(opts?: {
       status: "concluído",
       observacoes: null,
       criado_em: daysFromNow(-4),
+      // Pagou adiantado: no Financeiro entra em 17/09 (mockup), na Agenda
+      // o atendimento continua no domingo 20/09 (mockup da Agenda).
+      pago_em: daysFromNow(-6),
     },
     {
       id: "job-5",
@@ -91,12 +94,28 @@ export function buildMockAppSeed(opts?: {
       cliente_nome: "Helena Brito",
       data: daysFromNow(-10),
       hora: "09:00",
-      valor: 310,
+      valor: 200,
       modalidade: "presencial",
       local: "Casa da cliente",
       status: "concluído",
       observacoes: "Cliente desde o começo, sempre indica gente nova.",
       criado_em: daysFromNow(-11),
+      // Pagou em agosto (sinal): fatura em setembro, entrou no caixa em
+      // agosto.
+      pago_em: daysFromNow(-24),
+    },
+    {
+      id: "job-15",
+      user_id: uid,
+      cliente_nome: "Renata Ferreira",
+      data: daysFromNow(-9),
+      hora: "15:00",
+      valor: 110,
+      modalidade: "presencial",
+      local: "Studio Miguel",
+      status: "concluído",
+      observacoes: null,
+      criado_em: daysFromNow(-12),
     },
     {
       id: "job-6",
@@ -117,12 +136,29 @@ export function buildMockAppSeed(opts?: {
       cliente_nome: "Sônia Aparecida",
       data: daysFromNow(-30),
       hora: "15:30",
-      valor: 320,
+      valor: 150,
       modalidade: "presencial",
       local: "Studio Miguel — Zona Sul",
       status: "concluído",
       observacoes: null,
       criado_em: daysFromNow(-31),
+      // Os dois atendimentos de agosto da Sônia foram pagos juntos em 20/09
+      // (as duas linhas "Sônia Aparecida +R$ 150" do mockup do Financeiro).
+      pago_em: daysFromNow(-3),
+    },
+    {
+      id: "job-16",
+      user_id: uid,
+      cliente_nome: "Sônia Aparecida",
+      data: daysFromNow(-37),
+      hora: "15:30",
+      valor: 150,
+      modalidade: "presencial",
+      local: "Studio Miguel — Zona Sul",
+      status: "concluído",
+      observacoes: null,
+      criado_em: daysFromNow(-38),
+      pago_em: daysFromNow(-3),
     },
     {
       id: "job-8",
@@ -291,10 +327,12 @@ export function buildMockAppSeed(opts?: {
       id: "rec-1",
       user_id: uid,
       descricao: "Venda de kit de esmaltes",
-      valor: 60,
+      valor: 80,
       categoria: "outros",
-      data: daysFromNow(-4),
-      criado_em: daysFromNow(-4),
+      // Agosto: setembro só tem os 4 lançamentos de entrada do mockup do
+      // Financeiro, e agosto fecha o "-56% vs agosto".
+      data: daysFromNow(-26),
+      criado_em: daysFromNow(-26),
     },
     {
       id: "rec-2",
@@ -302,8 +340,8 @@ export function buildMockAppSeed(opts?: {
       descricao: "Comissão de indicação",
       valor: 40,
       categoria: "outros",
-      data: daysFromNow(-9),
-      criado_em: daysFromNow(-9),
+      data: daysFromNow(-35),
+      criado_em: daysFromNow(-35),
     },
   ];
 

@@ -74,7 +74,7 @@ export function GreetingHeader({
           className="truncate"
           style={{ margin: 0, fontSize: "17px", fontWeight: 800 }}
         >
-          Olá, {firstName}
+          {`Olá, ${firstName}`}
         </h1>
         <div
           className="truncate"

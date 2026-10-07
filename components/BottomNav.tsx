@@ -168,7 +168,9 @@ export function BottomNav({
                   // Mockup: a aba ativa não tem brilho em volta.
                 }}
               >
-                <Icon size={22} strokeWidth={active ? 2.3 : 2} />
+                {/* Traço 2 em todas, a ativa também: o .pill .it svg do
+                    mockup tem stroke-width="2" (a ativa tinha 2,3). */}
+                <Icon size={22} strokeWidth={2} />
               </button>
             );
           })}

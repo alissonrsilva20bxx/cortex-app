@@ -782,6 +782,13 @@ async function principal() {
         // fracionária (o do modo escuro fica em y = x,5), e o recorte
         // deslocava o texto inteiro meio pixel. Preso no canto da página,
         // o celular fica em (0, 0).
+        // `.phone` tem transform: scale(var(--s)). Com --s = 1 ele não muda
+        // nada no layout, mas põe o celular numa camada própria, e o texto
+        // ali é suavizado de outro jeito (1 pixel de borda de letra aqui e
+        // ali). O app não tem essa camada: sem o transform, os dois lados
+        // desenham igual.
+        const celular = ph.closest(".phone");
+        if (celular) celular.style.transform = "none";
         const escala = ph.closest(".scaler");
         if (escala) {
           escala.style.position = "fixed";

@@ -109,10 +109,12 @@ export function SemanaSection({ jobs, onGoToAgenda }: Props) {
                       className="truncate"
                       style={{ fontSize: "11px", color: "var(--t-mut)" }}
                     >
-                      {formatHora(job.hora)} ·{" "}
-                      {job.modalidade === "online"
-                        ? "Online"
-                        : (job.local ?? "Presencial")}
+                      {/* Um nó de texto só, como no mockup. */}
+                      {`${formatHora(job.hora)} · ${
+                        job.modalidade === "online"
+                          ? "Online"
+                          : (job.local ?? "Presencial")
+                      }`}
                     </div>
                   </div>
                   <span

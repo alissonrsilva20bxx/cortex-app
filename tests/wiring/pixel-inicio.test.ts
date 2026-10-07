@@ -430,6 +430,7 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
       modalidade: r.modalidade,
       local: r.local ?? undefined,
       status: r.status,
+      pagoEm: (r.pago_em as string | null | undefined) ?? null,
     })) as unknown as Job[];
     const metas = t.metas.map((r) => ({
       periodo: r.periodo,
@@ -489,7 +490,7 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
     ]);
     expect(app).toEqual(mock);
     expect(read(PROXIMOS)).toContain(
-      "{rotuloDiaFrase(job.data)} · {formatHora(job.hora)}"
+      "{`${rotuloDiaFrase(job.data)} · ${formatHora(job.hora)}`}"
     );
   });
 
@@ -556,6 +557,7 @@ describe('Pixel Início A — "Esta semana" como o mockup', () => {
       modalidade: r.modalidade,
       local: r.local ?? undefined,
       status: r.status,
+      pagoEm: (r.pago_em as string | null | undefined) ?? null,
     })) as unknown as Job[];
     return diasRestantesDaSemana(jobs, AGORA).flatMap((d) =>
       d.jobs.length === 0
@@ -585,18 +587,11 @@ describe('Pixel Início A — "Esta semana" como o mockup', () => {
     expect([...posicoes].sort((a, b) => a - b)).toEqual(posicoes);
   });
 
-  it('de hoje até domingo: os dias a mais do app (fora do recorte do mockup) são só "Dia livre"', () => {
-    const app = linhasDoApp();
-    expect(app.map((l) => l[0])).toEqual([
-      "QUA 23",
-      "QUI 24",
-      "SEX 25",
-      "SÁB 26",
-      "DOM 27",
-    ]);
-    const doMockup = new Set(linhasDoMockup().map((l) => JSON.stringify(l)));
-    for (const l of app.filter((a) => !doMockup.has(JSON.stringify(a))))
-      expect(l[1], l[0]).toBe("Dia livre");
+  // Regra revista por ordem do operador: do próximo dia com atendimento
+  // até sábado (components/home/inicioAgenda.ts, diasRestantesDaSemana).
+  it("as linhas do app são exatamente as do mockup (SEX 25 Renata, SÁB 26 livre)", () => {
+    expect(linhasDoApp()).toEqual(linhasDoMockup());
+    expect(linhasDoMockup().map((l) => l[0])).toEqual(["SEX 25", "SÁB 26"]);
   });
 
   it('a seção usa a regra de antes (diasRestantesDaSemana) e mostra "Dia livre"', () => {

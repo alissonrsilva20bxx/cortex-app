@@ -6,6 +6,7 @@ import {
   monthConcludedCount,
   monthEarnings,
   monthExpenses,
+  monthPaidJobsCount,
 } from "../../lib/finance";
 import { progressoMeta } from "../../components/financeiro/progressoMeta";
 import { buildMovements } from "../../components/financeiro/movimentos";
@@ -265,6 +266,7 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
       hora: r.hora,
       valor: r.valor,
       status: r.status,
+      pagoEm: (r.pago_em as string | null | undefined) ?? null,
     })) as unknown as Job[];
     const despesas = t.despesas as unknown as Despesa[];
     const receitas = t.receitas_avulsas as unknown as ReceitaAvulsa[];
@@ -302,7 +304,7 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
       saiu: brl(saiu),
       saldo: brl(entrou - saiu),
       variacao: `${pct >= 0 ? "+" : ""}${pct}% vs agosto`,
-      qtdEntradas: `${monthConcludedCount(jobs) + receitas.filter((r) => noMes(r.data)).length} lançamentos`,
+      qtdEntradas: `${monthPaidJobsCount(jobs) + receitas.filter((r) => noMes(r.data)).length} lançamentos`,
       qtdSaidas: `${despesas.filter((d) => noMes(d.data)).length} lançamentos`,
     };
   }
@@ -420,56 +422,36 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
   });
 
   /**
-   * Divergências conhecidas, travadas dos DOIS lados. Nenhum laboratório
-   * casa estas linhas sem mudar regra ou quebrar outra tela:
-   *  - Meta e Ticket médio: o mockup escreve "R$ 430 de R$ 3.500" (12%) e
-   *    "R$ 177" com Entrou R$ 530. A regra do app usa o MESMO total do
-   *    "Entrou" na Meta (R$ 530, 15%) e o ticket é faturamento de
-   *    atendimentos ÷ atendimentos (R$ 430 ÷ 2). Os números do mockup não
-   *    fecham entre si por nenhuma regra.
-   *  - A 3ª linha de Recentes e as entradas de Mais lançamentos: o mockup
-   *    da Agenda tem Camila Duarte concluída em 20/09 por R$ 120; o do
-   *    Financeiro tem Sônia Aparecida em 20/09 por R$ 150 e Camila em
-   *    17/09. Vale o da Agenda.
-   * Se um dos lados mudar (mockup ou laboratório), este teste cai e a
-   * lista tem de ser revista.
+   * Sem divergência: com o dia do pagamento (`pago_em`, migration 0036) e as
+   * regras revistas por ordem do operador (Meta = faturamento do mês; ticket
+   * = o que entrou ÷ atendimentos), o laboratório fecha o mockup inteiro e
+   * a Agenda continua com Camila Duarte no domingo 20/09 (ela pagou em
+   * 17/09, que é quando entra no Financeiro).
    */
-  it("divergências conhecidas: Meta e Ticket médio (regra) e Sônia x Camila (Agenda x Financeiro)", () => {
+  it("iguais ao mockup: Meta (12%, R$ 430 de R$ 3.500) e Ticket médio (R$ 177)", () => {
     const { jobs, receitas, metaMes } = seed();
     const entrou = calcEarnings(jobs, receitas, "mes");
+    const faturamento = monthEarnings(jobs);
     const mockMeta = [
       doMockup(/>Meta<\/span><span[^>]*>([^<]+)</),
       doMockup(/>Meta<\/span><span[^>]*>[^<]+<\/span><span[^>]*>([^<]+)</),
     ];
-    const appMeta = [
-      `${Math.round(progressoMeta(entrou, metaMes))}%`,
-      `${brl(entrou)} de ${brl(metaMes)}`,
-    ];
-    const mockTicket = doMockup(/>Ticket médio<\/span><span[^>]*>([^<]+)</);
-    const appTicket = brl(
-      Math.round(monthEarnings(jobs) / monthConcludedCount(jobs))
+    expect([
+      `${Math.round(progressoMeta(faturamento, metaMes))}%`,
+      `${brl(faturamento)} de ${brl(metaMes)}`,
+    ]).toEqual(mockMeta);
+    expect(brl(Math.round(entrou / monthConcludedCount(jobs)))).toBe(
+      doMockup(/>Ticket médio<\/span><span[^>]*>([^<]+)</)
     );
-    expect([mockMeta, appMeta, [mockTicket, appTicket]]).toEqual([
-      ["12%", "R$ 430 de R$ 3.500"],
-      ["15%", "R$ 530 de R$ 3.500"],
-      ["R$ 177", "R$ 215"],
-    ]);
-    const { mock, app: linhas } = recentes();
-    expect([mock[2], linhas[2]]).toEqual([
-      ["20 SET", "Sônia Aparecida", "+R$ 150"],
-      ["20 SET", "Camila Duarte", "+R$ 120"],
-    ]);
-    const m2 = mais();
-    const entradas = (l: string[][]) => l.filter((x) => x[2].startsWith("+"));
-    expect(entradas(m2.mock)).toEqual([
-      ["20 set.", "Sônia Aparecida", "+R$ 150"],
-      ["17 set.", "Camila Duarte", "+R$ 120"],
-      ["14 set.", "Renata Ferreira", "+R$ 110"],
-    ]);
-    expect(entradas(m2.app)).toEqual([
-      ["19 set.", "Venda de kit de esmaltes", "+R$ 60"],
-      ["14 set.", "Comissão de indicação", "+R$ 40"],
-      ["13 set.", "Helena Brito", "+R$ 310"],
-    ]);
+  });
+
+  it("Recentes: as três linhas iguais às do mockup", () => {
+    const { mock, app } = recentes();
+    expect(app).toEqual(mock);
+  });
+
+  it("Mais lançamentos: as linhas do mockup são as do laboratório, na ordem", () => {
+    const { mock, app } = mais();
+    expect(app.slice(0, mock.length)).toEqual(mock);
   });
 });

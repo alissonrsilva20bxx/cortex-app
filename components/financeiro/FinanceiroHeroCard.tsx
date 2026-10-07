@@ -8,6 +8,7 @@ import {
   monthMeta,
   monthConcludedCount,
   monthEarnings,
+  monthPaidJobsCount,
 } from "@/lib/finance";
 import type { Job, Despesa, Meta, ReceitaAvulsa } from "@/lib/types";
 import { progressoMeta } from "./progressoMeta";
@@ -29,11 +30,14 @@ interface Props {
  * Saídas, Meta, Ticket médio). Valores de estilo copiados do mockup, cores
  * pelas variáveis `--t-*` (as mesmas do mockup, em globals.css).
  *
- * Nenhuma regra nova: saldo e totais chegam prontos do FinanceiroTab, a
- * variação é a de antes (#136) e o percentual da meta é o mesmo do
- * MetasTab (`progressoMeta`). As contagens ("4 lançamentos") e o ticket
- * médio (faturamento de atendimentos ÷ atendimentos concluídos no mês) são
- * só leitura do que já está na tela.
+ * Saldo e totais chegam prontos do FinanceiroTab e a variação é a de antes
+ * (#136). Regras de exibição revistas por ordem do operador para o mockup
+ * fechar inteiro (pixel do Financeiro, #209):
+ *  - Meta: o faturamento do mês (atendimentos concluídos pelo dia do
+ *    atendimento, o mesmo número do card principal do Início) sobre a meta;
+ *  - Ticket médio: o que entrou no mês ÷ atendimentos concluídos no mês;
+ *  - "N lançamentos" de Entradas: atendimentos cujo dinheiro entrou no mês
+ *    (`diaDoDinheiro`) + receitas avulsas do mês.
  *
  * O gráfico (preferência de Ajustes) não está no mockup: mora em
  * FinanceiroGrafico, abaixo dos lançamentos.
@@ -106,9 +110,10 @@ export function FinanceiroHeroCard({
   const mesAnterior = prevRef.toLocaleDateString("pt-BR", { month: "long" });
 
   const metaMes = monthMeta(metas);
+  const faturamento = monthEarnings(jobs, now);
   const metaPct =
     metaMes !== null && metaMes > 0
-      ? progressoMeta(totalEntradaMes, metaMes)
+      ? progressoMeta(faturamento, metaMes)
       : null;
 
   const noMes = (data: string) => {
@@ -119,14 +124,12 @@ export function FinanceiroHeroCard({
   };
   const atendimentosMes = monthConcludedCount(jobs, now);
   const qtdEntradas =
-    atendimentosMes + receitas.filter((r) => noMes(r.data)).length;
+    monthPaidJobsCount(jobs, now) +
+    receitas.filter((r) => noMes(r.data)).length;
   const qtdSaidas = despesas.filter((d) => noMes(d.data)).length;
-  // Ticket médio = faturamento de atendimentos ÷ atendimentos concluídos
-  // no mês (a definição usual de "por atendimento").
+  // Ticket médio = o que entrou no mês ÷ atendimentos concluídos no mês.
   const ticketMedio =
-    atendimentosMes > 0
-      ? Math.round(monthEarnings(jobs, now) / atendimentosMes)
-      : null;
+    atendimentosMes > 0 ? Math.round(totalEntradaMes / atendimentosMes) : null;
 
   const movimento = totalEntradaMes + totalDespMes;
   const sobe = variacaoPct !== null && variacaoPct >= 0;
@@ -166,8 +169,10 @@ export function FinanceiroHeroCard({
                 color: sobe ? "var(--t-green)" : "var(--t-red)",
               }}
             >
-              {sobe ? "+" : ""}
-              {Math.round(variacaoPct)}% vs {mesAnterior}
+              {/* Um nó de texto só, como no mockup: o navegador espaça a
+                  junção de dois nós de forma diferente (ordem do operador:
+                  pixel idêntico). */}
+              {`${sobe ? "+" : ""}${Math.round(variacaoPct)}% vs ${mesAnterior}`}
             </span>
           )}
         </div>
@@ -247,9 +252,9 @@ export function FinanceiroHeroCard({
             <circle cx="12" cy="12" r="2" />
           </Icone>
           <span style={ROTULO}>Meta</span>
-          <span style={VALOR}>{Math.round(metaPct)}%</span>
+          <span style={VALOR}>{`${Math.round(metaPct)}%`}</span>
           <span style={APOIO}>
-            {formatBRL(totalEntradaMes)} de {formatBRL(metaMes)}
+            {formatBRL(faturamento)} de {formatBRL(metaMes)}
           </span>
         </section>
       )}

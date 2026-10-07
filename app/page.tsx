@@ -322,6 +322,7 @@ export default function Page() {
               status: j.status,
               observacoes: j.observacoes ?? undefined,
               criadoEm: j.criado_em,
+              pagoEm: j.pago_em ?? null,
             }))
           );
         }

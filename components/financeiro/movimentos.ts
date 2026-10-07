@@ -3,6 +3,7 @@
  * `.ts` (não `.tsx`) pra ter teste de verdade: o vitest deste projeto roda
  * em "node", sem JSX -- mesmo motivo do components/home/inicioAgenda.ts.
  */
+import { diaDoDinheiro } from "@/lib/finance";
 import type { Job, Despesa, ReceitaAvulsa } from "@/lib/types";
 
 export interface Movement {
@@ -36,7 +37,8 @@ export function buildMovements(
       id: `job-${j.id}`,
       desc: j.clienteNome,
       valor: j.valor,
-      data: j.data,
+      // Entra no extrato no dia em que o dinheiro entrou (migration 0036).
+      data: diaDoDinheiro(j),
       positive: true,
     }));
   const recM: Movement[] = receitas.map((r) => ({

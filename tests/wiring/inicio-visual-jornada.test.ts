@@ -251,19 +251,33 @@ describe("J02 — inicioAgenda: arranjo dos atendimentos (sem cálculo novo)", (
     ...over,
   });
 
-  it("a semana vai de hoje até domingo", () => {
+  // Regra revista por ordem do operador (pixel do Início): a semana vai de
+  // domingo a sábado, como a faixa da Agenda, e a lista começa no próximo
+  // dia com atendimento -- o mockup mostra SEX 25 e SÁB 26 numa quarta.
+  it("sem atendimento até sábado: de hoje a sábado, todos livres", () => {
     const dias = diasRestantesDaSemana([], REF).map((d) => d.data);
     expect(dias).toEqual([
       "2026-09-23",
       "2026-09-24",
       "2026-09-25",
       "2026-09-26",
-      "2026-09-27",
     ]);
-    // Domingo: só o próprio dia.
+    // Sábado: só o próprio dia. Domingo: a semana nova inteira.
+    const sabado = new Date(2026, 8, 26, 9, 0);
+    expect(fimDaSemana(sabado).getDate()).toBe(26);
+    expect(diasRestantesDaSemana([], sabado)).toHaveLength(1);
     const domingo = new Date(2026, 8, 27, 9, 0);
-    expect(fimDaSemana(domingo).getDate()).toBe(27);
-    expect(diasRestantesDaSemana([], domingo)).toHaveLength(1);
+    expect(fimDaSemana(domingo).getDate()).toBe(3);
+    expect(diasRestantesDaSemana([], domingo)).toHaveLength(7);
+  });
+
+  it("começa no próximo dia com atendimento e vai até sábado (o mockup: SEX 25 e SÁB 26)", () => {
+    const dias = diasRestantesDaSemana([job({ data: "2026-09-25" })], REF);
+    expect(dias.map((d) => d.data)).toEqual(["2026-09-25", "2026-09-26"]);
+    // Atendimento hoje: começa hoje.
+    const hoje = diasRestantesDaSemana([job({ data: "2026-09-23" })], REF);
+    expect(hoje[0].data).toBe("2026-09-23");
+    expect(hoje).toHaveLength(4);
   });
 
   it("agrupa por dia em ordem de hora, só agendado/confirmado; dia vazio vem sem atendimentos", () => {
@@ -276,12 +290,14 @@ describe("J02 — inicioAgenda: arranjo dos atendimentos (sem cálculo novo)", (
     const dias = diasRestantesDaSemana(jobs, REF);
     const sexta = dias.find((d) => d.data === "2026-09-25")!;
     expect(sexta.jobs.map((j) => j.id)).toEqual(["a", "b"]);
-    expect(dias.find((d) => d.data === "2026-09-24")!.jobs).toEqual([]);
+    // Concluído não conta como próximo: a quinta (só com ele) não aparece.
+    expect(dias.find((d) => d.data === "2026-09-24")).toBeUndefined();
+    expect(dias.find((d) => d.data === "2026-09-26")!.jobs).toEqual([]);
   });
 
   it("'Próximos atendimentos' começa depois desta semana, em ordem, com limite", () => {
     const jobs = [
-      job({ id: "semana", data: "2026-09-27" }),
+      job({ id: "semana", data: "2026-09-26" }),
       job({ id: "c", data: "2026-10-01" }),
       job({ id: "a", data: "2026-09-28", hora: "09:00" }),
       job({ id: "b", data: "2026-09-28", hora: "15:30" }),
