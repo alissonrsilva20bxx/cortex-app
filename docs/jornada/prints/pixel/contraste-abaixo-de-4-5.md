@@ -58,3 +58,11 @@ Valores do mockup mantidos (decisão do operador: o mockup vence), listados para
 | midnight | claro | valor negativo | 4.37:1 |
 | midnight | claro | valor positivo | 4.40:1 |
 | midnight | escuro | Novo (#fff sobre --t-acc) | 4.47:1 |
+
+## Card da Jornada no Início (protótipo `prototipo-sua-jornada.html`)
+
+Calculado com os tokens `--t-*` de `styles/globals.css`, no ponto de cada texto (o fundo do card tem o brilho do acento a 16% no canto superior direito, que some aos 60% do raio). Valor do protótipo mantido, para decisão.
+
+| Tema | Modo | Par | Contraste |
+|---|---|---|---|
+| crimson | escuro | "SUA JORNADA" (--t-deep sobre o card) | 4.43:1 |

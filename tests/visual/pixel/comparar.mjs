@@ -718,7 +718,7 @@ async function principal() {
       );
 
     const alvo = await page.evaluate(
-      ([t, md, tm, larg, mockLarg, inteira]) => {
+      ([t, md, tm, larg, mockLarg, inteira, altura]) => {
         const raiz = document.documentElement;
         raiz.style.setProperty("--s", "1"); // zoom do mockup em 1:1
         const barra = document.querySelector(".toolbar");
@@ -751,6 +751,17 @@ async function principal() {
           if (fone) fone.style.width = alvoLarg;
           if (escala) escala.style.width = alvoLarg;
         }
+        // Altura da tela-alvo: o `.ph` do mockup tem 844px fixos. Em 430 o
+        // app tem 932px; sem isso a barra e o FAB do mockup ficam 88px
+        // acima e a faixa de baixo inteira conta como diferente.
+        if (!inteira && altura !== ph.offsetHeight) {
+          const alvoAlt = `${altura}px`;
+          ph.style.height = alvoAlt;
+          const fone = ph.closest(".phone");
+          const escala = ph.closest(".scaler");
+          if (fone) fone.style.height = alvoAlt;
+          if (escala) escala.style.height = alvoAlt;
+        }
         const scr = ph.querySelector(".scr");
         if (scr) scr.scrollTop = 0;
         if (inteira && scr) {
@@ -767,13 +778,29 @@ async function principal() {
             escala.style.overflow = "visible";
           }
         }
-        ph.scrollIntoView({ block: "center" });
-        // Posição inteira: o scrollIntoView costuma parar numa fração, e o
-        // recorte herdaria essa fração como 1px a mais.
-        window.scrollTo(Math.round(window.scrollX), Math.round(window.scrollY));
+        // Posição inteira: no meio da página o celular cai numa coordenada
+        // fracionária (o do modo escuro fica em y = x,5), e o recorte
+        // deslocava o texto inteiro meio pixel. Preso no canto da página,
+        // o celular fica em (0, 0).
+        const escala = ph.closest(".scaler");
+        if (escala) {
+          escala.style.position = "fixed";
+          escala.style.left = "0";
+          escala.style.top = "0";
+          escala.style.zIndex = "2147483647";
+        }
+        window.scrollTo(0, 0);
         return { ok: true, reflow: larg !== mockLarg };
       },
-      [tela, MODO_CSS, tema, largura, LARGURA_DO_MOCKUP, OPC.inteira]
+      [
+        tela,
+        MODO_CSS,
+        tema,
+        largura,
+        LARGURA_DO_MOCKUP,
+        OPC.inteira,
+        ALTURA[largura],
+      ]
     );
     if (alvo.erro) throw new Error(alvo.erro);
     await page.addStyleTag({
