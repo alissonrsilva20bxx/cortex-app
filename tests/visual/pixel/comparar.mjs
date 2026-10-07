@@ -113,7 +113,8 @@ export function medirPixels({
 
   for (let py = 0; py < altura; py++) {
     for (let px = 0; px < largura; px++) {
-      const fora = px >= larguraA || py >= alturaA || px >= larguraB || py >= alturaB;
+      const fora =
+        px >= larguraA || py >= alturaA || px >= larguraB || py >= alturaB;
       if (fora) {
         mascara[py * largura + px] = 1;
         diferentes++;
@@ -121,9 +122,12 @@ export function medirPixels({
       }
       const ia = (py * larguraA + px) * 4;
       const ib = (py * larguraB + px) * 4;
-      const dy = y(a[ia], a[ia + 1], a[ia + 2]) - y(b[ib], b[ib + 1], b[ib + 2]);
-      const di = i(a[ia], a[ia + 1], a[ia + 2]) - i(b[ib], b[ib + 1], b[ib + 2]);
-      const dq = q(a[ia], a[ia + 1], a[ia + 2]) - q(b[ib], b[ib + 1], b[ib + 2]);
+      const dy =
+        y(a[ia], a[ia + 1], a[ia + 2]) - y(b[ib], b[ib + 1], b[ib + 2]);
+      const di =
+        i(a[ia], a[ia + 1], a[ia + 2]) - i(b[ib], b[ib + 1], b[ib + 2]);
+      const dq =
+        q(a[ia], a[ia + 1], a[ia + 2]) - q(b[ib], b[ib + 1], b[ib + 2]);
       const delta = 0.5053 * dy * dy + 0.299 * di * di + 0.1957 * dq * dq;
       if (delta > maxDelta) {
         mascara[py * largura + px] = 1;
@@ -200,7 +204,10 @@ const px = (v) => {
 export function corEmRgb(v) {
   const m = String(v).match(/rgba?\(([^)]+)\)/);
   if (!m) return null;
-  const p = m[1].split(/[,/\s]+/).filter(Boolean).map(Number);
+  const p = m[1]
+    .split(/[,/\s]+/)
+    .filter(Boolean)
+    .map(Number);
   if (p.length < 3 || p.some((n) => !Number.isFinite(n))) return null;
   return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
 }
@@ -375,7 +382,10 @@ export function comparar(mock, app, areaTotal) {
   // que o olho vê como "mudou a letra".
   const comTexto = linhas.filter((l) => l.texto);
   return {
-    fontes: { mockup: censoDeFontes(mock.itens), app: censoDeFontes(app.itens) },
+    fontes: {
+      mockup: censoDeFontes(mock.itens),
+      app: censoDeFontes(app.itens),
+    },
     comTextoDivergindo: comTexto.length,
     pioresComTexto: comTexto.slice(0, 12),
     pareados: pares.length,
@@ -506,7 +516,10 @@ export function relatorioDeEstilos(nome, cmp, meta) {
     });
   });
   if (cmp.linhas.length > 60)
-    l.push("", `_(${cmp.linhas.length - 60} elementos de impacto menor omitidos)_`);
+    l.push(
+      "",
+      `_(${cmp.linhas.length - 60} elementos de impacto menor omitidos)_`
+    );
   return l.join("\n");
 }
 
@@ -557,7 +570,9 @@ async function principal() {
   };
   for (const t of OPC.telas)
     if (!TELAS[t])
-      erroDeUso(`tela desconhecida: ${t} (use ${Object.keys(TELAS).join("|")})`);
+      erroDeUso(
+        `tela desconhecida: ${t} (use ${Object.keys(TELAS).join("|")})`
+      );
   if (!ALTURA[OPC.largura])
     erroDeUso(`largura deve ser 390 ou 430, veio ${OPC.largura}`);
   if (!["claro", "escuro"].includes(OPC.modo))
@@ -624,7 +639,8 @@ async function principal() {
             img.data[o + 2] = 90;
             img.data[o + 3] = 255;
           } else {
-            const px2 = (Math.floor(p / r.largura) * ia.width + (p % r.largura)) * 4;
+            const px2 =
+              (Math.floor(p / r.largura) * ia.width + (p % r.largura)) * 4;
             const cinza = (da[px2] + da[px2 + 1] + da[px2 + 2]) / 3;
             const c = 255 - (255 - cinza) * 0.18;
             img.data[o] = c;
@@ -690,6 +706,18 @@ async function principal() {
         );
         if (!ph) return { erro: `fase não encontrada: ${t}/${md}` };
         ph.classList.remove("compact");
+        // Moldura do celular fora do recorte: o `.scaler` tem
+        // `border-radius: 36px` e `overflow: hidden`, então ele ARREDONDA os
+        // quatro cantos do `.ph`. O print do app tem canto reto, e isso
+        // fazia os cantos divergirem SEMPRE, em toda tela e todo tema, sem
+        // que nada de errado estivesse acontecendo.
+        const moldura = ph.closest(".scaler");
+        if (moldura) {
+          moldura.style.borderRadius = "0";
+          moldura.style.overflow = "visible";
+          moldura.style.boxShadow = "none";
+        }
+        ph.style.borderRadius = "0";
         if (larg !== mockLarg) {
           const alvoLarg = `${larg}px`;
           ph.style.width = alvoLarg;
@@ -800,6 +828,37 @@ async function principal() {
     });
   }
 
+  /**
+   * No Início, o card do Cofre do mockup está no estado "Protegido". O
+   * `CofreCard` só é renderizado quando o Cofre TEM PIN -- sem PIN ele
+   * devolve `null` e o card simplesmente não existe, e aí a grade inteira
+   * do Início fica diferente do mockup.
+   *
+   * Quem configura o PIN no laboratório é o `__previewLock()`. Só que ele
+   * também liga a trava, e `locked && pinHash` troca a árvore inteira pelo
+   * PinScreen -- ou seja, sozinho ele esconde justamente a tela que
+   * queremos. Por isso o par: trava (que define o PIN) e destrava logo em
+   * seguida (que devolve o Início com o PIN já configurado).
+   *
+   * Depois ESPERA o texto aparecer, em vez de dormir um tempo arbitrário:
+   * o React remonta a árvore nas duas trocas, e capturar no meio pegava o
+   * card no estado errado de forma intermitente.
+   */
+  async function travarParaOCardDoCofre(page) {
+    const temGancho = await page.evaluate(
+      () =>
+        typeof window.__previewLock === "function" &&
+        typeof window.__previewUnlock === "function"
+    );
+    if (!temGancho) return;
+    await page.evaluate(() => window.__previewLock());
+    await page.evaluate(() => window.__previewUnlock());
+    await page
+      .getByText("Protegido", { exact: true })
+      .first()
+      .waitFor({ state: "visible", timeout: 15000 });
+  }
+
   async function forcarTema(page, tema) {
     await page.evaluate(
       ([t, m]) => {
@@ -820,6 +879,7 @@ async function principal() {
       .first()
       .click();
     await page.waitForTimeout(900);
+    if (tela === "inicio") await travarParaOCardDoCofre(page);
     await forcarTema(page, tema);
     await esconderOQueEhSoDoLaboratorio(page);
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -905,7 +965,10 @@ async function principal() {
       },
       erros: app.erros.slice(0, 5),
     };
-    writeFileSync(join(dir, `${nome}-resultado.json`), JSON.stringify(r, null, 2));
+    writeFileSync(
+      join(dir, `${nome}-resultado.json`),
+      JSON.stringify(r, null, 2)
+    );
     resultados.push(r);
     log(
       `${nome.padEnd(34)} diff ${String(r.difPct).padStart(7)}%  ` +

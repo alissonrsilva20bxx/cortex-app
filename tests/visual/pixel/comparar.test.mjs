@@ -110,14 +110,8 @@ describe("pareamento", () => {
   });
 
   it("entre homônimos, escolhe o mais perto e não reusa o mesmo elemento", () => {
-    const mock = [
-      el({ texto: "Meta", y: 0 }),
-      el({ texto: "Meta", y: 300 }),
-    ];
-    const app = [
-      el({ texto: "Meta", y: 310 }),
-      el({ texto: "Meta", y: 4 }),
-    ];
+    const mock = [el({ texto: "Meta", y: 0 }), el({ texto: "Meta", y: 300 })];
+    const app = [el({ texto: "Meta", y: 310 }), el({ texto: "Meta", y: 4 })];
     const { pares } = parear(mock, app);
     expect(pares).toHaveLength(2);
     expect(pares[0].app.y).toBe(4);
@@ -182,10 +176,19 @@ describe("normalização", () => {
 
   it("raio de pílula: 999 e 9999 são o mesmo desenho", () => {
     expect(
-      diferenca("borderRadius", "999px 999px 999px 999px", "9999px 9999px 9999px 9999px")
+      diferenca(
+        "borderRadius",
+        "999px 999px 999px 999px",
+        "9999px 9999px 9999px 9999px"
+      )
     ).toBeNull();
-    expect(diferenca("borderRadius", "0px 0px 0px 0px", "9999px 9999px 9999px 9999px"))
-      .not.toBeNull();
+    expect(
+      diferenca(
+        "borderRadius",
+        "0px 0px 0px 0px",
+        "9999px 9999px 9999px 9999px"
+      )
+    ).not.toBeNull();
   });
 
   it("transparente dos dois lados não é divergência de cor", () => {
@@ -196,14 +199,23 @@ describe("normalização", () => {
 
   it("corEmRgb entende rgb, rgba e a forma com barra", () => {
     expect(corEmRgb("rgb(1, 2, 3)")).toEqual({ r: 1, g: 2, b: 3, a: 1 });
-    expect(corEmRgb("rgba(1, 2, 3, 0.5)")).toEqual({ r: 1, g: 2, b: 3, a: 0.5 });
+    expect(corEmRgb("rgba(1, 2, 3, 0.5)")).toEqual({
+      r: 1,
+      g: 2,
+      b: 3,
+      a: 0.5,
+    });
     expect(corEmRgb("rgb(1 2 3 / 0.5)")).toEqual({ r: 1, g: 2, b: 3, a: 0.5 });
     expect(corEmRgb("nada")).toBeNull();
   });
 
   it("nenhuma propriedade sozinha passa do teto", () => {
     // 9999px contra 0px daria peso 3333 sem o achatamento e sem o teto.
-    const d = diferenca("borderRadius", "0px 0px 0px 0px", "9999px 9999px 9999px 9999px");
+    const d = diferenca(
+      "borderRadius",
+      "0px 0px 0px 0px",
+      "9999px 9999px 9999px 9999px"
+    );
     expect(d.peso).toBeLessThanOrEqual(TETO_POR_PROPRIEDADE);
   });
 
@@ -256,14 +268,22 @@ describe("impacto", () => {
     const mock = {
       itens: [
         el({ texto: "letra", estilos: { fontSize: "11px" } }),
-        el({ largura: 100, altura: 50, estilos: { backgroundColor: "rgb(0, 0, 0)" } }),
+        el({
+          largura: 100,
+          altura: 50,
+          estilos: { backgroundColor: "rgb(0, 0, 0)" },
+        }),
       ],
       area: 1000,
     };
     const app = {
       itens: [
         el({ texto: "letra", estilos: { fontSize: "20px" } }),
-        el({ largura: 100, altura: 50, estilos: { backgroundColor: "rgb(255, 255, 255)" } }),
+        el({
+          largura: 100,
+          altura: 50,
+          estilos: { backgroundColor: "rgb(255, 255, 255)" },
+        }),
       ],
       area: 1000,
     };
@@ -390,7 +410,12 @@ describe("diff de pixel (métrica do pixelmatch, YIQ)", () => {
     const p = (1 * 4 + 2) * 4;
     b[p] = b[p + 1] = b[p + 2] = 255;
     const r = medirPixels({
-      a, b, larguraA: 4, alturaA: 4, larguraB: 4, alturaB: 4,
+      a,
+      b,
+      larguraA: 4,
+      alturaA: 4,
+      larguraB: 4,
+      alturaB: 4,
     });
     expect(r.diferentes).toBe(1);
     expect(r.mascara[1 * 4 + 2]).toBe(1);

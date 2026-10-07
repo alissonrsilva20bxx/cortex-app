@@ -19,29 +19,29 @@ node tests/visual/pixel/comparar.mjs --telas=todas --largura=390 --modo=claro --
 node tests/visual/pixel/comparar.mjs --tela=rede --modo=escuro --tema=ocean --base-url=http://localhost:3105
 ```
 
-| opção | padrão | |
-| ----- | ------ | - |
-| `--tela=` | `inicio` | `inicio\|agenda\|financeiro\|cofre\|rede` (aceita lista com vírgula) |
-| `--telas=todas` | — | as 5 de uma vez |
-| `--largura=` | `390` | `390` ou `430` |
-| `--modo=` | `claro` | `claro` ou `escuro` |
-| `--tema=` | `pink-neon` | um dos 8 |
-| `--base-url=` | `http://localhost:3103` | onde está o `next dev` |
-| `--saida=` | `docs/jornada/prints/pixel` | |
-| `--limiar=` | `0.1` | limiar do pixelmatch (0 a 1) |
-| `--inteira` | — | compara o conteúdo rolável inteiro, não só a 1ª dobra |
-| `--so-pixel` | — | pula o dump de estilos (bem mais rápido) |
-| `--json` | — | só o JSON no stdout |
+| opção           | padrão                      |                                                                      |
+| --------------- | --------------------------- | -------------------------------------------------------------------- |
+| `--tela=`       | `inicio`                    | `inicio\|agenda\|financeiro\|cofre\|rede` (aceita lista com vírgula) |
+| `--telas=todas` | —                           | as 5 de uma vez                                                      |
+| `--largura=`    | `390`                       | `390` ou `430`                                                       |
+| `--modo=`       | `claro`                     | `claro` ou `escuro`                                                  |
+| `--tema=`       | `pink-neon`                 | um dos 8                                                             |
+| `--base-url=`   | `http://localhost:3103`     | onde está o `next dev`                                               |
+| `--saida=`      | `docs/jornada/prints/pixel` |                                                                      |
+| `--limiar=`     | `0.1`                       | limiar do pixelmatch (0 a 1)                                         |
+| `--inteira`     | —                           | compara o conteúdo rolável inteiro, não só a 1ª dobra                |
+| `--so-pixel`    | —                           | pula o dump de estilos (bem mais rápido)                             |
+| `--json`        | —                           | só o JSON no stdout                                                  |
 
 ## O que sai, em `<saida>/<tela>/`
 
-| arquivo | |
-| ------- | - |
-| `<tela>-<largura>-<modo>-<tema>-mockup.png` | o recorte do mockup |
-| `...-app.png` | o mesmo recorte do app |
-| `...-diff.png` | o que difere, em vermelho, sobre a base clareada |
-| `...-estilos.md` | estilo computado lado a lado, ordenado por impacto |
-| `...-resultado.json` | tudo em número |
+| arquivo                                     |                                                    |
+| ------------------------------------------- | -------------------------------------------------- |
+| `<tela>-<largura>-<modo>-<tema>-mockup.png` | o recorte do mockup                                |
+| `...-app.png`                               | o mesmo recorte do app                             |
+| `...-diff.png`                              | o que difere, em vermelho, sobre a base clareada   |
+| `...-estilos.md`                            | estilo computado lado a lado, ordenado por impacto |
+| `...-resultado.json`                        | tudo em número                                     |
 
 ## Como ler
 
@@ -90,7 +90,7 @@ harnesses visuais (`.mjs`) ficam fora dele por convenção.
 ## Dois cuidados que a ferramenta já toma
 
 - **A fonte.** O mockup carrega a Plus Jakarta Sans do Google Fonts. Se ela não carregar,
-  *toda* letra divergiria e a medição não valeria nada — então isso é **erro duro**, não
+  _toda_ letra divergiria e a medição não valeria nada — então isso é **erro duro**, não
   aviso. O nome gerado pelo `next/font` (`__plus_jakarta_sans_a11773`) é normalizado para
   `plus jakarta sans`, senão a mesma fonte apareceria como divergência em todo elemento.
 - **Animação.** Transições e animações são desligadas dos dois lados antes do recorte.
