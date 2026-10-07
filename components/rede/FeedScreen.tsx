@@ -143,8 +143,12 @@ function FileiraAmigas({
                 background: amiga.fotoUrl
                   ? undefined
                   : amiga.cor || "var(--accent)",
-                color: "#fff",
-                fontSize: "18px",
+                // A referência não declara tamanho na inicial: ela herda os
+                // 11px do item da fileira, e a cor é um tom escuro do
+                // próprio avatar (não branco).
+                color: amiga.cor
+                  ? `color-mix(in srgb, ${amiga.cor} 38%, #141026)`
+                  : "#fff",
               }}
             >
               {amiga.fotoUrl ? (

@@ -35,7 +35,7 @@ interface ListaProps {
   /** Rótulo real da categoria, vindo de `CATS` no CofreTab. */
   rotuloCategoria: (categoria: string) => string;
   /** Tripla RGB da cor de identidade da categoria (`catRgb` do CofreTab). */
-  corCategoria: (categoria: string) => string;
+  corCategoria: (categoria: string) => { tinta: string; fundo: string };
 }
 
 /**
