@@ -518,13 +518,10 @@ export function ComemoracaoPalco({
             </div>
             <button
               type="button"
-              className={s.cta}
+              // O protótipo fixa o botão da tela cheia em branco (inline com
+              // !important no #sOk), no estágio e na meta.
+              className={cx(s.cta, s.sOk)}
               onClick={aoTocarNoBotao}
-              style={
-                atual.c.tipo === "estagio"
-                  ? { background: "#fff", color: "#111114" }
-                  : undefined
-              }
             >
               {verJornada ? COMEMORACAO.verJornada : COMEMORACAO.continuar}
             </button>

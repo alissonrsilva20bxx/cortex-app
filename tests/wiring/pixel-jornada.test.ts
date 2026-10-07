@@ -212,6 +212,8 @@ describe("Pixel Jornada — CSS: as regras do protótipo, sem tirar nem pôr", (
     /^\.toque$/,
     /^\.sw/,
     /^\.palco$/,
+    // O style inline do #sOk (conferido abaixo).
+    /^\.sOk$/,
   ];
   const PAR_NO_PROTOTIPO: Record<string, string> = {
     ".pad": ".pad",
@@ -244,6 +246,15 @@ describe("Pixel Jornada — CSS: as regras do protótipo, sem tirar nem pôr", (
       expect(decl, seletor).toEqual(proto.get(par)!);
     });
   }
+
+  it(".sOk = o style inline do #sOk do protótipo", () => {
+    expect(PROTO).toContain(
+      'id="sOk" style="background:#fff!important;color:#111114!important"'
+    );
+    expect(app.get(".sOk")).toEqual(
+      declaracoes("background:#fff!important;color:#111114!important")
+    );
+  });
 
   it("os @keyframes usados pela Jornada são os do protótipo", () => {
     for (const [nome, corpo] of app)

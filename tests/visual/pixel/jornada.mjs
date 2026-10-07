@@ -88,7 +88,9 @@ const TELA_INTEIRA_APP = `
   [data-jornada-tela]{position:relative!important;inset:auto!important;overflow:visible!important}
   body > *:not(:has([data-jornada-tela])){display:none!important}
 `;
-const SO_DO_LABORATORIO = `nextjs-portal{display:none!important}`;
+// O canvas de faíscas fica escondido dos dois lados (no protótipo, #fx).
+const SO_DO_LABORATORIO = `nextjs-portal{display:none!important}
+  [data-jornada-fx]{display:none!important}`;
 
 /**
  * Congela a tela no estado FINAL, igual dos dois lados: as animações finitas
@@ -336,6 +338,15 @@ async function acionarPrototipo(page, estado) {
   }
   // Deixa as entradas (fade, letras, faíscas) assentarem.
   await page.waitForTimeout(1600);
+  // Clicar num botão faz o Playwright rolar os contêineres com overflow
+  // hidden (o celular) pra mostrá-lo: tudo volta pro lugar antes do recorte.
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll("#ph, #ph *"))
+      if (el.scrollTop || el.scrollLeft) {
+        el.scrollTop = 0;
+        el.scrollLeft = 0;
+      }
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -477,6 +488,13 @@ async function acionarApp(page, estado) {
   } else {
     if (estado !== "selo") await page.keyboard.press("Escape");
     await page.evaluate((demo) => window.__previewComemoracao(demo), estado);
+    if (estado === "meta") {
+      // Como no protótipo: o selo "Rumo à meta" vem antes; Continuar.
+      const continuar = page.getByRole("button", { name: "Continuar" });
+      await continuar.waitFor({ timeout: 15000 });
+      await page.waitForTimeout(1600);
+      await continuar.click();
+    }
   }
   await page.waitForTimeout(
     estado === "estagio" || estado === "meta" ? 4500 : 3000

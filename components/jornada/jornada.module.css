@@ -1501,3 +1501,9 @@
     transition-delay: 0s !important;
   }
 }
+/* O style inline do botão #sOk do protótipo (com !important, por cima do
+   .cta): branco, texto escuro. */
+.sOk {
+  background: #fff !important;
+  color: #111114 !important;
+}
