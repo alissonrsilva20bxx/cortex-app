@@ -775,14 +775,6 @@ export function buildMockAppSeed(opts?: {
         // mostra as mais recentes primeiro, e a referência desenha as 4
         // "Amiga N" nas quatro primeiras posições. Marina fica depois
         // delas, alcançável deslizando.
-        {
-          id: "mock-amizade-juliana",
-          solicitante_id: "mock-amiga-juliana",
-          destinatario_id: uid,
-          status: "aceita",
-          criado_em: daysFromNow(-26),
-          respondido_em: daysFromNow(-25),
-        },
         ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
           id: `mock-amizade-${a.id}`,
           solicitante_id: a.id,
@@ -791,6 +783,14 @@ export function buildMockAppSeed(opts?: {
           criado_em: daysFromNow(-28 + i),
           respondido_em: daysFromNow(-27 + i),
         })),
+        {
+          id: "mock-amizade-juliana",
+          solicitante_id: "mock-amiga-juliana",
+          destinatario_id: uid,
+          status: "aceita",
+          criado_em: daysFromNow(-26),
+          respondido_em: daysFromNow(-25),
+        },
         {
           id: "mock-amizade-marina",
           solicitante_id: FRIEND_ID,

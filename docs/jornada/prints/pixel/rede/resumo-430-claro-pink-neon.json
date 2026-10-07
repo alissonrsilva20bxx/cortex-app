@@ -1,5 +1,5 @@
 {
-  "quando": "2026-10-07T21:59:38.164Z",
+  "quando": "2026-10-07T21:59:59.004Z",
   "baseUrl": "http://localhost:3107",
   "metrica": "pixelmatch YIQ, limiar 0.1",
   "relogio": "2026-09-23T13:00:00.000Z",
@@ -7,16 +7,16 @@
   "resultados": [
     {
       "tela": "rede",
-      "largura": 390,
+      "largura": 430,
       "modo": "claro",
       "tema": "pink-neon",
       "layout": "E",
       "metrica": "pixelmatch YIQ, limiar 0.1",
-      "difPct": 4.4304,
-      "pixelsDiferentes": 58333,
-      "tamanho": "780x1688",
+      "difPct": 4.3074,
+      "pixelsDiferentes": 69049,
+      "tamanho": "860x1864",
       "mesmoTamanho": true,
-      "reflowDoMockup": false,
+      "reflowDoMockup": true,
       "estilos": null,
       "erros": [
         "Text content does not match server-rendered HTML.",

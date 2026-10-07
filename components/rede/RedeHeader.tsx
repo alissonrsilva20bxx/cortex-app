@@ -44,22 +44,23 @@ function IconButton({
         {children}
       </span>
       {!!badge && (
+        // A referência marca "tem coisa nova" com um PONTO de 8px no
+        // acento, não com um número: `top:6 right:7; width:8; height:8;
+        // border-radius:50%; background: var(--t-acc)`. O número ficava
+        // maior que o ponto e com outra cor, e aparecia em toda abertura
+        // da tela. A contagem continua acessível onde ela importa, dentro
+        // de cada folha (notificações e conversas).
         <span
-          className="absolute flex items-center justify-center rounded-full font-bold"
+          aria-hidden
+          className="absolute rounded-full"
           style={{
-            top: 0,
-            right: 0,
-            minWidth: 16,
-            height: 16,
-            padding: "0 3px",
-            fontSize: 9,
-            background: "var(--danger)",
-            color: "#fff",
-            boxShadow: "0 0 0 2px var(--bg)",
+            top: 6,
+            right: 7,
+            width: 8,
+            height: 8,
+            background: "var(--accent)",
           }}
-        >
-          {badge > 9 ? "9+" : badge}
-        </span>
+        />
       )}
     </button>
   );
