@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   criarTransporteJornadaLaboratorio,
+  estadoJornadaAno,
   estadoJornadaContaNova,
   estadoJornadaExemplo,
 } from "../../lib/mockJornada";
@@ -38,11 +39,11 @@ const MESES = [
 ];
 
 /** As 3 missões de cada mês na tabela da §6, sem o ◆ de comunidade. */
+/** As missões do mês pela spec §6 (0036): a trinca (mês - 1) % 3 + 1. */
 function missoesDaSpec(mes: number): string[] {
-  const linha = spec
-    .split("\n")
-    .find((l) => l.startsWith(`| ${MESES[mes - 1]} |`));
-  expect(linha, MESES[mes - 1]).toBeTruthy();
+  const trinca = ((mes - 1) % 3) + 1;
+  const linha = spec.split("\n").find((l) => l.startsWith(`| ${trinca} |`));
+  expect(linha, `trinca ${trinca} (${MESES[mes - 1]})`).toBeTruthy();
   return linha!
     .slice(1, -1)
     .split("|")
@@ -57,18 +58,62 @@ describe("os estados do laboratório são estados válidos", () => {
     expect(ehEstadoJornada(estadoJornadaContaNova())).toBe(true);
   });
 
-  it("no exemplo, o Glow dos pilares soma o total e o estágio fica entre os cortes", () => {
+  it('no exemplo (foto "Agora"), o estágio fica entre os cortes e cada pilar dá a % do protótipo', () => {
     const e = estadoJornadaExemplo();
-    const soma = Object.values(e.glowPorPilar).reduce((a, b) => a + b, 0);
-    expect(soma).toBe(e.glowTotal);
+    expect(e.glowTotal).toBeGreaterThanOrEqual(e.glowInicioEstagio);
+    expect(e.glowTotal).toBeLessThan(e.glowProximoEstagio);
+    // A regra do servidor (0036, private.jornada_pilar_pct): Glow / 160
+    // (Conectar: / 125), até 100%. A foto do protótipo não fecha a soma dos
+    // pilares com o total, e o servidor também não fecha (capítulo).
+    const pct = (glow: number, div: number) =>
+      Math.min(100, Math.round((glow * 100) / div));
+    expect(e.pilares).toEqual({
+      organizar: pct(e.glowPorPilar.organizar, 160),
+      prosperar: pct(e.glowPorPilar.prosperar, 160),
+      proteger: pct(e.glowPorPilar.proteger, 160),
+      conectar: pct(e.glowPorPilar.conectar, 125),
+    });
+  });
+
+  it('no exemplo (foto "Agora" do protótipo), a coleção ainda está vazia', () => {
+    const e = estadoJornadaExemplo(new Date(2026, 9, 15));
+    expect(e.colecao).toEqual([]);
+    expect(e.hoje).toBe("2026-10-15");
+  });
+
+  it('no ano (foto "Mês 14" do protótipo), 11 enfeites e 3 meses em branco', () => {
+    const e = estadoJornadaAno(new Date(2027, 11, 3));
+    expect(ehEstadoJornada(e)).toBe(true);
+    expect(e.colecao).toHaveLength(11);
+    const chaves = e.colecao.map((m) => `${m.ano}-${m.mes}`);
+    for (const branco of ["2026-12", "2027-3", "2027-8"])
+      expect(chaves).not.toContain(branco);
     expect(e.glowTotal).toBeGreaterThanOrEqual(e.glowInicioEstagio);
     expect(e.glowTotal).toBeLessThan(e.glowProximoEstagio);
   });
 
-  it("no exemplo, a coleção tem um mês fechado antes do mês atual", () => {
-    const e = estadoJornadaExemplo(new Date(2026, 9, 15));
-    expect(e.colecao).toEqual([{ ano: 2026, mes: 8 }]);
-    expect(e.hoje).toBe("2026-10-15");
+  it("os selos: o próximo corte sai dos cortes do servidor (0035 jornada_selos_def)", () => {
+    const e = estadoJornadaExemplo();
+    expect(e.selosProgresso?.planejadora).toEqual({ contador: 3, proximo: 10 });
+    expect(e.selosProgresso?.mao_amiga).toEqual({ contador: 14, proximo: 25 });
+    expect(e.selosProgresso?.guardia).toEqual({ contador: 4, proximo: 5 });
+    expect(e.selosProgresso?.primeiros_passos).toEqual({
+      contador: 1,
+      proximo: null,
+    });
+    const sql = readFileSync(
+      join(ROOT, "supabase/migrations/0035_jornada_rpcs.sql"),
+      "utf-8"
+    );
+    expect(sql).toContain(
+      "('planejadora',      'organizar', 'dias_planejar',      1, 10, 50)"
+    );
+    expect(sql).toContain(
+      "('mao_amiga',        'conectar',  'dica_ajudou',        1, 25, 100)"
+    );
+    expect(sql).toContain(
+      "('guardia',          'conectar',  'dica_protegeu',      5, 25, 100)"
+    );
   });
 
   it("conta nova: Glow zero, nenhum selo, coleção e marcos vazios, nada feito no mês", () => {
@@ -94,7 +139,7 @@ describe("os estados do laboratório são estados válidos", () => {
   });
 });
 
-describe("as missões do laboratório são as da spec §6", () => {
+describe("as missões do laboratório são as da spec §6 (as trincas do protótipo)", () => {
   it.each(MESES.map((m, i) => [m, i + 1] as const))(
     "%s: a trinca escrita pelo textos.ts bate com a spec",
     (_nome, mes) => {

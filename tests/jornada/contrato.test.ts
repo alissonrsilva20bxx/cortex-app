@@ -140,7 +140,14 @@ describe("nenhum valor de Glow, limite ou corte de estágio no cliente", () => {
   it.each(DA_JORNADA)(
     "%s não tem nome de tabela de pontos, limite ou corte",
     (arquivo) => {
-      const codigo = soCodigo(read(arquivo));
+      // Ordem do operador (0036): o servidor manda a regra de cada ação
+      // (Glow, limite, pilar) pra tabela "O que dá Glow". O TIPO dela
+      // (RegraDaAcao) tem o campo `limite`; isso é a forma do dado que chega,
+      // não uma tabela de limites no cliente.
+      const codigo = soCodigo(read(arquivo)).replace(
+        /export interface RegraDaAcao \{[^}]*\}/,
+        ""
+      );
       expect(codigo).not.toMatch(
         /\b(GLOW_POR\w*|PONTOS|PTS|LIMITES?|TETOS?|CORTES?|TIERS?|CAPS?)\b\s*[:=]/i
       );
@@ -189,8 +196,11 @@ describe("pilares = spec §1.3", () => {
 
 describe("ações = spec §3 = migration 0034 (J09)", () => {
   const migration = read("supabase/migrations/0034_jornada_contadores.sql");
+  // As 2 ações sem Glow da Jornada de Começo vêm na 0036 (ordem do
+  // operador): a lista das chaves é a da 0034 + a da 0036.
+  const migration0036 = read("supabase/migrations/0036_jornada_prototipo.sql");
 
-  // As 9 da §3 = as que o cliente registra (menos abrir_jornada, que não é
+  // As 11 da §3 = as que o cliente registra (menos abrir_jornada, que não é
   // da tabela §3: é o contador do selo Primeiros passos, §5) + as 2 de dica,
   // que o servidor credita à autora.
   const daSpec3 = [
@@ -198,11 +208,11 @@ describe("ações = spec §3 = migration 0034 (J09)", () => {
     ...ACOES_DA_DICA,
   ];
 
-  it("o mesmo número de ações da tabela da §3 (9)", () => {
+  it("o mesmo número de ações da tabela da §3 (11)", () => {
     const daSpec = linhasDaSecao(3).filter(
       (c) => c.length === 4 && c[0] !== "Ação"
     );
-    expect(daSpec).toHaveLength(9);
+    expect(daSpec).toHaveLength(11);
     expect(daSpec3).toHaveLength(daSpec.length);
   });
 
@@ -211,9 +221,14 @@ describe("ações = spec §3 = migration 0034 (J09)", () => {
       /Chaves de ação da §3[^\n]*\n((?:--[^\n]*\n)+)/
     );
     expect(bloco).not.toBeNull();
-    const daMigration = [...bloco![1].matchAll(/'([a-z_]+)'/g)].map(
-      (m) => m[1]
+    const bloco0036 = migration0036.match(
+      /Chaves de ação da §3 novas[^\n]*\n((?:--[^\n]*\n)+)/
     );
+    expect(bloco0036).not.toBeNull();
+    const daMigration = [
+      ...bloco![1].matchAll(/'([a-z_]+)'/g),
+      ...bloco0036![1].matchAll(/'([a-z_]+)'/g),
+    ].map((m) => m[1]);
     expect([...daSpec3].sort()).toEqual([...daMigration].sort());
   });
 });

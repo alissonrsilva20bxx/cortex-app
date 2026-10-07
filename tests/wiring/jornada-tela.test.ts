@@ -216,11 +216,9 @@ describe("as leituras do estado (progresso.ts)", () => {
     expect(missoesFeitas(e.capitulo!)).toBe(0);
   });
 
-  it("exemplo: coleção com mês fechado, mês em branco e o mês atual", () => {
+  it('exemplo (foto "Agora" do protótipo): só o mês atual na coleção', () => {
     const e = estadoJornadaExemplo(hoje);
     expect(mesesDaColecao(e, hoje)).toEqual([
-      { ano: 2026, mes: 8, situacao: "fechado" },
-      { ano: 2026, mes: 9, situacao: "branco" },
       { ano: 2026, mes: 10, situacao: "atual" },
     ]);
   });
