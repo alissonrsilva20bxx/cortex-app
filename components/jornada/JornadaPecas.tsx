@@ -147,3 +147,97 @@ export function JornadaAnel({
     </span>
   );
 }
+
+// ── Peças da seção "Seus 4 pilares", sem mudança: a porcentagem do
+// protótipo depende de decisão do operador (PR #208). ──
+
+/** Um card de seção: título, chip opcional à direita, conteúdo e nota. */
+export function JornadaSecao({
+  titulo,
+  chip,
+  nota,
+  children,
+}: {
+  titulo: string;
+  chip?: string;
+  nota?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className="flex flex-col gap-[14px]"
+      style={{
+        padding: "16px",
+        borderRadius: "var(--radius-lg)",
+        background: "var(--j-card)",
+      }}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-extrabold" style={{ fontSize: "16px" }}>
+          {titulo}
+        </h2>
+        {chip && <JornadaChip>{chip}</JornadaChip>}
+      </div>
+      {children}
+      {nota && (
+        <p
+          className="leading-snug"
+          style={{ fontSize: "12px", color: "var(--text-muted)" }}
+        >
+          {nota}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** Barra de progresso; `fracao` de 0 a 1. */
+export function JornadaBarra({
+  fracao,
+  cor = "var(--j-progresso)",
+  trilho = "var(--j-trilho)",
+  altura = 6,
+}: {
+  fracao: number;
+  cor?: string;
+  trilho?: string;
+  altura?: number;
+}) {
+  return (
+    <div
+      aria-hidden
+      className="w-full overflow-hidden"
+      style={{
+        height: `${altura}px`,
+        borderRadius: "var(--radius-pill)",
+        background: trilho,
+      }}
+    >
+      <div
+        className="h-full w-full origin-left transition-transform duration-500"
+        style={{
+          transform: `scaleX(${Math.min(1, Math.max(0, fracao))})`,
+          borderRadius: "var(--radius-pill)",
+          background: cor,
+        }}
+      />
+    </div>
+  );
+}
+
+export function JornadaChip({ children }: { children: ReactNode }) {
+  return (
+    <span
+      className="shrink-0 font-bold tabular-nums"
+      style={{
+        fontSize: "11px",
+        padding: "4px 10px",
+        borderRadius: "var(--radius-pill)",
+        background: "var(--j-chip-bg)",
+        color: "var(--j-chip-texto)",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
