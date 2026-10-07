@@ -89,7 +89,7 @@ describe("CofreTab monta a composição do mockup com os componentes novos", () 
 
   it('"Ver tudo ›" é só uma âncora para "Todos os arquivos" na mesma tela', () => {
     expect(arquivos).toMatch(
-      /href=\{`#\$\{TODOS_OS_ARQUIVOS_ID\}`\}[\s\S]{0,400}Ver tudo ›/
+      /href=\{`#\$\{TODOS_OS_ARQUIVOS_ID\}`\}[\s\S]{0,700}Ver tudo ›/
     );
   });
 
@@ -98,7 +98,7 @@ describe("CofreTab monta a composição do mockup com os componentes novos", () 
     const ordem = [
       />\s*Cofre\s*<\/h1>/,
       />\s*Protegido\s*<\/h2>/,
-      /<Upload size=\{22\} \/>/,
+      /<IconeEnviar size=\{22\} \/>/,
       /ORDEM_AZULEJOS\.map/,
       /<SecaoCofre titulo="Recentes" verTudo>/,
       /<SecaoCofre titulo="Todos os arquivos"/,
@@ -113,16 +113,12 @@ describe("CofreTab monta a composição do mockup com os componentes novos", () 
   it("os 3 números do card Protegido são dados reais (contagem, soma de tamanhos, último envio), sem cota nem porcentagem", () => {
     expect(cofreTab).toContain("const usado = totalUsado(files);");
     expect(cofreTab).toContain("const ultimo = ultimoEnvio(files);");
-    expect(cofreTab).toMatch(
-      /\{formatTamanho\(usado\)\}(\{" "\}|\s)[\s\S]{0,160}>usado</
-    );
-    expect(cofreTab).toMatch(
-      /\{ultimo \?\? "—"\}(\{" "\}|\s)[\s\S]{0,120}>último</
-    );
+    expect(cofreTab).toMatch(/\{formatTamanho\(usado\)\}[\s\S]{0,160}>usado</);
+    expect(cofreTab).toMatch(/\{ultimo \?\? "—"\}[\s\S]{0,160}>último</);
     // Só código (comentários explicam justamente que não existe cota), e só
     // o bloco do card: um `calc(100% ...)` do CSS da fileira de azulejos não
     // é "porcentagem de cota", que é o que esta regra protege.
-    const inicio = cofreTab.indexOf("<Shield size={26}");
+    const inicio = cofreTab.indexOf("<IconeEscudo size={26}");
     const codigo = cofreTab
       .slice(inicio, cofreTab.indexOf(">último<", inicio))
       .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -175,7 +171,7 @@ describe("A proteção continua fiada e o visual novo não passa por fora dela",
       "<ListaArquivos",
       "onClick={onEnviar}",
       "ORDEM_AZULEJOS.map",
-      "<Shield size={26}",
+      "<IconeEscudo size={26}",
     ]) {
       const idx = cofreTab.indexOf(marca, lockedGateIdx);
       expect(idx, marca).toBeGreaterThan(mainReturnIdx);
@@ -256,7 +252,10 @@ describe("Nenhum nome de arquivo, tamanho ou data do mockup no código", () => {
     "288 KB",
     "19 de set",
     "17 de set",
-    "Trava do app ativa",
+    // "Trava do app ativa" saiu da lista: pela decisão do operador de
+    // 07/10/2026 a referência vence também no texto, e a frase continua
+    // verdadeira sem PIN (é a trava do app que protege). Todo o resto segue
+    // proibido no componente -- nome, tamanho e data vêm do dado.
   ];
   const arquivosCofre = readdirSync(join(ROOT, "components/cofre")).map(
     (f) => `components/cofre/${f}`

@@ -395,7 +395,7 @@ describe("CofreTab.tsx 'Protegido' summary card matches the approved visual (#13
 
   it("renders the approved 'Protegido' heading and pluralized real file count", () => {
     expect(src).toContain("Protegido");
-    expect(src).toMatch(/\{files\.length\}\{" "\}/);
+    expect(src).toMatch(/\{files\.length\}</);
     // O rótulo é o do mockup ("arquivos"): o de duas palavras quebrava em
     // duas linhas e esticava o hero. O plural real continua lá.
     expect(src).toContain('"arquivo"');
@@ -407,18 +407,23 @@ describe("CofreTab.tsx 'Protegido' summary card matches the approved visual (#13
   });
 
   it("reuses the same PIN-vs-app-lock distinction as the top honesty notice, no new copy path", () => {
+    // Sem PIN a frase é a da referência ("Trava do app ativa"), que continua
+    // verdadeira: é a trava do app que protege. Com PIN, a frase do PIN.
     expect(src).toContain("Acesso protegido pelo seu PIN");
-    expect(src).toContain("Acesso protegido pela trava do app");
+    expect(src).toContain("Trava do app ativa");
   });
 
   it("shows the card regardless of file count (structural parity with the prototype's fixed placement)", () => {
-    expect(src).toMatch(/\{!loading\s*&&\s*\(\s*\r?\n\s*<GlassCard/);
+    // Sem GlassCard em volta desde o pixel do Cofre: a referência desenha a
+    // própria caixa escura, com o fundo e a sombra dela.
+    expect(src).toMatch(/\{!loading && \(\s*\r?\n\s*<>/);
+    expect(src).toMatch(/<section\s*\r?\n\s*className="flex flex-col"/);
   });
 
   it("uses the theme accent token for the orb, never the prototype's fixed pink", () => {
     // Ancorado no próprio marcador do orbe (Shield size={26}, a geometria
     // do mockup normativo), não no comentário em volta.
-    const cardStart = src.indexOf("Shield size={26}");
+    const cardStart = src.indexOf("IconeEscudo size={26}");
     const cardBlock = src.slice(Math.max(0, cardStart - 300), cardStart);
     expect(cardStart).toBeGreaterThan(-1);
     expect(cardBlock).toContain("var(--accent-rgb)");
@@ -433,7 +438,7 @@ describe("CofreTab.tsx 'Protegido' summary card matches the approved visual (#13
     expect(src).toContain('width: "54px"');
     expect(src).toContain('height: "54px"');
     expect(src).toContain('borderRadius: "16px"');
-    expect(src).toContain("Shield size={26}");
+    expect(src).toContain("IconeEscudo size={26}");
     expect(src).toContain('fontSize: "22px"');
     // O cadeado saiu: o mockup não o desenha e ele esticava o hero.
     expect(src).not.toContain("LockKeyhole");
