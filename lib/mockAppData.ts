@@ -643,6 +643,12 @@ export function buildMockAppSeed(opts?: {
     },
   ];
 
+  // Atenção ao dia: `daysFromNow` devolve a data em UTC (`toISOString`) e
+  // quem lê faz `new Date("AAAA-MM-DD")`, que o JS interpreta como meia-noite
+  // UTC -- em UTC-3 isso volta para o dia ANTERIOR na hora de formatar. Por
+  // isso os deslocamentos abaixo são de um dia a menos do que a conta direta
+  // sugere. O defeito de fuso em si é do app, não do laboratório, e está
+  // registrado no PR.
   // Os 5 arquivos são os da referência (tela Cofre, layout C): mesmo nome,
   // mesma categoria, mesmo tamanho impresso e mesma data. Com o relógio em
   // 23/09/2026, "Recentes" (os 4 mais novos) sai exatamente como a tela
@@ -657,7 +663,7 @@ export function buildMockAppSeed(opts?: {
       categoria: "comprovantes",
       size: 244_736, // 239 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-4), // 19 de set.
+      createdAt: daysFromNow(-3), // 19 de set.
     },
     {
       path: `${uid}/conversas/print-combinado-marcos.png`,
@@ -665,7 +671,7 @@ export function buildMockAppSeed(opts?: {
       categoria: "conversas",
       size: 312_320, // 305 KB
       mimeType: "image/png",
-      createdAt: daysFromNow(-6), // 17 de set.
+      createdAt: daysFromNow(-5), // 17 de set.
     },
     {
       path: `${uid}/pessoal/lembrete-consulta.jpg`,
@@ -673,7 +679,7 @@ export function buildMockAppSeed(opts?: {
       categoria: "pessoal",
       size: 88_064, // 86 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-13), // 10 de set.
+      createdAt: daysFromNow(-12), // 10 de set.
     },
     {
       path: `${uid}/comprovantes/recibo-camila-duarte.jpg`,
@@ -681,7 +687,7 @@ export function buildMockAppSeed(opts?: {
       categoria: "comprovantes",
       size: 197_632, // 193 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-31), // 23 de ago.
+      createdAt: daysFromNow(-30), // 23 de ago.
     },
     {
       path: `${uid}/pessoal/rg-frente.jpg`,
@@ -689,7 +695,7 @@ export function buildMockAppSeed(opts?: {
       categoria: "pessoal",
       size: 520_000, // fecha o total do card em 1,3 MB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-43), // 11 de ago.
+      createdAt: daysFromNow(-42), // 11 de ago.
     },
     // Fotos dos posts da Rede (principal + miniatura) -- sem blobUrl, o
     // mock serve o placeholder SVG; o que importa é o path existir p/ assinar.

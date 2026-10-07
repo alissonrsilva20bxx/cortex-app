@@ -5,8 +5,8 @@
   "tema": "pink-neon",
   "layout": "C",
   "metrica": "pixelmatch YIQ, limiar 0.1",
-  "difPct": 2.108,
-  "pixelsDiferentes": 27755,
+  "difPct": 1.6687,
+  "pixelsDiferentes": 21971,
   "tamanho": "780x1688",
   "mesmoTamanho": true,
   "reflowDoMockup": false,
@@ -19,11 +19,11 @@
         "plus jakarta sans": 100
       }
     },
-    "pareados": 154,
-    "comDivergencia": 65,
-    "semParNoMockup": 18,
-    "semParNoApp": 187,
-    "impactoTotal": 72.585,
+    "pareados": 164,
+    "comDivergencia": 60,
+    "semParNoMockup": 8,
+    "semParNoApp": 177,
+    "impactoTotal": 72.459,
     "comTextoDivergindo": 3,
     "pioresComTexto": [
       {

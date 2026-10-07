@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ChevronRight, File, FileText, Image as ImageIcon } from "lucide-react";
+import { File, FileText } from "lucide-react";
+import { IconeArquivoImagem, IconeSeta } from "./cofreIcones";
 import type { CofreFile } from "@/lib/cofre/cofreCache";
 import { formatDataArquivo, formatTamanho } from "./cofreResumo";
 
@@ -21,8 +22,7 @@ const LIST_STYLE = {
 } as const;
 
 function FileIcon({ mime }: { mime?: string }) {
-  if (mime?.startsWith("image/"))
-    return <ImageIcon size={18} aria-hidden="true" />;
+  if (mime?.startsWith("image/")) return <IconeArquivoImagem size={20} />;
   if (mime?.includes("pdf") || mime?.includes("document"))
     return <FileText size={18} aria-hidden="true" />;
   return <File size={18} aria-hidden="true" />;
@@ -99,7 +99,7 @@ export function ListaArquivos({
                 {formatDataArquivo(f.createdAt)}
               </span>
             </span>
-            <ChevronRight
+            <IconeSeta
               size={16}
               className="shrink-0"
               style={{ color: "var(--text-muted)" }}

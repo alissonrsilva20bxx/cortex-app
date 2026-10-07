@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Search } from "lucide-react";
 import {
-  Shield,
-  Search,
-  Upload,
-  FileText,
-  MessageCircle,
-  Folder,
-  User,
-  LayoutGrid,
-} from "lucide-react";
+  IconeEscudo,
+  IconeEnviar,
+  IconeComprovante,
+  IconeConversa,
+  IconePasta,
+  IconePessoa,
+  IconeArquivoImagem,
+} from "./cofreIcones";
 import { BotaoRedondo, IconeCadeado } from "@/components/ui/cabecalho";
 import { IconeBusca } from "@/components/jobs/agendaIcones";
 import { supabase } from "@/lib/supabase";
@@ -78,13 +78,15 @@ const AZULEJO = {
   color: "var(--accent-deep)",
 } as const;
 const AZULEJO_ROTULO = { fontSize: "11px", fontWeight: 600 } as const;
-const ICONE_CATEGORIA: Record<Categoria, typeof FileText> = {
-  comprovantes: FileText,
-  conversas: MessageCircle,
-  documentos: Folder,
-  pessoal: User,
-  todos: LayoutGrid,
-};
+const ICONE_CATEGORIA: Record<Categoria, (p: { size?: number }) => ReactNode> =
+  {
+    comprovantes: IconeComprovante,
+    conversas: IconeConversa,
+    documentos: IconePasta,
+    pessoal: IconePessoa,
+    // "Todos" não existe na referência: usa a miniatura de arquivo dela.
+    todos: IconeArquivoImagem,
+  };
 /** A ordem do mockup primeiro; o que só existe no app vem depois. */
 const ORDEM_AZULEJOS: Categoria[] = [
   "comprovantes",
@@ -525,12 +527,10 @@ export function CofreTab({
                     color: "var(--text)",
                   }}
                 >
-                  <Shield size={26} />
+                  <IconeEscudo size={26} />
                 </div>
                 <div className="min-w-0">
-                  <h2
-                    style={{ fontSize: "22px", fontWeight: 800 }}
-                  >
+                  <h2 style={{ fontSize: "22px", fontWeight: 800 }}>
                     Protegido
                   </h2>
                   <span
@@ -602,7 +602,7 @@ export function CofreTab({
             style={{ gap: "8px", ...AZULEJO_ROTULO }}
           >
             <span className="grid place-items-center" style={AZULEJO}>
-              <Upload size={22} />
+              <IconeEnviar size={22} />
             </span>
             Enviar
           </button>
@@ -624,7 +624,9 @@ export function CofreTab({
                     ...AZULEJO,
                     // Selecionado: o círculo ganha a tinta do acento. O
                     // desenho (tamanho, raio, rótulo) não muda.
-                    background: ativo ? "var(--accent-tint)" : AZULEJO.background,
+                    background: ativo
+                      ? "var(--accent-tint)"
+                      : AZULEJO.background,
                   }}
                 >
                   <Icone size={22} />
