@@ -79,19 +79,27 @@ export function JornadaScreen({ userId, onVoltar }: Props) {
         }}
       >
         <header className="flex items-center gap-2">
+          {/* Área de toque 44×44 (#198); o círculo que se vê continua 40×40,
+              e a margem negativa mantém o cabeçalho no mesmo lugar. */}
           <button
             ref={voltarRef}
             type="button"
             onClick={onVoltar}
             aria-label={VOLTAR}
             className="flex shrink-0 items-center justify-center rounded-full active:opacity-70"
-            style={{
-              width: "40px",
-              height: "40px",
-              background: "var(--j-card)",
-            }}
+            style={{ width: "44px", height: "44px", margin: "-2px" }}
           >
-            <ChevronLeft size={20} aria-hidden />
+            <span
+              aria-hidden
+              className="flex items-center justify-center rounded-full"
+              style={{
+                width: "40px",
+                height: "40px",
+                background: "var(--j-card)",
+              }}
+            >
+              <ChevronLeft size={20} />
+            </span>
           </button>
           <h1
             id="jornada-titulo"

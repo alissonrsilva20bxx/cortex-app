@@ -83,6 +83,8 @@ function Chavinha({
   rotuloId: string;
   onTrocar: () => void;
 }) {
+  // Área de toque 48×44 (#198); o trilho que se vê continua 48×28, e a
+  // margem negativa não deixa a linha crescer.
   return (
     <button
       type="button"
@@ -90,27 +92,32 @@ function Chavinha({
       aria-checked={ligada}
       aria-labelledby={rotuloId}
       onClick={onTrocar}
-      className="relative shrink-0 transition-colors"
-      style={{
-        width: "48px",
-        height: "28px",
-        borderRadius: "var(--radius-pill)",
-        background: ligada ? "var(--j-progresso)" : "var(--j-trilho)",
-      }}
+      className="flex shrink-0 items-center"
+      style={{ width: "48px", height: "44px", margin: "-8px 0" }}
     >
       <span
         aria-hidden
-        className="absolute rounded-full transition-transform"
+        className="relative block transition-colors"
         style={{
-          top: "3px",
-          left: "3px",
-          width: "22px",
-          height: "22px",
-          background: "var(--j-chave-botao)",
-          boxShadow: "var(--j-chave-sombra)",
-          transform: ligada ? "translateX(20px)" : "none",
+          width: "48px",
+          height: "28px",
+          borderRadius: "var(--radius-pill)",
+          background: ligada ? "var(--j-progresso)" : "var(--j-trilho)",
         }}
-      />
+      >
+        <span
+          className="absolute rounded-full transition-transform"
+          style={{
+            top: "3px",
+            left: "3px",
+            width: "22px",
+            height: "22px",
+            background: "var(--j-chave-botao)",
+            boxShadow: "var(--j-chave-sombra)",
+            transform: ligada ? "translateX(20px)" : "none",
+          }}
+        />
+      </span>
     </button>
   );
 }

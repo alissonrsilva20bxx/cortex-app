@@ -7,6 +7,12 @@
 
 .raiz {
   --c-acc: var(--accent);
+  /* Texto de acento (#197): o --accent puro fica abaixo de 4,5:1 em texto
+     pequeno sobre o cartão e os raios. --accent-deep-2 é o token do app
+     pra texto de acento sobre tinta (J01), escurece no claro e clareia no
+     escuro, tema a tema. Desenho (raio, medalha, fundo da pílula) segue
+     no --c-acc. */
+  --c-acc-texto: var(--accent-deep-2);
   --c-deep: color-mix(in srgb, var(--accent) 62%, #1a0b14);
   --c-soft: color-mix(in srgb, var(--accent) 16%, transparent);
   --c-card: var(--card-solid, var(--bg));
@@ -342,7 +348,7 @@
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--c-acc);
+  color: var(--c-acc-texto);
 }
 
 .nomeSelo {
@@ -367,7 +373,7 @@
   gap: 4px;
   font-size: 13px;
   font-weight: 800;
-  color: var(--c-acc);
+  color: var(--c-acc-texto);
   background: var(--c-soft);
   padding: 5px 12px;
   border-radius: 999px;

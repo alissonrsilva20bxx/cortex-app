@@ -128,7 +128,9 @@ function capitulo(agora: Date, progresso: number[]): Capitulo {
 function periodos(
   agora: Date,
   semana: Record<string, number> | null,
-  semanaFechada: Record<string, number> | null
+  semanaFechada: Record<string, number> | null,
+  mes: Record<string, number> | null = null,
+  ano: Record<string, number> | null = null
 ): Periodos {
   const primeiroDoMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
   const primeiroDoAno = new Date(agora.getFullYear(), 0, 1);
@@ -137,8 +139,10 @@ function periodos(
   return {
     corrente: {
       semana: { inicio: iso(segunda(agora)), contadores: semana ?? {} },
-      mes: { inicio: iso(primeiroDoMes), contadores: semana ?? {} },
-      ano: { inicio: iso(primeiroDoAno), contadores: semana ?? {} },
+      // Cada período com os próprios números (#200): o mês contém a semana
+      // e o ano contém o mês.
+      mes: { inicio: iso(primeiroDoMes), contadores: mes ?? {} },
+      ano: { inicio: iso(primeiroDoAno), contadores: ano ?? {} },
     },
     ultimoFechado: semanaFechada
       ? { semana: { inicio: iso(semanaPassada), contadores: semanaFechada } }
@@ -176,7 +180,33 @@ export function estadoJornadaExemplo(agora: Date = new Date()): EstadoJornada {
     periodos: periodos(
       agora,
       { dias_fortes: 2, despesa: 4, glow: 45 },
-      { dias_fortes: 3, despesa: 6, glow: 80 }
+      { dias_fortes: 3, despesa: 6, firme: 1, glow: 80 },
+      // Mês: bate com o capítulo (2 descansos, 5 despesas, 1 comprovante).
+      {
+        dias_fortes: 5,
+        despesa: 5,
+        receita: 2,
+        planejar: 3,
+        descanso: 2,
+        comprovante_cofre: 1,
+        semanas_firmes: 1,
+        glow: 120,
+      },
+      // Ano: tudo o que ela fez desde o começo (o Glow do ano = o total).
+      {
+        dias_fortes: 14,
+        despesa: 22,
+        receita: 9,
+        planejar: 8,
+        guardar_meta: 2,
+        descanso: 5,
+        comprovante_cofre: 4,
+        dica_ajudou: 14,
+        dica_protegeu: 4,
+        semanas_firmes: 2,
+        semanas_guardou: 2,
+        glow: 305,
+      }
     ),
   };
 }
