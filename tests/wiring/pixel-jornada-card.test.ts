@@ -103,7 +103,7 @@ describe("Pixel card da Jornada — medidas do protótipo (.jcard)", () => {
   });
 
   it.each([
-    [".eyebrow", "textTransform"],
+    [".eyebrow", 'letterSpacing: ".09em"'],
     [".jname", 'letterSpacing: "-.3px"'],
   ])("tipografia de %s", (seletor, marca) => {
     const r = regra(seletor);

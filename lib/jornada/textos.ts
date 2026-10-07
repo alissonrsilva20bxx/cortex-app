@@ -461,6 +461,46 @@ export function capituloEmPartes(
   };
 }
 
+/** As letras dos 7 dias do card, de segunda a domingo (`DAYS` do
+ * protótipo). */
+export const LETRAS_DA_SEMANA = ["S", "T", "Q", "Q", "S", "S", "D"] as const;
+
+// "Próximo passo" do card (protótipo: NEXT_ORDER e NEXT_TXT, ordem do
+// operador).
+
+/** Quanto o passo "guardar" sugere (`ACTIONS.save` do protótipo). */
+export const VALOR_SUGERIDO_PARA_GUARDAR = 10;
+
+/** A ordem em que o card sugere o próximo passo: o primeiro que ela ainda
+ * não fez hoje. */
+export const ORDEM_DO_PROXIMO_PASSO = [
+  "guardar_meta",
+  "comprovante_cofre",
+  "planejar",
+  "descanso",
+  "despesa",
+] as const satisfies readonly Acao[];
+export type AcaoDoProximoPasso = (typeof ORDEM_DO_PROXIMO_PASSO)[number];
+
+export const PROXIMO_PASSO = {
+  rotulo: "Próximo passo",
+  feitoRotulo: "Hoje",
+  feito: "Hoje você já cuidou de tudo",
+};
+
+export const TEXTO_DO_PROXIMO_PASSO: Record<AcaoDoProximoPasso, string> = {
+  guardar_meta: `Guardar ${money(VALOR_SUGERIDO_PARA_GUARDAR)} na sua meta`,
+  comprovante_cofre: "Guardar um comprovante no Cofre",
+  planejar: "Planejar amanhã em 1 minuto",
+  descanso: "Garantir um descanso esta semana",
+  despesa: "Lançar as despesas de hoje",
+};
+
+/** "+15" (o Glow do passo; a faísca vem do ícone). */
+export function glowDoPasso(glow: number): string {
+  return `+${numero(glow)} `;
+}
+
 /** "**Lua de outubro** na sua coleção ✓" */
 export function enfeiteEmPartes(mes: number): { forte: string; resto: string } {
   return { forte: nomeEnfeite(mes), resto: " na sua coleção ✓" };

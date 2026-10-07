@@ -38,6 +38,20 @@ function Svg({
 
 const PATHS: Record<string, ReactNode> = {
   chev: <path d="m9 18 6-6-6-6" />,
+  shieldp: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+  check: <path d="M20 6 9 17l-5-5" />,
+  cal: (
+    <>
+      <rect x="3" y="4" width="18" height="17" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="M4 2v20l3-2 3 2 2-2 2 2 3-2 3 2V2l-3 2-3-2-2 2-2-2-3 2z" />
+      <path d="M8 9h8M8 13h6" />
+    </>
+  ),
   spark: (
     <path d="M12 3l1.9 5.6a2 2 0 0 0 1.3 1.3L21 12l-5.8 2.1a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.6a2 2 0 0 0-1.3-1.3L3 12l5.8-2.1a2 2 0 0 0 1.3-1.3z" />
   ),
@@ -141,5 +155,39 @@ export function IconeSeta() {
     <Svg size={20} strokeWidth={2}>
       {PATHS.chev}
     </Svg>
+  );
+}
+
+/** Um ícone do `P` do protótipo, com o tamanho e o traço de quem usa
+ * (`ic(nome, tamanho, traço)`). */
+export function IconeDoPrototipo({
+  nome,
+  tamanho,
+  traco,
+}: {
+  nome: string;
+  tamanho: number;
+  traco: number;
+}) {
+  return (
+    <Svg size={tamanho} strokeWidth={traco}>
+      {PATHS[nome]}
+    </Svg>
+  );
+}
+
+/** `icf('spark', n)` do protótipo: a faísca cheia, sem traço. */
+export function FaiscaCheia({ tamanho }: { tamanho: number }) {
+  return (
+    <svg
+      width={tamanho}
+      height={tamanho}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      style={{ flexShrink: 0, display: "block" }}
+    >
+      {PATHS.spark}
+    </svg>
   );
 }

@@ -422,7 +422,7 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
   });
 
   /**
-   * Sem divergência: com o dia do pagamento (`pago_em`, migration 0036) e as
+   * Sem divergência: com o dia do pagamento (`pago_em`, migration 0037) e as
    * regras revistas por ordem do operador (Meta = faturamento do mês; ticket
    * = o que entrou ÷ atendimentos), o laboratório fecha o mockup inteiro e
    * a Agenda continua com Camila Duarte no domingo 20/09 (ela pagou em

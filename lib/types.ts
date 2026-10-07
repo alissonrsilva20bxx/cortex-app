@@ -22,7 +22,7 @@ export interface Job {
   observacoes?: string;
   criadoEm: string; // ISO timestamp
   /** Dia em que o dinheiro entrou (YYYY-MM-DD); sem ele, o do atendimento.
-   * O Financeiro lança a entrada nesse dia (migration 0036). */
+   * O Financeiro lança a entrada nesse dia (migration 0037). */
   pagoEm?: string | null;
 }
 

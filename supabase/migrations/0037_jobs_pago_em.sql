@@ -1,4 +1,4 @@
--- 0036: dia em que o dinheiro de um atendimento entrou (ordem do operador,
+-- 0037: dia em que o dinheiro de um atendimento entrou (ordem do operador,
 -- pixel do Financeiro contra o mockup normativo
 -- docs/jornada/referencias/5-telas-8-temas-claro-escuro.html).
 --

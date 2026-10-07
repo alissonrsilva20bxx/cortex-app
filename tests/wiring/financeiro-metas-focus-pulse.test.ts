@@ -70,9 +70,11 @@ describe("app/page.tsx — onGoToMetas dispara o pulso completo (troca de aba + 
     );
   });
 
-  it('financeiroFocusTab aceita "metas" e "visao", começa null (Financeiro abre em "Visão" por padrão em qualquer outra entrada)', () => {
+  // "saidas": o "Próximo passo" do card da Jornada ("Lançar as despesas de
+  // hoje") abre a sub-aba de saídas (ordem do operador, #209).
+  it('financeiroFocusTab aceita "metas", "visao" e "saidas", começa null (Financeiro abre em "Visão" por padrão em qualquer outra entrada)', () => {
     expect(pageSrc).toMatch(
-      /const \[financeiroFocusTab, setFinanceiroFocusTab\] = useState<\s*\r?\n\s*"metas" \| "visao" \| null\s*\r?\n\s*>\(null\);/
+      /const \[financeiroFocusTab, setFinanceiroFocusTab\] = useState<\s*\r?\n\s*"metas" \| "visao" \| "saidas" \| null\s*\r?\n\s*>\(null\);/
     );
   });
 

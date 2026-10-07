@@ -18,6 +18,7 @@ import { ObjetivosCard } from "@/components/home/ObjetivosCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { CofreCard } from "@/components/home/CofreCard";
 import { JornadaCard } from "@/components/home/JornadaCard";
+import { destinoDoProximoPasso } from "@/components/jornada/progresso";
 import { JornadaScreen } from "@/components/jornada/JornadaScreen";
 import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
 import { SemanaSection } from "@/components/home/SemanaSection";
@@ -163,7 +164,7 @@ export default function Page() {
   // evolução" do HeroCard — issue #134) — ver comentário de `focusTab` em
   // FinanceiroTab.tsx (redesign iOS #122/#125).
   const [financeiroFocusTab, setFinanceiroFocusTab] = useState<
-    "metas" | "visao" | null
+    "metas" | "visao" | "saidas" | null
   >(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -569,6 +570,12 @@ export default function Page() {
                       <JornadaCard
                         userId={usuario.id}
                         onAbrir={() => setJornadaAberta(true)}
+                        onProximoPasso={(acao) => {
+                          const destino = destinoDoProximoPasso(acao);
+                          handleTabChange(destino.aba);
+                          if (destino.financeiro)
+                            setFinanceiroFocusTab(destino.financeiro);
+                        }}
                       />
                     )}
                   </div>

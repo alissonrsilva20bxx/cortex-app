@@ -224,6 +224,10 @@ export interface EstadoJornada {
   pilares?: Record<Pilar, number>;
   /** Jornada de Começo: os 7 passos, feitos ou não. */
   comeco?: { passos: boolean[] };
+  /** O que ela já fez HOJE, por ação: quantas vezes deu Glow hoje (0038,
+   * ordem do operador). Só as ações feitas hoje aparecem. É o que escolhe
+   * o "Próximo passo" do card do Início. */
+  feitasHoje?: Partial<Record<Acao, number>>;
 }
 
 /**
@@ -338,8 +342,11 @@ function ehExtrasDoPrototipo(x: Record<string, unknown>): boolean {
     dinheiro,
     pilares,
     comeco,
+    feitasHoje,
   } = x;
   return (
+    (feitasHoje === undefined ||
+      (ehObjeto(feitasHoje) && Object.values(feitasHoje).every(ehNumero))) &&
     (semana === undefined ||
       (ehObjeto(semana) &&
         Array.isArray(semana.dias) &&

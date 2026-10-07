@@ -209,6 +209,8 @@ export function estadoJornadaExemplo(agora: Date = new Date()): EstadoJornada {
     protegeu: 4,
     preferencias: { ...PREFERENCIAS_DO_PROTOTIPO },
     hoje: iso(agora),
+    // Nada feito hoje ainda: S.done = {} no protótipo.
+    feitasHoje: {},
     destravados: [],
     ...DO_SERVIDOR,
     // week:['strong', 'rest', 'strong', null, null, null, null]
@@ -322,6 +324,8 @@ export function estadoJornadaAno(agora: Date = new Date()): EstadoJornada {
     ajudou: 103,
     protegeu: 27,
     hoje: iso(agora),
+    // Nada feito hoje ainda: S.done = {} no protótipo.
+    feitasHoje: {},
     periodos: periodos(
       agora,
       { dias_fortes: 3, glow: 65 },
@@ -356,6 +360,8 @@ export function estadoJornadaContaNova(
     protegeu: 0,
     preferencias: { ...PREFERENCIAS_DO_PROTOTIPO },
     hoje: iso(agora),
+    // Nada feito hoje ainda: S.done = {} no protótipo.
+    feitasHoje: {},
     destravados: [],
     ...DO_SERVIDOR,
     semana: { dias: [null, null, null, null, null, null, null] },
@@ -554,7 +560,20 @@ export function criarTransporteJornadaLaboratorio(
     async lerEstado() {
       return estado;
     },
-    async registrar() {
+    async registrar(pedido) {
+      // O que ela fez hoje (0038): conta a ação, até o limite do dia, para o
+      // "Próximo passo" do card andar como no protótipo.
+      const limite = estado.glowPorAcao?.[pedido.acao]?.limite;
+      if (limite !== undefined) {
+        const feitas = estado.feitasHoje?.[pedido.acao] ?? 0;
+        estado = {
+          ...estado,
+          feitasHoje: {
+            ...estado.feitasHoje,
+            [pedido.acao]: Math.min(feitas + 1, limite),
+          },
+        };
+      }
       const comemoracoes = comemoracoesDoLaboratorio;
       comemoracoesDoLaboratorio = [];
       // Só com uma comemoração preparada (__previewComemoracao): o Glow dela

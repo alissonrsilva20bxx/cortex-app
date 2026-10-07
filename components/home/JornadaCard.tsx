@@ -3,33 +3,131 @@
 import type { CSSProperties } from "react";
 import { useJornada } from "@/components/jornada/useJornada";
 import {
+  FaiscaCheia,
   IconeDoEnfeite,
   IconeDoEstagio,
+  IconeDoPrototipo,
   IconeSeta,
 } from "@/components/jornada/jornadaIcones";
 import {
   contadorDaSemana,
   faltaProProximo,
   fracaoDoEstagio,
+  indiceDeHojeNaSemana,
   missoesFeitas,
+  proximoPasso,
 } from "@/components/jornada/progresso";
+import type { MarcaDoDia } from "@/lib/jornada/estado";
 import {
   ABRIR_JORNADA,
+  LETRAS_DA_SEMANA,
   NOME_GLOW,
+  PROXIMO_PASSO,
   RITMO_COMPLETO,
+  TEXTO_DO_PROXIMO_PASSO,
   ateProximo,
   capituloEmPartes,
   diasFortesDeTres,
   enfeiteEmPartes,
+  glowDoPasso,
   nomeEstagio,
   numero,
   tituloJornada,
+  type AcaoDoProximoPasso,
 } from "@/lib/jornada/textos";
 
 interface Props {
   userId: string;
   onAbrir: () => void;
+  /** "Próximo passo": leva para onde ela faz a ação (Financeiro, Cofre,
+   * Agenda). */
+  onProximoPasso: (acao: AcaoDoProximoPasso) => void;
 }
+
+/** O ícone de cada passo (`ACTIONS[k].ic` do protótipo). */
+const ICONE_DO_PASSO: Record<AcaoDoProximoPasso, string> = {
+  guardar_meta: "coins",
+  comprovante_cofre: "shieldp",
+  planejar: "cal",
+  descanso: "moon",
+  despesa: "receipt",
+};
+
+/** Uma bolinha da semana (`.dot` do protótipo): forte, descanso, hoje ou
+ * vazia. A vazia muda no escuro (classe em globals.css). */
+function Bolinha({ marca, hoje }: { marca: MarcaDoDia; hoje: boolean }) {
+  const base: CSSProperties = {
+    width: "30px",
+    height: "30px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+  };
+  if (marca === "forte")
+    return (
+      <span style={{ ...base, background: "var(--t-acc)" }}>
+        <IconeDoPrototipo nome="check" tamanho={15} traco={3} />
+      </span>
+    );
+  if (marca === "descanso")
+    return (
+      <span
+        style={{ ...base, background: "var(--t-soft)", color: "var(--t-deep)" }}
+      >
+        <IconeDoPrototipo nome="moon" tamanho={13} traco={2.4} />
+      </span>
+    );
+  if (hoje)
+    return (
+      <span
+        style={{
+          ...base,
+          background: "transparent",
+          boxShadow: "inset 0 0 0 2px var(--t-acc)",
+        }}
+      />
+    );
+  return <span className="jornada-dia-vazio" style={base} />;
+}
+
+const PASSO: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "10px 12px",
+  borderRadius: "14px",
+  background: "var(--t-sub)",
+  textAlign: "left",
+  color: "inherit",
+  font: "inherit",
+};
+const PASSO_ICONE: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "50%",
+  background: "var(--t-acc)",
+  color: "#fff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+const PASSO_TEXTO: CSSProperties = {
+  flexGrow: 1,
+  fontSize: "13px",
+  fontWeight: 700,
+  minWidth: 0,
+};
+const PASSO_ROTULO: CSSProperties = {
+  display: "block",
+  fontSize: "10px",
+  fontWeight: 800,
+  letterSpacing: ".07em",
+  textTransform: "uppercase",
+  color: "var(--t-mut)",
+};
 
 /** Anel do protótipo (`ring(56, 5, p)`): trilho `--t-soft`, progresso
  * `--t-acc` com ponta redonda, começando no topo. */
@@ -87,25 +185,37 @@ const FORTE: CSSProperties = { color: "var(--t-ink)" };
  * aprovado: estágio, Glow e quanto falta, os dias fortes da semana e o
  * capítulo do mês. Tocar abre a tela da Jornada.
  *
- * O protótipo também desenha as bolinhas dos 7 dias e um "Próximo passo".
- * O estado da Jornada não tem o dia a dia da semana nem um próximo passo,
- * então essas duas peças não aparecem (decisão do operador, listada no PR).
+ * Também as 7 bolinhas da semana (a marca de cada dia, `semana.dias`, 0036)
+ * e o "Próximo passo" (o primeiro que ela não fez hoje, `feitasHoje`,
+ * 0038), por ordem do operador. O card é um `div` com papel de botão: o
+ * "Próximo passo" é um botão de verdade dentro dele.
  *
  * A Jornada nunca bloqueia o Início: sem estado ainda (carregando, ou erro
  * sem nada no cache), o card simplesmente não aparece.
  */
-export function JornadaCard({ userId, onAbrir }: Props) {
+export function JornadaCard({ userId, onAbrir, onProximoPasso }: Props) {
   const { estado } = useJornada(userId);
   if (!estado) return null;
 
   const capitulo = estado.capitulo;
   const ritmoCompleto = contadorDaSemana(estado, "firme") > 0;
   const dias = diasFortesDeTres(contadorDaSemana(estado, "dias_fortes"));
+  const marcas = estado.semana?.dias ?? [];
+  const hoje = indiceDeHojeNaSemana(estado);
+  const passo = proximoPasso(estado);
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onAbrir}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onAbrir();
+        }
+      }}
       aria-label={ABRIR_JORNADA}
       // #131: o FAB recua se colidir com uma ação real (ver FAB.tsx).
       data-fab-avoid
@@ -210,6 +320,29 @@ export function JornadaCard({ userId, onAbrir }: Props) {
         </span>
       </div>
 
+      {marcas.length === 7 && (
+        // `weekHTML(false)`: segunda a domingo, a bolinha e a letra.
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          {marcas.map((marca, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "10px",
+                fontWeight: 700,
+                color: i === hoje ? "var(--t-deep)" : "var(--t-mut)",
+              }}
+            >
+              <Bolinha marca={marca} hoje={i === hoje} />
+              {LETRAS_DA_SEMANA[i]}
+            </div>
+          ))}
+        </div>
+      )}
+
       <span style={{ ...LINHA, display: "block" }}>
         <b style={FORTE}>{dias.forte}</b>
         {dias.resto}
@@ -279,7 +412,55 @@ export function JornadaCard({ userId, onAbrir }: Props) {
           )}
         </span>
       )}
-    </button>
+
+      {passo ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onProximoPasso(passo);
+          }}
+          className="transition-transform active:scale-[.97]"
+          style={PASSO}
+        >
+          <span style={PASSO_ICONE}>
+            <IconeDoPrototipo
+              nome={ICONE_DO_PASSO[passo]}
+              tamanho={16}
+              traco={2.3}
+            />
+          </span>
+          <span style={PASSO_TEXTO}>
+            <small style={PASSO_ROTULO}>{PROXIMO_PASSO.rotulo}</small>
+            {TEXTO_DO_PROXIMO_PASSO[passo]}
+          </span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "3px",
+              fontSize: "12px",
+              fontWeight: 800,
+              color: "var(--t-deep)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {glowDoPasso(estado.glowPorAcao?.[passo]?.glow ?? 0)}
+            <FaiscaCheia tamanho={11} />
+          </span>
+        </button>
+      ) : (
+        <div style={{ ...PASSO, cursor: "default" }}>
+          <span style={{ ...PASSO_ICONE, background: "var(--t-green)" }}>
+            <IconeDoPrototipo nome="check" tamanho={16} traco={3} />
+          </span>
+          <span style={PASSO_TEXTO}>
+            <small style={PASSO_ROTULO}>{PROXIMO_PASSO.feitoRotulo}</small>
+            {PROXIMO_PASSO.feito}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
 

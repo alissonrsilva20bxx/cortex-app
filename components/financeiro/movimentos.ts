@@ -37,7 +37,7 @@ export function buildMovements(
       id: `job-${j.id}`,
       desc: j.clienteNome,
       valor: j.valor,
-      // Entra no extrato no dia em que o dinheiro entrou (migration 0036).
+      // Entra no extrato no dia em que o dinheiro entrou (migration 0037).
       data: diaDoDinheiro(j),
       positive: true,
     }));
