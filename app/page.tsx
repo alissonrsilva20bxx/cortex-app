@@ -532,7 +532,12 @@ export default function Page() {
                   pequenos (Próximo, Objetivos, Falta pra meta, Cofre), "Esta semana" e
                   "Próximos atendimentos". Stack explícito com `grid`+`gap` (achado
                   #131: nada de `space-y-*`, que depende de seletor de irmão). */}
-              <div className="grid grid-cols-[minmax(0,1fr)] gap-[var(--space-section)]">
+              <div
+                // Mockup normativo (Início): coluna com gap de 12px e 18px
+                // entre o cabeçalho e a grade (gap 12 + margin-top 6).
+                className="grid grid-cols-[minmax(0,1fr)]"
+                style={{ gap: "12px", marginTop: "18px" }}
+              >
                 {/* Grade de 2 colunas do mockup; o card principal ocupa as duas. Com
     quantidade ímpar de cards pequenos (um deles desligado em Ajustes,
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar

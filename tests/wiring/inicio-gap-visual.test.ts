@@ -70,7 +70,8 @@ describe("§2-P0-3 — ObjetivosCard é binário (concluido/não-concluido), gra
     // por objetivo). Marcar objetivo continua em Financeiro › Metas, que
     // grava pelo mesmo handleToggleObjetivo (teste abaixo).
     expect(src).toMatch(/objetivos\.filter\(\(o\) => o\.concluido\)\.length/);
-    expect(src).toMatch(/obj\.concluido\s*\?/);
+    // Pixel (mockup normativo): os traços acendem os N primeiros, N = feitos.
+    expect(src).toMatch(/i < feitos \? "var\(--t-acc\)" : "var\(--t-line\)"/);
     // Nenhum objetivo individual é renderizado com uma barra/valor percentual
     // (a menção a "percentual" no comentário de topo documenta a decisão de
     // NÃO fazer isso — não é código de UI).

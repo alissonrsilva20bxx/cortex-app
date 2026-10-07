@@ -27,9 +27,11 @@ export function InicioCard({
   tom = "padrao",
 }: Props) {
   const base: CSSProperties = {
-    borderRadius: "var(--radius-lg)",
-    background: tom === "cofre" ? "var(--hero-bg)" : "var(--card-solid)",
-    color: tom === "cofre" ? "#fff" : "var(--text)",
+    // Mockup normativo: `border-radius:20px; background:var(--t-card)` (ou
+    // `var(--t-hero)` no card do Cofre), tinta `var(--t-ink)` / branco.
+    borderRadius: "20px",
+    background: tom === "cofre" ? "var(--t-hero)" : "var(--t-card)",
+    color: tom === "cofre" ? "#ffffff" : "var(--t-ink)",
     ...style,
   };
 

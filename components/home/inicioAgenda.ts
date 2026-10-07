@@ -81,11 +81,12 @@ export function diasRestantesDaSemana(
   return dias;
 }
 
-/** Atendimentos ativos depois desta semana, em ordem, até `limite`. */
+/** Atendimentos ativos depois desta semana, em ordem, até `limite` (6,
+ * como a lista "Próximos atendimentos" do mockup normativo). */
 export function atendimentosDepoisDaSemana(
   jobs: Job[],
   ref: Date = new Date(),
-  limite = 5
+  limite = 6
 ): Job[] {
   const fim = dataLocal(fimDaSemana(ref));
   return jobs

@@ -1,8 +1,13 @@
 "use client";
 
-import { Clock } from "lucide-react";
 import type { Job } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
+import {
+  CARD_PEQUENO,
+  IconeCard,
+  ROTULO_CARD,
+  VALOR_CARD,
+} from "./pecasMockup";
 import { formatHora, proximoAtendimento, rotuloDiaCurto } from "./inicioAgenda";
 
 // Reexportado só pra não quebrar quem já importa daqui
@@ -23,31 +28,23 @@ export function NextJobCard({ jobs }: Props) {
   const job = proximoAtendimento(jobs);
 
   return (
-    <InicioCard
-      className="flex flex-col gap-2"
-      style={{ padding: "16px", minHeight: "118px" }}
-    >
-      <Clock size={20} style={{ color: "var(--accent-deep)" }} aria-hidden />
-      <span
-        className="font-semibold"
-        style={{ fontSize: "11px", color: "var(--text-muted)" }}
-      >
-        Próximo
-      </span>
+    <InicioCard style={{ ...CARD_PEQUENO, minHeight: "118px" }}>
+      <IconeCard>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </IconeCard>
+      <span style={ROTULO_CARD}>Próximo</span>
       {job ? (
         <>
-          <span
-            className="font-extrabold tabular-nums leading-none"
-            style={{ fontSize: "20px" }}
-          >
-            {formatHora(job.hora)}
-          </span>
+          <span style={VALOR_CARD}>{formatHora(job.hora)}</span>
+          {/* Mockup: só o primeiro nome ("<nome> · sex 25"). */}
           <span className="truncate" style={{ fontSize: "12px" }}>
-            {job.clienteNome} · {rotuloDiaCurto(job.data).toLowerCase()}
+            {job.clienteNome.split(" ")[0]} ·{" "}
+            {rotuloDiaCurto(job.data).toLowerCase()}
           </span>
         </>
       ) : (
-        <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+        <span style={{ fontSize: "12px", color: "var(--t-mut)" }}>
           Nenhum atendimento agendado ainda.
         </span>
       )}

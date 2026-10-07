@@ -25,8 +25,6 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
     ? p.metaEta.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })
     : null;
 
-  // Uma linha só de projeção, no tom de aliada serena. Mesmos textos que o
-  // card já usava em cada situação.
   let projecao: string | null;
   if (p.isEmpty) {
     projecao = "Registre seu primeiro atendimento e veja sua projeção começar.";
@@ -44,28 +42,40 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
     )} até o fim de ${p.monthLabel}.`;
   }
 
+  // Valores do mockup normativo: `padding:18px; gap:10px`, pílula
+  // `--t-soft`/`--t-deep`, valor 36px/800 (-1px), barra 8px raio 4.
   return (
     <InicioCard
       onClick={onGoToFinanceiro}
-      className="flex flex-col gap-[10px]"
-      style={{ padding: "18px" }}
+      style={{
+        padding: "18px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+      }}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <span
-          className="font-semibold"
-          style={{ fontSize: "12px", color: "var(--text-muted)" }}
+          style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-mut)" }}
         >
           Faturamento · {p.monthLabel}
         </span>
         {p.pct !== null && (
           <span
-            className="font-bold rounded-full shrink-0"
             style={{
               fontSize: "11px",
+              fontWeight: 700,
               padding: "3px 9px",
-              background: "var(--accent-tint)",
-              // #175: --accent-deep sobre --accent-tint ficava em 4,25.
-              color: "var(--accent-deep-2)",
+              borderRadius: "999px",
+              background: "var(--t-soft)",
+              color: "var(--t-deep)",
+              flexShrink: 0,
             }}
           >
             {Math.round(p.pct)}% da meta
@@ -73,15 +83,14 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
         )}
       </div>
 
-      <div className="flex items-baseline gap-2 flex-wrap">
+      <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
         <span
-          className="font-extrabold tabular-nums leading-none"
-          style={{ fontSize: "36px", letterSpacing: "-1px" }}
+          style={{ fontSize: "36px", fontWeight: 800, letterSpacing: "-1px" }}
         >
           {formatBRL(p.earned)}
         </span>
         {p.meta !== null && (
-          <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+          <span style={{ fontSize: "13px", color: "var(--t-mut)" }}>
             de {formatBRL(p.meta)}
           </span>
         )}
@@ -89,28 +98,28 @@ export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
 
       {!p.isEmpty && (
         <div
-          className="overflow-hidden"
           style={{
             height: "8px",
-            borderRadius: "var(--radius-pill)",
-            background: "var(--accent-tint)",
+            borderRadius: "4px",
+            background: "var(--t-soft)",
+            overflow: "hidden",
           }}
         >
           <div
             style={{
               width: `${Math.round(p.barFraction * 100)}%`,
               height: "8px",
-              borderRadius: "var(--radius-pill)",
-              background: "var(--accent)",
+              background: "var(--t-acc)",
+              borderRadius: "4px",
             }}
           />
         </div>
       )}
 
       {projecao && (
-        <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+        <div style={{ fontSize: "11px", color: "var(--t-mut)" }}>
           {projecao}
-        </p>
+        </div>
       )}
     </InicioCard>
   );

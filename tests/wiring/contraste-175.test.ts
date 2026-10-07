@@ -278,19 +278,6 @@ describe("#175 — os componentes da issue usam os tokens novos", () => {
         /color: `color-mix\(in srgb, rgb\(\$\{cat\.rgb\}\) 62%, var\(--text\)\)`,/,
       ],
     ],
-    ["components/home/HeroCard.tsx", [/color: "var\(--accent-deep-2\)",/]],
-    [
-      "components/financeiro/FinanceiroHeroCard.tsx",
-      [
-        /variacaoPct >= 0\s*\?\s*"var\(--success-text\)"\s*:\s*"var\(--danger-text\)"/,
-      ],
-    ],
-    [
-      "components/financeiro/VisaoTab.tsx",
-      [
-        /color: m\.positive \? "var\(--success-text\)" : "var\(--danger-text\)",/,
-      ],
-    ],
   ];
 
   for (const [arquivo, padroes] of casosFonte) {
@@ -305,15 +292,142 @@ describe("#175 — os componentes da issue usam os tokens novos", () => {
       `${SELO_PCT * 100}%, var(--text))`
     );
   });
+});
 
-  it("nenhum dos botões Novo voltou a branco fixo sobre o acento", () => {
+// ---------------------------------------------------------------- pixel
+/**
+ * Perfeição de pixel com o mockup normativo (Financeiro A e Início A): por
+ * decisão do operador o MOCKUP vence, inclusive nas cores que o #175 tinha
+ * escurecido. Onde o valor do mockup fica abaixo de 4,5:1, ele é mantido e
+ * listado aqui (e no PR) pra decisão do operador. Esta lista é travada: um
+ * caso novo abaixo de 4,5 (ou um que saiu) faz o teste falhar.
+ */
+const base = (token: string, tema: string, modo: Modo): Cor[] => {
+  const v = valor(token, tema, modo);
+  if (!/gradient/.test(v)) return [cor(v)];
+  // Fundo em degradê: confere contra cada cor de parada (a pior vale).
+  return [...v.matchAll(/#[0-9a-fA-F]{6}/g)].map((m) => cor(m[0]));
+};
+const pior = (texto: Cor, fundos: Cor[], sobreFundo: Cor) =>
+  Math.min(
+    ...fundos.map((f) =>
+      contraste(sobre(texto, sobre(f, sobreFundo)), sobre(f, sobreFundo))
+    )
+  );
+
+/** [nome, token do texto, token do fundo, fundo por baixo do fundo]. */
+const PARES_MOCKUP: Array<[string, string, string]> = [
+  ["Novo (#fff sobre --t-acc)", "#ffffff", "--t-acc"],
+  ["variação negativa", "--t-red", "--t-rsoft"],
+  ["variação positiva", "--t-green", "--t-gsoft"],
+  ["X% da meta", "--t-deep", "--t-soft"],
+  ["valor negativo", "--t-red", "--t-card"],
+  ["valor positivo", "--t-green", "--t-card"],
+  ["valor da semana (--t-deep)", "--t-deep", "--t-card"],
+  ["texto secundário no card", "--t-mut", "--t-card"],
+  ["texto secundário na página", "--t-mut", "--t-phbg"],
+  ["link (Extrato/Agenda)", "--t-deep", "--t-phbg"],
+  ["Cofre (rótulo no herói)", "--t-hero-mut", "--t-hero"],
+];
+
+function casosMockup(tema: string, modo: Modo): Record<string, number> {
+  const out: Record<string, number> = {};
+  const branco: Cor = [255, 255, 255, 1];
+  for (const [nome, texto, fundo] of PARES_MOCKUP) {
+    const t = texto.startsWith("#")
+      ? cor(texto)
+      : cor(valor(texto, tema, modo));
+    out[nome] = pior(t, base(fundo, tema, modo), branco);
+  }
+  return out;
+}
+
+const ABAIXO_DE_4_5: string[] = [
+  "grafite · light · variação negativa · 3.73",
+  "grafite · light · variação positiva · 3.91",
+  "grafite · light · valor negativo · 4.37",
+  "grafite · light · valor positivo · 4.40",
+  "grafite · dark · Novo (#fff sobre --t-acc) · 2.56",
+  "grafite · dark · variação negativa · 4.29",
+  "pink-neon · light · Novo (#fff sobre --t-acc) · 3.56",
+  "pink-neon · light · variação negativa · 3.73",
+  "pink-neon · light · variação positiva · 3.91",
+  "pink-neon · light · X% da meta · 4.25",
+  "pink-neon · light · valor negativo · 4.37",
+  "pink-neon · light · valor positivo · 4.40",
+  "pink-neon · dark · Novo (#fff sobre --t-acc) · 3.56",
+  "purple · light · Novo (#fff sobre --t-acc) · 4.00",
+  "purple · light · variação negativa · 3.73",
+  "purple · light · variação positiva · 3.91",
+  "purple · light · valor negativo · 4.37",
+  "purple · light · valor positivo · 4.40",
+  "purple · dark · Novo (#fff sobre --t-acc) · 4.00",
+  "crimson · light · variação negativa · 3.73",
+  "crimson · light · variação positiva · 3.91",
+  "crimson · light · valor negativo · 4.37",
+  "crimson · light · valor positivo · 4.40",
+  "crimson · dark · X% da meta · 3.80",
+  "ocean · light · Novo (#fff sobre --t-acc) · 3.44",
+  "ocean · light · variação negativa · 3.73",
+  "ocean · light · variação positiva · 3.91",
+  "ocean · light · X% da meta · 4.38",
+  "ocean · light · valor negativo · 4.37",
+  "ocean · light · valor positivo · 4.40",
+  "ocean · dark · Novo (#fff sobre --t-acc) · 1.95",
+  "ocean · dark · variação negativa · 3.86",
+  "ocean · dark · Cofre (rótulo no herói) · 4.23",
+  "gold · light · Novo (#fff sobre --t-acc) · 3.51",
+  "gold · light · variação negativa · 3.73",
+  "gold · light · variação positiva · 3.91",
+  "gold · light · X% da meta · 4.46",
+  "gold · light · valor negativo · 4.37",
+  "gold · light · valor positivo · 4.40",
+  "gold · dark · Novo (#fff sobre --t-acc) · 2.15",
+  "gold · dark · variação negativa · 4.22",
+  "emerald · light · Novo (#fff sobre --t-acc) · 3.77",
+  "emerald · light · variação negativa · 3.73",
+  "emerald · light · variação positiva · 3.91",
+  "emerald · light · valor negativo · 4.37",
+  "emerald · light · valor positivo · 4.40",
+  "emerald · dark · Novo (#fff sobre --t-acc) · 2.54",
+  "emerald · dark · variação negativa · 3.94",
+  "midnight · light · Novo (#fff sobre --t-acc) · 4.47",
+  "midnight · light · variação negativa · 3.73",
+  "midnight · light · variação positiva · 3.91",
+  "midnight · light · valor negativo · 4.37",
+  "midnight · light · valor positivo · 4.40",
+  "midnight · dark · Novo (#fff sobre --t-acc) · 4.47",
+];
+
+describe("Pixel (mockup vence) — contraste dos valores do mockup, listado", () => {
+  it("os casos abaixo de 4,5:1 são exatamente os listados no PR", () => {
+    const abaixo: string[] = [];
+    for (const tema of TEMAS)
+      for (const modo of ["light", "dark"] as const)
+        for (const [nome, c] of Object.entries(casosMockup(tema, modo)))
+          if (c < 4.5)
+            abaixo.push(`${tema} · ${modo} · ${nome} · ${c.toFixed(2)}`);
+    if (process.env.MOSTRAR_CONTRASTE)
+      console.log(JSON.stringify(abaixo, null, 1));
+    expect(abaixo).toEqual(ABAIXO_DE_4_5);
+  });
+
+  it("Financeiro e Início usam os valores do mockup (não os tokens do #175)", () => {
     for (const arquivo of [
       "components/home/GreetingHeader.tsx",
       "components/financeiro/FinanceiroTab.tsx",
-    ]) {
-      expect(read(arquivo), arquivo).not.toMatch(
-        /background: "var\(--accent\)",\s*color: "#fff"/
+    ])
+      expect(read(arquivo), arquivo).toMatch(
+        /background: "var\(--t-acc\)",\s*color: "#f{3,6}",/
       );
-    }
+    expect(read("components/home/HeroCard.tsx")).toMatch(
+      /background: "var\(--t-soft\)",\s*color: "var\(--t-deep\)",/
+    );
+    expect(read("components/financeiro/FinanceiroHeroCard.tsx")).toMatch(
+      /color: sobe \? "var\(--t-green\)" : "var\(--t-red\)",/
+    );
+    expect(read("components/financeiro/VisaoTab.tsx")).toMatch(
+      /color: m\.positive \? "var\(--t-green\)" : "var\(--t-red\)",/
+    );
   });
 });

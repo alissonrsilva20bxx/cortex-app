@@ -55,8 +55,10 @@ export function GreetingHeader({
   const date = useMemo(getFormattedDate, []);
   const firstName = getFirstName(usuario.nome);
 
+  // Valores do mockup normativo (tela Início): avatar 42px `--t-soft`,
+  // título 17px/800, data 12px `--t-mut`, "Novo" 38px em `--t-acc`.
   return (
-    <div className="flex items-center gap-3">
+    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
       {/* Avatar -- dado real (foto/inicial), 42px como o mockup, toque de
           44px (components/ui/cabecalho.tsx). */}
       <AvatarAjustes
@@ -67,19 +69,19 @@ export function GreetingHeader({
         data-tour="home-ajustes"
       />
 
-      <div className="min-w-0 flex-grow">
+      <div style={{ flexGrow: 1, minWidth: 0 }}>
         <h1
-          className="truncate font-extrabold"
-          style={{ fontSize: "17px", lineHeight: 1.5, color: "var(--text)" }}
+          className="truncate"
+          style={{ margin: 0, fontSize: "17px", fontWeight: 800 }}
         >
           Olá, {firstName}
         </h1>
-        <p
+        <div
           className="truncate"
-          style={{ fontSize: "12px", color: "var(--text-muted)" }}
+          style={{ fontSize: "12px", color: "var(--t-mut)" }}
         >
           {date}
-        </p>
+        </div>
       </div>
 
       <BotaoNovo onClick={onNovo}>Novo</BotaoNovo>
