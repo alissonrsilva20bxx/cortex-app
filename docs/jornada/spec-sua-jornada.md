@@ -95,8 +95,12 @@ sem prêmios de uma vez, é 140. Com um dia bom a cada dois, Icônica (3.000) ch
 
 ### Dia forte e semana firme
 
-- **Dia forte:** dia em que **3 ou mais ações deram Glow** (contando cada vez que deu Glow,
-  dentro do limite). **Atendimento não conta**, e ação que passou do limite também não.
+- **Dia forte (0037, ordem do operador, como o protótipo):** o dia vira forte na **primeira
+  ação do dia que cuida do negócio** — lançar despesa ou entrada, planejar, guardar numa meta,
+  guardar um comprovante — e no **atendimento** ("Dia contado"), mesmo acima do limite de Glow.
+  Descanso, abrir a Jornada, criar o PIN e ver um resumo não fazem dia forte. Conta uma vez por
+  dia, na hora em que vira (um dia de descanso que vira forte conta). Antes (0035/0036): 3 ações
+  com Glow no dia, sem o atendimento.
 - **Semana firme:** semana (segunda a domingo) com **3 ou mais dias fortes**.
 - **Ritmo da semana (0036):** cada dia da semana corrente tem uma marca — **forte** quando
   vira dia forte, **descanso** quando ela tira o descanso e o dia ainda não é forte (um dia
@@ -290,3 +294,7 @@ o protótipo exigir. O que mudou por essa ordem (migration
 2. §3: duas ações sem Glow da Jornada de Começo (criar o PIN, ver o primeiro resumo).
 3. §6: as 3 trincas do protótipo no lugar das 12 trincas mensais.
 4. §8: o que o estado manda para as telas e a preferência "Comemorações: Calma".
+5. §3, dia forte (migration `0037_jornada_dia_forte.sql`): a primeira ação do dia que cuida
+   do negócio, atendimento incluso, como o `act()` do protótipo. É o que faz a bolinha da
+   semana, o "N de 3 dias fortes", a missão "Ter 12 dias fortes" e a semana firme saírem iguais
+   à referência.

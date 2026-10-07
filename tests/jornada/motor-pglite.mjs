@@ -75,7 +75,14 @@ log(
   `migrations: ${arquivos.length - falhas}/${arquivos.length} aplicadas sem erro`
 );
 if (falhas) process.exit(1);
-for (const f of ["0034_jornada_contadores.sql", "0035_jornada_rpcs.sql"]) {
+// Na ordem, até a última: senão a reaplicação da 0035 desfaz o motor da 0036
+// e os casos abaixo testariam a versão antiga.
+for (const f of [
+  "0034_jornada_contadores.sql",
+  "0035_jornada_rpcs.sql",
+  "0036_jornada_prototipo.sql",
+  "0037_jornada_dia_forte.sql",
+]) {
   try {
     await db.exec(readFileSync(join(DIR, f), "utf-8"));
     log(`ok    ${f} reaplicada (idempotente)`);
@@ -459,39 +466,64 @@ await como("authenticated", C, async () => {
 // ---------------------------------------------------------------- dia forte, semana firme
 const E = "eeeeeeee-0000-4000-8000-00000000000e";
 await db.exec(`insert into auth.users (id, email) values ('${E}', 'e@x')`);
-// Em ordem cronológica, como no app. Seg e ter: dia forte (3 com Glow).
-for (const dia of ["2026-10-12", "2026-10-13"]) {
-  await aplica(E, "despesa", dia);
-  await aplica(E, "atendimento", dia); // não conta pro dia forte
-  await aplica(E, "receita", dia);
-  if (dia === "2026-10-12")
-    espera(
-      ((await periodo(E, "semana")).contadores.dias_fortes ?? 0) === 0,
-      "2 ações com Glow + atendimento não fazem dia forte"
-    );
-  await aplica(E, "planejar", dia);
-}
+// Dia forte como o protótipo (0036, ordem do operador): a PRIMEIRA ação do
+// dia que cuida do negócio (atendimento incluso) faz o dia forte, uma vez.
+const marcas = async (u) =>
+  (
+    await db.query(
+      `select dia::text d, marca from public.jornada_semana_dias where user_id = '${u}' order by dia`
+    )
+  ).rows
+    .map((x) => `${x.d.slice(8)}:${x.marca}`)
+    .join(",");
+await aplica(E, "atendimento", "2026-10-12");
+espera(
+  (await periodo(E, "semana")).contadores.dias_fortes === 1 &&
+    (await marcas(E)) === "12:forte",
+  "seg: o atendimento sozinho já faz o dia forte (protótipo: 'Dia contado')"
+);
+await aplica(E, "despesa", "2026-10-12");
+await aplica(E, "planejar", "2026-10-12");
+espera(
+  (await periodo(E, "semana")).contadores.dias_fortes === 1,
+  "seg: mais ações no mesmo dia não contam outro dia forte"
+);
+await aplica(E, "descanso", "2026-10-13");
+espera(
+  (await periodo(E, "semana")).contadores.dias_fortes === 1 &&
+    (await marcas(E)) === "12:forte,13:descanso",
+  "ter: descanso marca o dia como descanso e não é dia forte"
+);
+await aplica(E, "despesa", "2026-10-13");
 const sem = await periodo(E, "semana");
 espera(
-  sem.contadores.dias_fortes === 2 && !sem.contadores.firme,
-  "3ª ação com Glow faz o dia forte (2 dias)"
+  sem.contadores.dias_fortes === 2 &&
+    !sem.contadores.firme &&
+    (await marcas(E)) === "12:forte,13:forte",
+  "ter: uma despesa depois do descanso vira o dia em forte (2 dias)"
 );
-await aplica(E, "despesa", "2026-10-14");
-await aplica(E, "despesa", "2026-10-14");
-await aplica(E, "despesa", "2026-10-14");
-r = await aplica(E, "despesa", "2026-10-14"); // acima do limite: não conta
+await aplica(E, "abrir_jornada", "2026-10-14");
+await aplica(E, "ver_resumo", "2026-10-14");
 espera(
-  (await periodo(E, "semana")).contadores.dias_fortes === 3,
-  "qua: 3 despesas = dia forte (a 4ª, acima do limite, não muda nada)"
+  (await periodo(E, "semana")).contadores.dias_fortes === 2 &&
+    !(await marcas(E)).includes("14:"),
+  "qua: abrir a Jornada e ver o resumo não fazem dia forte"
 );
-r = await aplica(E, "planejar", "2026-10-15");
+await aplica(E, "despesa", "2026-10-14");
+await aplica(E, "despesa", "2026-10-14");
+await aplica(E, "despesa", "2026-10-14");
+r = await aplica(E, "despesa", "2026-10-14"); // acima do limite: só registra
 const sem2 = await periodo(E, "semana");
 espera(
   sem2.contadores.dias_fortes === 3 &&
     sem2.contadores.firme === 1 &&
-    !tipos(r).includes("selo") &&
     (await contador(E, "semanas_firmes")) === 1,
-  "3º dia forte da semana = semana firme"
+  "qua: 3º dia forte da semana = semana firme (uma vez)"
+);
+await aplica(E, "descanso", "2026-10-14");
+espera(
+  (await marcas(E)) === "12:forte,13:forte,14:forte",
+  "descanso depois não desfaz o dia forte"
 );
 espera(
   await um(
@@ -507,13 +539,17 @@ espera(
 // ---------------------------------------------------------------- capítulo (outubro)
 const F = "ffffffff-0000-4000-8000-00000000000f";
 await db.exec(`insert into auth.users (id, email) values ('${F}', 'f@x')`);
-// Outubro: 3 descansos, 12 despesas, 4 comprovantes.
-for (const d of ["2026-10-01", "2026-10-02"]) await aplica(F, "descanso", d);
-for (let i = 0; i < 12; i++)
-  await aplica(F, "despesa", `2026-10-${String(3 + (i % 4)).padStart(2, "0")}`);
-for (let i = 0; i < 4; i++) await aplica(F, "comprovante_cofre", "2026-10-08");
+// Outubro (trinca 1 do protótipo): planejar 8 dias, guardar dinheiro em 3
+// semanas, 2 descansos. Em ordem cronológica; o 2º descanso fecha.
+for (let d = 1; d <= 8; d++) {
+  const dia = `2026-10-${String(d).padStart(2, "0")}`;
+  await aplica(F, "planejar", dia);
+  if (d === 1 || d === 8) await aplica(F, "guardar_meta", dia);
+}
+await aplica(F, "descanso", "2026-10-09");
+await aplica(F, "guardar_meta", "2026-10-15");
 const antes = (await saldo(F)).glow_total;
-r = await aplica(F, "descanso", "2026-10-09");
+r = await aplica(F, "descanso", "2026-10-16");
 log(
   "   fila:",
   JSON.stringify(r.fila.map((f) => [f.tipo, f.selo ?? f.capitulo?.mes ?? ""]))
@@ -547,7 +583,7 @@ espera(
         40,
   "o +40 do capítulo vai só pro total (não pra pilar)"
 );
-r = await aplica(F, "descanso", "2026-10-10");
+r = await aplica(F, "descanso", "2026-10-17");
 espera(
   !r.fila.some((f) => f.tipo === "capitulo"),
   "capítulo não fecha duas vezes"
@@ -559,7 +595,8 @@ const fechadoMes = await periodo(F, "mes", true);
 const corrMes = await periodo(F, "mes");
 espera(
   fechadoMes.inicio === "2026-10-01" &&
-    fechadoMes.contadores.despesa === 12 &&
+    fechadoMes.contadores.planejar === 8 &&
+    !fechadoMes.contadores.despesa &&
     corrMes.inicio === "2026-11-01" &&
     corrMes.contadores.despesa === 1,
   "virada de mês: outubro vira o retrato fechado, novembro recomeça"

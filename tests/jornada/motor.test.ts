@@ -45,7 +45,9 @@ const sql0034 = ler("supabase/migrations/0034_jornada_contadores.sql");
 const sql0035 =
   ler("supabase/migrations/0035_jornada_rpcs.sql") +
   "\n" +
-  ler("supabase/migrations/0036_jornada_prototipo.sql");
+  ler("supabase/migrations/0036_jornada_prototipo.sql") +
+  "\n" +
+  ler("supabase/migrations/0037_jornada_dia_forte.sql");
 const servidor = ler("lib/jornada/servidor.ts");
 
 /** Linhas de tabela markdown de uma seção da spec ("## 3." até a próxima "## "). */
