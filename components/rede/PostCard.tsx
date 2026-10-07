@@ -77,11 +77,14 @@ export function PostCard({
         className="flex items-center"
         style={{ gap: "10px", padding: "0 16px" }}
       >
+        {/* 38px é o que a referência desenha; o alvo segue 44 por margem
+            negativa (desenhoFixo). */}
         <Avatar
           nome={post.autorNome}
           cor={post.autorCor}
           fotoUrl={post.autorFotoUrl}
-          size="md"
+          tamanho={38}
+          desenhoFixo
           onClick={() => onOpenAutor(post.autorId)}
         />
         <div className="flex-1 min-w-0">

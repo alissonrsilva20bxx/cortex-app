@@ -35,8 +35,15 @@ function AbasFeed({
   return (
     <div
       role="tablist"
-      className="flex mb-4"
-      style={{ gap: "22px", borderBottom: "1px solid var(--card-border)" }}
+      className="flex"
+      style={{
+        gap: "22px",
+        borderBottom: "1px solid var(--card-border)",
+        // A referência deixa 14px entre a borda das abas e o 1º artigo (o
+        // gap da coluna da tela). O `mb-4` dava 16 e, somado ao respiro do
+        // alvo de toque, empurrava o post 10px.
+        marginBottom: "6px",
+      }}
     >
       {ABAS.map((aba) => {
         const ativa = aba.id === segmento;
@@ -383,7 +390,7 @@ export function FeedScreen({
         {/* A referência separa os artigos por 6px e não dá respiro antes do
             primeiro: o `mt-3` e o `space-y-3` do cartão antigo somavam 24px
             e empurravam o post inteiro. */}
-        <div className="flex flex-col" style={{ gap: "6px" }}>
+        <div className="flex flex-col" style={{ gap: "20px" }}>
           {/* Skeleton só em cache miss de verdade -- com posts cacheados em
             tela, um refresh em 2º plano (`loading` ainda true) NÃO volta pro
             skeleton, e uma falha de rede NÃO cobre o conteúdo com o erro
