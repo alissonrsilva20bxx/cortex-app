@@ -29,6 +29,7 @@ import {
   tituloDoAviso,
 } from "./decidir";
 import { criarParticulas, type Particulas } from "./particulas";
+import { useComemoracaoPausada } from "./pausa";
 import {
   adiadasDaSessao,
   liberarAdiadas,
@@ -121,8 +122,11 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
   // "esconder" -- senão o último aviso ficava na tela.
   const avisoTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  // Uma camada de cada vez (#196): com o recap do mês (ou outra camada que
+  // pausa) aberto, nada toca e nada é consumido; a fila retoma depois.
+  const pausada = useComemoracaoPausada();
   const adiadas = adiadasDaSessao(fila);
-  const proxima = proximaParaTocar(fila, adiadas);
+  const proxima = pausada ? null : proximaParaTocar(fila, adiadas);
   const proximaId = proxima?.id ?? null;
   const proximaRef = useRef(proxima);
   proximaRef.current = proxima;
@@ -309,7 +313,7 @@ export function ComemoracaoPalco({ fila, ambiente, consumir }: PropsPalco) {
 
   return (
     <div className={styles.raiz} data-jornada-comemoracao="">
-      {aviso && (
+      {aviso && !pausada && (
         <div
           key={aviso.id}
           className={[

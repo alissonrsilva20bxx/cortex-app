@@ -1,0 +1,7 @@
+depois recap+comemoração @300ms {"recapVisivel":true,"comemorando":false,"porCima":"DIV"}
+depois recap+comemoração @1300ms {"recapVisivel":true,"comemorando":false,"porCima":"DIV"}
+depois recap+comemoração @2500ms {"recapVisivel":true,"comemorando":false,"porCima":"DIV"}
+depois depois de fechar o recap @300ms {"recapVisivel":false,"comemorando":true,"porCima":"comemoracao"}
+depois depois de fechar o recap @1300ms {"recapVisivel":false,"comemorando":true,"porCima":"comemoracao"}
+depois comemoração vista: ["SELO NOVO Rumo à meta Seu primeiro dinheiro guardado numa meta. +20 Glow"]
+depois selo Mês a mês I: SELO NOVO Mês a mês Seu primeiro mês na Jornada. +20 Glow

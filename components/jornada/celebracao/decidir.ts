@@ -232,7 +232,12 @@ export function textosDaComemoracao(
       return {
         chamada: TITULO_COMEMORACAO.selo,
         titulo,
-        apoio: c.selo && !discreto ? SELO[c.selo].descricao : "",
+        // A descrição de cada selo fala do nível I (como no protótipo):
+        // nos níveis II e III ela não se aplica (#199).
+        apoio:
+          c.selo && !discreto && (c.nivel ?? 1) <= 1
+            ? SELO[c.selo].descricao
+            : "",
         glow,
       };
     }
