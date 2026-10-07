@@ -1,6 +1,6 @@
 {
-  "quando": "2026-10-07T21:59:38.164Z",
-  "baseUrl": "http://localhost:3107",
+  "quando": "2026-10-07T22:07:25.398Z",
+  "baseUrl": "http://localhost:3109",
   "metrica": "pixelmatch YIQ, limiar 0.1",
   "relogio": "2026-09-23T13:00:00.000Z",
   "meta": "difPct < 0,5",

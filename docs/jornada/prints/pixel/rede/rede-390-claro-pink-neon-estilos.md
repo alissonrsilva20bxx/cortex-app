@@ -2,10 +2,10 @@
 
 - mockup: `5-telas-8-temas-claro-escuro.html`
 - app: `http://localhost:3107/dev-preview/app`
-- pareados 91 · divergem 63 · só no mockup 22 · só no app 471
+- pareados 91 · divergem 63 · só no mockup 22 · só no app 475
 - impacto total: **76.822**
 - famílias no mockup: plus jakarta sans (27)
-- famílias no app: plus jakarta sans (146)
+- famílias no app: plus jakarta sans (147)
 
 Ordem por impacto = (soma das diferenças normalizadas) × √(área relativa).
 Em cada célula: **mockup** → app.
