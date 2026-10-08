@@ -134,6 +134,14 @@ async function app(w, md, tm, ctxNome, estado) {
     else h.removeAttribute("data-mode");
   };
   await p.evaluate(tema, [tm, md]);
+  // Na 1ª compilação o gancho do laboratório pode chegar depois da página.
+  await p.waitForFunction(
+    () => typeof window.__previewPin === "function",
+    null,
+    {
+      timeout: 60000,
+    }
+  );
   if (ctxNome === "app") {
     await p.evaluate((h) => window.__previewLock(h), HASH_1234);
   } else {
@@ -161,6 +169,9 @@ async function app(w, md, tm, ctxNome, estado) {
         'main[aria-labelledby="pin-screen-title"][data-estado]'
       )
     );
+  // O app reaplica o tema depois de hidratar (corrida na 1ª carga): força
+  // de novo logo antes do print.
+  await p.evaluate(tema, [tm, md]);
   await p.mouse.move(0, 0);
   await p.waitForTimeout(300);
   return { ctx, p, el };

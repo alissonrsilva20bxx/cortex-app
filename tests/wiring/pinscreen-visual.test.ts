@@ -15,7 +15,10 @@ import { join } from "node:path";
  */
 
 const ROOT = join(__dirname, "..", "..");
-const ler = (...p: string[]) => readFileSync(join(ROOT, ...p), "utf-8");
+// Fim de linha normalizado: num checkout Windows (core.autocrlf) os
+// arquivos chegam com CRLF, e as regras abaixo esperam "\n".
+const ler = (...p: string[]) =>
+  readFileSync(join(ROOT, ...p), "utf-8").replace(/\r\n/g, "\n");
 const tsxSrc = ler("components", "pin", "PinScreen.tsx");
 const cssSrc = ler("components", "pin", "PinScreen.module.css");
 const pageSrc = ler("app", "page.tsx");
