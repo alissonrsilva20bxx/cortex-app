@@ -26,9 +26,10 @@ const financeiroTabSrc = read("components/financeiro/FinanceiroTab.tsx");
 
 describe("Card-herói de saldo fica acima das 4 sub-abas, sempre visível (composição aprovada)", () => {
   it("FinanceiroHeroCard é renderizado antes da Visão e do SegmentedControl das sub-abas, fora do switch por sub-aba", () => {
-    // Pixel (mockup normativo Financeiro A): hero no topo, depois a Visão
-    // (Recentes + Mais lançamentos, sempre visível), e só abaixo o gráfico
-    // e o seletor das sub-abas.
+    // Pixel (mockup normativo Financeiro A): hero no topo (com o gráfico de
+    // palitos logo abaixo dos 4 cards, decisão do operador), depois a Visão
+    // (Recentes + Mais lançamentos, sempre visível), e só abaixo o seletor
+    // das sub-abas.
     const heroIdx = financeiroTabSrc.indexOf("<FinanceiroHeroCard");
     const visaoIdx = financeiroTabSrc.indexOf("<VisaoTab");
     // Índice do USO em JSX, não do import no topo do arquivo.

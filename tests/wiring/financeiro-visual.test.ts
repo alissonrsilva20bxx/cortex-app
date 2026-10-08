@@ -100,17 +100,18 @@ describe("FinanceiroHeroCard.tsx (issue #136) uses real data/calculations, never
   });
 });
 
-describe("FinanceiroGrafico.tsx (pixel) keeps the real chart preference below the mockup content", () => {
-  // O mockup normativo do Financeiro A não tem gráfico: ele saiu do hero e
-  // mora no FinanceiroGrafico, abaixo dos lançamentos, com os mesmos dados.
+describe("FinanceiroGrafico.tsx keeps the real chart preference, at the top (palitos)", () => {
+  // Decisão do operador: o gráfico de palitos de antes da PR de pixel volta
+  // ao topo, logo abaixo dos 4 cards (mesmo bloco, ver
+  // financeiro-palitos-topo.test.ts), com os mesmos dados.
   const src = read("components/financeiro/FinanceiroGrafico.tsx");
-  const tab = read("components/financeiro/FinanceiroTab.tsx");
+  const hero = read("components/financeiro/FinanceiroHeroCard.tsx");
 
-  it("FinanceiroTab mounts FinanceiroGrafico with the real Ajustes preference", () => {
-    expect(tab).toMatch(
-      /^import \{ FinanceiroGrafico \} from "\.\/FinanceiroGrafico";$/m
+  it("FinanceiroHeroCard mounts FinanceiroGrafico with the real Ajustes preference", () => {
+    expect(hero).toMatch(
+      /^import \{ FinanceiroGrafico \} from "\.\/FinanceiroGrafico";\r?$/m
     );
-    expect(tab).toMatch(
+    expect(hero).toMatch(
       /<FinanceiroGrafico\s+jobs=\{jobs\}\s+receitas=\{receitas\}\s+chartType=\{chartType\}/
     );
   });
@@ -122,14 +123,12 @@ describe("FinanceiroGrafico.tsx (pixel) keeps the real chart preference below th
 
   it("preserves the real bar/area chart preference (chartType prop) — never forces line-only, dropping the 'Barras' option", () => {
     expect(src).toMatch(
-      /chartType === "area" \? \(\s*<Area data=\{sparkData\} \/>\s*\) : chartData\.length > 0 \? \(\s*<Barras data=\{chartData\} \/>/
+      /chartType === "area" \? \(\s*<AreaSparkline data=\{sparkData\} height=\{100\} id="fin-hero-area" \/>\s*\) : \(\s*<MiniBarChart data=\{chartData\} height=\{100\} id="fin-hero-bar" \/>/
     );
   });
 
-  it("uses the mockup tokens (--t-acc line/bars, --t-soft track), no hardcoded pink", () => {
-    expect(src).toMatch(/stroke="var\(--t-acc\)"/);
-    expect(src).toMatch(/background: "var\(--t-acc\)"/);
-    expect(src).toMatch(/background: "var\(--t-soft\)"/);
+  it("uses theme tokens through FinCard and the shared charts, no hardcoded pink", () => {
+    expect(src).toContain('color: "var(--text-muted)"');
     expect(src).not.toMatch(/#ff2d78|#ff4f85|#ff376e/i);
   });
 });
