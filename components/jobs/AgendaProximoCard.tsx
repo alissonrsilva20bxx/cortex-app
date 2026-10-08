@@ -1,6 +1,7 @@
 "use client";
 
 import { formatBRL } from "@/lib/finance";
+import { podeLembrar } from "@/lib/lembrete/cartaoAgenda";
 import { countdownLabel, getDaysUntil } from "@/lib/proximoAtendimento";
 import type { Job } from "@/lib/types";
 import {
@@ -14,6 +15,8 @@ interface Props {
   job: Job | null;
   /** Abre o detalhe do atendimento (mesmo `JobDetailSheet` da timeline). */
   onOpen: (job: Job) => void;
+  /** Abre o "Lembrar cliente" (cartão de agenda para mandar no WhatsApp). */
+  onLembrar?: (job: Job) => void;
 }
 
 /**
@@ -26,10 +29,12 @@ interface Props {
  * com centavos. A pílula de tempo relativo usa `countdownLabel`, a mesma
  * da Início, e some quando a data é inválida em vez de inventar contagem.
  *
- * "Lembrar cliente ›" fica visível mas desabilitado: o app não tem hoje
- * nenhuma ação de lembrar a cliente, e o ticket proíbe criar ação nova.
+ * "Lembrar cliente ›" abre o cartão de agenda (proposta 2) com a mensagem
+ * curta do WhatsApp: é opcional, nada é enviado sozinho. A decisão antiga
+ * que mantinha o botão desabilitado foi revogada pelo operador. Fica
+ * desabilitado só quando não faz sentido lembrar (concluído ou cancelado).
  */
-export function AgendaProximoCard({ job, onOpen }: Props) {
+export function AgendaProximoCard({ job, onOpen, onLembrar }: Props) {
   const countdown = job ? countdownLabel(getDaysUntil(job.data)) : null;
   const local = job ? localDoAtendimento(job) : null;
 
@@ -113,8 +118,10 @@ export function AgendaProximoCard({ job, onOpen }: Props) {
             {/* Toque de 44px sem crescer a linha (30px no mockup). */}
             <button
               type="button"
-              disabled
-              aria-disabled="true"
+              onClick={() => onLembrar?.(job)}
+              disabled={!onLembrar || !podeLembrar(job)}
+              aria-label={`Lembrar ${job.clienteNome} do atendimento`}
+              className="active:opacity-70 disabled:opacity-60"
               style={{
                 fontSize: "12px",
                 fontWeight: 700,

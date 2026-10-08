@@ -17,6 +17,8 @@ import { JobDetailSheet } from "./JobDetailSheet";
 import { AgendaResumoSheet } from "./AgendaResumoSheet";
 import { NotasSection } from "./NotasSection";
 import { AgendaProximoCard } from "./AgendaProximoCard";
+import { LembrarClienteSheet } from "./LembrarClienteSheet";
+import type { Profissional } from "@/lib/lembrete/cartaoAgenda";
 import { AgendaAcoes } from "./AgendaAcoes";
 import { IconeBusca, IconeSino } from "./agendaIcones";
 import { BotaoRedondo } from "@/components/ui/cabecalho";
@@ -215,6 +217,8 @@ interface Props {
    */
   onEditJob: (job: Job | null) => void;
   chartType?: "bar" | "donut";
+  /** Nome e telefone dela, para o cartão do "Lembrar cliente". */
+  profissional?: Profissional;
 }
 
 export function JobsTab({
@@ -222,6 +226,7 @@ export function JobsTab({
   refreshTrigger,
   onEditJob,
   chartType = "bar",
+  profissional,
 }: Props) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filter, setFilter] = useState<Filter>("todos");
@@ -254,6 +259,13 @@ export function JobsTab({
   // Resumo/Anotações — composição aprovada de /dev-preview/ios (issue
   // #135), substitui o card colapsável único de antes.
   const [detailJob, setDetailJob] = useState<Job | null>(null);
+  // "Lembrar cliente": guarda o id e lê o agendamento atual da lista, para
+  // o cartão ser refeito na hora se o agendamento mudar.
+  const [lembrarId, setLembrarId] = useState<string | null>(null);
+  const setLembrarJobId = (job: Job) => setLembrarId(job.id);
+  const lembrarJob = lembrarId
+    ? (jobs.find((j) => j.id === lembrarId) ?? null)
+    : null;
   const [resumoOpen, setResumoOpen] = useState(false);
   const [anotacoesOpen, setAnotacoesOpen] = useState(false);
 
@@ -472,7 +484,11 @@ export function JobsTab({
       {/* Próximo atendimento em destaque (J03). Só depois da 1ª carga
           bem-sucedida: antes disso "nenhum agendado" seria mentira. */}
       {hasLoadedOnce && (
-        <AgendaProximoCard job={proximo} onOpen={setDetailJob} />
+        <AgendaProximoCard
+          job={proximo}
+          onOpen={setDetailJob}
+          onLembrar={setLembrarJobId}
+        />
       )}
 
       {/* As 4 ações do mockup. "Novo" abre o mesmo JobForm do "+";
@@ -907,6 +923,12 @@ export function JobsTab({
           )}
         </div>
       </div>
+
+      <LembrarClienteSheet
+        job={lembrarJob}
+        profissional={profissional ?? { nome: "" }}
+        onClose={() => setLembrarId(null)}
+      />
 
       <JobDetailSheet
         job={detailJob}

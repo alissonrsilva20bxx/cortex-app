@@ -214,6 +214,11 @@ export default function Page() {
         nome: authUser.user_metadata?.full_name ?? authUser.email ?? "Usuário",
         email: authUser.email ?? "",
         avatarUrl: authUser.user_metadata?.avatar_url,
+        telefone:
+          authUser.phone ||
+          authUser.user_metadata?.phone ||
+          authUser.user_metadata?.telefone ||
+          null,
       };
 
       // Só revela o usuário (e libera as buscas de dados sensíveis) depois
@@ -627,6 +632,10 @@ export default function Page() {
                 userId={usuario.id}
                 refreshTrigger={jobsRefreshKey}
                 chartType={chartPrefs.jobs}
+                profissional={{
+                  nome: usuario.nome,
+                  telefone: usuario.telefone,
+                }}
                 onEditJob={(job) => {
                   setEditingJob(job);
                   setJobFormOpen(true);

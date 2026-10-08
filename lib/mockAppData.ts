@@ -7,6 +7,7 @@ export const MOCK_APP_USUARIO: Usuario = {
   id: MOCK_APP_USER_ID,
   nome: "Miguel",
   email: "miguel@exemplo.com",
+  telefone: "(11) 98765-4321",
 };
 
 const daysFromNow = (d: number) =>
