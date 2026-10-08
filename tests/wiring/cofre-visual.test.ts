@@ -327,9 +327,10 @@ describe("CofreTab.tsx locked gate renders through a portal (fixes the visual-ju
   });
 
   it("PinScreen respects safe-area insets top/bottom (390x844 / notched viewports)", () => {
-    const pinScreenSrc = read("components/pin/PinScreen.tsx");
-    expect(pinScreenSrc).toContain("env(safe-area-inset-top, 0px)");
-    expect(pinScreenSrc).toContain("env(safe-area-inset-bottom, 0px)");
+    // Cartão Cofre: o recuo mora no CSS (cartão do topo e folha do teclado).
+    const pinCss = read("components/pin/PinScreen.module.css");
+    expect(pinCss).toContain("env(safe-area-inset-top, 0px)");
+    expect(pinCss).toContain("env(safe-area-inset-bottom, 0px)");
   });
 
   it("does not modify the global prefers-reduced-motion rule (fix is structural, not animation-timing-dependent)", () => {

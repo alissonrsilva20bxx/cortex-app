@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pt-BR" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobApp · Tela de bloqueio: Cartão Cofre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Tokens do app (styles/globals.css, tema pink-neon). */
+:root{
+  --t-phbg: radial-gradient(130% 42% at 50% -6%, rgba(255,45,120,.2), transparent 70%), #0a0007;
+  --t-card:#25121c; --t-ink:#faeef5; --t-mut:#9a8f96; --t-line:#3a2832; --t-sub:#20151c;
+  --t-acc:#ff2d78; --t-deep:#ff528f; --t-soft:#51172e;
+  --t-hero: linear-gradient(150deg,#6c1234,#2f0718); --t-hero-mut: rgba(255,255,255,.68);
+  --t-green:#50dc78; --t-gsoft:#2c322b; --t-red:#ff5a5a; --t-rsoft:#481e26;
+  --t-glass-sh: rgba(0,0,0,.45); --t-plus-sh: rgba(255,45,120,.4);
+  --page:#07050a; --page-ink:#efe6ec; --page-mut:#9a8f96; --page-card:#140c11; --page-line:#2a1c24;
+}
+[data-mode="light"]{
+  --t-phbg:#f5f5f7; --t-card:#fff; --t-ink:#0f0f0f; --t-mut:#6b6b74; --t-line:#ececf0; --t-sub:#f4f4f6;
+  --t-acc:#ff2d78; --t-deep:#d6105c; --t-soft:#fde3ec;
+  --t-hero:#111114; --t-hero-mut:#b8b8c0;
+  --t-green:#0f8a52; --t-gsoft:#e3f6ec; --t-red:#e0364f; --t-rsoft:#fde8eb;
+  --t-glass-sh: rgba(17,17,20,.14); --t-plus-sh: rgba(255,45,120,.35);
+  --page:#ececf1; --page-ink:#141217; --page-mut:#5d5a63; --page-card:#ffffff; --page-line:#dcdce3;
+}
+*,*::before,*::after{box-sizing:border-box}
+:where(.grid,.flex)>*{min-width:0}
+html,body{margin:0}
+body{background:var(--page);color:var(--page-ink);font-family:"Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 70px}
+header.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:10px}
+header.top h1{margin:0;font-size:28px;letter-spacing:-.03em;font-weight:800}
+header.top p{margin:6px 0 0;color:var(--page-mut);font-size:14px;max-width:640px;line-height:1.5}
+.seg{display:inline-flex;background:var(--page-card);border:1px solid var(--page-line);border-radius:999px;padding:3px}
+.seg button{padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;color:var(--page-mut)}
+.seg button[aria-pressed="true"]{background:#ff2d78;color:#fff}
+.hint{font-size:12.5px;color:var(--page-mut);margin:12px 0 24px;line-height:1.5}
+.hint b{color:var(--page-ink)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,410px),1fr));gap:26px}
+.card{background:var(--page-card);border:1px solid var(--page-line);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h3{margin:0;font-size:17px;letter-spacing:-.02em}
+.card .tag{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#ff2d78}
+.card p.one{margin:4px 0 0;color:var(--page-mut);font-size:13px;line-height:1.45}
+.notes{margin-top:26px;background:var(--page-card);border:1px solid var(--page-line);border-radius:18px;padding:16px 18px;font-size:13.5px;line-height:1.6}
+.notes ul{margin:6px 0 0;padding-left:18px}
+/* Moldura 390×844 (escala só para caber na largura da janela) */
+.fit{width:100%;display:flex;justify-content:center}
+.scaler{transform-origin:top center}
+.phone{width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #050405,0 0 0 11px #2b2b30,0 30px 60px rgba(0,0,0,.35);isolation:isolate;outline:none}
+.phone:focus-visible{box-shadow:0 0 0 10px #050405,0 0 0 13px #ff2d78,0 30px 60px rgba(0,0,0,.35)}
+.notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:34px;border-radius:20px;background:#000;z-index:30}
+.status{position:absolute;top:0;left:0;right:0;height:54px;display:flex;justify-content:space-between;align-items:center;padding:0 34px;font-size:15px;font-weight:700;z-index:25;color:#fff}
+.toast{position:absolute;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);opacity:0;background:rgba(20,16,20,.92);color:#fff;font-size:13px;font-weight:700;padding:10px 16px;border-radius:999px;transition:.25s;z-index:40;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.shake{animation:shake .45s ease}
+.ico{width:22px;height:22px;display:block}
+
+/* ===== 2 · Cartão Cofre ===== */
+.v2{background:var(--t-phbg);color:var(--t-ink);display:flex;flex-direction:column}
+.v2 .hero{background:var(--t-hero);color:#fff;padding:60px 18px 26px;border-radius:0 0 34px 34px;position:relative;overflow:hidden;box-shadow:0 18px 40px var(--t-glass-sh)}
+.v2 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,45,120,.45),transparent 70%)}
+.v2 .backslot{height:44px;position:relative;z-index:1}
+.v2 .back{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 14px 0 4px;border-radius:999px;font-size:15px;font-weight:700;color:#fff}
+.v2 .back .c{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.14)}
+.v2 .back:active .c{background:rgba(255,255,255,.26)}
+.v2 .row{display:flex;gap:14px;align-items:center;margin-top:18px;position:relative;z-index:1}
+.v2 .shield{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,.12);display:grid;place-items:center;transition:.25s}
+.v2.ok .shield{background:var(--t-green);animation:pop .45s}
+.v2.err .shield{background:rgba(255,90,90,.28)}
+.v2 .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--t-hero-mut)}
+.v2 .hero h4{margin:2px 0 0;font-size:24px;font-weight:800;letter-spacing:-.02em}
+.v2 .boxes{display:flex;gap:10px;justify-content:center;margin:28px 0 0}
+.v2 .boxes i{width:56px;height:64px;border-radius:16px;background:var(--t-card);box-shadow:inset 0 0 0 1.5px var(--t-line);display:grid;place-items:center;transition:.18s}
+.v2 .boxes i.cur{box-shadow:inset 0 0 0 2px var(--t-acc)}
+.v2 .boxes i.f::after{content:"";width:14px;height:14px;border-radius:50%;background:var(--t-acc);animation:pop .25s}
+.v2.err .boxes i{box-shadow:inset 0 0 0 2px var(--t-red);background:var(--t-rsoft)}
+.v2.err .boxes i.f::after{background:var(--t-red)}
+.v2.ok .boxes i{box-shadow:inset 0 0 0 2px var(--t-green);background:var(--t-gsoft)}
+.v2.ok .boxes i.f::after{background:var(--t-green)}
+.v2 .msg{font-size:13.5px;color:var(--t-mut);line-height:1.45;min-height:40px;text-align:center;margin:14px 0 0;padding:0 30px;transition:color .2s}
+.v2 .msg.err{color:var(--t-red);font-weight:700}
+.v2 .msg.ok{color:var(--t-green);font-weight:700}
+.v2 .sheet{margin-top:auto;background:var(--t-card);border-radius:30px 30px 0 0;padding:16px 18px 26px;box-shadow:0 -10px 30px var(--t-glass-sh)}
+.v2 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.v2 .pad button,.v2 .pad span{height:60px}
+.v2 .pad button{border-radius:16px;background:var(--t-sub);font-size:25px;font-weight:700;transition:.1s;font-variant-numeric:tabular-nums}
+.v2 .pad button:active{background:var(--t-soft);color:var(--t-deep);transform:scale(.96)}
+.v2 .pad button:disabled{opacity:.55}
+.v2 .pad button.k-del{background:transparent;color:var(--t-mut);display:grid;place-items:center}
+.v2 .forgot{display:block;margin:10px auto 0;min-height:44px;padding:0 16px;font-size:13.5px;font-weight:700;color:var(--t-mut);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--t-mut) 45%,transparent);text-underline-offset:3px}
+.v2 .forgot:active{color:var(--t-deep)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <span class="card tag" style="all:unset;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#ff2d78">Proposta escolhida</span>
+      <h1>Tela de bloqueio · Cartão Cofre</h1>
+      <p>Só a proposta 2, sem Face ID (o app é PWA e não abre a biometria com confiança). No lugar dele, um "Esqueci o PIN" discreto. Cores e fonte do app: tema pink-neon de <code>styles/globals.css</code>.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Modo">
+      <button type="button" data-mode-set="dark" aria-pressed="true">Escuro</button>
+      <button type="button" data-mode-set="light" aria-pressed="false">Claro</button>
+    </div>
+  </header>
+  <p class="hint">Digite o PIN fictício <b>1234</b> para ver o acesso liberado; qualquer outro mostra o erro. Dá para tocar nos números ou clicar numa tela e usar o teclado (0–9, Backspace). O Voltar e o "Esqueci o PIN" também respondem.</p>
+
+  <div class="gallery" id="g"></div>
+
+  <div class="notes">
+    <b>O que ficou</b>
+    <ul>
+      <li><b>Voltar</b> sempre no mesmo lugar: canto de cima à esquerda do cartão, com 44px de toque. Na trava do app inteiro, que não tem para onde voltar, o espaço fica reservado e o resto da tela não se mexe.</li>
+      <li><b>4 casas de entrada</b>: a próxima a preencher fica com contorno rosa; erro deixa as 4 vermelhas e treme; acerto deixa verdes e o escudo vira um ✓.</li>
+      <li><b>Teclado numérico</b> em azulejos (como os atalhos do app), apagar no canto de baixo à direita.</li>
+      <li><b>"Esqueci o PIN"</b> discreto embaixo do teclado, onde ficava o Face ID.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const ICON = {
+  back:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  del:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><path d="M18 9l-6 6M12 9l6 6"/></svg>',
+  shield:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  check:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+  x:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+};
+const PIN = "1234";
+const CTX = {
+  vault:{ nome:"Vindo do Cofre", frase:"Ela tocou no Cofre: o Voltar leva de volta ao Início, com o Cofre ainda trancado.", eyebrow:"Cofre", title:"Abra seu Cofre", sub:"Digite seu PIN para ver seus arquivos protegidos.", voltar:true },
+  app:{ nome:"Abrindo o app", frase:"A trava do app inteiro: não há para onde voltar, então o espaço do Voltar fica reservado e nada muda de lugar.", eyebrow:"JobApp", title:"Digite seu PIN", sub:"Confirme que é você para entrar no JobApp.", voltar:false },
+};
+let focusPhone = null;
+const phones = [];
+
+function render(s){
+  const c = CTX[s.ctx];
+  const msg = s.err ? 'Esse PIN não confere. Tente de novo.' : s.ok ? 'Tudo certo, abrindo…' : s.checking ? 'Verificando…' : c.sub;
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','del'].map(k=>{
+    if(!k) return '<span aria-hidden="true"></span>';
+    if(k==='del') return `<button type="button" class="k-del" data-k="del" aria-label="Apagar último dígito">${ICON.del}</button>`;
+    return `<button type="button" data-k="${k}" aria-label="Dígito ${k}">${k}</button>`;
+  }).join('');
+  return `<div class="notch"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="toast"></div>
+    <div class="hero">
+      <div class="backslot">${c.voltar ? `<button type="button" class="back" data-act="back" aria-label="Voltar para o Início"><span class="c">${ICON.back}</span>Voltar</button>` : ''}</div>
+      <div class="row"><div class="shield">${s.ok?ICON.check:s.err?ICON.x:ICON.shield}</div><div><div class="eyebrow">${c.eyebrow}</div><h4>${s.ok?'Acesso liberado':c.title}</h4></div></div>
+    </div>
+    <div class="boxes ${s.err?'shake':''}" aria-label="${s.d.length} de 4 dígitos">${[0,1,2,3].map(i=>`<i class="${s.d.length>i||s.ok?'f':''} ${s.d.length===i&&!s.err&&!s.ok&&!s.checking?'cur':''}"></i>`).join('')}</div>
+    <p class="msg ${s.err?'err':s.ok?'ok':''}" aria-live="polite">${msg}</p>
+    <div class="sheet">
+      <div class="pad">${keys}</div>
+      <button type="button" class="forgot" data-act="forgot">Esqueci o PIN</button>
+    </div>`;
+}
+
+function makePhone(host, ctx){
+  const card=document.createElement('article'); card.className='card';
+  card.innerHTML=`<div><span class="tag">${ctx==='vault'?'Variante':'Variante'}</span><h3>${CTX[ctx].nome}</h3><p class="one">${CTX[ctx].frase}</p></div>`;
+  host.appendChild(card);
+  const fit=document.createElement('div'); fit.className='fit';
+  const scaler=document.createElement('div'); scaler.className='scaler';
+  const ph=document.createElement('div'); ph.className='phone v2'; ph.tabIndex=0; ph.setAttribute('aria-label','Tela de bloqueio: '+CTX[ctx].nome);
+  scaler.appendChild(ph); fit.appendChild(scaler); card.appendChild(fit);
+  const o={ ph, scaler, fit, st:{ ctx, d:[], err:false, ok:false, checking:false } };
+  phones.push(o);
+  ph.addEventListener('click',e=>{ focusPhone=o; const b=e.target.closest('button'); if(!b) return; if(b.dataset.k) press(o,b.dataset.k); else if(b.dataset.act) act(o,b.dataset.act); });
+  ph.addEventListener('focus',()=>focusPhone=o);
+  draw(o);
+}
+function draw(o){ const s=o.st; o.ph.className='phone v2'+(s.err?' err':'')+(s.ok?' ok':''); o.ph.innerHTML=render(s); }
+function reset(o){ Object.assign(o.st,{d:[],err:false,ok:false,checking:false}); draw(o); }
+function toast(o,txt){ const t=o.ph.querySelector('.toast'); if(!t) return; t.textContent=txt; t.classList.add('on'); clearTimeout(o._t); o._t=setTimeout(()=>{ const t2=o.ph.querySelector('.toast'); t2&&t2.classList.remove('on'); },1700); }
+function press(o,k){
+  const s=o.st; if(s.checking||s.ok||s.err) return;
+  if(k==='del'){ s.d.pop(); return draw(o); }
+  if(s.d.length>=4) return;
+  s.d.push(k); draw(o);
+  if(s.d.length===4){
+    s.checking=true; draw(o);
+    setTimeout(()=>{
+      s.checking=false;
+      if(s.d.join('')===PIN){ s.ok=true; draw(o); setTimeout(()=>reset(o),1700); }
+      else { s.err=true; draw(o); setTimeout(()=>reset(o),900); }
+    },380);
+  }
+}
+function act(o,a){
+  if(a==='back') toast(o,'← Voltou para o Início (o Cofre continua trancado)');
+  if(a==='forgot') toast(o,'Abre a recuperação do PIN pelo e-mail');
+}
+document.addEventListener('keydown',e=>{
+  if(!focusPhone) return;
+  if(/^[0-9]$/.test(e.key)){ press(focusPhone,e.key); e.preventDefault(); }
+  else if(e.key==='Backspace'){ press(focusPhone,'del'); e.preventDefault(); }
+});
+
+const g=document.getElementById('g');
+makePhone(g,'vault');
+makePhone(g,'app');
+
+document.querySelectorAll('[data-mode-set]').forEach(b=>b.addEventListener('click',()=>{
+  document.documentElement.setAttribute('data-mode',b.dataset.modeSet);
+  document.querySelectorAll('[data-mode-set]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+}));
+function fitAll(){
+  for(const o of phones){
+    const w=o.fit.clientWidth; const k=Math.min(1,(w-24)/410);
+    o.scaler.style.transform=`scale(${k})`; o.fit.style.height=(864*k+12)+'px'; o.scaler.style.marginTop='11px';
+  }
+}
+addEventListener('resize',fitAll); fitAll(); setTimeout(fitAll,300);
+</script>
+</body>
+</html>

@@ -475,7 +475,13 @@ export default function Page() {
   }
 
   if (locked && pinHash) {
-    return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
+    return (
+      <PinScreen
+        pinHash={pinHash}
+        onUnlock={() => setLocked(false)}
+        onSair={handleSignOut}
+      />
+    );
   }
 
   // 1º uso: decidido uma única vez (isNewUserSession, ver efeito acima) a
@@ -671,6 +677,7 @@ export default function Page() {
                 pinHash={pinHash}
                 active={activeTab === "cofre"}
                 onExit={() => handleTabChange(abaAntesDoCofre.current)}
+                onAbrirAjustes={() => handleTabChange("ajustes")}
                 // Sem este sinal o azulejo "Enviar" nasce desabilitado (meio
                 // transparente), e a referência o desenha ativo. O sheet mora na
                 // página, FORA da trava do Cofre, de propósito: o seletor de
