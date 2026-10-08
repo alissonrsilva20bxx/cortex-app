@@ -79,7 +79,7 @@ export function RedeHeader({
   return (
     <div
       className="flex items-center justify-between gap-2"
-      style={{ marginBottom: "14px" }}
+      style={{ marginBottom: "12px" }}
     >
       {/* Jornada J06 (mockup 5-telas-8-temas-claro-escuro.html, tela Rede):
           título 24px/800, -0.5px. */}
