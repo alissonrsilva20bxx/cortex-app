@@ -63,6 +63,9 @@ export interface Usuario {
   nome: string;
   email: string;
   avatarUrl?: string;
+  /** Telefone da conta (Supabase `phone` ou o do cadastro), quando houver.
+   * Vai no cartão do "Lembrar cliente"; sem ele, a linha some. */
+  telefone?: string | null;
 }
 
 export interface HomeCardConfig {

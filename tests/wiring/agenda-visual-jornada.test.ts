@@ -172,9 +172,17 @@ describe("As 4 ações ligam no que já existe", () => {
     expect(jobsTab).not.toMatch(/>\s*Bloco de notas\s*<\/button>/);
   });
 
-  it('"Lembrar cliente ›" e "Ver tudo ›" ficam desabilitados: não existe ação para eles no app', () => {
-    expect(proximoCard).toMatch(/disabled[\s\S]{0,300}Lembrar cliente ›/);
+  it('"Ver tudo ›" fica desabilitado (não existe ação para ele no app)', () => {
     expect(listas).toMatch(/disabled[\s\S]{0,300}Ver tudo ›/);
+  });
+
+  it('"Lembrar cliente ›" tem ação (decisão antiga revogada pelo operador): abre o cartão de agenda', () => {
+    expect(proximoCard).toMatch(
+      /onClick=\{\(\) => onLembrar\?\.\(job\)\}[\s\S]{0,800}Lembrar cliente ›/
+    );
+    expect(proximoCard).not.toMatch(
+      /disabled\s+aria-disabled="true"[\s\S]{0,300}Lembrar cliente ›/
+    );
   });
 });
 

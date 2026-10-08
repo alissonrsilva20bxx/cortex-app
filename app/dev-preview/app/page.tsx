@@ -525,6 +525,7 @@ export default function DevPreviewApp() {
             userId={usuario.id}
             refreshTrigger={jobsRefreshKey}
             chartType={chartPrefs.jobs}
+            profissional={{ nome: usuario.nome, telefone: usuario.telefone }}
             onEditJob={(job) => {
               setEditingJob(job);
               setJobFormOpen(true);
