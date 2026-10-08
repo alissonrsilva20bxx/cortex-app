@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -27,7 +27,10 @@ import {
   atendimentosProximasSemanas,
   buildWeekStrip,
   formatHora,
+  paginaAoAssentar,
   proximoAtendimento,
+  rotuloDaSemana,
+  semanasDesdeHoje,
   startOfWeek,
   toISODate,
 } from "./agendaSemana";
@@ -321,12 +324,6 @@ export function JobsTab({
   const now = new Date();
   const today = toISODate(new Date());
   const weekStrip = buildWeekStrip(weekStart, filtered);
-  // O ponto de "dia com atendimento" só aparece fora da semana corrente: na
-  // semana corrente os atendimentos já estão listados logo abaixo, em "Esta
-  // semana", e o mockup normativo desenha a faixa sem pontos (ordem do
-  // operador, pixel da Agenda).
-  const naSemanaCorrente =
-    weekStart.getTime() === startOfWeek(new Date()).getTime();
   const days = weekStrip.map((d) => d.iso);
   const selectedDayJobs = filtered.filter((j) => j.data === selectedDate);
   const isViewingToday = selectedDate === today;
@@ -365,6 +362,105 @@ export function JobsTab({
     setSelectedDate(nextSelected);
   }
 
+  // Faixa da semana com catraca: 3 páginas (semana anterior, a visível e a
+  // seguinte) num rolador horizontal com `scroll-snap` por semana inteira.
+  // Parada, a faixa mostra sempre a página do meio -- o mesmo desenho de
+  // antes, no mesmo lugar (pixel da Agenda). Quando a rolagem assenta numa
+  // página vizinha, a semana troca (`goToWeek`) e a faixa volta pro meio
+  // antes da pintura, já com as semanas novas em volta.
+  const faixaRef = useRef<HTMLDivElement>(null);
+  // Entre uma semana e a outra, o mesmo vão de 5px que separa os dias: no
+  // meio do gesto, o sábado de uma e o domingo da outra não encostam. O
+  // passo de uma página é a largura da faixa mais esse vão.
+  const VAO_ENTRE_SEMANAS = 5;
+  const passoDaFaixa = (el: HTMLElement) => el.clientWidth + VAO_ENTRE_SEMANAS;
+  const semanaAtual = semanasDesdeHoje(weekStart, now);
+  const paginas = [-1, 0, 1].map((offset) => {
+    const inicio = addDays(weekStart, offset * 7);
+    return {
+      offset,
+      inicio,
+      weekStrip: offset === 0 ? weekStrip : buildWeekStrip(inicio, filtered),
+      // O ponto de "dia com atendimento" só aparece fora da semana
+      // corrente: na corrente os atendimentos já estão listados logo
+      // abaixo, em "Esta semana", e o mockup normativo desenha a faixa sem
+      // pontos (ordem do operador, pixel da Agenda). Por página: a vizinha
+      // da semana visível pode ser a corrente.
+      naSemanaCorrente: semanasDesdeHoje(inicio, now) === 0,
+    };
+  });
+
+  function centralizarFaixa() {
+    const el = faixaRef.current;
+    if (el) el.scrollLeft = passoDaFaixa(el);
+  }
+
+  useLayoutEffect(centralizarFaixa, [weekStart]);
+
+  function aoAssentarFaixa() {
+    const el = faixaRef.current;
+    if (!el) return;
+    const pagina =
+      el.clientWidth > 0
+        ? paginaAoAssentar(el.scrollLeft, passoDaFaixa(el))
+        : null;
+    if (pagina === -1 || pagina === 1) goToWeek(pagina);
+  }
+  // Os ouvintes abaixo ficam presos ao 1º render; o ref aponta sempre pra
+  // versão atual (com a semana e o dia de agora).
+  const assentarRef = useRef(aoAssentarFaixa);
+  assentarRef.current = aoAssentarFaixa;
+
+  useEffect(() => {
+    const el = faixaRef.current;
+    if (!el) return;
+    // A aba nasce escondida (largura 0): ao aparecer, ou ao girar o
+    // aparelho, a faixa volta pra página do meio.
+    const observador = new ResizeObserver(centralizarFaixa);
+    observador.observe(el);
+    // `scrollend` quando o navegador tem (assenta depois do dedo e do
+    // snap); senão, um pouco depois do último `scroll`. `paginaAoAssentar`
+    // só troca a semana numa borda de página, nunca no meio de um arrasto.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const assentar = () => assentarRef.current();
+    const rolar = () => {
+      clearTimeout(timer);
+      timer = setTimeout(assentar, 120);
+    };
+    const temScrollEnd = "onscrollend" in window;
+    if (temScrollEnd) el.addEventListener("scrollend", assentar);
+    else el.addEventListener("scroll", rolar, { passive: true });
+    return () => {
+      observador.disconnect();
+      clearTimeout(timer);
+      el.removeEventListener("scrollend", assentar);
+      el.removeEventListener("scroll", rolar);
+    };
+  }, []);
+
+  /** As setas do painel giram a mesma catraca, com a animação do snap. */
+  function passarSemana(delta: -1 | 1) {
+    const el = faixaRef.current;
+    if (!el || el.clientWidth === 0) {
+      goToWeek(delta);
+      return;
+    }
+    const reduzir = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    el.scrollTo({
+      left: passoDaFaixa(el) * (1 + delta),
+      behavior: reduzir ? "auto" : "smooth",
+    });
+  }
+
+  function voltarParaHoje() {
+    const hoje = new Date();
+    setRatchetDirection(semanaAtual > 0 ? "backward" : "forward");
+    setWeekStart(startOfWeek(hoje));
+    setSelectedDate(toISODate(hoje));
+  }
+
   return (
     <div className="pb-4 flex flex-col" style={{ gap: "16px" }}>
       {/* Animação "catraca" — transportada do laboratório
@@ -383,6 +479,9 @@ export function JobsTab({
           (cubic-bezier(0.34,1.56,0.64,1)) em vez de herdar essa referência
           quebrada. */}
       <style jsx>{`
+        .agenda-semanas::-webkit-scrollbar {
+          display: none;
+        }
         .agenda-ratchet-day {
           transform-origin: center 72%;
           transition:
@@ -498,67 +597,136 @@ export function JobsTab({
             atendimento). Hoje e dia com atendimento nunca usam a mesma
             marca. As datas vêm de `buildWeekStrip`, que segue a semana
             real, inclusive na virada do mês. */}
-        <div className="grid grid-cols-7" style={{ gap: "5px" }}>
-          {weekStrip.map(({ iso, letter, day, hasJobs }) => {
-            const selected = iso === selectedDate;
-            const isToday = iso === today;
-            return (
-              <button
-                key={iso}
-                onClick={() => selectDay(iso)}
-                aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}`}
-                aria-pressed={selected}
-                data-selected={selected}
-                // Pixel do mockup: o dia escolhido não sobe nem brilha, e
-                // letra e número têm 2px entre si.
-                className="agenda-ratchet-day relative flex flex-col items-center justify-center"
-                style={{
-                  height: "58px",
-                  borderRadius: "29px",
-                  gap: "2px",
-                  background: selected ? "var(--accent)" : "var(--card-solid)",
-                  color: "var(--text)",
-                  border:
-                    isToday && !selected ? "1px solid var(--accent)" : "none",
-                }}
-              >
-                <span style={{ fontSize: "10px", fontWeight: 600 }}>
-                  {letter}
-                </span>
-                <strong
-                  className="agenda-ratchet-number"
-                  style={{
-                    fontSize: "15px",
-                    fontWeight: 800,
-                    color: isToday && !selected ? "var(--accent)" : undefined,
-                  }}
-                >
-                  {day}
-                </strong>
-                {/* Ponto de dia com atendimento (J03), só fora da semana
-                    corrente (ver `naSemanaCorrente`). Fora do fluxo, pra
-                    letra e número ficarem onde o mockup põe. */}
-                <span
-                  aria-hidden="true"
-                  className="absolute rounded-full"
-                  style={{
-                    bottom: "6px",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: "4px",
-                    height: "4px",
-                    background:
-                      hasJobs && !naSemanaCorrente
-                        ? selected
-                          ? "var(--text)"
-                          : "var(--accent)"
-                        : "transparent",
-                  }}
-                />
-              </button>
-            );
-          })}
+        <div
+          ref={faixaRef}
+          // A troca de aba por gesto ignora este rolador: deslizar aqui
+          // troca a semana, nunca a aba.
+          data-no-tab-swipe=""
+          className="agenda-semanas"
+          aria-label="Semanas"
+          style={{
+            display: "flex",
+            gap: `${VAO_ENTRE_SEMANAS}px`,
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollSnapType: "x mandatory",
+            overscrollBehaviorX: "contain",
+            scrollbarWidth: "none",
+          }}
+        >
+          {paginas.map(({ offset, inicio, weekStrip, naSemanaCorrente }) => (
+            <div
+              key={toISODate(inicio)}
+              data-semana={offset}
+              // Só a semana do meio é lida e recebe foco; as vizinhas são
+              // o que aparece durante o gesto.
+              aria-hidden={offset !== 0}
+              className="grid grid-cols-7"
+              style={{
+                flex: "0 0 100%",
+                gap: "5px",
+                // Catraca: uma semana inteira por gesto, nunca duas.
+                scrollSnapAlign: "start",
+                scrollSnapStop: "always",
+              }}
+            >
+              {weekStrip.map(({ iso, letter, day, hasJobs }) => {
+                const selected = iso === selectedDate;
+                const isToday = iso === today;
+                return (
+                  <button
+                    key={iso}
+                    onClick={() => selectDay(iso)}
+                    tabIndex={offset === 0 ? undefined : -1}
+                    aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}`}
+                    aria-pressed={selected}
+                    data-selected={selected}
+                    // Pixel do mockup: o dia escolhido não sobe nem brilha, e
+                    // letra e número têm 2px entre si.
+                    className="agenda-ratchet-day relative flex flex-col items-center justify-center"
+                    style={{
+                      height: "58px",
+                      borderRadius: "29px",
+                      gap: "2px",
+                      background: selected
+                        ? "var(--accent)"
+                        : "var(--card-solid)",
+                      color: "var(--text)",
+                      border:
+                        isToday && !selected
+                          ? "1px solid var(--accent)"
+                          : "none",
+                    }}
+                  >
+                    <span style={{ fontSize: "10px", fontWeight: 600 }}>
+                      {letter}
+                    </span>
+                    <strong
+                      className="agenda-ratchet-number"
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: 800,
+                        color:
+                          isToday && !selected ? "var(--accent)" : undefined,
+                      }}
+                    >
+                      {day}
+                    </strong>
+                    {/* Ponto de dia com atendimento (J03), só fora da semana
+                          corrente (ver `naSemanaCorrente`). Fora do fluxo, pra
+                          letra e número ficarem onde o mockup põe. */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute rounded-full"
+                      style={{
+                        bottom: "6px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: "4px",
+                        height: "4px",
+                        background:
+                          hasJobs && !naSemanaCorrente
+                            ? selected
+                              ? "var(--text)"
+                              : "var(--accent)"
+                            : "transparent",
+                      }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
+
+        {/* Indicador de qual semana a faixa mostra e a volta para hoje: só
+            fora da semana corrente (na corrente a tela é a do mockup). */}
+        {semanaAtual !== 0 && (
+          <div
+            className="flex items-center justify-between"
+            style={{ marginTop: "6px" }}
+          >
+            <span
+              aria-live="polite"
+              style={{ fontSize: "11px", color: "var(--text-muted)" }}
+            >
+              {rotuloDaSemana(semanaAtual)} · {formatWeekRangeLabel(weekStart)}
+            </span>
+            <button
+              type="button"
+              onClick={voltarParaHoje}
+              className="font-bold active:opacity-70"
+              style={{
+                minHeight: "44px",
+                padding: "0 4px 0 12px",
+                fontSize: "12px",
+                color: "var(--accent)",
+              }}
+            >
+              Voltar para hoje
+            </button>
+          </div>
+        )}
       </div>
 
       {/* "Esta semana" e "Próximas semanas" (J03), na ordem do mockup.
@@ -587,7 +755,7 @@ export function JobsTab({
               Setas 44×44px. */}
         <div className="flex items-center justify-between mb-2">
           <button
-            onClick={() => goToWeek(-1)}
+            onClick={() => passarSemana(-1)}
             aria-label="Semana anterior"
             className="flex items-center justify-center active:opacity-70"
             style={{ minWidth: "44px", minHeight: "44px" }}
@@ -598,7 +766,7 @@ export function JobsTab({
             {formatWeekRangeLabel(weekStart)}
           </span>
           <button
-            onClick={() => goToWeek(1)}
+            onClick={() => passarSemana(1)}
             aria-label="Próxima semana"
             className="flex items-center justify-center active:opacity-70"
             style={{ minWidth: "44px", minHeight: "44px" }}

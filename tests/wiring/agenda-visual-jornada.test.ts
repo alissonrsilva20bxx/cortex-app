@@ -106,14 +106,19 @@ describe("JobsTab monta a composição do mockup com os componentes novos", () =
   it("a tira usa buildWeekStrip e marca hoje e dia com atendimento de formas diferentes", () => {
     expect(jobsTab).toContain("buildWeekStrip(weekStart, filtered)");
     // hoje = anel; dia com atendimento = ponto. Nunca a mesma marca.
-    expect(jobsTab).toContain(
-      'isToday && !selected ? "1px solid var(--accent)" : "none"'
+    expect(jobsTab).toMatch(
+      /isToday && !selected\s*\?\s*"1px solid var\(--accent\)"\s*:\s*"none"/
     );
     // Ordem do operador (pixel da Agenda): o ponto só fora da semana
-    // corrente -- a faixa do mockup não tem ponto.
+    // corrente -- a faixa do mockup não tem ponto. Com a catraca, cada
+    // página da faixa sabe se é a semana corrente (a vizinha da semana
+    // visível pode ser).
     expect(jobsTab).toMatch(/hasJobs && !naSemanaCorrente\s*\?/);
     expect(jobsTab).toMatch(
-      /const naSemanaCorrente =\s*weekStart\.getTime\(\) === startOfWeek\(new Date\(\)\)\.getTime\(\);/
+      /naSemanaCorrente: semanasDesdeHoje\(inicio, now\) === 0,/
+    );
+    expect(jobsTab).toMatch(
+      /paginas\.map\(\(\{ offset, inicio, weekStrip, naSemanaCorrente \}\)/
     );
   });
 });
