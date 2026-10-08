@@ -117,9 +117,15 @@ describe("JobsTab: a faixa é um rolador com catraca por semana", () => {
   });
 
   it("parada, mostra a página do meio, também quando a aba aparece ou o aparelho gira", () => {
-    expect(jobsTab).toContain("if (el) el.scrollLeft = passoDaFaixa(el);");
-    expect(jobsTab).toContain(
-      "useLayoutEffect(centralizarFaixa, [weekStart]);"
+    expect(jobsTab).toMatch(
+      /const centralizarFaixa = useCallback\(\(\) => \{\s*const el = faixaRef\.current;\s*if \(el\) el\.scrollLeft = passoDaFaixa\(el\);\s*\}, \[\]\);/
+    );
+    expect(jobsTab).toMatch(
+      /useLayoutEffect\(\(\) => \{\s*centralizarFaixa\(\);\s*\}, \[weekStart, centralizarFaixa\]\);/
+    );
+    // O efeito do ResizeObserver e do scrollend depende da função estável.
+    expect(jobsTab).toMatch(
+      /el\.removeEventListener\("scroll", rolar\);\s*\};\s*\}, \[centralizarFaixa\]\);/
     );
     expect(jobsTab).toContain(
       "const observador = new ResizeObserver(centralizarFaixa);"

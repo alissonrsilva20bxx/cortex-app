@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -48,6 +54,13 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "concluído", label: "Concluído" },
   { id: "cancelado", label: "Cancelado" },
 ];
+
+/** Faixa da semana com catraca: entre uma semana e a outra, o mesmo vão de
+ * 5px que separa os dias (no meio do gesto, o sábado de uma e o domingo da
+ * outra não encostam). O passo de uma página é a largura da faixa mais esse
+ * vão. */
+const VAO_ENTRE_SEMANAS = 5;
+const passoDaFaixa = (el: HTMLElement) => el.clientWidth + VAO_ENTRE_SEMANAS;
 
 /**
  * Lacuna entre dois atendimentos consecutivos só ganha uma nota de
@@ -369,11 +382,6 @@ export function JobsTab({
   // página vizinha, a semana troca (`goToWeek`) e a faixa volta pro meio
   // antes da pintura, já com as semanas novas em volta.
   const faixaRef = useRef<HTMLDivElement>(null);
-  // Entre uma semana e a outra, o mesmo vão de 5px que separa os dias: no
-  // meio do gesto, o sábado de uma e o domingo da outra não encostam. O
-  // passo de uma página é a largura da faixa mais esse vão.
-  const VAO_ENTRE_SEMANAS = 5;
-  const passoDaFaixa = (el: HTMLElement) => el.clientWidth + VAO_ENTRE_SEMANAS;
   const semanaAtual = semanasDesdeHoje(weekStart, now);
   const paginas = [-1, 0, 1].map((offset) => {
     const inicio = addDays(weekStart, offset * 7);
@@ -390,12 +398,16 @@ export function JobsTab({
     };
   });
 
-  function centralizarFaixa() {
+  // Estável (só lê o ref): entra nas dependências dos dois efeitos abaixo.
+  const centralizarFaixa = useCallback(() => {
     const el = faixaRef.current;
     if (el) el.scrollLeft = passoDaFaixa(el);
-  }
+  }, []);
 
-  useLayoutEffect(centralizarFaixa, [weekStart]);
+  // A cada troca de semana, a faixa volta pra página do meio antes da pintura.
+  useLayoutEffect(() => {
+    centralizarFaixa();
+  }, [weekStart, centralizarFaixa]);
 
   function aoAssentarFaixa() {
     const el = faixaRef.current;
@@ -436,7 +448,7 @@ export function JobsTab({
       el.removeEventListener("scrollend", assentar);
       el.removeEventListener("scroll", rolar);
     };
-  }, []);
+  }, [centralizarFaixa]);
 
   /** As setas do painel giram a mesma catraca, com a animação do snap. */
   function passarSemana(delta: -1 | 1) {
