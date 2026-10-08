@@ -122,8 +122,8 @@ describe("Indicação do dia atual (hoje) é distinta da seleção", () => {
   });
 
   it("hoje-sem-estar-selecionado ganha um anel próprio, distinto do fundo sólido de selecionado", () => {
-    expect(jobsTabSrc).toContain(
-      'isToday && !selected ? "1px solid var(--accent)" : "none"'
+    expect(jobsTabSrc).toMatch(
+      /isToday && !selected\s*\?\s*"1px solid var\(--accent\)"\s*:\s*"none"/
     );
   });
 });

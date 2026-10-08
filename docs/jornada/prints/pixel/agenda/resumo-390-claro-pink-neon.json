@@ -1,0 +1,30 @@
+{
+  "quando": "2026-10-08T19:47:07.696Z",
+  "baseUrl": "http://localhost:3112",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "relogio": "2026-09-23T13:00:00.000Z",
+  "meta": "difPct < 0,5",
+  "resultados": [
+    {
+      "tela": "agenda",
+      "largura": 390,
+      "modo": "claro",
+      "tema": "pink-neon",
+      "layout": "C",
+      "metrica": "pixelmatch YIQ, limiar 0.1",
+      "difPct": 0,
+      "pixelsDiferentes": 0,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true,
+      "reflowDoMockup": false,
+      "estilos": null,
+      "erros": [
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML."
+      ]
+    }
+  ]
+}

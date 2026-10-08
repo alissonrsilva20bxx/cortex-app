@@ -164,3 +164,47 @@ export function inicialDoNome(nome: string): string {
   const letra = nome.trim().charAt(0);
   return letra ? letra.toUpperCase() : "?";
 }
+
+/**
+ * Faixa da semana com catraca (deslizar para a semana anterior/seguinte):
+ * a faixa rola na horizontal entre 3 páginas -- semana anterior, a
+ * visível e a seguinte -- com `scroll-snap` por semana inteira. Quando a
+ * rolagem assenta numa borda de página, esta função diz qual: -1 (a
+ * anterior), 0 (a do meio, nada a fazer) ou 1 (a seguinte). No meio de
+ * um arrasto (fora de uma borda) devolve `null`, pra nunca trocar a
+ * semana com o dedo ainda na tela. Largura 0 (aba escondida) também é
+ * `null`.
+ */
+export function paginaAoAssentar(
+  scrollLeft: number,
+  largura: number,
+  tolerancia = 2
+): -1 | 0 | 1 | null {
+  if (largura <= 0) return null;
+  const pagina = Math.round(scrollLeft / largura);
+  if (Math.abs(scrollLeft - pagina * largura) > tolerancia) return null;
+  if (pagina <= 0) return -1;
+  if (pagina >= 2) return 1;
+  return 0;
+}
+
+/** Quantas semanas inteiras `inicio` (um domingo) está da semana de `hoje`
+ * (negativo = passado). Arredonda pra absorver a hora a mais/a menos do
+ * horário de verão. */
+export function semanasDesdeHoje(
+  inicio: Date,
+  hoje: Date = new Date()
+): number {
+  const daSemana = startOfWeek(hoje).getTime();
+  return Math.round(
+    (startOfWeek(inicio).getTime() - daSemana) / (7 * 86_400_000)
+  );
+}
+
+/** O indicador de qual semana a faixa mostra, em relação a hoje. */
+export function rotuloDaSemana(delta: number): string {
+  if (delta === 0) return "Esta semana";
+  if (delta === 1) return "Próxima semana";
+  if (delta === -1) return "Semana passada";
+  return delta > 1 ? `Daqui a ${delta} semanas` : `Há ${-delta} semanas`;
+}
