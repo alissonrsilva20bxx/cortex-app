@@ -635,6 +635,7 @@ export default function DevPreviewApp() {
                       onToggle={() => setFabOpen((v) => !v)}
                       onAction={handleFabAction}
                       compact={compact}
+                      cobertoPorTela={jornadaAberta}
                     />
                   )
             }

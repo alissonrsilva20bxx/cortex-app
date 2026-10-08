@@ -169,6 +169,9 @@ interface Props {
   /** Estado compacto da BottomNav -- o "+" mora ao lado da pílula e
    * encolhe junto com ela (pílula 2, "Recolhe pra aba atual"). */
   compact?: boolean;
+  /** Uma tela cobre a aba por inteiro (a Jornada): nada da aba de trás está
+   * ao alcance, então o "+" não recua por causa do que está escondido. */
+  cobertoPorTela?: boolean;
 }
 
 export function FAB({
@@ -178,6 +181,7 @@ export function FAB({
   onToggle,
   onAction,
   compact = false,
+  cobertoPorTela = false,
 }: Props) {
   const action =
     activeTab === "financeiro"
@@ -190,8 +194,10 @@ export function FAB({
   // fechado -- com ele aberto o botão vira o "X" de fechar sobre o
   // próprio backdrop, sem risco de cobrir outra ação (a tela toda já
   // está bloqueada pelo backdrop).
+  // Com uma tela por cima (Jornada), os `data-fab-avoid` da aba ficam
+  // escondidos atrás dela: não contam.
   const { ref: fabRef, obstructed } = useFabCollisionAvoidance(
-    Boolean(action) && !open
+    Boolean(action) && !open && !cobertoPorTela
   );
 
   if (!action) return null;
