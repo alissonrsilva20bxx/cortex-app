@@ -30,8 +30,21 @@ export function totalUsado(files: readonly CofreFile[]): number {
   return files.reduce((soma, f) => soma + (f.size > 0 ? f.size : 0), 0);
 }
 
+/**
+ * Lê a data do arquivo SEM deixar o fuso mexer no dia (#210).
+ *
+ * `new Date("2026-09-19")` é interpretado pelo JS como meia-noite **UTC**;
+ * em UTC-3 isso vira 18/09 às 21h local, e a data aparecia **um dia antes**
+ * para qualquer usuária em fuso negativo -- na linha do arquivo e no
+ * "último" do card. Quando a string traz só o dia, montamos a data pelas
+ * partes, em hora local. Com hora junto (ISO completo), o próprio `Date`
+ * já resolve o fuso certo.
+ */
 function dataValida(iso: string): Date | null {
-  const d = new Date(iso);
+  const soDia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const d = soDia
+    ? new Date(Number(soDia[1]), Number(soDia[2]) - 1, Number(soDia[3]))
+    : new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 

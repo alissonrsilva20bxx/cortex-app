@@ -1,8 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Shield, Search, LockKeyhole, Upload } from "lucide-react";
+import { Search } from "lucide-react";
+import {
+  IconeEscudo,
+  IconeEnviar,
+  IconeComprovante,
+  IconeConversa,
+  IconePasta,
+  IconePessoa,
+  IconeArquivoImagem,
+} from "./cofreIcones";
 import { BotaoRedondo, IconeCadeado } from "@/components/ui/cabecalho";
 import { IconeBusca } from "@/components/jobs/agendaIcones";
 import { supabase } from "@/lib/supabase";
@@ -43,32 +52,75 @@ const CATS: { id: Categoria; label: string }[] = [
   { id: "pessoal", label: "Pessoal" },
 ];
 
-// Cor de identidade por categoria, como tripla RGB para compor rgb(... / a)
-// sem hex hard-coded (mata a deriva de cor da auditoria).
-const CAT_RGB: Record<string, string> = {
-  comprovantes: "var(--success-rgb)",
-  conversas: "var(--info-rgb)",
-  documentos: "var(--accent-rgb)",
-  pessoal: "192 132 252",
+/**
+ * Cor de identidade por categoria. A referência usa um PAR de tokens por
+ * categoria -- o tom cheio no ícone e o tom suave, SÓLIDO, no fundo do
+ * quadradinho (`--t-green`/`--t-gsoft`, `--t-blue`/`--t-bsoft`,
+ * `--t-purple`/`--t-psoft`). O app compunha o fundo com alfa sobre o tom
+ * cheio, o que derivava do valor desenhado. Agora usa os pares semânticos
+ * da fundação, que são os mesmos tokens.
+ */
+const CAT_COR: Record<string, { tinta: string; fundo: string }> = {
+  comprovantes: { tinta: "var(--success)", fundo: "var(--success-tint)" },
+  conversas: { tinta: "var(--info)", fundo: "var(--info-tint)" },
+  documentos: { tinta: "var(--accent-deep)", fundo: "var(--accent-tint)" },
+  pessoal: { tinta: "var(--violet)", fundo: "var(--violet-tint)" },
 };
-const catRgb = (cat: string) => CAT_RGB[cat] ?? "var(--accent-rgb)";
+const catCor = (cat: string) =>
+  CAT_COR[cat] ?? { tinta: "var(--accent-deep)", fundo: "var(--accent-tint)" };
+
+/**
+ * Fileira de ações do mockup (layout C): azulejos redondos de 56px com o
+ * rótulo de 11px/600 embaixo, numa grade de 4 colunas com 8px de intervalo.
+ * Substitui o botão "Enviar" de largura inteira e os chips de categoria.
+ * A ordem das 4 primeiras é a do mockup; "Pessoal" e "Todos" existem só no
+ * app (há dado real em Pessoal) e caem na segunda linha, com o mesmo
+ * desenho -- nada deixa de ser alcançável.
+ */
+const AZULEJO = {
+  width: "56px",
+  height: "56px",
+  borderRadius: "50%",
+  background: "var(--card-solid)",
+  color: "var(--accent-deep)",
+} as const;
+const AZULEJO_ROTULO = { fontSize: "11px", fontWeight: 600 } as const;
+const ICONE_CATEGORIA: Record<Categoria, (p: { size?: number }) => ReactNode> =
+  {
+    comprovantes: IconeComprovante,
+    conversas: IconeConversa,
+    documentos: IconePasta,
+    pessoal: IconePessoa,
+    // "Todos" não existe na referência: usa a miniatura de arquivo dela.
+    todos: IconeArquivoImagem,
+  };
+/** A ordem do mockup primeiro; o que só existe no app vem depois. */
+const ORDEM_AZULEJOS: Categoria[] = [
+  "comprovantes",
+  "conversas",
+  "documentos",
+  "pessoal",
+  "todos",
+];
 const rotuloCategoria = (cat: string) =>
   CATS.find((c) => c.id === cat)?.label ?? cat;
 
 /** Cada número da fileira do card "Protegido": valor grande em cima, rótulo embaixo. */
+/**
+ * Cada número da fileira do card "Protegido". A estrutura espelha a da
+ * referência: uma caixa com padding, e dentro dela um bloco com o valor e
+ * outro com o rótulo -- os dois herdando o line-height 1.5 da tela, como no
+ * mockup. Antes era um <p> só com line-height 1.2, o que deixava a caixa
+ * 8px mais baixa que a desenhada.
+ */
 const STAT_STYLE = {
   padding: "10px",
   borderRadius: "14px",
   background: "var(--hero-bg-2)",
-  fontSize: "17px",
-  fontWeight: 800,
-  lineHeight: 1.2,
 } as const;
+const STAT_VALOR_STYLE = { fontSize: "17px", fontWeight: 800 } as const;
 const STAT_LABEL_STYLE = {
-  display: "block",
-  marginTop: "2px",
   fontSize: "10px",
-  fontWeight: 500,
   color: "var(--hero-text-muted)",
 } as const;
 
@@ -400,8 +452,11 @@ export function CofreTab({
             style={{
               fontSize: "24px",
               fontWeight: 800,
-              letterSpacing: "-0.5px",
+              // O mockup não declara line-height no h1: ele herda 1.1 do
+              // .ph (26,4px). No app a herança vem do body (1.5 = 36px), o
+              // que empurrava todo o resto da tela 10px para baixo.
               lineHeight: 1.1,
+              letterSpacing: "-0.5px",
               color: "var(--text)",
             }}
           >
@@ -451,116 +506,142 @@ export function CofreTab({
             dos tamanhos do storage e data do envio mais recente (traço com
             o Cofre vazio). Nenhuma cota ou porcentagem: não existe cota. */}
         {!loading && (
-          <GlassCard
-            radius="lg"
-            className="p-0"
-            style={{ border: "none", borderRadius: "26px" }}
-          >
-            {/* O fundo do hero mora neste div, não no GlassCard: no modo
-                claro, `.glass-card` (globals.css, compartilhado) força o
-                próprio fundo e sombra com `!important`, o que deixava o card
-                branco com o título branco por cima. O GlassCard continua
-                sendo a moldura do card (fixada pelos testes do #137). */}
-            <div
-              className="flex flex-col p-5"
+          <>
+            {/* Sem GlassCard em volta: na referência o card do Cofre É esta
+                caixa escura, com o fundo e a sombra dela. O GlassCard punha
+                uma segunda camada de vidro branco e uma segunda sombra em
+                volta, que apareciam na borda e na comparação de pixel. */}
+            <section
+              className="flex flex-col"
               style={{
-                gap: "14px",
+                padding: "22px",
+                gap: "12px",
                 background: "var(--hero-bg)",
                 borderRadius: "26px",
                 boxShadow: "0 14px 30px var(--hero-shadow)",
                 color: "#fff",
               }}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center" style={{ gap: "14px" }}>
                 <div
-                  className="grid place-items-center rounded-full shrink-0"
+                  className="grid place-items-center shrink-0"
                   style={{
-                    width: "72px",
-                    height: "72px",
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "16px",
                     background: "rgb(var(--accent-rgb))",
                     color: "var(--text)",
                   }}
                 >
-                  <Shield size={34} />
+                  <IconeEscudo size={26} />
                 </div>
                 <div className="min-w-0">
-                  <h2
-                    style={{
-                      fontSize: "23px",
-                      fontWeight: 800,
-                      letterSpacing: "-0.03em",
-                    }}
-                  >
+                  <h2 style={{ fontSize: "22px", fontWeight: 800 }}>
                     Protegido
                   </h2>
                   <span
-                    className="mt-1 flex items-center gap-1.5"
+                    className="block"
                     style={{
+                      // O mockup põe a linha de proteção colada no título,
+                      // sem margem e sem ícone -- o `mt-1` mais o cadeado
+                      // esticavam o hero e empurravam a tela toda.
                       fontSize: "12px",
                       color: "var(--hero-text-muted)",
                     }}
                   >
-                    <LockKeyhole size={16} className="shrink-0" />
                     {pinHash
                       ? "Acesso protegido pelo seu PIN"
-                      : "Acesso protegido pela trava do app"}
+                      : "Trava do app ativa"}
                   </span>
                 </div>
               </div>
               <div className="grid grid-cols-3" style={{ gap: "8px" }}>
-                <p className="tabular-nums" style={STAT_STYLE}>
-                  {files.length}{" "}
-                  <span style={STAT_LABEL_STYLE}>
-                    {files.length === 1
-                      ? "arquivo armazenado"
-                      : "arquivos armazenados"}
-                  </span>
-                </p>
-                <p className="tabular-nums" style={STAT_STYLE}>
-                  {formatTamanho(usado)}{" "}
-                  <span style={STAT_LABEL_STYLE}>usado</span>
-                </p>
-                <p className="tabular-nums" style={STAT_STYLE}>
-                  {ultimo ?? "—"} <span style={STAT_LABEL_STYLE}>último</span>
-                </p>
+                <div style={STAT_STYLE}>
+                  <div style={STAT_VALOR_STYLE}>{files.length}</div>
+                  <div style={STAT_LABEL_STYLE}>
+                    {files.length === 1 ? "arquivo" : "arquivos"}
+                  </div>
+                </div>
+                <div style={STAT_STYLE}>
+                  <div style={STAT_VALOR_STYLE}>{formatTamanho(usado)}</div>
+                  <div style={STAT_LABEL_STYLE}>usado</div>
+                </div>
+                <div style={STAT_STYLE}>
+                  <div style={STAT_VALOR_STYLE}>{ultimo ?? "—"}</div>
+                  <div style={STAT_LABEL_STYLE}>último</div>
+                </div>
               </div>
-            </div>
-          </GlassCard>
+            </section>
+          </>
         )}
 
-        {/* "Enviar" em destaque (J05). Abre o mesmo UploadSheet do "+",
-            que mora na página, FORA da trava do Cofre. Não dá pra abrir um
-            UploadSheet daqui de dentro: o seletor de arquivo do sistema tira
-            o foco da janela, o Cofre trava na hora (proteção, sem período de
-            graça) e o sheet sumiria junto com o conteúdo. Por isso o botão
-            depende de `onEnviar` vir da página; sem ele, fica desabilitado
-            com o rótulo certo em vez de virar um envio que se perde. */}
-        <button
-          type="button"
-          onClick={onEnviar}
-          disabled={!onEnviar}
-          className="flex items-center justify-center gap-2 rounded-2xl font-bold active:opacity-80 disabled:opacity-50"
+        {/* Fileira de ações no desenho do mockup (layout C): "Enviar" e as
+            categorias viram azulejos redondos de 56px com rótulo de 11px/600,
+            numa grade de 4 colunas. O "Enviar" deixou de ser botão rosa de
+            largura inteira; o UploadSheet que ele abre continua morando na
+            página, FORA da trava do Cofre -- o seletor de arquivo do sistema
+            tira o foco da janela e o Cofre trava na hora, então o sheet
+            precisa sobreviver a isso. Sem `onEnviar` o azulejo fica
+            desabilitado em vez de virar um envio que se perde.
+            Alvo de toque: o azulejo inteiro tem 80px de altura (56 do círculo
+            + 8 de intervalo + a linha do rótulo), acima dos 44 exigidos. */}
+        <div
+          className="grid no-scrollbar"
           style={{
-            minHeight: "44px",
-            padding: "12px 16px",
-            fontSize: "14px",
-            background: "var(--accent)",
-            color: "var(--text)",
+            gap: "8px",
+            // O mockup desenha 4 colunas iguais. O app tem 6 azulejos (há
+            // dado real em "Pessoal" e "Todos" é o estado padrão), então a
+            // fileira vira uma linha que desliza: os 4 primeiros caem
+            // exatamente onde o mockup os põe e nada deixa de ser
+            // alcançável -- uma segunda linha empurraria a tela inteira.
+            gridAutoFlow: "column",
+            gridAutoColumns: "calc((100% - 24px) / 4)",
+            overflowX: "auto",
+            scrollSnapType: "x proximity",
           }}
         >
-          <Upload size={18} />
-          Enviar
-        </button>
-
-        {/* Chips de categoria — as 4 categorias reais do app mais "Todos"
-            (o mockup mostra 3, mas existe dado em "Pessoal"). 44px de alvo
-            de toque (achado P1-6; ver components/ui/FilterChips.tsx). */}
-        <FilterChips
-          options={CATS}
-          value={filter}
-          onChange={setFilter}
-          minTouchTarget
-        />
+          <button
+            type="button"
+            onClick={onEnviar}
+            disabled={!onEnviar}
+            className="flex flex-col items-center active:opacity-70 disabled:opacity-50"
+            style={{ gap: "8px", ...AZULEJO_ROTULO }}
+          >
+            <span className="grid place-items-center" style={AZULEJO}>
+              <IconeEnviar size={22} />
+            </span>
+            Enviar
+          </button>
+          {ORDEM_AZULEJOS.map((id) => {
+            const Icone = ICONE_CATEGORIA[id];
+            const ativo = filter === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={ativo}
+                onClick={() => setFilter(id)}
+                className="flex flex-col items-center active:opacity-70"
+                style={{ gap: "8px", ...AZULEJO_ROTULO }}
+              >
+                <span
+                  className="grid place-items-center"
+                  style={{
+                    ...AZULEJO,
+                    // Selecionado: o círculo ganha a tinta do acento. O
+                    // desenho (tamanho, raio, rótulo) não muda.
+                    background: ativo
+                      ? "var(--accent-tint)"
+                      : AZULEJO.background,
+                  }}
+                >
+                  <Icone size={22} />
+                </span>
+                {rotuloCategoria(id)}
+              </button>
+            );
+          })}
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -589,7 +670,7 @@ export function CofreTab({
                 files={listaRecentes}
                 onOpen={openFile}
                 rotuloCategoria={rotuloCategoria}
-                corCategoria={catRgb}
+                corCategoria={catCor}
               />
             </SecaoCofre>
             <SecaoCofre titulo="Todos os arquivos" id={TODOS_OS_ARQUIVOS_ID}>
@@ -597,7 +678,7 @@ export function CofreTab({
                 files={filtered}
                 onOpen={openFile}
                 rotuloCategoria={rotuloCategoria}
-                corCategoria={catRgb}
+                corCategoria={catCor}
               />
             </SecaoCofre>
           </>

@@ -560,6 +560,11 @@ export default function DevPreviewApp() {
             pinHash={pinHash}
             active={activeTab === "cofre"}
             onExit={() => handleTabChange(abaAntesDoCofre.current)}
+            // Sem este sinal o azulejo "Enviar" nasce desabilitado (meio
+            // transparente), e a referência o desenha ativo. O sheet mora na
+            // página, FORA da trava do Cofre, de propósito: o seletor de
+            // arquivo do sistema tira o foco e o Cofre trava na hora.
+            onEnviar={() => setUploadOpen(true)}
           />
         </TabPanel>
 

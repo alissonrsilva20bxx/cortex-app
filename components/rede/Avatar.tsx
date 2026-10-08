@@ -22,6 +22,10 @@ interface Props {
   cor?: string;
   fotoUrl?: string | null;
   size?: keyof typeof SIZES;
+  /** Tamanho exato do círculo, quando a referência manda um valor próprio. */
+  tamanho?: number;
+  /** Mantém o desenho e cresce só o alvo de toque, por margem negativa. */
+  desenhoFixo?: boolean;
   anonimo?: boolean;
   onClick?: () => void;
   /** Selo de câmera no canto — único sinal visual de que o avatar abre o
@@ -38,6 +42,8 @@ export function Avatar({
   cor,
   fotoUrl,
   size = "md",
+  tamanho,
+  desenhoFixo = false,
   anonimo,
   onClick,
   editable,
@@ -45,7 +51,14 @@ export function Avatar({
 }: Props) {
   // Alvo de toque mínimo de 44px (achado #56) quando interativo — só sm/md
   // crescem, lg/xl já passam de 44.
-  const px = onClick ? Math.max(SIZES[size], 44) : SIZES[size];
+  //
+  // `desenhoFixo`: o alvo continua 44, mas o CÍRCULO fica do tamanho pedido
+  // e a margem negativa devolve o espaço (receita do #198/#204). Serve onde
+  // a referência desenha um tamanho exato — o avatar do post da Rede é 38.
+  const pxDesenho = tamanho ?? SIZES[size];
+  const alvo = onClick ? Math.max(pxDesenho, 44) : pxDesenho;
+  const px = desenhoFixo ? pxDesenho : alvo;
+  const folga = desenhoFixo ? (alvo - pxDesenho) / 2 : 0;
   const Tag = onClick ? "button" : "div";
   const temFoto = !!fotoUrl && !anonimo;
 
@@ -60,6 +73,10 @@ export function Avatar({
         width: px,
         height: px,
         fontSize: px * 0.4,
+        ...(folga
+          ? { outline: "none", margin: `-${folga}px`, padding: `${folga}px` }
+          : null),
+        boxSizing: folga ? "content-box" : undefined,
         background: temFoto
           ? undefined
           : anonimo

@@ -1,7 +1,6 @@
 "use client";
 
 import { Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { Avatar } from "./Avatar";
 import { FeedFotos } from "./FeedFotos";
 import { formatRelativeTime } from "@/lib/mockRede";
@@ -18,6 +17,8 @@ interface Props {
    * chamado ao detectar falha de carregamento; devolve uma URL nova pro
    * mesmo path, ou `null` se a renovação falhar (ex.: bloqueio mudou). */
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** Posição no feed: a referência alterna o tom do espaço da foto. */
+  indice?: number;
 }
 
 function ActionButton({
@@ -39,21 +40,25 @@ function ActionButton({
     <button
       onClick={onClick}
       aria-label={label}
-      className="flex items-center gap-1.5 pr-2 transition-opacity active:opacity-60"
+      className="flex items-center transition-opacity active:opacity-60"
       style={{
-        paddingTop: 13,
-        paddingBottom: 13,
-        marginTop: -13,
-        marginBottom: -13,
-        color: active ? activeColor : "var(--text-muted)",
+        // Alvo de toque de 44 com o ícone de 24 da referência: o padding
+        // cresce e a margem negativa devolve a altura desenhada.
+        paddingTop: 10,
+        paddingBottom: 10,
+        marginTop: -10,
+        marginBottom: -10,
+        color: active ? activeColor : "var(--accent-deep)",
       }}
     >
       {icon}
-      {count !== undefined && (
-        <span className="text-xs font-semibold tabular-nums">{count}</span>
-      )}
     </button>
   );
+}
+
+/** "12 curtidas" / "1 curtida" -- o texto que a referência imprime. */
+function curtidasTexto(n: number): string {
+  return `${n} ${n === 1 ? "curtida" : "curtidas"}`;
 }
 
 export function PostCard({
@@ -64,25 +69,39 @@ export function PostCard({
   onOpenMenu,
   onOpenAutor,
   onRenovarFoto,
+  indice = 0,
 }: Props) {
   const cat = CATEGORIA_META[post.categoria];
 
   return (
-    <GlassCard radius="lg" className="p-4">
-      {/* Header */}
-      <div className="flex items-start gap-3">
+    <article className="flex flex-col" style={{ gap: "10px" }}>
+      {/* Cabeçalho: 16px laterais, como na referência (só a foto sangra). */}
+      <div
+        className="flex items-center"
+        style={{ gap: "10px", padding: "0 16px" }}
+      >
+        {/* 38px é o que a referência desenha; o alvo segue 44 por margem
+            negativa (desenhoFixo). */}
         <Avatar
           nome={post.autorNome}
           cor={post.autorCor}
           fotoUrl={post.autorFotoUrl}
-          size="md"
+          tamanho={38}
+          desenhoFixo
           onClick={() => onOpenAutor(post.autorId)}
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p
-              className="font-semibold text-sm truncate"
-              style={{ color: "var(--text)" }}
+              className="truncate"
+              style={{
+                // A referência: 14px, peso 700, line-height 1,5 (21px). O
+                // `font-semibold text-sm` dava 600 e 20px.
+                fontSize: "14px",
+                fontWeight: 700,
+                lineHeight: 1.5,
+                color: "var(--text)",
+              }}
             >
               {post.autorNome}
             </p>
@@ -114,14 +133,6 @@ export function PostCard({
         </button>
       </div>
 
-      {/* Texto */}
-      <p
-        className="text-sm leading-relaxed mt-3"
-        style={{ color: "var(--text-2)" }}
-      >
-        {post.texto}
-      </p>
-
       {/* Fotos (0-2) -- foto grande no próprio card (sangra a padding), estilo
           Instagram. 2 fotos = carrossel com swipe. Miniatura como placeholder,
           principal sob demanda. A foto NÃO é interativa: fica no feed. */}
@@ -131,15 +142,19 @@ export function PostCard({
           fotos={post.fotos}
           autorNome={post.autorNome}
           onRenovarFoto={onRenovarFoto}
+          // A referência alterna o tom do espaço da foto entre um artigo e
+          // o seguinte: `--t-soft` e `--t-psoft`, que aqui são o
+          // `--accent-tint` e o `--violet-tint`.
+          tom={indice % 2 === 0 ? "var(--accent-tint)" : "var(--info-tint)"}
         />
       )}
 
       {/* Ações */}
       <div
-        className="flex items-center justify-between mt-3 pt-3"
-        style={{ borderTop: "1px solid var(--divider)" }}
+        className="flex items-center"
+        style={{ gap: "16px", padding: "0 16px" }}
       >
-        <div className="flex items-center gap-1">
+        <div className="flex items-center" style={{ gap: "16px" }}>
           <ActionButton
             icon={
               <Heart
@@ -147,7 +162,6 @@ export function PostCard({
                 fill={post.curtidoPorMim ? "var(--danger)" : "none"}
               />
             }
-            count={post.curtidas}
             active={post.curtidoPorMim}
             activeColor="var(--danger)"
             onClick={() => onToggleLike(post.id)}
@@ -155,7 +169,6 @@ export function PostCard({
           />
           <ActionButton
             icon={<MessageCircle size={18} />}
-            count={post.comentariosCount}
             onClick={() => onComment(post)}
             label="Comentar"
           />
@@ -166,6 +179,18 @@ export function PostCard({
           />
         </div>
       </div>
-    </GlassCard>
+
+      {/* Curtidas e legenda, nesta ordem e com estes tamanhos, como a
+          referência desenha. */}
+      {post.curtidas > 0 && (
+        <div style={{ padding: "0 16px", fontSize: "13px" }}>
+          <strong>{curtidasTexto(post.curtidas)}</strong>
+        </div>
+      )}
+      <div style={{ padding: "0 16px", fontSize: "14px", marginTop: "-4px" }}>
+        <strong style={{ color: "var(--text)" }}>{post.autorNome}</strong>{" "}
+        {post.texto}
+      </div>
+    </article>
   );
 }

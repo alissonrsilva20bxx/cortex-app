@@ -1,0 +1,21 @@
+{
+  "tela": "cofre",
+  "largura": 430,
+  "modo": "claro",
+  "tema": "grafite",
+  "layout": "C",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "difPct": 1.5746,
+  "pixelsDiferentes": 25242,
+  "tamanho": "860x1864",
+  "mesmoTamanho": true,
+  "reflowDoMockup": true,
+  "estilos": null,
+  "erros": [
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML."
+  ]
+}

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -89,7 +89,7 @@ describe("CofreTab monta a composição do mockup com os componentes novos", () 
 
   it('"Ver tudo ›" é só uma âncora para "Todos os arquivos" na mesma tela', () => {
     expect(arquivos).toMatch(
-      /href=\{`#\$\{TODOS_OS_ARQUIVOS_ID\}`\}[\s\S]{0,400}Ver tudo ›/
+      /href=\{`#\$\{TODOS_OS_ARQUIVOS_ID\}`\}[\s\S]{0,700}Ver tudo ›/
     );
   });
 
@@ -98,8 +98,8 @@ describe("CofreTab monta a composição do mockup com os componentes novos", () 
     const ordem = [
       />\s*Cofre\s*<\/h1>/,
       />\s*Protegido\s*<\/h2>/,
-      /<Upload size=\{18\} \/>\s*Enviar/,
-      /<FilterChips/,
+      /<IconeEnviar size=\{22\} \/>/,
+      /ORDEM_AZULEJOS\.map/,
       /<SecaoCofre titulo="Recentes" verTudo>/,
       /<SecaoCofre titulo="Todos os arquivos"/,
     ].map((re) => {
@@ -113,16 +113,17 @@ describe("CofreTab monta a composição do mockup com os componentes novos", () 
   it("os 3 números do card Protegido são dados reais (contagem, soma de tamanhos, último envio), sem cota nem porcentagem", () => {
     expect(cofreTab).toContain("const usado = totalUsado(files);");
     expect(cofreTab).toContain("const ultimo = ultimoEnvio(files);");
-    expect(cofreTab).toMatch(
-      /\{formatTamanho\(usado\)\}(\{" "\}|\s)[\s\S]{0,120}>usado</
-    );
-    expect(cofreTab).toMatch(
-      /\{ultimo \?\? "—"\}(\{" "\}|\s)[\s\S]{0,120}>último</
-    );
-    // Só código (comentários explicam justamente que não existe cota).
+    expect(cofreTab).toMatch(/\{formatTamanho\(usado\)\}[\s\S]{0,160}>usado</);
+    expect(cofreTab).toMatch(/\{ultimo \?\? "—"\}[\s\S]{0,160}>último</);
+    // Só código (comentários explicam justamente que não existe cota), e só
+    // o bloco do card: um `calc(100% ...)` do CSS da fileira de azulejos não
+    // é "porcentagem de cota", que é o que esta regra protege.
+    const inicio = cofreTab.indexOf("<IconeEscudo size={26}");
     const codigo = cofreTab
+      .slice(inicio, cofreTab.indexOf(">último<", inicio))
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/\/\/.*$/gm, "");
+    expect(inicio).toBeGreaterThan(-1);
     expect(codigo).not.toMatch(/\d\s*%|cota|quota/i);
   });
 
@@ -144,7 +145,11 @@ describe("Categorias: a lista real do app, não as 3 do mockup", () => {
       "documentos",
       "pessoal",
     ]);
-    expect(cofreTab).toMatch(/<FilterChips\s+options=\{CATS\}/);
+    // Os chips viraram os azulejos do mockup, mas a lista de categorias é a
+    // mesma: ORDEM_AZULEJOS cobre as 5 de CATS, nenhuma some.
+    const ordem = cofreTab.match(/const ORDEM_AZULEJOS:[\s\S]*?\];/)![0];
+    const nosAzulejos = [...ordem.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    expect([...nosAzulejos].sort()).toEqual([...ids].sort());
   });
 
   it("o rótulo da categoria em cada linha vem de CATS, sem texto próprio", () => {
@@ -165,8 +170,8 @@ describe("A proteção continua fiada e o visual novo não passa por fora dela",
       "<SecaoCofre",
       "<ListaArquivos",
       "onClick={onEnviar}",
-      "<FilterChips",
-      "<Shield size={34}",
+      "ORDEM_AZULEJOS.map",
+      "<IconeEscudo size={26}",
     ]) {
       const idx = cofreTab.indexOf(marca, lockedGateIdx);
       expect(idx, marca).toBeGreaterThan(mainReturnIdx);
@@ -247,7 +252,10 @@ describe("Nenhum nome de arquivo, tamanho ou data do mockup no código", () => {
     "288 KB",
     "19 de set",
     "17 de set",
-    "Trava do app ativa",
+    // "Trava do app ativa" saiu da lista: pela decisão do operador de
+    // 07/10/2026 a referência vence também no texto, e a frase continua
+    // verdadeira sem PIN (é a trava do app que protege). Todo o resto segue
+    // proibido no componente -- nome, tamanho e data vêm do dado.
   ];
   const arquivosCofre = readdirSync(join(ROOT, "components/cofre")).map(
     (f) => `components/cofre/${f}`
@@ -333,5 +341,60 @@ describe("cofreResumo", () => {
   it("formatDataArquivo: dia com 2 dígitos e mês abreviado; traço para data inválida", () => {
     expect(formatDataArquivo("2026-10-03T12:00:00")).toBe("03 de out.");
     expect(formatDataArquivo("lixo")).toBe("—");
+  });
+});
+
+/**
+ * #210 — data só-dia ("2026-09-19") num fuso negativo. `new Date("AAAA-MM-DD")`
+ * é meia-noite em UTC: em São Paulo (UTC-3) isso é 18/09 às 21h, e o Cofre
+ * mostrava o dia anterior. `dataValida` monta a data pelas partes, em hora
+ * local. Os testes rodam em America/Sao_Paulo de propósito.
+ */
+describe("cofreResumo — data só-dia em fuso negativo (#210)", () => {
+  const tzAntes = process.env.TZ;
+  beforeAll(() => {
+    process.env.TZ = "America/Sao_Paulo";
+  });
+  afterAll(() => {
+    if (tzAntes === undefined) delete process.env.TZ;
+    else process.env.TZ = tzAntes;
+  });
+
+  it("o fuso do teste é mesmo negativo (UTC-3), onde o defeito aparece", () => {
+    expect(new Date(2026, 8, 19).getTimezoneOffset()).toBe(180);
+    // O defeito, como era: a data só-dia cai no dia anterior.
+    expect(new Date("2026-09-19").getDate()).toBe(18);
+  });
+
+  it('formatDataArquivo: "2026-09-19" é 19 de set., não 18', () => {
+    expect(formatDataArquivo("2026-09-19")).toBe("19 de set.");
+    expect(formatDataArquivo("2026-10-01")).toBe("01 de out.");
+  });
+
+  it('ultimoEnvio: "2026-09-19" é 19/09 (e o primeiro do mês não vira o mês anterior)', () => {
+    expect(ultimoEnvio([arquivo("a", "2026-09-19")])).toBe("19/09");
+    expect(ultimoEnvio([arquivo("a", "2026-10-01")])).toBe("01/10");
+    // Só-dia de 19/09 é mais recente que 18/09 às 22h.
+    expect(
+      ultimoEnvio([
+        arquivo("noite", "2026-09-18T22:00:00"),
+        arquivo("dia", "2026-09-19"),
+      ])
+    ).toBe("19/09");
+  });
+
+  it("recentes: o envio só-dia de 19/09 vem antes do de 18/09 às 22h", () => {
+    const ordem = recentes([
+      arquivo("noite", "2026-09-18T22:00:00"),
+      arquivo("dia", "2026-09-19"),
+    ]).map((f) => f.name);
+    expect(ordem).toEqual(["dia", "noite"]);
+    // Duas datas só-dia em dias seguidos: a mais nova primeiro.
+    expect(
+      recentes([
+        arquivo("d18", "2026-09-18"),
+        arquivo("d19", "2026-09-19"),
+      ]).map((f) => f.name)
+    ).toEqual(["d19", "d18"]);
   });
 });

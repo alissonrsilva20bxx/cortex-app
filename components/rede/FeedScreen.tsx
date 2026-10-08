@@ -35,8 +35,15 @@ function AbasFeed({
   return (
     <div
       role="tablist"
-      className="flex mb-4"
-      style={{ gap: "22px", borderBottom: "1px solid var(--card-border)" }}
+      className="flex"
+      style={{
+        gap: "22px",
+        borderBottom: "1px solid var(--card-border)",
+        // A referência deixa 14px entre a borda das abas e o 1º artigo (o
+        // gap da coluna da tela). O `mb-4` dava 16 e, somado ao respiro do
+        // alvo de toque, empurrava o post 10px.
+        marginBottom: "6px",
+      }}
     >
       {ABAS.map((aba) => {
         const ativa = aba.id === segmento;
@@ -48,7 +55,11 @@ function AbasFeed({
             aria-selected={ativa}
             onClick={() => onChange(aba.id)}
             style={{
+              // 44 de alvo de toque com o desenho de 8px 0 da referência
+              // (altura 37px): a margem negativa devolve a diferença.
               minHeight: "44px",
+              margin: "-3.5px 0",
+              padding: "8px 0",
               fontSize: "14px",
               fontWeight: ativa ? 800 : 700,
               color: ativa ? "var(--text)" : "var(--text-muted)",
@@ -130,7 +141,7 @@ function FileiraAmigas({
               width: "62px",
               height: "62px",
               padding: "3px",
-              border: "2.5px solid var(--ring)",
+              border: "2.5px solid var(--accent)",
             }}
           >
             <span
@@ -139,8 +150,12 @@ function FileiraAmigas({
                 background: amiga.fotoUrl
                   ? undefined
                   : amiga.cor || "var(--accent)",
-                color: "#fff",
-                fontSize: "18px",
+                // A referência não declara tamanho na inicial: ela herda os
+                // 11px do item da fileira, e a cor é um tom escuro do
+                // próprio avatar (não branco).
+                color: amiga.cor
+                  ? `color-mix(in srgb, ${amiga.cor} 38%, #141026)`
+                  : "#fff",
               }}
             >
               {amiga.fotoUrl ? (
@@ -318,27 +333,47 @@ export function FeedScreen({
 
   return (
     <PullToRefresh onRefresh={onRefresh}>
-      <div className="pb-4">
-        <RedeHeader
-          usuarioNome={usuario.nome}
-          usuarioFotoUrl={usuarioFotoUrl}
-          unreadChats={unreadChats}
-          unreadNotifs={unreadNotifs}
-          onSearch={onOpenSearch}
-          onOpenNotifs={onOpenNotifs}
-          onOpenChat={onOpenChat}
-          onOpenMeuEspaco={onOpenMeuEspaco}
-        />
+      {/* A referência desenha a Rede de ponta a ponta, com 22px no topo e
+          sem respiro lateral (cada bloco é que tem os 16px; a foto do post
+          sangra). A casca do app dá `px-4` e `--space-shell-top` a TODAS as
+          telas, então aqui a margem negativa devolve a borda e o topo só
+          para esta tela, sem mexer na casca compartilhada. */}
+      <div
+        className="pb-4"
+        style={{
+          margin: "-20px -16px 0",
+          // Fundo da tela como a referência pinta (`--t-redebg`).
+          background: "var(--rede-bg)",
+          minHeight: "100vh",
+        }}
+      >
+        {/* Os 16px voltam para CADA bloco: a referência sangra só a foto do
+            post. Sem isso o título, a fileira, as abas e os cards encostavam
+            na borda. */}
+        <div style={{ padding: "0 16px" }}>
+          <RedeHeader
+            usuarioNome={usuario.nome}
+            usuarioFotoUrl={usuarioFotoUrl}
+            unreadChats={unreadChats}
+            unreadNotifs={unreadNotifs}
+            onSearch={onOpenSearch}
+            onOpenNotifs={onOpenNotifs}
+            onOpenChat={onOpenChat}
+            onOpenMeuEspaco={onOpenMeuEspaco}
+          />
+        </div>
 
         {/* Jornada J06: a entrada do composer virou o "Postar" da fileira
             de amigas (mesmo onOpenComposer), como no mockup. */}
-        <FileiraAmigas
-          amigas={montado ? amigas : []}
-          onPostar={onOpenComposer}
-          onOpenAmiga={onOpenAutor}
-        />
+        <div style={{ padding: "0 16px" }}>
+          <FileiraAmigas
+            amigas={montado ? amigas : []}
+            onPostar={onOpenComposer}
+            onOpenAmiga={onOpenAutor}
+          />
 
-        <AbasFeed segmento={segmento} onChange={onSegmentoChange} />
+          <AbasFeed segmento={segmento} onChange={onSegmentoChange} />
+        </div>
 
         {/* Entrada fixa pra Amigas/Solicitações/Descobrir — como no protótipo
           (linha própria logo abaixo dos tabs, sempre visível). Achado T20/#127:
@@ -352,14 +387,10 @@ export function FeedScreen({
           fiado a `AmigasScreen` em RedeTab.tsx — nenhuma lógica nova, só
           garante o caminho permanente que os blocos contextuais abaixo não
           garantem sozinhos. */}
-        <ContextualBlock
-          icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
-          title="Amigas"
-          subtitle="Solicitações e descobrir pessoas"
-          onClick={onOpenAmigas}
-        />
-
-        <div className="space-y-3 mt-3">
+        {/* A referência separa os artigos por 6px e não dá respiro antes do
+            primeiro: o `mt-3` e o `space-y-3` do cartão antigo somavam 24px
+            e empurravam o post inteiro. */}
+        <div className="flex flex-col" style={{ gap: "20px" }}>
           {/* Skeleton só em cache miss de verdade -- com posts cacheados em
             tela, um refresh em 2º plano (`loading` ainda true) NÃO volta pro
             skeleton, e uma falha de rede NÃO cobre o conteúdo com o erro
@@ -383,10 +414,11 @@ export function FeedScreen({
                 : "Nenhuma publicação por aqui ainda."}
             </p>
           ) : (
-            items.map((item) =>
+            items.map((item, i) =>
               item.type === "post" ? (
                 <PostCard
                   key={item.post.id}
+                  indice={i}
                   post={item.post}
                   onToggleLike={onToggleLike}
                   onComment={onComment}
@@ -423,6 +455,21 @@ export function FeedScreen({
             {loadingMore ? "Carregando…" : "Carregar mais publicações"}
           </button>
         )}
+
+        {/* Entrada permanente pra Amigas/Solicitações/Descobrir (achado
+            T20/#127): continua INCONDICIONAL, então nunca some, nem com o
+            feed vazio ou curto -- que é o que o contrato exige. Mudou só o
+            lugar: por ordem do operador de 07/10/2026, o que a referência
+            não desenha fica abaixo da dobra dela, em vez de empurrar o feed
+            inteiro para baixo. Esconder não era permitido; mover, sim. */}
+        <div style={{ padding: "0 16px", marginTop: "16px" }}>
+          <ContextualBlock
+            icon={<Users2 size={17} style={{ color: "var(--accent)" }} />}
+            title="Amigas"
+            subtitle="Solicitações e descobrir pessoas"
+            onClick={onOpenAmigas}
+          />
+        </div>
       </div>
     </PullToRefresh>
   );

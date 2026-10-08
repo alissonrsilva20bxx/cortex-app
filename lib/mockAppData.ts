@@ -12,6 +12,18 @@ export const MOCK_APP_USUARIO: Usuario = {
 const daysFromNow = (d: number) =>
   new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
 
+/**
+ * As 4 amigas da fileira do topo da Rede, como a referência as desenha
+ * (`5-telas-8-temas-claro-escuro.html`, tela Rede): nome, inicial e cor do
+ * avatar. São dados de laboratório -- no app de verdade vêm do servidor.
+ */
+const AMIGAS_DA_REFERENCIA = [
+  { id: "mock-amiga-1", nome: "Amiga 1", cor: "#c7b8f5" },
+  { id: "mock-amiga-2", nome: "Amiga 2", cor: "#f7c6a3" },
+  { id: "mock-amiga-3", nome: "Amiga 3", cor: "#b8e3d0" },
+  { id: "mock-amiga-4", nome: "Amiga 4", cor: "#bcd3f5" },
+];
+
 const hoursAgoIso = (h: number) =>
   new Date(Date.now() - h * 3_600_000).toISOString();
 
@@ -426,6 +438,28 @@ export function buildMockAppSeed(opts?: {
       criado_em: daysFromNow(-18),
       atualizado_em: daysFromNow(-2),
     },
+    // As 4 da fileira da referência (tela Rede): mesmo nome, mesma inicial
+    // e a mesma cor de avatar que ela desenha.
+    {
+      user_id: "mock-amiga-juliana",
+      nome_exibicao: "Juliana",
+      cor_avatar: "#f59e0b",
+      bio: "",
+      avatar_url: null,
+      area_atuacao: "",
+      criado_em: daysFromNow(-26),
+      atualizado_em: daysFromNow(-3),
+    },
+    ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
+      user_id: a.id,
+      nome_exibicao: a.nome,
+      cor_avatar: a.cor,
+      bio: "",
+      avatar_url: null,
+      area_atuacao: "",
+      criado_em: daysFromNow(-29 + i),
+      atualizado_em: daysFromNow(-4),
+    })),
     {
       user_id: FRIEND_ID,
       nome_exibicao: "Marina Alves",
@@ -455,12 +489,13 @@ export function buildMockAppSeed(opts?: {
       texto: "Fechei a agenda da semana inteira! 🎉",
       h: 3,
     },
+    // 2º artigo da referência: Juliana, há 5h.
     {
       id: "rede-post-4",
-      autor: uid,
+      autor: "mock-amiga-juliana",
       categoria: "conquista",
       texto: "Antes e depois da cliente de hoje 💅 deslizem pro lado",
-      h: 6,
+      h: 5,
     },
     {
       id: "rede-post-5",
@@ -612,15 +647,31 @@ export function buildMockAppSeed(opts?: {
       ],
     };
   };
+  // 1300x1000 = proporção 1,3: a 390px de largura a foto fica com os 300px
+  // de altura que a referência desenha (tela Rede).
   const fotosDef = [
-    foto("rede-post-1", uid, 1, "1080x1350", 3),
-    foto("rede-post-4", uid, 1, "1080x1350", 6),
-    foto("rede-post-4", uid, 2, "1080x810", 6),
+    foto("rede-post-1", uid, 1, "1300x1000", 3),
+    foto("rede-post-4", uid, 1, "1300x1000", 6),
+    foto("rede-post-4", uid, 2, "1300x1000", 6),
   ];
   const rede_post_fotos = fotosDef.map((f) => f.row);
+  // 12 curtidas no 1º post e 8 no 2º: é o que a referência imprime.
+  const curtidoras = [
+    FRIEND_ID,
+    "mock-amiga-juliana",
+    ...AMIGAS_DA_REFERENCIA.map((a) => a.id),
+  ];
+  const curtidasDe = (postId: string, quantas: number) =>
+    Array.from({ length: quantas }, (_, i) => ({
+      post_id: postId,
+      user_id:
+        i < curtidoras.length ? curtidoras[i] : `mock-curtidora-${postId}-${i}`,
+      criado_em: hoursAgoIso(2 + i),
+    }));
   const rede_curtidas = [
     { post_id: "rede-post-2", user_id: uid, criado_em: hoursAgoIso(20) },
-    { post_id: "rede-post-1", user_id: FRIEND_ID, criado_em: hoursAgoIso(2) },
+    ...curtidasDe("rede-post-1", 12),
+    ...curtidasDe("rede-post-4", 8),
   ];
   const rede_comentarios = [
     {
@@ -643,46 +694,53 @@ export function buildMockAppSeed(opts?: {
     },
   ];
 
+  // Os 5 arquivos são os da referência (tela Cofre, layout C): mesmo nome,
+  // mesma categoria, mesmo tamanho impresso e mesma data. Com o relógio em
+  // 23/09/2026, "Recentes" (os 4 mais novos) sai exatamente como a tela
+  // desenhada. O 5º existe para o contador do card bater com os "5
+  // arquivos" da referência -- e o tamanho dele é o que falta para o total
+  // fechar em "1,3 MB", porque a soma dos tamanhos que a própria referência
+  // imprime não dá esse total (contradição dela, listada no PR).
   const cofreFiles = [
     {
       path: `${uid}/comprovantes/recibo-renata-ferreira.jpg`,
       name: "recibo-renata-ferreira.jpg",
       categoria: "comprovantes",
-      size: 245_000,
+      size: 244_736, // 239 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-3),
-    },
-    {
-      path: `${uid}/comprovantes/recibo-camila-duarte.jpg`,
-      name: "recibo-camila-duarte.jpg",
-      categoria: "comprovantes",
-      size: 198_000,
-      mimeType: "image/jpeg",
-      createdAt: daysFromNow(-30),
+      createdAt: daysFromNow(-4), // 19 de set.
     },
     {
       path: `${uid}/conversas/print-combinado-marcos.png`,
       name: "print-combinado-marcos.png",
       categoria: "conversas",
-      size: 312_000,
+      size: 312_320, // 305 KB
       mimeType: "image/png",
-      createdAt: daysFromNow(-5),
-    },
-    {
-      path: `${uid}/documentos/contrato-parceria-studio.pdf`,
-      name: "contrato-parceria-studio.pdf",
-      categoria: "documentos",
-      size: 540_000,
-      mimeType: "application/pdf",
-      createdAt: daysFromNow(-40),
+      createdAt: daysFromNow(-6), // 17 de set.
     },
     {
       path: `${uid}/pessoal/lembrete-consulta.jpg`,
       name: "lembrete-consulta.jpg",
       categoria: "pessoal",
-      size: 88_000,
+      size: 88_064, // 86 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-12),
+      createdAt: daysFromNow(-13), // 10 de set.
+    },
+    {
+      path: `${uid}/comprovantes/recibo-camila-duarte.jpg`,
+      name: "recibo-camila-duarte.jpg",
+      categoria: "comprovantes",
+      size: 197_632, // 193 KB
+      mimeType: "image/jpeg",
+      createdAt: daysFromNow(-31), // 23 de ago.
+    },
+    {
+      path: `${uid}/pessoal/rg-frente.jpg`,
+      name: "rg-frente.jpg",
+      categoria: "pessoal",
+      size: 520_000, // fecha o total do card em 1,3 MB
+      mimeType: "image/jpeg",
+      createdAt: daysFromNow(-43), // 11 de ago.
     },
     // Fotos dos posts da Rede (principal + miniatura) -- sem blobUrl, o
     // mock serve o placeholder SVG; o que importa é o path existir p/ assinar.
@@ -711,13 +769,35 @@ export function buildMockAppSeed(opts?: {
       // Um pedido de amizade pendente (Marina → você) pra exercitar o
       // fluxo de responder: card no perfil, aba Solicitações, banner do feed.
       rede_amizades: [
+        // Marina aceita (era "pendente": a solicitação em aberto fazia
+        // nascer um bloco que a referência não tem, acima da dobra).
+        // Marina é a amizade MAIS ANTIGA de propósito: a fileira do topo
+        // mostra as mais recentes primeiro, e a referência desenha as 4
+        // "Amiga N" nas quatro primeiras posições. Marina fica depois
+        // delas, alcançável deslizando.
+        ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
+          id: `mock-amizade-${a.id}`,
+          solicitante_id: a.id,
+          destinatario_id: uid,
+          status: "aceita",
+          criado_em: daysFromNow(-28 + i),
+          respondido_em: daysFromNow(-27 + i),
+        })),
+        {
+          id: "mock-amizade-juliana",
+          solicitante_id: "mock-amiga-juliana",
+          destinatario_id: uid,
+          status: "aceita",
+          criado_em: daysFromNow(-26),
+          respondido_em: daysFromNow(-25),
+        },
         {
           id: "mock-amizade-marina",
           solicitante_id: FRIEND_ID,
           destinatario_id: uid,
-          status: "pendente",
-          criado_em: daysFromNow(-1),
-          respondido_em: null,
+          status: "aceita",
+          criado_em: daysFromNow(-60),
+          respondido_em: daysFromNow(-59),
         },
       ],
       rede_conversas: [],

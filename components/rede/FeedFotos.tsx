@@ -85,9 +85,17 @@ interface Props {
   /** Renova a URL assinada (5min) de um path -- miniatura ou principal.
    * Devolve URL nova ou `null` se a renovação falhar (ex.: bloqueio mudou). */
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** Tom do espaço da foto; a referência alterna entre um post e o seguinte. */
+  tom: string;
 }
 
-export function FeedFotos({ postId, fotos, autorNome, onRenovarFoto }: Props) {
+export function FeedFotos({
+  postId,
+  fotos,
+  autorNome,
+  onRenovarFoto,
+  tom,
+}: Props) {
   if (fotos.length === 0) return null;
   if (fotos.length === 1) {
     return (
@@ -95,6 +103,7 @@ export function FeedFotos({ postId, fotos, autorNome, onRenovarFoto }: Props) {
         foto={fotos[0]}
         autorNome={autorNome}
         onRenovarFoto={onRenovarFoto}
+        tom={tom}
       />
     );
   }
@@ -104,6 +113,7 @@ export function FeedFotos({ postId, fotos, autorNome, onRenovarFoto }: Props) {
       fotos={fotos}
       autorNome={autorNome}
       onRenovarFoto={onRenovarFoto}
+      tom={tom}
     />
   );
 }
@@ -179,16 +189,24 @@ function useAltura(foto0: FotoPost) {
   };
 }
 
-const bleed = (altura: number, ratio: number): React.CSSProperties => ({
+const bleed = (
+  altura: number,
+  ratio: number,
+  tom: string
+): React.CSSProperties => ({
   position: "relative",
-  // sangra a padding do PostCard (`p-4` = 16px) -- foto na largura do card
-  marginLeft: -16,
-  marginRight: -16,
-  marginTop: 12,
+  // A referência (tela Rede) desenha a foto de ponta a ponta, sem margem e
+  // sem raio: o PostCard já não tem padding lateral, então a foto ocupa os
+  // 390px. Antes a margem negativa compensava o `p-4` do cartão antigo.
   height: altura || undefined,
   aspectRatio: altura ? undefined : String(ratio),
   overflow: "hidden",
-  background: "var(--bg)", // fundo neutro, só visível onde a foto não preenche
+  // O espaço da foto. A referência ALTERNA o tom entre um artigo e o
+  // seguinte (`--t-soft` no 1º, `--t-psoft` no 2º), que no app são o
+  // `--accent-tint` e o `--violet-tint`. Com um tom só, o 2º post divergia
+  // em todos os temas -- e no crimson escuro, onde o acento é muito
+  // saturado, essa era a maior diferença da tela inteira.
+  background: tom,
 });
 
 // ─────────────────────────────── palco ──────────────────────────────────
@@ -383,15 +401,17 @@ function UmaFoto({
   foto,
   autorNome,
   onRenovarFoto,
+  tom,
 }: {
   foto: FotoPost;
   autorNome: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
+  tom: string;
 }) {
   const { boxRef, ratio, altura, naViewport, medirDaMiniatura } =
     useAltura(foto);
   return (
-    <div ref={boxRef} style={bleed(altura, ratio)}>
+    <div ref={boxRef} style={bleed(altura, ratio, tom)}>
       <PhotoStage
         foto={foto}
         alt={`Foto da publicação de ${autorNome}`}
@@ -410,7 +430,9 @@ function Carrossel({
   fotos,
   autorNome,
   onRenovarFoto,
+  tom,
 }: {
+  tom: string;
   postId: string;
   fotos: FotoPost[];
   autorNome: string;
@@ -478,7 +500,7 @@ function Carrossel({
 
   return (
     <>
-      <div ref={boxRef} style={bleed(altura, ratio)}>
+      <div ref={boxRef} style={bleed(altura, ratio, tom)}>
         {/* scroller nativo: dedo arrasta, encaixe por scroll-snap, física do
             iOS. touch-action no default → o navegador arbitra o eixo do
             gesto (rolagem vertical da lista nunca trava).

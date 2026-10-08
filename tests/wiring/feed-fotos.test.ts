@@ -61,9 +61,12 @@ describe("PostCard usa o FeedFotos real", () => {
 describe("FeedFotos — direção iOS + Instagram", () => {
   const f = read("components/rede/FeedFotos.tsx");
 
-  it("foto sangra a largura do card (margem negativa) e sem raio/sombra/borda própria", () => {
-    expect(f).toMatch(/marginLeft:\s*-16/);
-    expect(f).toMatch(/marginRight:\s*-16/);
+  it("foto sangra a largura da tela e sem raio/sombra/borda própria", () => {
+    // Sem margem negativa desde o pixel da Rede: o PostCard deixou de ter
+    // padding lateral (a referência põe os 16px em cada bloco e sangra só a
+    // foto), então a faixa já nasce com os 390px.
+    expect(f).not.toMatch(/marginLeft:\s*-16/);
+    expect(f).not.toMatch(/marginRight:\s*-16/);
     expect(f).not.toMatch(/boxShadow/);
     // a faixa da foto (helper `bleed`) não pode ter borda nem raio próprio
     const bleedBody = f.match(/const bleed =[\s\S]*?\}\);/)?.[0] ?? "";
@@ -72,8 +75,16 @@ describe("FeedFotos — direção iOS + Instagram", () => {
     expect(bleedBody).not.toMatch(/border:/);
   });
 
-  it("fundo neutro é var(--bg), object-contain (foto inteira, sem corte/distorção)", () => {
-    expect(f).toMatch(/background:\s*"var\(--bg\)"/);
+  it("o tom do espaço da foto vem de fora e alterna entre os posts", () => {
+    // A referência ALTERNA: `--t-soft` no 1º artigo e `--t-psoft` no 2º,
+    // que no app são `--accent-tint` e `--info-tint`. Com um tom só, o 2º
+    // post divergia em todos os temas -- e no crimson escuro, onde o acento
+    // é muito saturado, era a maior diferença da tela.
+    expect(f).toMatch(/background:\s*tom,/);
+    const card = read("components/rede/PostCard.tsx");
+    expect(card).toMatch(
+      /tom=\{indice % 2 === 0 \? "var\(--accent-tint\)" : "var\(--info-tint\)"\}/
+    );
     expect(f).toMatch(/objectFit:\s*"contain"/);
     expect(f).not.toMatch(/objectFit:\s*"cover"/);
   });

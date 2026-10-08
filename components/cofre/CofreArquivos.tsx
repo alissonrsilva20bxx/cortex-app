@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ChevronRight, File, FileText, Image as ImageIcon } from "lucide-react";
+import { File, FileText } from "lucide-react";
+import { IconeArquivoImagem, IconeSeta } from "./cofreIcones";
 import type { CofreFile } from "@/lib/cofre/cofreCache";
 import { formatDataArquivo, formatTamanho } from "./cofreResumo";
 
@@ -21,8 +22,7 @@ const LIST_STYLE = {
 } as const;
 
 function FileIcon({ mime }: { mime?: string }) {
-  if (mime?.startsWith("image/"))
-    return <ImageIcon size={18} aria-hidden="true" />;
+  if (mime?.startsWith("image/")) return <IconeArquivoImagem size={20} />;
   if (mime?.includes("pdf") || mime?.includes("document"))
     return <FileText size={18} aria-hidden="true" />;
   return <File size={18} aria-hidden="true" />;
@@ -35,7 +35,7 @@ interface ListaProps {
   /** Rótulo real da categoria, vindo de `CATS` no CofreTab. */
   rotuloCategoria: (categoria: string) => string;
   /** Tripla RGB da cor de identidade da categoria (`catRgb` do CofreTab). */
-  corCategoria: (categoria: string) => string;
+  corCategoria: (categoria: string) => { tinta: string; fundo: string };
 }
 
 /**
@@ -53,7 +53,7 @@ export function ListaArquivos({
   return (
     <div style={LIST_STYLE}>
       {files.map((f, i) => {
-        const rgb = corCategoria(f.categoria);
+        const cor = corCategoria(f.categoria);
         return (
           <button
             key={f.path}
@@ -74,8 +74,8 @@ export function ListaArquivos({
                 width: "40px",
                 height: "40px",
                 borderRadius: "12px",
-                background: `rgb(${rgb} / 0.14)`,
-                color: `rgb(${rgb})`,
+                background: cor.fundo,
+                color: cor.tinta,
               }}
             >
               <FileIcon mime={f.mimeType} />
@@ -95,11 +95,13 @@ export function ListaArquivos({
                 className="block truncate"
                 style={{ fontSize: "11px", color: "var(--text-muted)" }}
               >
-                {rotuloCategoria(f.categoria)} · {formatTamanho(f.size)} ·{" "}
-                {formatDataArquivo(f.createdAt)}
+                {/* Num NÓ SÓ: juntar pedaços de texto faz o navegador
+                    espaçar a emenda de um jeito diferente do da referência,
+                    e a linha inteira sai deslocada. */}
+                {`${rotuloCategoria(f.categoria)} · ${formatTamanho(f.size)} · ${formatDataArquivo(f.createdAt)}`}
               </span>
             </span>
-            <ChevronRight
+            <IconeSeta
               size={16}
               className="shrink-0"
               style={{ color: "var(--text-muted)" }}
@@ -129,7 +131,9 @@ export function SecaoCofre({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="flex flex-col" style={{ gap: "12px" }}>
+    // 16px entre o título e a lista: na referência os dois são irmãos da
+    // coluna da tela, que tem `gap: 16px`.
+    <section id={id} className="flex flex-col" style={{ gap: "16px" }}>
       <div className="flex items-center justify-between">
         <h2 style={SECTION_TITLE_STYLE}>{titulo}</h2>
         {verTudo && (
@@ -140,7 +144,13 @@ export function SecaoCofre({
               fontSize: "12px",
               fontWeight: 700,
               color: "var(--accent-deep)",
+              // Alvo de toque de 44px sem crescer a linha: a margem negativa
+              // devolve a altura de 18px que a referência desenha. Com os 44
+              // ocupando espaço de verdade, o `items-center` empurrava o
+              // título "Recentes" 10,8px para baixo e a lista inteira 17,5px
+              // junto. Mesma receita do #198/#204.
               minHeight: "44px",
+              margin: "-13px 0",
             }}
           >
             Ver tudo ›

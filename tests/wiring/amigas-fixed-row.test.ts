@@ -41,42 +41,36 @@ describe("FeedScreen — linha fixa de Amigas é incondicional (fora do items.ma
     );
   });
 
-  it("a linha fixa aparece ANTES (em ordem de fonte) do bloco condicional de loading/erro/vazio/posts — não está aninhada dentro dele", () => {
-    const fixedIdx = feedScreenSrc.indexOf('title="Amigas"');
-    const conditionalIdx = feedScreenSrc.indexOf(
-      "loading && posts.length === 0 ?"
-    );
-    expect(fixedIdx).toBeGreaterThan(-1);
-    expect(conditionalIdx).toBeGreaterThan(-1);
-    expect(fixedIdx).toBeLessThan(conditionalIdx);
-  });
+  it("a linha fixa é INCONDICIONAL: nenhuma guarda de tamanho (items/posts/visiblePosts/discover) a envolve", () => {
+    // O que o achado T20/#127 protege é o acesso GARANTIDO a Amigas /
+    // Solicitações / Descobrir, inclusive com o feed vazio ou curto -- ou
+    // seja: o bloco não pode estar atrás de nenhuma condicional.
+    //
+    // O LUGAR dele mudou por ordem do operador de 07/10/2026: o que a
+    // referência não desenha fica abaixo da dobra dela, em vez de empurrar
+    // o feed. Esconder não era permitido; mover, sim. Por isso este teste
+    // deixou de fixar a posição e passou a fixar o que importa.
+    const idx = feedScreenSrc.search(/<ContextualBlock\n\s*icon=\{<Users2/);
+    expect(idx).toBeGreaterThan(-1);
 
-  it("a linha fixa aparece ANTES do array `items` ser consumido (items.map) — não depende de haver posts/blocos intercalados", () => {
-    const fixedIdx = feedScreenSrc.indexOf('title="Amigas"');
-    const itemsMapIdx = feedScreenSrc.indexOf("items.map((item) =>");
-    expect(itemsMapIdx).toBeGreaterThan(-1);
-    expect(fixedIdx).toBeLessThan(itemsMapIdx);
-  });
+    // Profundidade de chaves a partir do início do JSX da tela: se o bloco
+    // estiver dentro de qualquer `{...}` (toda condicional em JSX é uma),
+    // a profundidade é maior que zero.
+    const jsxIdx = feedScreenSrc.indexOf("<PullToRefresh");
+    const antes = feedScreenSrc
+      .slice(jsxIdx, idx)
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, "") // comentários JSX
+      .replace(/"(?:[^"\\]|\\.)*"/g, '""') // strings
+      .replace(/`(?:[^`\\]|\\.)*`/g, "``");
+    const profundidade =
+      (antes.match(/\{/g) ?? []).length - (antes.match(/\}/g) ?? []).length;
+    expect(profundidade).toBe(0);
 
-  it("a linha fixa não é envolvida por nenhuma guarda de tamanho (items/posts/visiblePosts/discover) — a tag de abertura <ContextualBlock> vem logo depois da SegmentedControl fechar, sem condicional entre as duas", () => {
-    // Indentação livre: o feed inteiro fica dentro do <PullToRefresh>.
-    const openTagIdx = feedScreenSrc.search(
-      /<ContextualBlock\n\s*icon=\{<Users2/
-    );
-    const segmentedControlCloseIdx = feedScreenSrc.lastIndexOf(
-      "/>",
-      openTagIdx
-    );
-    expect(openTagIdx).toBeGreaterThan(-1);
-    const between = feedScreenSrc.slice(
-      segmentedControlCloseIdx + 2,
-      openTagIdx
-    );
-    // Só pode haver espaço em branco e comentários JSX ({/* ... */}) entre o
-    // fechamento da SegmentedControl e a abertura do bloco fixo. Removendo
-    // os comentários, não pode sobrar nenhum `{` de condicional/ternário.
-    const withoutComments = between.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
-    expect(withoutComments.trim()).toBe("");
+    // E continua fora do `items.map`, que é o caminho dos blocos
+    // intercalados (aqueles sim dependem de haver posts).
+    const mapIdx = feedScreenSrc.indexOf("items.map");
+    const fimDoMap = feedScreenSrc.indexOf("})}", mapIdx);
+    expect(idx > fimDoMap || idx < mapIdx).toBe(true);
   });
 
   it("a lógica de intercalação original (queue/blocks por posts[1,4,6]) continua existindo — a correção somou, não substituiu", () => {

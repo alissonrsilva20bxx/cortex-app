@@ -1079,11 +1079,19 @@ async function principal() {
     meta: "difPct < 0,5",
     resultados,
   };
-  mkdirSync(OPC.saida, { recursive: true });
-  writeFileSync(
-    join(OPC.saida, `resumo-${OPC.largura}-${OPC.modo}-${OPC.tema}.json`),
-    JSON.stringify(resumo, null, 2)
-  );
+  // O resumo vai para a pasta de CADA tela medida, nunca para a raiz de
+  // `--saida`. A raiz é compartilhada por todas as telas: arquivo solto ali
+  // (e, pior, uma limpeza da pasta antes de medir) já apagou por acidente a
+  // evidência de PRs alheias. Regra: a ferramenta só escreve dentro de
+  // `<saida>/<tela>/`, e nunca apaga nada.
+  for (const r of resultados) {
+    const dir = join(OPC.saida, r.tela);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, `resumo-${OPC.largura}-${OPC.modo}-${OPC.tema}.json`),
+      JSON.stringify({ ...resumo, resultados: [r] }, null, 2)
+    );
+  }
   if (OPC.json) console.log(JSON.stringify(resumo, null, 2));
   else {
     log("");
