@@ -9,7 +9,6 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { calcEarnings } from "@/lib/finance";
 import { DEFAULT_METAS } from "./constants";
 import { FinanceiroHeroCard } from "./FinanceiroHeroCard";
-import { FinanceiroGrafico } from "./FinanceiroGrafico";
 import { VisaoTab } from "./VisaoTab";
 import { EntradasTab } from "./EntradasTab";
 import { SaidasTab } from "./SaidasTab";
@@ -393,6 +392,7 @@ export function FinanceiroTab({
             totalDespMes={totalDespMes}
             saldo={saldo}
             metas={metas}
+            chartType={chartType}
           />
 
           {/* Visão do mockup (Recentes + Mais lançamentos): sempre visível,
@@ -409,9 +409,9 @@ export function FinanceiroTab({
             }
           />
 
-          {/* Fora do mockup, preservado: o gráfico (preferência de Ajustes)
-              e as listas completas com exclusão (Entradas, Saídas, Metas).
-              Ficam abaixo do que o mockup mostra. */}
+          {/* Fora do mockup, preservado: as listas completas com exclusão
+              (Entradas, Saídas, Metas), abaixo do que o mockup mostra. O
+              gráfico de palitos mora no topo, no FinanceiroHeroCard. */}
           <div
             ref={detalhesRef}
             style={{
@@ -421,12 +421,6 @@ export function FinanceiroTab({
               marginTop: "6px",
             }}
           >
-            <FinanceiroGrafico
-              jobs={jobs}
-              receitas={receitas}
-              chartType={chartType}
-            />
-
             <SegmentedControl
               // #174: abas internas com alvo de toque de 44px.
               minTouchTarget

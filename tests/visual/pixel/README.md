@@ -33,6 +33,7 @@ node tests/visual/pixel/comparar.mjs --tela=rede --modo=escuro --tema=ocean --ba
 | `--so-pixel`    | —                           | pula o dump de estilos (bem mais rápido)                                         |
 | `--sem-jornada` | —                           | no Início, esconde o card "Sua Jornada" (o mockup das 5 telas não tem esse card) |
 | `--json`        | —                           | só o JSON no stdout                                                              |
+| `--ate=`        | —                           | só a faixa acima desse elemento do app (ex.: `[data-pixel="grafico-palitos"]`)   |
 
 ## O que sai, em `<saida>/<tela>/`
 

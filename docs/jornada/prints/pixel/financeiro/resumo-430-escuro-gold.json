@@ -1,0 +1,30 @@
+{
+  "quando": "2026-10-08T19:26:44.332Z",
+  "baseUrl": "http://localhost:3112",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "relogio": "2026-09-23T13:00:00.000Z",
+  "meta": "difPct < 0,5",
+  "resultados": [
+    {
+      "tela": "financeiro",
+      "largura": 430,
+      "modo": "escuro",
+      "tema": "gold",
+      "layout": "A",
+      "metrica": "pixelmatch YIQ, limiar 0.1",
+      "difPct": 0.0001,
+      "pixelsDiferentes": 1,
+      "tamanho": "860x1112",
+      "mesmoTamanho": true,
+      "reflowDoMockup": true,
+      "estilos": null,
+      "erros": [
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML."
+      ]
+    }
+  ]
+}

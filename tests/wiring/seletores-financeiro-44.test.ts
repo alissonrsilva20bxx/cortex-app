@@ -53,8 +53,8 @@ const usos = [...arquivosTsx("app"), ...arquivosTsx("components")]
     tagsSegmented(read(arquivo)).map((tag) => ({ arquivo, tag }))
   );
 
-// Pixel (mockup Financeiro A): o Semana/Mês/Ano mudou do hero para o
-// FinanceiroGrafico, junto com o gráfico.
+// O Semana/Mês/Ano mora no FinanceiroGrafico, junto com o gráfico de
+// palitos (que o hero monta logo abaixo dos 4 cards).
 const FINANCEIRO = [
   "components/financeiro/FinanceiroGrafico.tsx",
   "components/financeiro/FinanceiroTab.tsx",
