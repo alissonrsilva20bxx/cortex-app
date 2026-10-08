@@ -1,0 +1,45 @@
+{
+  "quando": "2026-10-08T19:30:12.807Z",
+  "etapa": "tela",
+  "baseUrl": "http://localhost:3112",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "relogio": "2026-09-23T13:00:00.000Z",
+  "linhas": [
+    {
+      "sufixo": "pink-neon-claro-390"
+    },
+    {
+      "sufixo": "ocean-claro-390"
+    },
+    {
+      "sufixo": "gold-claro-390"
+    },
+    {
+      "sufixo": "pink-neon-escuro-390"
+    },
+    {
+      "sufixo": "ocean-escuro-390"
+    },
+    {
+      "sufixo": "gold-escuro-390"
+    },
+    {
+      "sufixo": "pink-neon-claro-430"
+    },
+    {
+      "sufixo": "ocean-claro-430"
+    },
+    {
+      "sufixo": "gold-claro-430"
+    },
+    {
+      "sufixo": "pink-neon-escuro-430"
+    },
+    {
+      "sufixo": "ocean-escuro-430"
+    },
+    {
+      "sufixo": "gold-escuro-430"
+    }
+  ]
+}

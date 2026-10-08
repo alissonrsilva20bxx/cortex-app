@@ -1,0 +1,21 @@
+{
+  "tela": "financeiro",
+  "largura": 390,
+  "modo": "claro",
+  "tema": "ocean",
+  "layout": "A",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "difPct": 0,
+  "pixelsDiferentes": 0,
+  "tamanho": "780x1112",
+  "mesmoTamanho": true,
+  "reflowDoMockup": false,
+  "estilos": null,
+  "erros": [
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML."
+  ]
+}
