@@ -36,6 +36,7 @@
  */
 
 import type { FeedPost } from "./feed";
+import type { AbaFeed } from "./abasFeed";
 
 /** Recursos "leves" (sem lógica própria): perfil e agregados de tela. O
  * feed tem funções dedicadas abaixo por causa dos tombstones. */
@@ -105,7 +106,7 @@ const acessoMemoria = new Map<
   { unlocked: boolean; confirmadoEm: number }
 >();
 const tombstones = new Set<string>(); // ids de posts excluídos nesta sessão
-let segmento: "paraVoce" | "amigas" = "paraVoce";
+let segmento: AbaFeed = "paraVoce";
 let scrollY = 0;
 let scrollValido = false;
 
@@ -332,11 +333,11 @@ export function slideLembrado(postId: string): number {
   return slideMemoria.get(postId) ?? 0;
 }
 
-export function lembrarSegmento(valor: "paraVoce" | "amigas"): void {
+export function lembrarSegmento(valor: AbaFeed): void {
   segmento = valor;
 }
 
-export function segmentoLembrado(): "paraVoce" | "amigas" {
+export function segmentoLembrado(): AbaFeed {
   return segmento;
 }
 

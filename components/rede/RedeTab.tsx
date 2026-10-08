@@ -118,6 +118,7 @@ import {
   type Notificacao,
 } from "@/lib/rede/notificacoes";
 import * as redeCache from "@/lib/rede/redeCache";
+import type { AbaFeed } from "@/lib/rede/abasFeed";
 import {
   processarFotoParaAvatar,
   FotoInvalidaError,
@@ -467,10 +468,10 @@ export function RedeTab({
   const [feedLoadingMore, setFeedLoadingMore] = useState(false);
   // Filtro Para você / Amigas -- lembrado entre remounts (o remount do PIN
   // não deve jogar a pessoa de volta pra "Para você").
-  const [segmento, setSegmento] = useState<"paraVoce" | "amigas">(() =>
+  const [segmento, setSegmento] = useState<AbaFeed>(() =>
     redeCache.segmentoLembrado()
   );
-  const trocarSegmento = useCallback((valor: "paraVoce" | "amigas") => {
+  const trocarSegmento = useCallback((valor: AbaFeed) => {
     setSegmento(valor);
     redeCache.lembrarSegmento(valor);
   }, []);
@@ -2030,7 +2031,6 @@ export function RedeTab({
             usuarioFotoUrl={fotoPropria}
             posts={posts}
             friends={friends.map((f) => f.id)}
-            amigas={friends}
             wishlistItems={wishlistItems}
             pendingRequestsCount={requests.length}
             unreadChats={unreadChats}
@@ -2041,6 +2041,9 @@ export function RedeTab({
             loadingMore={feedLoadingMore}
             segmento={segmento}
             onSegmentoChange={trocarSegmento}
+            sugestoes={sugestoes}
+            sentRequests={sentRequests}
+            onSendRequest={(id) => void sendRequest(id)}
             onLoadMore={loadMorePosts}
             onRefresh={atualizarFeedPuxando}
             onOpenSearch={() => push({ type: "busca" })}
@@ -2055,7 +2058,6 @@ export function RedeTab({
               push({ type: "amigas" });
             }}
             onOpenWishlist={() => push({ type: "wishlist" })}
-            onOpenComposer={() => setComposerOpen(true)}
             onOpenAutor={openAutor}
             {...postActions}
           />

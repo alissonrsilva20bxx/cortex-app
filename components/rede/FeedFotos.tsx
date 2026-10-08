@@ -16,6 +16,14 @@ import {
   proporcaoLembrada,
 } from "@/lib/rede/fotoRatioMemoria";
 import { lembrarSlide, slideLembrado } from "@/lib/rede/redeCache";
+import {
+  alturaDoQuadro,
+  encaixeDoSlide,
+  encaixeNoQuadro,
+  formatoMaisProximo,
+  type Encaixe,
+  type Formato,
+} from "@/lib/rede/formatoFoto";
 
 /**
  * Fotos no feed da Rede -- foto grande no próprio card (não só miniatura),
@@ -36,35 +44,40 @@ import { lembrarSlide, slideLembrado } from "@/lib/rede/redeCache";
  *   uma visão anterior (`lib/rede/fotoRatioMemoria`) e, se não houver,
  *   medindo a miniatura ao carregar -- aí a altura assenta DE UMA VEZ
  *   (sem animação, pra não empurrar o feed).
- * - 2 fotos: carrossel com scroll-snap NATIVO (o dedo arrasta a foto, a
- *   física é a do iOS, encaixe preciso entre slides). A rolagem vertical
- *   passa direto -- quem arbitra o eixo do gesto é o navegador. Altura fixa
- *   pela 1ª foto; a 2ª aparece inteira (`object-contain`) com fundo neutro
- *   onde não preenche.
- * - Sem setas no touch: as setas só existem sob `@media (hover:hover) and
- *   (pointer:fine)` (ver `.feed-foto-seta` em globals.css) e navegam o
- *   carrossel (não abrem nada). Indicador de página discreto, ABAIXO da foto.
+ * - Mais de 1 foto: carrossel com scroll-snap NATIVO (o dedo arrasta a
+ *   foto, a física é a do iOS, encaixe preciso entre slides). A rolagem
+ *   vertical passa direto -- quem arbitra o eixo do gesto é o navegador.
+ *   Aceita N fotos (o banco hoje guarda até 2 por post, migration 0028).
+ * - Setas em qualquer aparelho (proposta "Três abas": o dedo desliza OU os
+ *   botões), contador 1/N no canto e bolinhas ABAIXO da foto. Setas,
+ *   contador e teclado só NAVEGAM o carrossel, nunca abrem nada.
  * - A foto NÃO é interativa: tocar não abre modal/fullscreen/página/
- *   visualizador. Fica no próprio feed. Sem `role="button"`, sem foco por
- *   teclado, sem cursor de clique. (Decisão de 2026-09-10: o visualizador
- *   interno no feed foi retirado -- ver PR #112.)
+ *   visualizador. Fica no próprio feed. Sem `role="button"` nem cursor de
+ *   clique no palco. (Decisão de 2026-09-10: o visualizador interno no feed
+ *   foi retirado -- ver PR #112.) O único foco é o do carrossel, para as
+ *   setas do teclado trocarem a foto.
  * - Movimento curto; `prefers-reduced-motion` já é amortecido pela regra
  *   global do app + guarda no `scrollTo`.
+ *
+ * Formatos do Instagram (proposta "Três abas", proporções confirmadas em
+ * feed-proporcoes.html; regra em lib/rede/formatoFoto.ts): o quadro é
+ * sempre um dos 4 formatos -- 4:5, 1:1, 16:9 ou 1,91:1 -- o mais próximo da
+ * foto, com a altura em pixels inteiros (390 → 488/390/219/204). A foto é
+ * recortada centrada, só nas bordas; se o recorte tiraria a área segura,
+ * ela aparece inteira com o próprio fundo desfocado na sobra. No carrossel
+ * o quadro é o da 1ª foto, e um slide de outra proporção aparece inteiro.
+ * Setas (alvo 44, em qualquer aparelho), contador 1/N, bolinhas e as
+ * setas do teclado navegam o carrossel; o dedo desliza pelo scroll-snap.
  */
 
-// Feed ORGÂNICO do Instagram (mudança de 05/2025): paisagem no máximo
-// 1.91:1, retrato no máximo 3:4 (0.75). Quadrado e 4:5 caem no meio.
-// proporção = largura / altura.
-const RATIO_MAX = 1.91;
-const RATIO_MIN = 3 / 4;
 // Reserva neutra da foto legada (sem dimensão no nome) até medir a miniatura.
 const RATIO_RESERVA = 1;
 
-const clampRatio = (r: number) => Math.min(RATIO_MAX, Math.max(RATIO_MIN, r));
-
+/** Proporção NATIVA da foto pelo nome da miniatura (sem limitar: quem
+ * decide o quadro é `formatoMaisProximo`). */
 function ratioDe(foto: FotoPost): number | null {
   if (!foto.largura || !foto.altura) return null;
-  return clampRatio(foto.largura / foto.altura);
+  return foto.largura / foto.altura;
 }
 
 // Exportado (ticket #139): ProfilePhotoViewer.tsx reusa em vez de
@@ -128,7 +141,7 @@ function useAltura(foto0: FotoPost) {
     const doNome = ratioDe(foto0);
     if (doNome != null) return { ratio: doNome, medido: true };
     const lembrada = proporcaoLembrada(foto0.thumbPath);
-    if (lembrada != null) return { ratio: clampRatio(lembrada), medido: true };
+    if (lembrada != null) return { ratio: lembrada, medido: true };
     return { ratio: RATIO_RESERVA, medido: false };
   };
   const [seed] = useState(inicial);
@@ -173,25 +186,30 @@ function useAltura(foto0: FotoPost) {
     (w: number, h: number) => {
       if (medido.current || !w || !h) return;
       medido.current = true;
-      const r = clampRatio(w / h);
+      const r = w / h;
       setRatio(r);
       lembrarProporcao(foto0.thumbPath, r);
     },
     [foto0.thumbPath]
   );
 
+  // O quadro é o formato permitido mais próximo da foto; antes de medir a
+  // foto legada, o quadrado da reserva.
+  const formato = formatoMaisProximo(ratio);
   return {
     boxRef,
-    ratio,
+    formato,
+    /** proporção nativa conhecida (nome, memória ou medida), ou null */
+    ratioNativo: medido.current ? ratio : null,
     naViewport,
-    altura: largura > 0 ? Math.round(largura / ratio) : 0,
+    altura: largura > 0 ? alturaDoQuadro(largura, formato) : 0,
     medirDaMiniatura,
   };
 }
 
 const bleed = (
   altura: number,
-  ratio: number,
+  formato: Formato,
   tom: string
 ): React.CSSProperties => ({
   position: "relative",
@@ -199,7 +217,7 @@ const bleed = (
   // sem raio: o PostCard já não tem padding lateral, então a foto ocupa os
   // 390px. Antes a margem negativa compensava o `p-4` do cartão antigo.
   height: altura || undefined,
-  aspectRatio: altura ? undefined : String(ratio),
+  aspectRatio: altura ? undefined : String(formato.ratio),
   overflow: "hidden",
   // O espaço da foto. A referência ALTERNA o tom entre um artigo e o
   // seguinte (`--t-soft` no 1º, `--t-psoft` no 2º), que no app são o
@@ -227,13 +245,22 @@ export function PhotoStage({
   /** monta a `<img>` da principal? Falso p/ slide de carrossel ainda não
    * ativado -- sem `<img>` não há requisição de rede pra essa foto. */
   renderPrincipal = true,
+  /** No feed: "cortar" preenche o quadro (centrada, só as bordas saem);
+   * "inteira" cabe toda, com o fundo desfocado dela na sobra. Sem valor
+   * (visualizador do perfil): inteira, sem fundo desfocado, como antes. */
+  encaixe,
 }: {
   foto: FotoPost;
   alt: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
   onMedirMiniatura?: (w: number, h: number) => void;
   renderPrincipal?: boolean;
+  encaixe?: Encaixe;
 }) {
+  const ajuste: React.CSSProperties =
+    encaixe === "cortar"
+      ? { objectFit: "cover", objectPosition: "50% 50%" }
+      : { objectFit: "contain" };
   const [thumbUrl, setThumbUrl] = useState(foto.thumbUrl);
   const [url, setUrl] = useState(foto.url);
   const [principalOk, setPrincipalOk] = useState(false);
@@ -307,7 +334,31 @@ export function PhotoStage({
 
   return (
     // Container NÃO interativo: a foto vive no feed, tocar não abre nada.
-    <div style={{ position: "absolute", inset: 0 }}>
+    <div
+      style={{ position: "absolute", inset: 0 }}
+      data-encaixe={encaixe ?? undefined}
+    >
+      {/* "inteira": o fundo desfocado da própria foto preenche a sobra
+          (nunca uma faixa vazia, nunca a foto esticada). */}
+      {encaixe === "inteira" && thumbUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- URL assinada de Storage
+        <img
+          src={thumbUrl}
+          alt=""
+          aria-hidden
+          draggable={false}
+          data-fundo-desfocado=""
+          style={{
+            position: "absolute",
+            inset: -20,
+            width: "calc(100% + 40px)",
+            height: "calc(100% + 40px)",
+            objectFit: "cover",
+            filter: "blur(18px) saturate(1.2)",
+            opacity: 0.85,
+          }}
+        />
+      )}
       {/* miniatura -- placeholder, some no crossfade quando a principal
           carrega. Só monta com `src` de verdade: uma <img src=""> (cache
           hidratado, antes da re-assinatura) buscaria a própria página. O
@@ -332,7 +383,7 @@ export function PhotoStage({
             inset: 0,
             width: "100%",
             height: "100%",
-            objectFit: "contain",
+            ...ajuste,
             opacity: principalOk ? 0 : 1,
             transition: "opacity 160ms ease-out",
           }}
@@ -359,7 +410,7 @@ export function PhotoStage({
             inset: 0,
             width: "100%",
             height: "100%",
-            objectFit: "contain",
+            ...ajuste,
             opacity: principalOk ? 1 : 0,
             transition: "opacity 160ms ease-out",
           }}
@@ -408,16 +459,25 @@ function UmaFoto({
   onRenovarFoto: (path: string) => Promise<string | null>;
   tom: string;
 }) {
-  const { boxRef, ratio, altura, naViewport, medirDaMiniatura } =
+  const { boxRef, formato, ratioNativo, altura, naViewport, medirDaMiniatura } =
     useAltura(foto);
   return (
-    <div ref={boxRef} style={bleed(altura, ratio, tom)}>
+    <div
+      ref={boxRef}
+      style={bleed(altura, formato, tom)}
+      data-formato={formato.id}
+    >
       <PhotoStage
         foto={foto}
         alt={`Foto da publicação de ${autorNome}`}
         onRenovarFoto={onRenovarFoto}
         onMedirMiniatura={medirDaMiniatura}
         renderPrincipal={naViewport}
+        encaixe={
+          ratioNativo == null
+            ? "inteira"
+            : encaixeNoQuadro(ratioNativo, formato.ratio)
+        }
       />
     </div>
   );
@@ -438,13 +498,14 @@ function Carrossel({
   autorNome: string;
   onRenovarFoto: (path: string) => Promise<string | null>;
 }) {
-  const { boxRef, ratio, altura, naViewport, medirDaMiniatura } = useAltura(
-    fotos[0]
-  );
+  // O quadro do carrossel é o formato da 1ª foto (como o Instagram).
+  const { boxRef, formato, ratioNativo, altura, naViewport, medirDaMiniatura } =
+    useAltura(fotos[0]);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const total = fotos.length;
   // Slide ativo lembrado do último mount (remount do PIN não zera o
   // carrossel). Clampa se o post perdeu fotos desde então.
-  const slideInicial = Math.min(slideLembrado(postId), fotos.length - 1);
+  const slideInicial = Math.min(slideLembrado(postId), total - 1);
   const [indice, setIndice] = useState(slideInicial);
   // slides cuja principal já pode ser MONTADA -- a 1ª (e as até o slide
   // lembrado) desde o início, as outras só quando a pessoa desliza até
@@ -474,7 +535,7 @@ function Carrossel({
         const w = el.clientWidth || 1;
         const i = Math.max(
           0,
-          Math.min(fotos.length - 1, Math.round(el.scrollLeft / w))
+          Math.min(total - 1, Math.round(el.scrollLeft / w))
         );
         setIndice(i);
         lembrarSlide(postId, i);
@@ -486,29 +547,52 @@ function Carrossel({
       el.removeEventListener("scroll", aoRolar);
       cancelAnimationFrame(raf);
     };
-  }, [fotos.length, postId]);
+  }, [total, postId]);
 
-  const irPara = useCallback((dir: number) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const w = el.clientWidth;
-    el.scrollTo({
-      left: (Math.round(el.scrollLeft / w) + dir) * w,
-      behavior: resolveScrollBehavior(prefereMovimentoReduzido()),
-    });
-  }, []);
+  /** Vai para o slide `alvo` (limitado às pontas), com o encaixe do snap. */
+  const irPara = useCallback(
+    (alvo: number) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const i = Math.max(0, Math.min(total - 1, alvo));
+      el.scrollTo({
+        left: i * el.clientWidth,
+        behavior: resolveScrollBehavior(prefereMovimentoReduzido()),
+      });
+    },
+    [total]
+  );
 
   return (
     <>
-      <div ref={boxRef} style={bleed(altura, ratio, tom)}>
+      <div
+        ref={boxRef}
+        style={bleed(altura, formato, tom)}
+        data-formato={formato.id}
+        data-carrossel=""
+      >
         {/* scroller nativo: dedo arrasta, encaixe por scroll-snap, física do
             iOS. touch-action no default → o navegador arbitra o eixo do
-            gesto (rolagem vertical da lista nunca trava).
+            gesto (rolagem vertical da lista nunca trava). Com foco, as
+            setas do teclado trocam a foto.
             overscroll-behavior-x: contain é só uma dica -- NÃO garante bloqueio
             do gesto "Voltar" do iOS (a validar no aparelho). */}
         <div
           ref={scrollerRef}
           className="feed-foto-scroller"
+          tabIndex={0}
+          role="group"
+          aria-roledescription="carrossel"
+          aria-label={`${total} fotos da publicação de ${autorNome}`}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight") {
+              e.preventDefault();
+              irPara(indice + 1);
+            } else if (e.key === "ArrowLeft") {
+              e.preventDefault();
+              irPara(indice - 1);
+            }
+          }}
           style={{
             position: "absolute",
             inset: 0,
@@ -528,65 +612,100 @@ function Carrossel({
                 position: "relative",
                 minWidth: "100%",
                 height: "100%",
+                overflow: "hidden",
                 scrollSnapAlign: "start",
                 scrollSnapStop: "always",
               }}
             >
               <PhotoStage
                 foto={foto}
-                alt={`Foto ${foto.ordem} da publicação de ${autorNome}`}
+                alt={`Foto ${i + 1} de ${total} da publicação de ${autorNome}`}
                 onRenovarFoto={onRenovarFoto}
                 onMedirMiniatura={i === 0 ? medirDaMiniatura : undefined}
                 renderPrincipal={naViewport && ativados.has(i)}
+                encaixe={
+                  i === 0
+                    ? ratioNativo == null
+                      ? "inteira"
+                      : encaixeNoQuadro(ratioNativo, formato.ratio)
+                    : encaixeDoSlide(ratioDe(foto), formato)
+                }
               />
             </div>
           ))}
         </div>
 
-        {/* setas -- só ponteiro fino + hover (nunca no touch), alvo 44×44 */}
+        {/* contador 1/N no canto, como o Instagram */}
+        <span
+          aria-live="polite"
+          data-contador=""
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            zIndex: 3,
+            background: "rgba(0,0,0,.55)",
+            color: "#fff",
+            fontSize: 12,
+            fontWeight: 800,
+            padding: "4px 9px",
+            borderRadius: 999,
+            letterSpacing: ".02em",
+            pointerEvents: "none",
+          }}
+        >
+          {indice + 1}/{total}
+        </span>
+
+        {/* setas -- em qualquer aparelho (o dedo também desliza), alvo
+            44×44 com o círculo de 30 da proposta; somem nas pontas */}
         {indice > 0 && (
           <button
             type="button"
             aria-label="Foto anterior"
-            onClick={() => irPara(-1)}
-            className="feed-foto-seta"
+            onClick={() => irPara(indice - 1)}
             style={{ ...setaBase, left: 4 }}
           >
-            <ChevronLeft size={20} />
+            <span style={setaCirculo}>
+              <ChevronLeft size={16} strokeWidth={3} />
+            </span>
           </button>
         )}
-        {indice < fotos.length - 1 && (
+        {indice < total - 1 && (
           <button
             type="button"
             aria-label="Próxima foto"
-            onClick={() => irPara(1)}
-            className="feed-foto-seta"
+            onClick={() => irPara(indice + 1)}
             style={{ ...setaBase, right: 4 }}
           >
-            <ChevronRight size={20} />
+            <span style={setaCirculo}>
+              <ChevronRight size={16} strokeWidth={3} />
+            </span>
           </button>
         )}
       </div>
 
-      {/* indicador de página -- discreto, ABAIXO da foto */}
+      {/* bolinhas -- ABAIXO da foto; a ativa no acento */}
       <div
         aria-hidden
+        data-bolinhas=""
         style={{
           display: "flex",
           justifyContent: "center",
           gap: 5,
-          paddingTop: 8,
+          marginTop: 10,
         }}
       >
         {fotos.map((f, i) => (
           <span
             key={f.ordem}
             style={{
-              width: i === indice ? 6 : 5,
-              height: i === indice ? 6 : 5,
+              width: 6,
+              height: 6,
               borderRadius: "50%",
-              background: i === indice ? "var(--text-2)" : "var(--text-muted)",
-              transition: "all 160ms",
+              background: i === indice ? "var(--t-acc)" : "var(--t-ring)",
+              transform: i === indice ? "scale(1.15)" : undefined,
+              transition: "all 200ms",
             }}
           />
         ))}
@@ -595,22 +714,28 @@ function Carrossel({
   );
 }
 
-// Sem `display`/`alignItems`/`justifyContent` aqui de propósito: um `display`
-// inline venceria a media query `(hover:hover) and (pointer:fine)` de
-// `.feed-foto-seta` (globals.css) por especificidade e as setas apareceriam
-// no touch. Quem liga o `display: flex` (e centra o glifo) é aquela regra.
 const setaBase: React.CSSProperties = {
   position: "absolute",
   top: "50%",
   transform: "translateY(-50%)",
-  // alvo de toque 44×44; o glifo aparenta ~32 via padding + background-clip
+  zIndex: 3,
   width: 44,
   height: 44,
-  padding: 6,
-  borderRadius: "50%",
-  background: "rgba(0,0,0,0.4)",
-  backgroundClip: "content-box",
-  color: "#fff",
+  display: "grid",
+  placeItems: "center",
+  padding: 0,
   border: "none",
+  background: "none",
   cursor: "pointer",
+};
+
+const setaCirculo: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  borderRadius: "50%",
+  background: "rgba(255,255,255,.88)",
+  color: "#111",
+  display: "grid",
+  placeItems: "center",
+  boxShadow: "0 2px 8px rgba(0,0,0,.25)",
 };

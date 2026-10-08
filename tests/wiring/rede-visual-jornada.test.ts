@@ -46,14 +46,21 @@ describe("J06 — os componentes reais da Rede estão montados", () => {
     expect(src).toMatch(/<RedeTab\s/);
   });
 
-  it("RedeTab monta o FeedScreen real e passa as amigas que já carrega", () => {
+  it("RedeTab monta o FeedScreen real e passa as amigas e as sugestões que já carrega", () => {
     expect(redeTab).toMatch(
       /^import \{ FeedScreen \} from "\.\/FeedScreen";$/m
     );
     const tag = redeTab.match(/<FeedScreen\b[\s\S]*?\/>/);
     expect(tag).not.toBeNull();
     expect(tag![0]).toContain("friends={friends.map((f) => f.id)}");
-    expect(tag![0]).toContain("amigas={friends}");
+    // Descobrir (proposta "Três abas"): as mesmas sugestões e o mesmo
+    // "Adicionar" da tela Amigas.
+    expect(tag![0]).toContain("sugestoes={sugestoes}");
+    expect(tag![0]).toContain("sentRequests={sentRequests}");
+    expect(tag![0]).toContain("onSendRequest={(id) => void sendRequest(id)}");
+    // A fileira estilo stories saiu: nem as amigas para ela, nem o Postar.
+    expect(tag![0]).not.toContain("amigas={friends}");
+    expect(tag![0]).not.toContain("onOpenComposer");
   });
 
   it("FeedScreen monta o RedeHeader real", () => {
@@ -62,14 +69,17 @@ describe("J06 — os componentes reais da Rede estão montados", () => {
   });
 });
 
-describe("J06 — as duas abas do mockup", () => {
+describe('Proposta "Três abas" — as 3 abas no lugar da fileira de stories', () => {
   const src = semComentarios(feed);
 
-  it('"Para você" e "Amigas" são as abas, com o valor e o handler de antes', () => {
-    expect(src).toContain('{ id: "paraVoce", label: "Para você" }');
-    expect(src).toContain('{ id: "amigas", label: "Amigas" }');
-    expect(src).toContain(
-      "<AbasFeed segmento={segmento} onChange={onSegmentoChange} />"
+  it("Para você, Amigas e Descobrir vêm de ABAS_FEED, com o valor e o handler de antes", () => {
+    const abas = read("lib/rede/abasFeed.ts");
+    expect(abas).toContain('{ id: "paraVoce", rotulo: "Para você" }');
+    expect(abas).toContain('{ id: "amigas", rotulo: "Amigas" }');
+    expect(abas).toContain('{ id: "descobrir", rotulo: "Descobrir" }');
+    expect(src).toContain("{ABAS_FEED.map(({ id, rotulo }) => {");
+    expect(src).toMatch(
+      /<Abas3\s+aba=\{segmento\}\s+novasAmigas=\{novasAmigas\}\s+onChange=\{onSegmentoChange\}\s*\/>/
     );
   });
 
@@ -77,37 +87,14 @@ describe("J06 — as duas abas do mockup", () => {
     expect(src).toContain('role="tablist"');
     expect(src).toContain('role="tab"');
     expect(src).toContain("aria-selected={ativa}");
-    expect(src).toContain("onClick={() => onChange(aba.id)}");
-  });
-});
-
-describe("J06 — o botão Postar e a fileira de amigas", () => {
-  const src = semComentarios(feed);
-
-  it('"Postar" é um botão que abre o composer de antes', () => {
-    expect(src).toMatch(
-      /<button\s+type="button"\s+onClick=\{onPostar\}[\s\S]{0,900}Postar\s*<\/span>/
-    );
-    expect(src).toMatch(
-      /<FileiraAmigas\s+amigas=\{montado \? amigas : \[\]\}\s+onPostar=\{onOpenComposer\}\s+onOpenAmiga=\{onOpenAutor\}\s*\/>/
-    );
+    expect(src).toContain("onClick={() => onChange(id)}");
   });
 
-  it("a fileira mostra as amigas reais e tocar abre o perfil", () => {
-    expect(src).toContain("{amigas.map((amiga) => (");
-    expect(src).toContain("onClick={() => onOpenAmiga(amiga.id)}");
-    expect(src).toContain('{amiga.nome.split(" ")[0]}');
-  });
-
-  it("a fileira só entra depois de montar (não soma diferença servidor x cliente ao #130)", () => {
-    expect(src).toContain("const [montado, setMontado] = useState(false);");
-    expect(src).toContain("useEffect(() => setMontado(true), []);");
-  });
-
-  it("a entrada antiga do composer saiu: o Postar é o único caminho, sem duplicar", () => {
-    expect(src).not.toContain("Compartilhe algo");
-    // Um único lugar da tela abre o composer.
-    expect(src.match(/=\{onOpenComposer\}/g)).toHaveLength(1);
+  it("a fileira de amigas estilo stories e o Postar dela saíram do feed", () => {
+    expect(src).not.toMatch(/FileiraAmigas|onOpenComposer|onPostar/);
+    expect(src).not.toMatch(/>\s*Postar\s*</);
+    // O "Postar" fica no "+" da barra (o sinal `postarSignal` do RedeTab).
+    expect(redeTab).toMatch(/setComposerOpen\(true\)/);
   });
 });
 
@@ -124,10 +111,8 @@ describe("J06 — foto do feed continua sem visualizador (decisão de 2026-09-10
     const props = [...tag![0].matchAll(/\s(\w+)=\{/g)].map((m) => m[1]).sort();
     expect(props).toEqual(
       [
-        "key",
-        // `indice` é DADO (a posição no feed), não toque: a referência
-        // alterna o tom do espaço da foto entre um artigo e o seguinte.
-        "indice",
+        // `amiga` é DADO (a autora é amiga: "· amiga" na linha do tempo).
+        "amiga",
         "onComment",
         "onOpenAutor",
         "onOpenMenu",
@@ -153,7 +138,10 @@ describe("J06 — foto do feed continua sem visualizador (decisão de 2026-09-10
       /<FeedFotos\b[\s\S]*?\/>/
     );
     expect(tag).not.toBeNull();
-    const props = [...tag![0].matchAll(/\s(\w+)=\{/g)].map((m) => m[1]).sort();
+    // Prop com chaves (`x={...}`) ou com texto fixo (`tom="var(--t-sub)"`).
+    const props = [...tag![0].matchAll(/\s(\w+)=[{"]/g)]
+      .map((m) => m[1])
+      .sort();
     // `tom` é dado (a cor do espaço da foto), não toque.
     expect(props).toEqual([
       "autorNome",
@@ -174,12 +162,19 @@ describe("J06 — cache e busca do feed não entraram nos arquivos de tela", () 
       for (const linha of src
         .split("\n")
         .filter((l) => /from "@\/lib\/rede/.test(l))) {
+        // A única exceção é a lógica pura das abas (abasFeed), que não
+        // busca nada: ela mesma só importa tipos (conferido abaixo).
+        if (linha.includes('"@/lib/rede/abasFeed"')) continue;
         expect(linha).toMatch(/^import type /);
       }
       expect(src).not.toMatch(
         /supabase|redeCache|listarFeed|listarAmigas|fetch\(/
       );
     }
+    const abas = semComentarios(read("lib/rede/abasFeed.ts"));
+    for (const linha of abas.split("\n").filter((l) => /^import /.test(l)))
+      expect(linha).toMatch(/^import type /);
+    expect(abas).not.toMatch(/supabase|redeCache|listarFeed|fetch\(/);
   });
 });
 

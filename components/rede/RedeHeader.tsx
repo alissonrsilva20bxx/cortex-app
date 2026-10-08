@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Bell, MessageCircle } from "lucide-react";
+import { Search, Bell, MessageCircle, Users } from "lucide-react";
 import { Avatar } from "./Avatar";
 
 interface Props {
@@ -12,6 +12,10 @@ interface Props {
   onOpenNotifs: () => void;
   onOpenChat: () => void;
   onOpenMeuEspaco: () => void;
+  /** Ícone de pessoas (proposta "Três abas"): Amigas, solicitações e
+   * descobrir pessoas, com o número de pedidos esperando resposta. */
+  onOpenAmigas?: () => void;
+  pendingRequestsCount?: number;
 }
 
 function IconButton({
@@ -75,6 +79,8 @@ export function RedeHeader({
   onOpenNotifs,
   onOpenChat,
   onOpenMeuEspaco,
+  onOpenAmigas,
+  pendingRequestsCount = 0,
 }: Props) {
   return (
     <div
@@ -102,6 +108,15 @@ export function RedeHeader({
         <IconButton onClick={onSearch} label="Buscar">
           <Search size={20} style={{ color: "var(--text)" }} />
         </IconButton>
+        {onOpenAmigas && (
+          <IconButton
+            onClick={onOpenAmigas}
+            label="Amigas, solicitações e descobrir pessoas"
+            badge={pendingRequestsCount}
+          >
+            <Users size={20} style={{ color: "var(--text)" }} />
+          </IconButton>
+        )}
         <IconButton
           onClick={onOpenNotifs}
           label="Notificações"

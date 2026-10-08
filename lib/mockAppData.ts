@@ -1,5 +1,6 @@
 import type { MockSupabaseSeed } from "./mockSupabase";
 import type { Usuario } from "./types";
+import { fotoExemploUri, type TemaFoto } from "./mockFotosRede";
 
 export const MOCK_APP_USER_ID = "mock-app-user";
 
@@ -471,6 +472,28 @@ export function buildMockAppSeed(opts?: {
       criado_em: daysFromNow(-30),
       atualizado_em: daysFromNow(-5),
     },
+    // Sem relação nenhuma com você: aparecem em "Descobrir" (Pessoas para
+    // conhecer), como na proposta "Três abas".
+    {
+      user_id: "mock-descobrir-rita",
+      nome_exibicao: "Rita Melo",
+      cor_avatar: "#f0c4a8",
+      bio: "Cílios · Setúbal",
+      avatar_url: null,
+      area_atuacao: "Cílios",
+      criado_em: daysFromNow(-12),
+      atualizado_em: daysFromNow(-1),
+    },
+    {
+      user_id: "mock-descobrir-nina",
+      nome_exibicao: "Nina Paz",
+      cor_avatar: "#c3eab4",
+      bio: "Estética · Lisboa",
+      avatar_url: null,
+      area_atuacao: "Estética",
+      criado_em: daysFromNow(-9),
+      atualizado_em: daysFromNow(-1),
+    },
   ];
   // 15 posts -- o suficiente pra exercitar a paginação do feed
   // (FEED_PAGE_SIZE = 10: página 1 cheia + página 2 com resto, `hasMore`
@@ -601,21 +624,33 @@ export function buildMockAppSeed(opts?: {
     atualizado_em: hoursAgoIso(p.h),
   }));
 
-  // Fotos (blobs caem no placeholder SVG do mock -- o que importa é o path
-  // existir pra assinar). Dimensões vão no nome da miniatura
-  // (`-thumb-{L}x{A}.jpg`), como a rota real grava.
-  //  - post-1: 1 foto 3:4 -- exercita a re-assinatura sob demanda no cold
-  //    start (o cache persistido não guarda URL assinada).
-  //  - post-4: 2 fotos com proporções diferentes (3:4 e 4:3) -- exercita o
-  //    carrossel e a memória de slide (`redeCache.lembrarSlide`) entre
-  //    remounts.
+  // Fotos de exemplo (lib/mockFotosRede.ts): desenho SVG local no tamanho
+  // NATIVO da foto, servido como a "URL assinada" do Storage mockado. As
+  // dimensões vão no nome da miniatura (`-thumb-{L}x{A}.jpg`), como a rota
+  // real grava, e é por elas que o feed escolhe o formato (proposta "Três
+  // abas": 4:5, 1:1, 16:9 ou 1,91:1). No máximo 2 fotos por post, o teto do
+  // banco (`ordem in (1,2)`, migration 0028).
+  //  - post-1: retrato 4:5 (1080×1350);
+  //  - post-4: carrossel antes/depois, as duas 4:5 -- e a memória de slide
+  //    (`redeCache.lembrarSlide`) entre remounts;
+  //  - post-8: carrossel 1:1 + uma 16:9, que aparece inteira com o fundo
+  //    desfocado (outra proporção que a do quadro);
+  //  - post-6: paisagem 16:9; post-3: paisagem 1,91:1; post-13: dica 1:1;
+  //  - post-9: 3:4, recortada para 4:5 (só as bordas saem);
+  //  - post-11: 9:16, fora dos formatos -- vai para 4:5 e aparece inteira
+  //    (o recorte tiraria a área segura).
   const foto = (
     postId: string,
     autor: string,
     ordem: number,
-    dims: string,
+    tema: TemaFoto,
+    largura: number,
+    altura: number,
     h: number
   ) => {
+    const tw = 480;
+    const th = Math.round((tw * altura) / largura);
+    const dims = `${tw}x${th}`;
     const path = `${autor}/posts/${postId}/${ordem}.jpg`;
     const thumb_path = `${autor}/posts/${postId}/${ordem}-thumb-${dims}.jpg`;
     return {
@@ -636,6 +671,7 @@ export function buildMockAppSeed(opts?: {
           size: 320_000,
           mimeType: "image/jpeg",
           createdAt: hoursAgoIso(h),
+          blobUrl: fotoExemploUri(tema, largura, altura),
         },
         {
           path: thumb_path,
@@ -644,16 +680,22 @@ export function buildMockAppSeed(opts?: {
           size: 24_000,
           mimeType: "image/jpeg",
           createdAt: hoursAgoIso(h),
+          blobUrl: fotoExemploUri(tema, tw, th),
         },
       ],
     };
   };
-  // 1300x1000 = proporção 1,3: a 390px de largura a foto fica com os 300px
-  // de altura que a referência desenha (tela Rede).
   const fotosDef = [
-    foto("rede-post-1", uid, 1, "1300x1000", 3),
-    foto("rede-post-4", uid, 1, "1300x1000", 6),
-    foto("rede-post-4", uid, 2, "1300x1000", 6),
+    foto("rede-post-1", uid, 1, "unhas", 1080, 1350, 3),
+    foto("rede-post-4", "mock-amiga-juliana", 1, "antes", 1080, 1350, 5),
+    foto("rede-post-4", "mock-amiga-juliana", 2, "depois", 1080, 1350, 5),
+    foto("rede-post-6", uid, 1, "studio", 1920, 1080, 18),
+    foto("rede-post-8", uid, 1, "cabelo", 1080, 1080, 42),
+    foto("rede-post-8", uid, 2, "studio", 1920, 1080, 42),
+    foto("rede-post-3", uid, 1, "studio", 1910, 1000, 52),
+    foto("rede-post-9", FRIEND_ID, 1, "cores", 1080, 1440, 60),
+    foto("rede-post-11", FRIEND_ID, 1, "depois", 1080, 1920, 90),
+    foto("rede-post-13", FRIEND_ID, 1, "unhas", 1080, 1080, 130),
   ];
   const rede_post_fotos = fotosDef.map((f) => f.row);
   // 12 curtidas no 1º post e 8 no 2º: é o que a referência imprime.
@@ -673,6 +715,10 @@ export function buildMockAppSeed(opts?: {
     { post_id: "rede-post-2", user_id: uid, criado_em: hoursAgoIso(20) },
     ...curtidasDe("rede-post-1", 12),
     ...curtidasDe("rede-post-4", 8),
+    // Descobrir lista as dicas da semana das mais curtidas para as menos.
+    ...curtidasDe("rede-post-13", 6),
+    ...curtidasDe("rede-post-9", 4),
+    ...curtidasDe("rede-post-5", 2),
   ];
   const rede_comentarios = [
     {
