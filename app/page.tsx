@@ -725,6 +725,7 @@ export default function Page() {
                       onToggle={() => setFabOpen((v) => !v)}
                       onAction={handleFabAction}
                       compact={compact}
+                      cobertoPorTela={jornadaAberta}
                     />
                   )
             }
