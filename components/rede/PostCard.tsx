@@ -93,8 +93,15 @@ export function PostCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p
-              className="font-semibold text-sm truncate"
-              style={{ color: "var(--text)" }}
+              className="truncate"
+              style={{
+                // A referência: 14px, peso 700, line-height 1,5 (21px). O
+                // `font-semibold text-sm` dava 600 e 20px.
+                fontSize: "14px",
+                fontWeight: 700,
+                lineHeight: 1.5,
+                color: "var(--text)",
+              }}
             >
               {post.autorNome}
             </p>
@@ -138,7 +145,7 @@ export function PostCard({
           // A referência alterna o tom do espaço da foto entre um artigo e
           // o seguinte: `--t-soft` e `--t-psoft`, que aqui são o
           // `--accent-tint` e o `--violet-tint`.
-          tom={indice % 2 === 0 ? "var(--accent-tint)" : "var(--violet-tint)"}
+          tom={indice % 2 === 0 ? "var(--accent-tint)" : "var(--info-tint)"}
         />
       )}
 

@@ -1,9 +1,9 @@
 # Estilos: rede-390-claro-pink-neon
 
 - mockup: `5-telas-8-temas-claro-escuro.html`
-- app: `http://localhost:3107/dev-preview/app`
-- pareados 91 · divergem 63 · só no mockup 22 · só no app 475
-- impacto total: **76.822**
+- app: `http://localhost:3111/dev-preview/app`
+- pareados 91 · divergem 64 · só no mockup 22 · só no app 476
+- impacto total: **78.803**
 - famílias no mockup: plus jakarta sans (27)
 - famílias no app: plus jakarta sans (147)
 
@@ -18,11 +18,11 @@ Em cada célula: **mockup** → app.
 | 5.895 | “[foto do post]” | fontWeight | `600` → `400` |
 | 5.895 | “[foto do post]” | lineHeight | `18px` → `22.5px` |
 | 5.895 | “[foto do post]” | color | `rgb(163, 12, 71)` → `rgb(15, 15, 15)` |
-| 5.804 | “[foto do post]” | fontSize | `12px` → `15px` |
-| 5.804 | “[foto do post]” | fontWeight | `600` → `400` |
-| 5.804 | “[foto do post]” | lineHeight | `18px` → `22.5px` |
-| 5.804 | “[foto do post]” | color | `rgb(29, 63, 122)` → `rgb(15, 15, 15)` |
-| 5.804 | “[foto do post]” | backgroundColor | `rgb(230, 239, 253)` → `rgb(253, 227, 236)` |
+| 5.616 | “[foto do post]” | fontSize | `12px` → `15px` |
+| 5.616 | “[foto do post]” | fontWeight | `600` → `400` |
+| 5.616 | “[foto do post]” | lineHeight | `18px` → `22.5px` |
+| 5.616 | “[foto do post]” | color | `rgb(29, 63, 122)` → `rgb(15, 15, 15)` |
+| 5.616 | “[foto do post]” | backgroundColor | `rgb(230, 239, 253)` → `rgb(241, 234, 254)` |
 | 1.966 | “Postar” | gap | `6px` → `normal` |
 | 1.966 | “Postar” | largura | `62px` → `34.5px` |
 | 1.966 | “Postar” | altura | `84.5px` → `16.5px` |
@@ -61,7 +61,9 @@ Em cada célula: **mockup** → app.
 
 | # | impacto | elemento | onde | propriedade | mockup → app |
 | - | ------- | -------- | ---- | ----------- | ------------ |
-| 1 | 9.361 | div | 0,0 · 390x844 | backgroundColor | `rgb(255, 255, 255)` → `rgba(0, 0, 0, 0)` |
+| 1 | 11.361 | div | 0,0 · 390x844 | fontSize | `15px` → `16px` |
+|  |  |  |  | lineHeight | `22.5px` → `normal` |
+|  |  |  |  | backgroundColor | `rgb(255, 255, 255)` → `rgba(0, 0, 0, 0)` |
 | 2 | 7.623 | div | 16,762 · 358x60 | backgroundColor | `rgba(0, 0, 0, 0)` → `rgba(255, 255, 255, 0.74)` |
 |  |  |  |  | borderRadius | `0px 0px 0px 0px` → `999px 999px 999px 999px` |
 |  |  |  |  | boxShadow | `none` → `rgba(17, 17, 20, 0.14) 0px 10px 30px 0px` |
@@ -70,11 +72,11 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | fontWeight | `600` → `400` |
 |  |  |  |  | lineHeight | `18px` → `22.5px` |
 |  |  |  |  | color | `rgb(163, 12, 71)` → `rgb(15, 15, 15)` |
-| 4 | 5.804 | div “[foto do post]” | 0,734 · 390x300 | fontSize | `12px` → `15px` |
+| 4 | 5.616 | div “[foto do post]” | 0,734 · 390x300 | fontSize | `12px` → `15px` |
 |  |  |  |  | fontWeight | `600` → `400` |
 |  |  |  |  | lineHeight | `18px` → `22.5px` |
 |  |  |  |  | color | `rgb(29, 63, 122)` → `rgb(15, 15, 15)` |
-|  |  |  |  | backgroundColor | `rgb(230, 239, 253)` → `rgb(253, 227, 236)` |
+|  |  |  |  | backgroundColor | `rgb(230, 239, 253)` → `rgb(241, 234, 254)` |
 | 5 | 5.046 | article | 0,686 · 390x439 | altura | `438.5px` → `480.5px` |
 | 6 | 4.546 | nav | 16,762 · 288x60 | backgroundColor | `rgba(255, 255, 255, 0.74)` → `rgba(0, 0, 0, 0)` |
 |  |  |  |  | borderRadius | `30px 30px 30px 30px` → `0px 0px 0px 0px` |
@@ -159,39 +161,39 @@ Em cada célula: **mockup** → app.
 |  |  |  |  | lineHeight | `16.5px` → `22.5px` |
 | 39 | 0.169 | div | 0,586 · 390x24 | altura | `24px` → `18px` |
 | 40 | 0.169 | div | 0,1044 · 390x24 | altura | `24px` → `18px` |
-| 41 | 0.159 | div “há 3h” | 64,249 · 282x17 | fontSize | `11px` → `12px` |
+| 41 | 0.169 | path | 337,785 · 14x14 | color | `rgb(255, 255, 255)` → `rgb(15, 15, 15)` |
+| 42 | 0.159 | div “há 3h” | 64,249 · 282x17 | fontSize | `11px` → `12px` |
 |  |  |  |  | lineHeight | `16.5px` → `16px` |
 |  |  |  |  | altura | `16.5px` → `16px` |
-| 42 | 0.159 | div “há 5h” | 64,707 · 282x17 | fontSize | `11px` → `12px` |
+| 43 | 0.159 | div “há 5h” | 64,707 · 282x17 | fontSize | `11px` → `12px` |
 |  |  |  |  | lineHeight | `16.5px` → `16px` |
 |  |  |  |  | altura | `16.5px` → `16px` |
-| 43 | 0.147 | path | 98,588 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 44 | 0.147 | path | 98,588 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20px` → `18px` |
 |  |  |  |  | altura | `20px` → `18px` |
-| 44 | 0.147 | path | 98,1046 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 45 | 0.147 | path | 98,1046 · 20x20 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20px` → `18px` |
 |  |  |  |  | altura | `20px` → `18px` |
-| 45 | 0.136 | path | 18,589 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 46 | 0.136 | path | 18,589 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20.8px` → `18px` |
-| 46 | 0.136 | path | 18,1047 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 47 | 0.136 | path | 18,1047 · 21x18 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `20.8px` → `18px` |
-| 47 | 0.131 | path | 59,591 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 48 | 0.131 | path | 59,591 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | largura | `18px` → `14.3px` |
 |  |  |  |  | altura | `15.9px` → `14.3px` |
-| 48 | 0.115 | path | 59,1049 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
+| 49 | 0.115 | path | 59,1049 · 18x16 | color | `rgb(15, 15, 15)` → `rgb(214, 16, 92)` |
 |  |  |  |  | altura | `15.9px` → `18px` |
-| 49 | 0.106 | div | 0,228 · 390x38 | altura | `38px` → `41px` |
-| 50 | 0.106 | div | 0,686 · 390x38 | altura | `38px` → `41px` |
-| 51 | 0.105 | div | 64,228 · 282x38 | altura | `37.5px` → `41px` |
-| 52 | 0.105 | div | 64,686 · 282x38 | altura | `37.5px` → `41px` |
-| 53 | 0.086 | svg | 356,238 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 54 | 0.086 | svg | 356,696 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 55 | 0.077 | span “Amigas” | 105,175 · 51x38 | altura | `38px` → `44px` |
-| 56 | 0.074 | span “Para você” | 16,175 · 67x39 | altura | `39px` → `44px` |
-| 57 | 0.016 | path | 299,34 · 15x13 | largura | `15px` → `15.8px` |
+| 50 | 0.106 | div | 0,228 · 390x38 | altura | `38px` → `41px` |
+| 51 | 0.106 | div | 0,686 · 390x38 | altura | `38px` → `41px` |
+| 52 | 0.105 | div | 64,228 · 282x38 | altura | `37.5px` → `41px` |
+| 53 | 0.105 | div | 64,686 · 282x38 | altura | `37.5px` → `41px` |
+| 54 | 0.086 | svg | 356,238 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 55 | 0.086 | svg | 356,696 · 18x18 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 56 | 0.077 | span “Amigas” | 105,175 · 51x38 | altura | `38px` → `44px` |
+| 57 | 0.074 | span “Para você” | 16,175 · 67x39 | altura | `39px` → `44px` |
+| 58 | 0.016 | path | 299,34 · 15x13 | largura | `15px` → `15.8px` |
 |  |  |  |  | altura | `12.5px` → `15.8px` |
-| 58 | 0.007 | circle | 359,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 59 | 0.007 | circle | 364,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
-| 60 | 0.007 | circle | 370,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 59 | 0.007 | circle | 359,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
+| 60 | 0.007 | circle | 364,246 · 2x2 | color | `rgb(15, 15, 15)` → `rgb(107, 107, 116)` |
 
-_(3 elementos de impacto menor omitidos)_
+_(4 elementos de impacto menor omitidos)_

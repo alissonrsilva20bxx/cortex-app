@@ -95,8 +95,10 @@ export function ListaArquivos({
                 className="block truncate"
                 style={{ fontSize: "11px", color: "var(--text-muted)" }}
               >
-                {rotuloCategoria(f.categoria)} · {formatTamanho(f.size)} ·{" "}
-                {formatDataArquivo(f.createdAt)}
+                {/* Num NÓ SÓ: juntar pedaços de texto faz o navegador
+                    espaçar a emenda de um jeito diferente do da referência,
+                    e a linha inteira sai deslocada. */}
+                {`${rotuloCategoria(f.categoria)} · ${formatTamanho(f.size)} · ${formatDataArquivo(f.createdAt)}`}
               </span>
             </span>
             <IconeSeta
