@@ -1,0 +1,667 @@
+{
+  "quando": "2026-10-08T23:11:29.799Z",
+  "baseUrl": "http://localhost:3112",
+  "relogio": "2026-09-23T13:00:00.000Z",
+  "passos": [
+    {
+      "nome": "medidas 390 claro pink-neon: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 claro purple: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 claro crimson: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 claro ocean: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 claro gold: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 claro emerald: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 claro midnight: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 claro grafite: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 escuro pink-neon: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 escuro purple: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 escuro crimson: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 escuro ocean: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 escuro gold: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 escuro emerald: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 escuro midnight: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 390 escuro grafite: 6 fotos (1,91:1 16:9 1:1 4:5), largura 390 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 claro pink-neon: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 claro purple: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 claro crimson: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 claro ocean: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 claro gold: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 claro emerald: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 claro midnight: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 claro grafite: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 escuro pink-neon: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 escuro purple: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 escuro crimson: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 escuro ocean: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 escuro gold: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 escuro emerald: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 escuro midnight: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "medidas 430 escuro grafite: 6 fotos (1,91:1 16:9 1:1 4:5), largura 430 e altura exata",
+      "ok": true
+    },
+    {
+      "nome": "390 claro: sem a fileira de stories, as 3 abas no lugar (soltas no topo da tela)",
+      "ok": true,
+      "abas": [
+        "Para você",
+        "Amigas",
+        "Descobrir"
+      ],
+      "postar": false,
+      "fileira": false,
+      "presa": false
+    },
+    {
+      "nome": "390 claro: carrossel começa em 1/2, só a seta de avançar, 1ª bolinha",
+      "ok": true,
+      "contador": "1/2",
+      "anterior": false,
+      "proxima": true,
+      "bolinha": 0
+    },
+    {
+      "nome": "390 claro: rolando, as abas ficam presas no topo",
+      "ok": true,
+      "presa": true,
+      "top": 0,
+      "largura": 390,
+      "rolagem": 681
+    },
+    {
+      "nome": "390 claro: seta avança para 2/2, troca as setas e a bolinha",
+      "ok": true,
+      "contador": "2/2",
+      "anterior": true,
+      "proxima": false,
+      "bolinha": 1
+    },
+    {
+      "nome": "390 claro: teclado (←) volta para 1/2",
+      "ok": true,
+      "contador": "1/2",
+      "anterior": false,
+      "proxima": true,
+      "bolinha": 0
+    },
+    {
+      "nome": "390 claro: o dedo desliza para 2/2 e continua na Rede",
+      "ok": true,
+      "contador": "2/2",
+      "anterior": true,
+      "proxima": false,
+      "bolinha": 1
+    },
+    {
+      "nome": "390 claro: carrossel 1:1 com uma 16:9 → a 16:9 inteira, com fundo desfocado",
+      "ok": true,
+      "formato": "1:1",
+      "encaixes": [
+        "cortar",
+        "inteira"
+      ],
+      "fundo": 1
+    },
+    {
+      "nome": "390 claro: de volta ao topo, as abas voltam ao lugar",
+      "ok": true
+    },
+    {
+      "nome": "390 claro: curtir soma 1 e pinta o coração",
+      "ok": true,
+      "antes": "12",
+      "depois": "13"
+    },
+    {
+      "nome": "390 claro: comentar abre os comentários",
+      "ok": true
+    },
+    {
+      "nome": "390 claro: \"Mais opções\" abre a folha de opções",
+      "ok": true,
+      "folhasAntes": 4,
+      "folhasDepois": 5
+    },
+    {
+      "nome": "390 claro: a aba Amigas mostra o número de novas desde a última visita",
+      "ok": true,
+      "numero": "2"
+    },
+    {
+      "nome": "390 claro: Amigas só com amigas e você, dividida em novas e já vistas, sem o número aberta",
+      "ok": true,
+      "autores": [
+        "Miguel",
+        "Juliana",
+        "Marina"
+      ],
+      "divisores": [
+        "Novas desde a sua última visita",
+        "Já visto"
+      ],
+      "numero": 0
+    },
+    {
+      "nome": "390 claro: Descobrir com pessoas para conhecer e as dicas da semana",
+      "ok": true,
+      "titulos": [
+        "Rede",
+        "Pessoas para conhecer",
+        "Dicas mais curtidas da semana"
+      ],
+      "pessoas": 2,
+      "dicas": 3
+    },
+    {
+      "nome": "390 claro: Adicionar envia o pedido (\"Pedido enviado\")",
+      "ok": true
+    },
+    {
+      "nome": "390 claro: a busca abre",
+      "ok": true
+    },
+    {
+      "nome": "390 claro: o ícone de pessoas abre a tela de Amigas",
+      "ok": true
+    },
+    {
+      "nome": "390 claro: tocar no nome abre o perfil da autora",
+      "ok": true
+    },
+    {
+      "nome": "390 claro: sem erro na página (fora o aviso de hidratação do relógio congelado)",
+      "ok": true,
+      "outros": []
+    },
+    {
+      "nome": "390 escuro: sem a fileira de stories, as 3 abas no lugar (soltas no topo da tela)",
+      "ok": true,
+      "abas": [
+        "Para você",
+        "Amigas",
+        "Descobrir"
+      ],
+      "postar": false,
+      "fileira": false,
+      "presa": false
+    },
+    {
+      "nome": "390 escuro: carrossel começa em 1/2, só a seta de avançar, 1ª bolinha",
+      "ok": true,
+      "contador": "1/2",
+      "anterior": false,
+      "proxima": true,
+      "bolinha": 0
+    },
+    {
+      "nome": "390 escuro: rolando, as abas ficam presas no topo",
+      "ok": true,
+      "presa": true,
+      "top": 0,
+      "largura": 390,
+      "rolagem": 681
+    },
+    {
+      "nome": "390 escuro: seta avança para 2/2, troca as setas e a bolinha",
+      "ok": true,
+      "contador": "2/2",
+      "anterior": true,
+      "proxima": false,
+      "bolinha": 1
+    },
+    {
+      "nome": "390 escuro: teclado (←) volta para 1/2",
+      "ok": true,
+      "contador": "1/2",
+      "anterior": false,
+      "proxima": true,
+      "bolinha": 0
+    },
+    {
+      "nome": "390 escuro: o dedo desliza para 2/2 e continua na Rede",
+      "ok": true,
+      "contador": "2/2",
+      "anterior": true,
+      "proxima": false,
+      "bolinha": 1
+    },
+    {
+      "nome": "390 escuro: carrossel 1:1 com uma 16:9 → a 16:9 inteira, com fundo desfocado",
+      "ok": true,
+      "formato": "1:1",
+      "encaixes": [
+        "cortar",
+        "inteira"
+      ],
+      "fundo": 1
+    },
+    {
+      "nome": "390 escuro: de volta ao topo, as abas voltam ao lugar",
+      "ok": true
+    },
+    {
+      "nome": "390 escuro: curtir soma 1 e pinta o coração",
+      "ok": true,
+      "antes": "12",
+      "depois": "13"
+    },
+    {
+      "nome": "390 escuro: comentar abre os comentários",
+      "ok": true
+    },
+    {
+      "nome": "390 escuro: \"Mais opções\" abre a folha de opções",
+      "ok": true,
+      "folhasAntes": 4,
+      "folhasDepois": 5
+    },
+    {
+      "nome": "390 escuro: a aba Amigas mostra o número de novas desde a última visita",
+      "ok": true,
+      "numero": "2"
+    },
+    {
+      "nome": "390 escuro: Amigas só com amigas e você, dividida em novas e já vistas, sem o número aberta",
+      "ok": true,
+      "autores": [
+        "Miguel",
+        "Juliana",
+        "Marina"
+      ],
+      "divisores": [
+        "Novas desde a sua última visita",
+        "Já visto"
+      ],
+      "numero": 0
+    },
+    {
+      "nome": "390 escuro: Descobrir com pessoas para conhecer e as dicas da semana",
+      "ok": true,
+      "titulos": [
+        "Rede",
+        "Pessoas para conhecer",
+        "Dicas mais curtidas da semana"
+      ],
+      "pessoas": 2,
+      "dicas": 3
+    },
+    {
+      "nome": "390 escuro: Adicionar envia o pedido (\"Pedido enviado\")",
+      "ok": true
+    },
+    {
+      "nome": "390 escuro: a busca abre",
+      "ok": true
+    },
+    {
+      "nome": "390 escuro: o ícone de pessoas abre a tela de Amigas",
+      "ok": true
+    },
+    {
+      "nome": "390 escuro: tocar no nome abre o perfil da autora",
+      "ok": true
+    },
+    {
+      "nome": "390 escuro: sem erro na página (fora o aviso de hidratação do relógio congelado)",
+      "ok": true,
+      "outros": []
+    },
+    {
+      "nome": "430 claro: sem a fileira de stories, as 3 abas no lugar (soltas no topo da tela)",
+      "ok": true,
+      "abas": [
+        "Para você",
+        "Amigas",
+        "Descobrir"
+      ],
+      "postar": false,
+      "fileira": false,
+      "presa": false
+    },
+    {
+      "nome": "430 claro: carrossel começa em 1/2, só a seta de avançar, 1ª bolinha",
+      "ok": true,
+      "contador": "1/2",
+      "anterior": false,
+      "proxima": true,
+      "bolinha": 0
+    },
+    {
+      "nome": "430 claro: rolando, as abas ficam presas no topo",
+      "ok": true,
+      "presa": true,
+      "top": 0,
+      "largura": 430,
+      "rolagem": 515
+    },
+    {
+      "nome": "430 claro: seta avança para 2/2, troca as setas e a bolinha",
+      "ok": true,
+      "contador": "2/2",
+      "anterior": true,
+      "proxima": false,
+      "bolinha": 1
+    },
+    {
+      "nome": "430 claro: teclado (←) volta para 1/2",
+      "ok": true,
+      "contador": "1/2",
+      "anterior": false,
+      "proxima": true,
+      "bolinha": 0
+    },
+    {
+      "nome": "430 claro: o dedo desliza para 2/2 e continua na Rede",
+      "ok": true,
+      "contador": "2/2",
+      "anterior": true,
+      "proxima": false,
+      "bolinha": 1
+    },
+    {
+      "nome": "430 claro: carrossel 1:1 com uma 16:9 → a 16:9 inteira, com fundo desfocado",
+      "ok": true,
+      "formato": "1:1",
+      "encaixes": [
+        "cortar",
+        "inteira"
+      ],
+      "fundo": 1
+    },
+    {
+      "nome": "430 claro: de volta ao topo, as abas voltam ao lugar",
+      "ok": true
+    },
+    {
+      "nome": "430 claro: curtir soma 1 e pinta o coração",
+      "ok": true,
+      "antes": "12",
+      "depois": "13"
+    },
+    {
+      "nome": "430 claro: comentar abre os comentários",
+      "ok": true
+    },
+    {
+      "nome": "430 claro: \"Mais opções\" abre a folha de opções",
+      "ok": true,
+      "folhasAntes": 4,
+      "folhasDepois": 5
+    },
+    {
+      "nome": "430 claro: a aba Amigas mostra o número de novas desde a última visita",
+      "ok": true,
+      "numero": "2"
+    },
+    {
+      "nome": "430 claro: Amigas só com amigas e você, dividida em novas e já vistas, sem o número aberta",
+      "ok": true,
+      "autores": [
+        "Miguel",
+        "Juliana",
+        "Marina"
+      ],
+      "divisores": [
+        "Novas desde a sua última visita",
+        "Já visto"
+      ],
+      "numero": 0
+    },
+    {
+      "nome": "430 claro: Descobrir com pessoas para conhecer e as dicas da semana",
+      "ok": true,
+      "titulos": [
+        "Rede",
+        "Pessoas para conhecer",
+        "Dicas mais curtidas da semana"
+      ],
+      "pessoas": 2,
+      "dicas": 3
+    },
+    {
+      "nome": "430 claro: Adicionar envia o pedido (\"Pedido enviado\")",
+      "ok": true
+    },
+    {
+      "nome": "430 claro: a busca abre",
+      "ok": true
+    },
+    {
+      "nome": "430 claro: o ícone de pessoas abre a tela de Amigas",
+      "ok": true
+    },
+    {
+      "nome": "430 claro: tocar no nome abre o perfil da autora",
+      "ok": true
+    },
+    {
+      "nome": "430 claro: sem erro na página (fora o aviso de hidratação do relógio congelado)",
+      "ok": true,
+      "outros": []
+    },
+    {
+      "nome": "430 escuro: sem a fileira de stories, as 3 abas no lugar (soltas no topo da tela)",
+      "ok": true,
+      "abas": [
+        "Para você",
+        "Amigas",
+        "Descobrir"
+      ],
+      "postar": false,
+      "fileira": false,
+      "presa": false
+    },
+    {
+      "nome": "430 escuro: carrossel começa em 1/2, só a seta de avançar, 1ª bolinha",
+      "ok": true,
+      "contador": "1/2",
+      "anterior": false,
+      "proxima": true,
+      "bolinha": 0
+    },
+    {
+      "nome": "430 escuro: rolando, as abas ficam presas no topo",
+      "ok": true,
+      "presa": true,
+      "top": 0,
+      "largura": 430,
+      "rolagem": 515
+    },
+    {
+      "nome": "430 escuro: seta avança para 2/2, troca as setas e a bolinha",
+      "ok": true,
+      "contador": "2/2",
+      "anterior": true,
+      "proxima": false,
+      "bolinha": 1
+    },
+    {
+      "nome": "430 escuro: teclado (←) volta para 1/2",
+      "ok": true,
+      "contador": "1/2",
+      "anterior": false,
+      "proxima": true,
+      "bolinha": 0
+    },
+    {
+      "nome": "430 escuro: o dedo desliza para 2/2 e continua na Rede",
+      "ok": true,
+      "contador": "2/2",
+      "anterior": true,
+      "proxima": false,
+      "bolinha": 1
+    },
+    {
+      "nome": "430 escuro: carrossel 1:1 com uma 16:9 → a 16:9 inteira, com fundo desfocado",
+      "ok": true,
+      "formato": "1:1",
+      "encaixes": [
+        "cortar",
+        "inteira"
+      ],
+      "fundo": 1
+    },
+    {
+      "nome": "430 escuro: de volta ao topo, as abas voltam ao lugar",
+      "ok": true
+    },
+    {
+      "nome": "430 escuro: curtir soma 1 e pinta o coração",
+      "ok": true,
+      "antes": "12",
+      "depois": "13"
+    },
+    {
+      "nome": "430 escuro: comentar abre os comentários",
+      "ok": true
+    },
+    {
+      "nome": "430 escuro: \"Mais opções\" abre a folha de opções",
+      "ok": true,
+      "folhasAntes": 4,
+      "folhasDepois": 5
+    },
+    {
+      "nome": "430 escuro: a aba Amigas mostra o número de novas desde a última visita",
+      "ok": true,
+      "numero": "2"
+    },
+    {
+      "nome": "430 escuro: Amigas só com amigas e você, dividida em novas e já vistas, sem o número aberta",
+      "ok": true,
+      "autores": [
+        "Miguel",
+        "Juliana",
+        "Marina"
+      ],
+      "divisores": [
+        "Novas desde a sua última visita",
+        "Já visto"
+      ],
+      "numero": 0
+    },
+    {
+      "nome": "430 escuro: Descobrir com pessoas para conhecer e as dicas da semana",
+      "ok": true,
+      "titulos": [
+        "Rede",
+        "Pessoas para conhecer",
+        "Dicas mais curtidas da semana"
+      ],
+      "pessoas": 2,
+      "dicas": 3
+    },
+    {
+      "nome": "430 escuro: Adicionar envia o pedido (\"Pedido enviado\")",
+      "ok": true
+    },
+    {
+      "nome": "430 escuro: a busca abre",
+      "ok": true
+    },
+    {
+      "nome": "430 escuro: o ícone de pessoas abre a tela de Amigas",
+      "ok": true
+    },
+    {
+      "nome": "430 escuro: tocar no nome abre o perfil da autora",
+      "ok": true
+    },
+    {
+      "nome": "430 escuro: sem erro na página (fora o aviso de hidratação do relógio congelado)",
+      "ok": true,
+      "outros": []
+    }
+  ]
+}
