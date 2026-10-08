@@ -1755,3 +1755,40 @@
   position: absolute;
   inset: -9px 0;
 }
+
+/* ── Área segura do iPhone (notch / Dynamic Island, home indicator) ──
+   O app usa `viewport-fit: cover` com a barra de status
+   `black-translucent` (app/layout.tsx): no PWA instalado, a página começa
+   por baixo do relógio. A casca do app compensa isso; a Jornada não, porque
+   cobre a tela inteira (fixed inset-0) e trazia os 20px do topo do .ph do
+   protótipo, que já mora abaixo da barra de status. Resultado: Voltar,
+   áudio e Ajustes ficavam tampados e só apareciam puxando a tela para
+   baixo. Aqui só se SOMA a área segura aos valores do protótipo; fora do
+   iPhone (e no laboratório) `env()` é 0 e nada muda de lugar. */
+.raiz .pad {
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px));
+}
+.raiz .toast {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+}
+.raiz .rc-seg {
+  top: calc(14px + env(safe-area-inset-top, 0px));
+}
+.raiz .rc-x {
+  top: calc(26px + env(safe-area-inset-top, 0px));
+}
+.raiz .rc-tap {
+  top: calc(70px + env(safe-area-inset-top, 0px));
+}
+.raiz .rc-body {
+  padding-top: calc(70px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+.raiz .stg {
+  padding-top: calc(40px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+}
+.raiz .sheet {
+  padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+}
