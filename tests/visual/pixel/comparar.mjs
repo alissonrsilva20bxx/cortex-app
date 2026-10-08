@@ -41,6 +41,11 @@
 //   --sem-jornada            no Início, esconde o card "Sua Jornada" (o mockup
 //                            das 5 telas não tem esse card)
 //   --json                   imprime só o JSON no stdout
+//   --ate=<seletor>          compara só a faixa ACIMA desse elemento do app
+//                            (do topo da tela até o topo dele). No Financeiro,
+//                            `--ate='[data-pixel="grafico-palitos"]'` mede o
+//                            saldo e os 4 cards contra o mockup, que não tem
+//                            o gráfico de palitos
 //
 // Ambiente: PIXEL_PLAYWRIGHT, PIXEL_CHROME e PIXEL_BASE_URL sobrescrevem os
 // caminhos (Playwright do cache do npx, Chromium do ms-playwright).
@@ -587,6 +592,7 @@ async function principal() {
     inteira: flag("inteira"),
     semJornada: flag("sem-jornada"),
     json: flag("json"),
+    ate: arg("ate", ""),
   };
 
   const erroDeUso = (msg) => {
@@ -968,7 +974,8 @@ async function principal() {
   for (const tela of OPC.telas) {
     const nome =
       `${tela}-${OPC.largura}-${OPC.modo}-${OPC.tema}` +
-      (tela === "inicio" && OPC.semJornada ? "-sem-jornada" : "");
+      (tela === "inicio" && OPC.semJornada ? "-sem-jornada" : "") +
+      (OPC.ate ? "-acima" : "");
     const dir = join(OPC.saida, tela);
     mkdirSync(dir, { recursive: true });
 
@@ -977,9 +984,20 @@ async function principal() {
 
     // Recorte com geometria inteira e tamanho imposto (ver clipDoRecorte).
     const caixa = await mock.el.boundingBox();
-    const alturaAlvo = OPC.inteira
-      ? Math.round(caixa.height)
-      : ALTURA[OPC.largura];
+    // `--ate`: a faixa medida termina no topo do elemento pedido do app.
+    const topoDoCorte = OPC.ate
+      ? await app.page.evaluate((sel) => {
+          const alvo = document.querySelector(sel);
+          return alvo ? Math.floor(alvo.getBoundingClientRect().top) : null;
+        }, OPC.ate)
+      : null;
+    if (OPC.ate && !topoDoCorte)
+      throw new Error(`--ate: elemento não encontrado no app: ${OPC.ate}`);
+    const alturaAlvo = topoDoCorte
+      ? topoDoCorte
+      : OPC.inteira
+        ? Math.round(caixa.height)
+        : ALTURA[OPC.largura];
     const pngMock = await mock.page.screenshot({
       clip: clipDoRecorte({
         caixa,
@@ -987,7 +1005,11 @@ async function principal() {
         altura: alturaAlvo,
       }),
     });
-    const pngApp = await app.page.screenshot({ fullPage: OPC.inteira });
+    const pngApp = topoDoCorte
+      ? await app.page.screenshot({
+          clip: { x: 0, y: 0, width: OPC.largura, height: topoDoCorte },
+        })
+      : await app.page.screenshot({ fullPage: OPC.inteira });
     writeFileSync(join(dir, `${nome}-mockup.png`), pngMock);
     writeFileSync(join(dir, `${nome}-app.png`), pngApp);
 
