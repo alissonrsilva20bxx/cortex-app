@@ -40,6 +40,8 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
+import { usarReauth } from "@/lib/reauth";
+import { reauthDeLaboratorio } from "@/lib/reauthLaboratorio";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { AppTour } from "@/components/onboarding/AppTour";
 import type { RedeAcessoTour } from "@/lib/appTour";
@@ -212,6 +214,15 @@ export default function DevPreviewApp() {
   // vazios próprios (não os do app, que têm seed) só pra forçar os 4 passos
   // (welcome/goal/job/aha) a aparecerem; `onOpenJobForm` reaproveita o
   // `JobForm` já montado abaixo.
+  // Sem Supabase aqui: a confirmação da conta ("Esqueci o PIN", desligar
+  // ou trocar o PIN) usa o adaptador do laboratório (senha "senha123").
+  // Instalado já no 1º render, antes dos filhos lerem o adaptador.
+  // O efeito instala de novo: no StrictMode a limpeza roda no meio.
+  useState(() => usarReauth(reauthDeLaboratorio));
+  useEffect(() => {
+    usarReauth(reauthDeLaboratorio);
+    return () => usarReauth(null);
+  }, []);
   const [onboardingPreview, setOnboardingPreview] = useState(false);
   // Tour guiado (espelha app/page.tsx); `__previewTour()` abre direto.
   const [tourOpen, setTourOpen] = useState(false);
@@ -223,10 +234,18 @@ export default function DevPreviewApp() {
   const [fotoRede, setFotoRede] = useState<string | null>(null);
   useEffect(() => {
     const w = window as unknown as Record<string, () => void>;
-    w.__previewLock = () => {
-      setPinHash((h) => h ?? "preview-lock-000000000000000000000000000000");
+    // `hash` opcional: os testes passam o SHA-256 de um PIN conhecido para
+    // conferir o acerto; sem ele vale um hash que nenhum PIN gera.
+    const ganchos = w as unknown as Record<string, (hash?: string) => void>;
+    ganchos.__previewLock = (hash) => {
+      setPinHash(
+        (h) => hash ?? h ?? "preview-lock-000000000000000000000000000000"
+      );
       setLocked(true);
     };
+    // Só liga o PIN, sem travar o app: o Cofre passa a pedir o PIN.
+    ganchos.__previewPin = (hash) =>
+      setPinHash(hash ?? "preview-lock-000000000000000000000000000000");
     w.__previewUnlock = () => setLocked(false);
     w.__previewOnboarding = () => setOnboardingPreview(true);
     w.__previewTour = () => {
@@ -245,6 +264,7 @@ export default function DevPreviewApp() {
     return () => {
       delete w.__previewComemoracao;
       delete w.__previewLock;
+      delete w.__previewPin;
       delete w.__previewUnlock;
       delete w.__previewTour;
       delete w.__previewOnboarding;
@@ -373,7 +393,15 @@ export default function DevPreviewApp() {
   });
 
   if (locked && pinHash) {
-    return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
+    return (
+      <PinScreen
+        pinHash={pinHash}
+        onUnlock={() => setLocked(false)}
+        usuarioId={usuario.id}
+        onPinRedefinido={(hash) => setPinHash(hash)}
+        onSair={handleSignOut}
+      />
+    );
   }
 
   if (onboardingPreview) {
@@ -561,6 +589,7 @@ export default function DevPreviewApp() {
             pinHash={pinHash}
             active={activeTab === "cofre"}
             onExit={() => handleTabChange(abaAntesDoCofre.current)}
+            onPinHashChange={(h) => setPinHash(h)}
             // Sem este sinal o azulejo "Enviar" nasce desabilitado (meio
             // transparente), e a referência o desenha ativo. O sheet mora na
             // página, FORA da trava do Cofre, de propósito: o seletor de

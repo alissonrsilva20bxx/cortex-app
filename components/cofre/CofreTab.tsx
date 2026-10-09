@@ -139,6 +139,9 @@ interface Props {
    * PinScreen cobre a tela inteira (inclusive a barra de abas), então sem
    * isto não havia como sair do Cofre sem digitar o PIN. */
   onExit?: () => void;
+  /** PIN novo criado pelo "Esqueci o PIN" do Cofre (depois de confirmar a
+   * conta): a página troca o hash, e o Cofre abre. */
+  onPinHashChange?: (hash: string) => void;
   /** Abre o UploadSheet da página (o mesmo do "+"), que fica fora da trava
    * do Cofre. Opcional: sem ele o botão "Enviar" fica desabilitado — ver o
    * comentário do botão. */
@@ -151,6 +154,7 @@ export function CofreTab({
   pinHash,
   active,
   onExit,
+  onPinHashChange,
   onEnviar,
 }: Props) {
   /**
@@ -403,6 +407,8 @@ export function CofreTab({
         context="vault"
         onUnlock={() => setUnlocked(true)}
         onCancel={onExit}
+        usuarioId={userId}
+        onPinRedefinido={onPinHashChange}
       />,
       document.body
     );

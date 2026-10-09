@@ -48,6 +48,8 @@ import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import * as cofreCache from "@/lib/cofre/cofreCache";
 import * as pinHashCache from "@/lib/pinHashCache";
+import { zerarTodasAsTentativas } from "@/lib/pinTentativas";
+import { reauthAtual } from "@/lib/reauth";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { isFreshAccount } from "@/lib/onboarding";
 import { tourDoneKey, type RedeAcessoTour } from "@/lib/appTour";
@@ -381,6 +383,16 @@ export default function Page() {
       });
   }, [usuario, locked, objetivosRefreshKey]);
 
+  // Volta do Google pedida nos Ajustes (desligar ou trocar o PIN): depois de
+  // destravar o app, abre os Ajustes; lá a confirmação é conferida e a ação
+  // termina (components/ajustes/AjustesTab.tsx).
+  useEffect(() => {
+    if (locked || !usuario) return;
+    const motivo = reauthAtual().motivoPendente();
+    if (motivo === "desligar-pin" || motivo === "trocar-pin")
+      setActiveTab("ajustes");
+  }, [locked, usuario]);
+
   async function handleSignOut() {
     // Zera o cache da Rede, do Cofre e do PIN ANTES de sair -- em memória
     // (a próxima conta nesta aba não herda nada) e no localStorage (req
@@ -390,6 +402,9 @@ export default function Page() {
       redeCachePersist.limpar();
       cofreCache.limparTudo();
       pinHashCache.limparTudo();
+      // Sair da conta zera o limite de tentativas do PIN: para voltar é
+      // preciso a senha (ou o Google) da conta.
+      zerarTodasAsTentativas();
     } catch (_) {}
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -475,7 +490,18 @@ export default function Page() {
   }
 
   if (locked && pinHash) {
-    return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
+    return (
+      <PinScreen
+        pinHash={pinHash}
+        onUnlock={() => setLocked(false)}
+        usuarioId={usuario?.id ?? ""}
+        onPinRedefinido={(hash) => {
+          setPinHash(hash);
+          if (usuario) pinHashCache.gravar(usuario.id, hash);
+        }}
+        onSair={handleSignOut}
+      />
+    );
   }
 
   // 1º uso: decidido uma única vez (isNewUserSession, ver efeito acima) a
@@ -671,6 +697,10 @@ export default function Page() {
                 pinHash={pinHash}
                 active={activeTab === "cofre"}
                 onExit={() => handleTabChange(abaAntesDoCofre.current)}
+                onPinHashChange={(h) => {
+                  setPinHash(h);
+                  pinHashCache.gravar(usuario.id, h);
+                }}
                 // Sem este sinal o azulejo "Enviar" nasce desabilitado (meio
                 // transparente), e a referência o desenha ativo. O sheet mora na
                 // página, FORA da trava do Cofre, de propósito: o seletor de
