@@ -70,7 +70,12 @@ import { TRIAL_DIAS, type EstadoAssinatura } from "@/lib/assinatura";
 import { supabase, __setMockSupabaseClient } from "@/lib/supabase";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { createMockSupabaseClient } from "@/lib/mockSupabase";
-import { buildMockAppSeed, MOCK_APP_USUARIO } from "@/lib/mockAppData";
+import {
+  buildMockAppSeed,
+  MOCK_APP_USUARIO,
+  aplicarCasoFinanceiro,
+  ehCasoFinanceiro,
+} from "@/lib/mockAppData";
 import {
   enableDevPreviewGateSession,
   disableDevPreviewGateSession,
@@ -119,9 +124,18 @@ export default function DevPreviewApp() {
       objetivosParam !== null && /^\d+$/.test(objetivosParam)
         ? Number(objetivosParam)
         : undefined;
+    // `?financeiro=vazio|so-entradas|so-saidas` — só diagnóstico da barra
+    // entrou x saiu do Financeiro (mês zerado, só entradas, só saídas).
+    const financeiroParam =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("financeiro")
+        : null;
     __setMockSupabaseClient(
       createMockSupabaseClient(
-        buildMockAppSeed({ objetivosCount }),
+        aplicarCasoFinanceiro(
+          buildMockAppSeed({ objetivosCount }),
+          ehCasoFinanceiro(financeiroParam) ? financeiroParam : null
+        ),
         MOCK_APP_USUARIO.id
       )
     );

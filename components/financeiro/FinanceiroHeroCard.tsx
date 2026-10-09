@@ -189,30 +189,31 @@ export function FinanceiroHeroCard({
           {formatBRL(saldo)}
         </span>
 
-        {/* Barra entrou x saiu: proporção dos dois totais do mês. */}
-        {movimento > 0 && (
-          <div
-            style={{
-              display: "flex",
-              height: "8px",
-              borderRadius: "4px",
-              overflow: "hidden",
-              gap: "3px",
-            }}
-            aria-hidden
-          >
-            {totalEntradaMes > 0 && (
-              <span
-                style={{ flex: totalEntradaMes, background: "var(--t-green)" }}
-              />
-            )}
-            {totalDespMes > 0 && (
-              <span
-                style={{ flex: totalDespMes, background: "var(--t-red)" }}
-              />
-            )}
-          </div>
-        )}
+        {/* Barra entrou x saiu: proporção dos dois totais do mês. Sempre
+            desenhada, na mesma altura e no mesmo lugar: mês zerado é a
+            trilha cinza vazia; só entrada, verde inteiro; só saída,
+            vermelho inteiro; os dois, verde e vermelho proporcionais. */}
+        <div
+          data-saldo-barra={movimento > 0 ? "movimento" : "vazia"}
+          style={{
+            display: "flex",
+            height: "8px",
+            borderRadius: "4px",
+            overflow: "hidden",
+            gap: "3px",
+            background: movimento > 0 ? undefined : "var(--t-line)",
+          }}
+          aria-hidden
+        >
+          {totalEntradaMes > 0 && (
+            <span
+              style={{ flex: totalEntradaMes, background: "var(--t-green)" }}
+            />
+          )}
+          {totalDespMes > 0 && (
+            <span style={{ flex: totalDespMes, background: "var(--t-red)" }} />
+          )}
+        </div>
 
         <div
           style={{
