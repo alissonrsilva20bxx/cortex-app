@@ -168,6 +168,46 @@ describe("Financeiro sem palitos: só a barra entrou x saiu do Saldo do mês", (
   });
 });
 
+// Correção da barra (09/10/2026): ela sempre aparece. Antes, com o mês
+// zerado (R$ 0 de entrada e de saída), não desenhava nada.
+describe("barra entrou x saiu do Saldo do mês: sempre desenhada", () => {
+  const hero = read("components/financeiro/FinanceiroHeroCard.tsx")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+
+  it("a barra não depende de haver movimento no mês (nada de `movimento > 0 &&` em volta)", () => {
+    expect(hero).not.toMatch(/\{movimento > 0 && \(\s*<div/);
+    expect(hero).toMatch(
+      /<div\s+data-saldo-barra=\{movimento > 0 \? "movimento" : "vazia"\}/
+    );
+  });
+
+  it("mês zerado: a trilha cinza vazia (--t-line), mesma altura e lugar", () => {
+    const barra = hero.slice(hero.indexOf("data-saldo-barra"));
+    expect(barra).toMatch(/height: "8px",/);
+    expect(barra).toMatch(/borderRadius: "4px",/);
+    expect(barra).toMatch(
+      /background: movimento > 0 \? undefined : "var\(--t-line\)",/
+    );
+  });
+
+  it("cada lado só aparece com valor: só entrada é verde inteiro; só saída, vermelho inteiro", () => {
+    expect(hero).toMatch(
+      /\{totalEntradaMes > 0 && \(\s*<span\s+style=\{\{ flex: totalEntradaMes, background: "var\(--t-green\)" \}\}/
+    );
+    expect(hero).toMatch(
+      /\{totalDespMes > 0 && \(\s*<span style=\{\{ flex: totalDespMes, background: "var\(--t-red\)" \}\} \/>/
+    );
+  });
+
+  it("o laboratório monta os 3 casos pelo ?financeiro=", () => {
+    const lab = read("app/dev-preview/app/page.tsx");
+    expect(lab).toMatch(
+      /aplicarCasoFinanceiro\(\s*buildMockAppSeed\(\{ objetivosCount \}\),\s*ehCasoFinanceiro\(financeiroParam\) \? financeiroParam : null\s*\)/
+    );
+  });
+});
+
 describe("Honesty rule (issue #136) — variação % only with a real, non-zero previous period", () => {
   const src = read("components/financeiro/FinanceiroHeroCard.tsx");
 
@@ -181,8 +221,21 @@ describe("Honesty rule (issue #136) — variação % only with a real, non-zero 
     expect(src).toMatch(/prevSaldo !== 0[\s\S]{0,100}: null/);
   });
 
-  it("the badge only renders when variacaoPct is not null (real, computable value)", () => {
-    expect(src).toContain("{variacaoPct !== null && (");
+  it("the badge only SHOWS a number when variacaoPct is not null; otherwise it is an invisible, number-free placeholder that keeps the row height", () => {
+    const chip = src.slice(src.indexOf("data-saldo-chip"));
+    expect(chip).toMatch(
+      /^data-saldo-chip=\{variacaoPct !== null \? "visivel" : "reservado"\}/
+    );
+    expect(chip).toMatch(/aria-hidden=\{variacaoPct === null \|\| undefined\}/);
+    expect(chip).toMatch(
+      /visibility: variacaoPct !== null \? undefined : "hidden",/
+    );
+    // O texto reservado é um espaço não separável: nenhum "0%" inventado.
+    expect(chip).toMatch(
+      /\{variacaoPct !== null\s*\? `\$\{sobe \? "\+" : ""\}\$\{Math\.round\(variacaoPct\)\}% vs \$\{mesAnterior\}`\s*: "\\u00a0"\}/
+    );
+    // O chip não some mais do DOM (sumir encolhia a linha e subia a barra).
+    expect(src).not.toContain("{variacaoPct !== null && (");
   });
 });
 

@@ -854,3 +854,37 @@ export function buildMockAppSeed(opts?: {
     cofreFiles,
   };
 }
+
+/**
+ * `?financeiro=vazio|so-entradas|so-saidas` do laboratório (só diagnóstico,
+ * mesmo padrão do `?objetivos=`): monta o mês do Financeiro sem nada, só
+ * com entradas ou só com saídas, para ver a barra entrou x saiu do "Saldo
+ * do mês" nos 3 estados. Entradas = atendimentos concluídos + receitas
+ * avulsas; saídas = despesas. Sem o parâmetro, a semente de sempre.
+ */
+export type CasoFinanceiro = "vazio" | "so-entradas" | "so-saidas";
+
+export function ehCasoFinanceiro(x: unknown): x is CasoFinanceiro {
+  return x === "vazio" || x === "so-entradas" || x === "so-saidas";
+}
+
+export function aplicarCasoFinanceiro(
+  seed: MockSupabaseSeed,
+  caso: CasoFinanceiro | null
+): MockSupabaseSeed {
+  if (!caso) return seed;
+  const t = seed.tables;
+  const semEntradas = caso === "vazio" || caso === "so-saidas";
+  const semSaidas = caso === "vazio" || caso === "so-entradas";
+  return {
+    ...seed,
+    tables: {
+      ...t,
+      jobs: semEntradas
+        ? (t.jobs ?? []).filter((j) => j.status !== "concluído")
+        : t.jobs,
+      receitas_avulsas: semEntradas ? [] : t.receitas_avulsas,
+      despesas: semSaidas ? [] : t.despesas,
+    },
+  };
+}

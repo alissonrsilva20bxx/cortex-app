@@ -159,23 +159,30 @@ export function FinanceiroHeroCard({
           >
             Saldo do mês
           </span>
-          {variacaoPct !== null && (
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 700,
-                padding: "3px 9px",
-                borderRadius: "999px",
-                background: sobe ? "var(--t-gsoft)" : "var(--t-rsoft)",
-                color: sobe ? "var(--t-green)" : "var(--t-red)",
-              }}
-            >
-              {/* Um nó de texto só, como no mockup: o navegador espaça a
-                  junção de dois nós de forma diferente (ordem do operador:
-                  pixel idêntico). */}
-              {`${sobe ? "+" : ""}${Math.round(variacaoPct)}% vs ${mesAnterior}`}
-            </span>
-          )}
+          {/* Sem variação (mês anterior zerado) o chip fica invisível e sem
+              número (regra de honestidade, #136), mas continua ocupando a
+              linha: sem ele a linha do título encolhe e o valor e a barra
+              sobem 4,5px. */}
+          <span
+            data-saldo-chip={variacaoPct !== null ? "visivel" : "reservado"}
+            aria-hidden={variacaoPct === null || undefined}
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              padding: "3px 9px",
+              borderRadius: "999px",
+              background: sobe ? "var(--t-gsoft)" : "var(--t-rsoft)",
+              color: sobe ? "var(--t-green)" : "var(--t-red)",
+              visibility: variacaoPct !== null ? undefined : "hidden",
+            }}
+          >
+            {/* Um nó de texto só, como no mockup: o navegador espaça a
+                junção de dois nós de forma diferente (ordem do operador:
+                pixel idêntico). */}
+            {variacaoPct !== null
+              ? `${sobe ? "+" : ""}${Math.round(variacaoPct)}% vs ${mesAnterior}`
+              : "\u00a0"}
+          </span>
         </div>
 
         <span
@@ -189,30 +196,31 @@ export function FinanceiroHeroCard({
           {formatBRL(saldo)}
         </span>
 
-        {/* Barra entrou x saiu: proporção dos dois totais do mês. */}
-        {movimento > 0 && (
-          <div
-            style={{
-              display: "flex",
-              height: "8px",
-              borderRadius: "4px",
-              overflow: "hidden",
-              gap: "3px",
-            }}
-            aria-hidden
-          >
-            {totalEntradaMes > 0 && (
-              <span
-                style={{ flex: totalEntradaMes, background: "var(--t-green)" }}
-              />
-            )}
-            {totalDespMes > 0 && (
-              <span
-                style={{ flex: totalDespMes, background: "var(--t-red)" }}
-              />
-            )}
-          </div>
-        )}
+        {/* Barra entrou x saiu: proporção dos dois totais do mês. Sempre
+            desenhada, na mesma altura e no mesmo lugar: mês zerado é a
+            trilha cinza vazia; só entrada, verde inteiro; só saída,
+            vermelho inteiro; os dois, verde e vermelho proporcionais. */}
+        <div
+          data-saldo-barra={movimento > 0 ? "movimento" : "vazia"}
+          style={{
+            display: "flex",
+            height: "8px",
+            borderRadius: "4px",
+            overflow: "hidden",
+            gap: "3px",
+            background: movimento > 0 ? undefined : "var(--t-line)",
+          }}
+          aria-hidden
+        >
+          {totalEntradaMes > 0 && (
+            <span
+              style={{ flex: totalEntradaMes, background: "var(--t-green)" }}
+            />
+          )}
+          {totalDespMes > 0 && (
+            <span style={{ flex: totalDespMes, background: "var(--t-red)" }} />
+          )}
+        </div>
 
         <div
           style={{
