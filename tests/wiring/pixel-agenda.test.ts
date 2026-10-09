@@ -257,7 +257,7 @@ describe('o "+" da Rede é o "Postar" do mockup, sem ação nova', () => {
     }
   );
 
-  it("o sinal chega na Rede e abre o MESMO compositor do Postar do feed", () => {
+  it("o sinal chega na Rede e abre o compositor (o único caminho do Postar, desde que a fileira de stories saiu)", () => {
     expect(read("components/rede/RedeGatedTab.tsx")).toMatch(
       /postarSignal=\{postarSignal\}/
     );
@@ -265,7 +265,9 @@ describe('o "+" da Rede é o "Postar" do mockup, sem ação nova', () => {
     expect(tab).toMatch(
       /if \(postarSignal === ultimoPostar\.current\) return;\s*ultimoPostar\.current = postarSignal;\s*setComposerOpen\(true\);/
     );
-    expect(tab).toMatch(/onOpenComposer=\{\(\) => setComposerOpen\(true\)\}/);
+    // Proposta "Três abas": a fileira de amigas (com o seu "Postar") saiu
+    // do feed; o "+" é o caminho para postar.
+    expect(tab).not.toMatch(/onOpenComposer=/);
   });
 });
 

@@ -47,9 +47,12 @@ describe("§6.1-P1-1 — override ?vitrine=1 continua existindo para forçar apr
 
 describe("§6.3-P0-1 — filtro real por amizade no feed (autorId === usuario.id || friends.includes(autorId))", () => {
   it("FeedScreen filtra por autoria própria ou lista real de amigas, não mostra tudo sem filtro", () => {
-    expect(feedScreen).toMatch(
-      /\(p\) => p\.autorId === usuario\.id \|\| friends\.includes\(p\.autorId\)/
+    // O filtro mora na lógica pura das abas (lib/rede/abasFeed.ts) e o
+    // FeedScreen o aplica com o usuário e a lista real de amigas.
+    expect(readFileSync(join(ROOT, "lib/rede/abasFeed.ts"), "utf-8")).toMatch(
+      /\(p\) => p\.autorId === usuarioId \|\| amigas\.includes\(p\.autorId\)/
     );
+    expect(feedScreen).toMatch(/postsDasAmigas\(posts, friends, usuario\.id\)/);
   });
 });
 

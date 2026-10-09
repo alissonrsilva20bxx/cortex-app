@@ -31,7 +31,11 @@ import { join } from "node:path";
  */
 
 const ROOT = join(__dirname, "..", "..");
-const read = (p: string) => readFileSync(join(ROOT, p), "utf-8");
+// Fim de linha normalizado (como em rede-feed-abas.test.ts): num checkout
+// Windows com core.autocrlf os fontes chegam com CRLF, e o regex do
+// PhotoStage (`\n}\n`) não casava.
+const read = (p: string) =>
+  readFileSync(join(ROOT, p), "utf-8").replace(/\r\n/g, "\n");
 
 describe("PostCard usa o FeedFotos real", () => {
   const postCard = read("components/rede/PostCard.tsx");
@@ -67,26 +71,31 @@ describe("FeedFotos — direção iOS + Instagram", () => {
     // foto), então a faixa já nasce com os 390px.
     expect(f).not.toMatch(/marginLeft:\s*-16/);
     expect(f).not.toMatch(/marginRight:\s*-16/);
-    expect(f).not.toMatch(/boxShadow/);
-    // a faixa da foto (helper `bleed`) não pode ter borda nem raio próprio
+    // a faixa da foto (helper `bleed`) não pode ter borda, raio nem sombra
+    // própria (a única sombra do arquivo é a do círculo das setas).
     const bleedBody = f.match(/const bleed =[\s\S]*?\}\);/)?.[0] ?? "";
     expect(bleedBody).toBeTruthy();
     expect(bleedBody).not.toMatch(/borderRadius/);
     expect(bleedBody).not.toMatch(/border:/);
+    expect(bleedBody).not.toMatch(/boxShadow/);
+    expect(f.match(/boxShadow/g)).toHaveLength(1);
+    expect(f).toMatch(/const setaCirculo[\s\S]*?boxShadow/);
   });
 
-  it("o tom do espaço da foto vem de fora e alterna entre os posts", () => {
-    // A referência ALTERNA: `--t-soft` no 1º artigo e `--t-psoft` no 2º,
-    // que no app são `--accent-tint` e `--info-tint`. Com um tom só, o 2º
-    // post divergia em todos os temas -- e no crimson escuro, onde o acento
-    // é muito saturado, era a maior diferença da tela.
+  it("o espaço da foto é --t-sub e o encaixe segue a regra dos formatos", () => {
+    // Proposta "Três abas": o espaço da foto é `--t-sub` em todo post (a
+    // alternância de tons era da referência antiga).
     expect(f).toMatch(/background:\s*tom,/);
     const card = read("components/rede/PostCard.tsx");
-    expect(card).toMatch(
-      /tom=\{indice % 2 === 0 \? "var\(--accent-tint\)" : "var\(--info-tint\)"\}/
+    expect(card).toMatch(/tom="var\(--t-sub\)"/);
+    // "cortar" preenche o quadro centrado; sem isso, a foto cabe inteira.
+    expect(f).toMatch(
+      /encaixe === "cortar"\s*\?\s*\{ objectFit: "cover", objectPosition: "50% 50%" \}\s*:\s*\{ objectFit: "contain" \}/
     );
-    expect(f).toMatch(/objectFit:\s*"contain"/);
-    expect(f).not.toMatch(/objectFit:\s*"cover"/);
+    // "inteira" tem o fundo desfocado da própria foto na sobra.
+    expect(f).toMatch(
+      /encaixe === "inteira" && thumbUrl && \([\s\S]{0,700}filter: "blur\(18px\) saturate\(1\.2\)"/
+    );
   });
 
   it("carrossel usa scroll-snap nativo", () => {
@@ -149,18 +158,30 @@ describe("FeedFotos — direção iOS + Instagram", () => {
       .replace(/(^|\s)\/\/.*$/gm, "");
     expect(semComentarios).not.toMatch(/onAbrir/);
     expect(semComentarios).not.toMatch(/FotoViewer/);
-    // nenhuma semântica de botão / ação invisível por teclado no palco
+    // nenhuma semântica de botão no palco da foto
     expect(semComentarios).not.toMatch(/role="button"/);
-    expect(semComentarios).not.toMatch(/onKeyDown/);
-    expect(semComentarios).not.toMatch(/tabIndex/);
+    const palco =
+      semComentarios.match(/export function PhotoStage[\s\S]*?\n}\n/)?.[0] ??
+      "";
+    expect(palco).toBeTruthy();
+    expect(palco).not.toMatch(/onKeyDown|tabIndex|onClick=\{\(\) => /);
+    // o único foco/teclado é o do carrossel, e ele só navega (irPara)
+    expect(semComentarios.match(/onKeyDown/g)).toHaveLength(1);
+    expect(semComentarios).toMatch(
+      /e\.key === "ArrowRight"\) \{\s*e\.preventDefault\(\);\s*irPara\(indice \+ 1\);/
+    );
+    expect(semComentarios).toMatch(
+      /e\.key === "ArrowLeft"\) \{\s*e\.preventDefault\(\);\s*irPara\(indice - 1\);/
+    );
     // sem detecção de "tap vs swipe" (existia só pra decidir se abria)
     expect(semComentarios).not.toMatch(/Math\.hypot/);
     expect(semComentarios).not.toMatch(/\bandou\b/);
   });
 
-  it("carrossel continua com swipe horizontal nativo e pontinhos abaixo", () => {
+  it("carrossel continua com swipe horizontal nativo, bolinhas abaixo e contador 1/N", () => {
     expect(f).toMatch(/scrollSnapType:\s*"x mandatory"/);
-    expect(f).toMatch(/indicador de página/i);
+    expect(f).toMatch(/data-bolinhas=""/);
+    expect(f).toMatch(/\{indice \+ 1\}\/\{total\}/);
   });
 
   it("usa a memória de proporções das fotos legadas (localStorage)", () => {
@@ -171,20 +192,31 @@ describe("FeedFotos — direção iOS + Instagram", () => {
     expect(f).toMatch(/lembrarProporcao\(foto0\.thumbPath/);
   });
 
-  it("setas só via classe .feed-foto-seta (escondidas no touch por CSS)", () => {
-    expect(f).toMatch(/className="feed-foto-seta"/);
-    // nada de setas sempre visíveis / dependentes de estado de hover em JS
+  it("setas em qualquer aparelho (o dedo também desliza), alvo 44, somem nas pontas", () => {
+    // Proposta "Três abas": deslizar com o dedo OU com os botões.
+    expect(f).not.toMatch(/className="feed-foto-seta"/);
     expect(f).not.toMatch(/onMouseEnter|onMouseOver/);
-    // o style inline das setas (setaBase) NÃO pode setar `display`: um
-    // display inline vence a media query `.feed-foto-seta` por
-    // especificidade e as setas vazam pro touch (regressão real do iPhone).
     const setaBase = f.match(/const setaBase[\s\S]*?\n};/)?.[0] ?? "";
-    expect(setaBase).not.toMatch(/display\s*:/);
+    expect(setaBase).toMatch(/width: 44,\s*height: 44,/);
+    expect(f).toMatch(
+      /\{indice > 0 && \(\s*<button[\s\S]{0,80}aria-label="Foto anterior"/
+    );
+    expect(f).toMatch(
+      /\{indice < total - 1 && \(\s*<button[\s\S]{0,80}aria-label="Próxima foto"/
+    );
+    expect(f).toMatch(/onClick=\{\(\) => irPara\(indice - 1\)\}/);
+    expect(f).toMatch(/onClick=\{\(\) => irPara\(indice \+ 1\)\}/);
   });
 
-  it("indicador de página é discreto e fica ABAIXO da foto (fora da bleed box)", () => {
-    expect(f).toMatch(/indicador de página/i);
-    expect(f).toMatch(/paddingTop:\s*8/);
+  it("as bolinhas ficam ABAIXO da foto (fora da bleed box), a ativa no acento", () => {
+    const bolinhas =
+      f.match(/data-bolinhas=""[\s\S]*?<\/div>\s*<\/>/)?.[0] ?? "";
+    expect(bolinhas).toMatch(/marginTop: 10/);
+    expect(bolinhas).toMatch(
+      /i === indice \? "var\(--t-acc\)" : "var\(--t-ring\)"/
+    );
+    // depois do fechamento da bleed box (`</div>` antes das bolinhas)
+    expect(f).toMatch(/<\/div>\s*\{\/\* bolinhas/);
   });
 
   it("NÃO anima a altura (foto legada assenta de uma vez)", () => {
@@ -192,9 +224,14 @@ describe("FeedFotos — direção iOS + Instagram", () => {
     expect(f).not.toMatch(/height\s+\d+ms/);
   });
 
-  it("limites de proporção = feed orgânico do Instagram (1.91:1 … 3:4)", () => {
-    expect(f).toMatch(/RATIO_MAX\s*=\s*1\.91/);
-    expect(f).toMatch(/RATIO_MIN\s*=\s*3\s*\/\s*4/);
+  it("o quadro é um dos 4 formatos (lib/rede/formatoFoto), com altura em pixels inteiros", () => {
+    expect(f).not.toMatch(/RATIO_MAX|RATIO_MIN|clampRatio/);
+    expect(f).toMatch(/const formato = formatoMaisProximo\(ratio\);/);
+    expect(f).toMatch(
+      /altura: largura > 0 \? alturaDoQuadro\(largura, formato\) : 0,/
+    );
+    // carrossel: os slides seguem o quadro da 1ª foto
+    expect(f).toMatch(/encaixeDoSlide\(ratioDe\(foto\), formato\)/);
   });
 
   it("scroll programático respeita prefers-reduced-motion", () => {

@@ -619,6 +619,9 @@ export default function DevPreviewApp() {
           )}
           <RedeGatedTab
             usuario={usuario}
+            // Espelha app/page.tsx: sem isto a Rede do laboratório se achava
+            // sempre na tela (o padrão é `true`), mesmo com outra aba aberta.
+            active={activeTab === "rede"}
             reselectSignal={redeReselect}
             onChatFocusChange={setChatComposerFocused}
             postarSignal={redePostar}
