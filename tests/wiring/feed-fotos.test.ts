@@ -31,7 +31,11 @@ import { join } from "node:path";
  */
 
 const ROOT = join(__dirname, "..", "..");
-const read = (p: string) => readFileSync(join(ROOT, p), "utf-8");
+// Fim de linha normalizado (como em rede-feed-abas.test.ts): num checkout
+// Windows com core.autocrlf os fontes chegam com CRLF, e o regex do
+// PhotoStage (`\n}\n`) não casava.
+const read = (p: string) =>
+  readFileSync(join(ROOT, p), "utf-8").replace(/\r\n/g, "\n");
 
 describe("PostCard usa o FeedFotos real", () => {
   const postCard = read("components/rede/PostCard.tsx");
