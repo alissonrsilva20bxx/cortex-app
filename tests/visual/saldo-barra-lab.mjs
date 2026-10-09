@@ -86,6 +86,16 @@ for (const largura of [390, 430])
         return {
           estado: el.getAttribute("data-saldo-barra"),
           x: Math.round(r.x),
+          // y relativo ao card (sem depender da rolagem da página); a
+          // revisão mediu 114,5px em 390 e 430.
+          y:
+            Math.round(
+              (r.y - el.closest("section").getBoundingClientRect().y) * 10
+            ) / 10,
+          chip: el
+            .closest("section")
+            .querySelector("[data-saldo-chip]")
+            ?.getAttribute("data-saldo-chip"),
           w: Math.round(r.width),
           h: Math.round(r.height),
           fundo: cs.backgroundColor,
@@ -151,9 +161,20 @@ for (const largura of [390, 430])
       (c) => medidas[`${c}-${largura}-${modo}`]
     );
     ok(
-      `${largura} ${modo}: mesma posição e largura nos 4 estados`,
-      ms.every((m) => m.x === ms[0].x && m.w === ms[0].w),
-      ms.map((m) => [m.x, m.w])
+      `${largura} ${modo}: mesma posição (x e y) e largura nos 4 estados`,
+      ms.every((m) => m.x === ms[0].x && m.y === ms[0].y && m.w === ms[0].w),
+      ms.map((m) => [m.x, m.y, m.w, m.chip])
+    );
+    ok(
+      `${largura} ${modo}: trilha em y = 114,5px no card (a medida da revisão), com e sem o chip`,
+      ms.every((m) => m.y === 114.5),
+      ms.map((m) => [m.y, m.chip])
+    );
+    ok(
+      `${largura} ${modo}: o mês zerado é o caso do chip reservado (o que encolhia a linha)`,
+      medidas[`vazio-${largura}-${modo}`].chip === "reservado" &&
+        medidas[`dados-${largura}-${modo}`].chip === "visivel",
+      ms.map((m) => m.chip)
     );
     const so = (c) => medidas[`${c}-${largura}-${modo}`].segs[0].cor;
     ok(
@@ -164,6 +185,8 @@ for (const largura of [390, 430])
       [so("so-entradas"), so("so-saidas")]
     );
   }
+for (const [id, m] of Object.entries(medidas))
+  console.log(`${id}: x ${m.x} y ${m.y} w ${m.w} chip ${m.chip}`);
 console.log(JSON.stringify(medidas["dados-390-claro"]));
 console.log(JSON.stringify(medidas["vazio-390-escuro"]));
 await browser.close();

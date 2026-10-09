@@ -221,8 +221,21 @@ describe("Honesty rule (issue #136) — variação % only with a real, non-zero 
     expect(src).toMatch(/prevSaldo !== 0[\s\S]{0,100}: null/);
   });
 
-  it("the badge only renders when variacaoPct is not null (real, computable value)", () => {
-    expect(src).toContain("{variacaoPct !== null && (");
+  it("the badge only SHOWS a number when variacaoPct is not null; otherwise it is an invisible, number-free placeholder that keeps the row height", () => {
+    const chip = src.slice(src.indexOf("data-saldo-chip"));
+    expect(chip).toMatch(
+      /^data-saldo-chip=\{variacaoPct !== null \? "visivel" : "reservado"\}/
+    );
+    expect(chip).toMatch(/aria-hidden=\{variacaoPct === null \|\| undefined\}/);
+    expect(chip).toMatch(
+      /visibility: variacaoPct !== null \? undefined : "hidden",/
+    );
+    // O texto reservado é um espaço não separável: nenhum "0%" inventado.
+    expect(chip).toMatch(
+      /\{variacaoPct !== null\s*\? `\$\{sobe \? "\+" : ""\}\$\{Math\.round\(variacaoPct\)\}% vs \$\{mesAnterior\}`\s*: "\\u00a0"\}/
+    );
+    // O chip não some mais do DOM (sumir encolhia a linha e subia a barra).
+    expect(src).not.toContain("{variacaoPct !== null && (");
   });
 });
 

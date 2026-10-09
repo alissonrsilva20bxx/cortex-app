@@ -131,7 +131,9 @@ describe("J04 — entrada x saída nunca só pela cor", () => {
       read("components/financeiro/FinanceiroHeroCard.tsx")
     );
     expect(src).toMatch(
-      /\{`\$\{sobe \? "\+" : ""\}\$\{Math\.round\(variacaoPct\)\}% vs \$\{mesAnterior\}`\}/
+      // O chip agora fica sempre na linha (invisível sem variação, para a
+      // barra não subir); o texto com sinal é o ramo com variação.
+      /\{variacaoPct !== null\s*\? `\$\{sobe \? "\+" : ""\}\$\{Math\.round\(variacaoPct\)\}% vs \$\{mesAnterior\}`/
     );
     expect(src).toContain(
       "const sobe = variacaoPct !== null && variacaoPct >= 0;"
