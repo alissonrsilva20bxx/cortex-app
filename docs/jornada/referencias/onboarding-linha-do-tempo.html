@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="pt-BR" data-page="escuro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobApp · Onboarding · Linha do tempo</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{--jak:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+html[data-page="escuro"]{--pg-bg:#0a0007;--pg-card:#160a11;--pg-ink:#faeef5;--pg-mut:#9a8f96;--pg-line:#3a2832;--pg-acc:#ff2d78;--pg-deep:#ff528f;--pg-soft:#51172e}
+html[data-page="claro"]{--pg-bg:#f5f5f7;--pg-card:#ffffff;--pg-ink:#0f0f0f;--pg-mut:#6b6b74;--pg-line:#ececf0;--pg-acc:#ff2d78;--pg-deep:#d6105c;--pg-soft:#fde3ec}
+body{margin:0;background:var(--pg-bg);color:var(--pg-ink);font-family:var(--jak);-webkit-font-smoothing:antialiased}
+html[data-page="escuro"] body{background:radial-gradient(ellipse 90% 35% at 50% -8%,rgba(255,45,120,.22),transparent 70%),#0a0007}
+button{font:inherit;color:inherit}
+.wrap{max-width:1320px;margin:0 auto;padding:26px 20px 70px}
+.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.kick{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--pg-deep);background:var(--pg-soft);padding:5px 11px;border-radius:999px}
+.logo{width:26px;height:26px;border-radius:8px;background:#0a0007;color:#ff2d78;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;box-shadow:0 0 0 1px rgba(255,45,120,.3)}
+h1{margin:12px 0 6px;font-size:30px;font-weight:800;letter-spacing:-.8px;line-height:1.1}
+.lead{margin:0;max-width:740px;color:var(--pg-mut);font-size:14px;line-height:1.55}
+.ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ctrl small{font-size:11px;font-weight:700;color:var(--pg-mut);letter-spacing:.06em;text-transform:uppercase}
+.seg{display:inline-flex;background:var(--pg-card);border:1px solid var(--pg-line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;color:var(--pg-mut);font-size:13px;font-weight:700;padding:8px 14px;border-radius:999px;min-height:38px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--pg-acc);color:#fff}
+.sec{margin-top:26px;background:var(--pg-card);border:1px solid var(--pg-line);border-radius:28px;padding:22px}
+.sec h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.3px}
+.sec .sub{margin:6px 0 0;font-size:13px;color:var(--pg-mut)}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:26px;align-items:start;margin-top:16px}
+@media (max-width:860px){.flow{grid-template-columns:minmax(0,1fr)}}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps button{width:100%;text-align:left;border:1px solid var(--pg-line);background:transparent;border-radius:14px;padding:10px 12px;cursor:pointer;display:flex;gap:10px;align-items:baseline;min-height:44px}
+.steps b{font-size:12px;color:var(--pg-deep);min-width:18px}
+.steps span{font-size:13px;font-weight:600}
+.steps small{display:block;font-size:12px;color:var(--pg-mut);font-weight:500;margin-top:2px}
+.steps button[aria-current="step"]{border-color:var(--pg-acc);background:var(--pg-soft)}
+.viewer{display:flex;flex-direction:column;align-items:center;gap:10px}
+.ph-wrap{width:273px;height:590.8px;position:relative}
+.nav{display:flex;align-items:center;gap:10px}
+.arrow{width:44px;height:44px;border-radius:50%;border:1px solid var(--pg-line);background:var(--pg-card);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.arrow:disabled{opacity:.35;cursor:default}
+.dots{display:flex;gap:2px}
+.dots button{width:22px;height:44px;border:0;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--pg-line);transition:transform .2s}
+.dots button[aria-current="step"] i{background:var(--pg-acc);transform:scale(1.3)}
+.daypick{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--pg-mut);font-weight:700}
+.daypick .seg button{padding:6px 12px;min-height:34px;font-size:12px}
+.gcell{display:flex;flex-direction:column;align-items:center;gap:8px}
+.gcell .ph-wrap{width:195px;height:422px}
+.gcell .phone{transform:scale(.5)}
+.gcell h3{margin:0;font-size:13px;font-weight:800;text-align:center}
+.gcell h3 b{color:var(--pg-deep)}
+.pills3{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:16px}
+.pcard{border:1px solid var(--pg-line);border-radius:20px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.pcard h3{margin:0;font-size:13px;font-weight:800;align-self:stretch;display:flex;justify-content:space-between}
+.pcard h3 span{color:var(--pg-deep)}
+.pstage{width:100%;height:120px;border-radius:18px;position:relative;overflow:hidden}
+.pstage .phone{position:relative;transform:none;width:100%;height:120px;border-radius:18px;box-shadow:none}
+.pstage .trial{left:50%;bottom:16px;transform:translateX(-50%) scale(.86);transform-origin:50% 100%;top:auto}
+.pcard p{margin:0;font-size:12px;color:var(--pg-mut);text-align:center;line-height:1.45}
+
+/* ── Celular 390×844 ── */
+.phone{position:absolute;left:0;top:0;width:390px;height:844px;transform:scale(.7);transform-origin:0 0;border-radius:46px;overflow:hidden;font-family:var(--jak);box-shadow:0 0 0 9px #111114,0 0 0 10px #2c2c33,0 24px 50px rgba(17,17,20,.28);background:var(--bg);color:var(--ink)}
+.phone[data-md="escuro"]{--bg:radial-gradient(ellipse 100% 55% at 50% -5%,rgba(255,45,120,.3) 0%,transparent 70%),radial-gradient(ellipse 55% 40% at 85% 105%,rgba(255,45,120,.1) 0%,transparent 70%),#0a0007;--ink:#faeef5;--mut:#9a8f96;--line:#3a2832;--card:#25121c;--sub:#20151c;--acc:#ff2d78;--deep:#ff528f;--soft:#51172e;--hero:linear-gradient(150deg,#6c1234,#2f0718);--glass:rgba(37,18,28,.82);--glassbd:rgba(255,255,255,.08);--green:#50dc78;--gsoft:#2c322b}
+.phone[data-md="claro"]{--bg:radial-gradient(ellipse 100% 45% at 50% -8%,rgba(255,45,120,.10) 0%,transparent 70%),#f5f5f7;--ink:#0f0f0f;--mut:#6b6b74;--line:#ececf0;--card:#ffffff;--sub:#f4f4f6;--acc:#ff2d78;--deep:#d6105c;--soft:#fde3ec;--hero:#111114;--glass:rgba(255,255,255,.86);--glassbd:rgba(17,17,20,.07);--green:#0f8a52;--gsoft:#e3f6ec}
+.screen{position:absolute;inset:0;padding:58px 24px 30px;display:flex;flex-direction:column;opacity:0;transform:translateX(24px);pointer-events:none;transition:opacity .28s ease,transform .32s cubic-bezier(.2,.8,.2,1)}
+.screen.on{opacity:1;transform:none;pointer-events:auto}
+.screen.prev{transform:translateX(-24px)}
+.static .screen{opacity:1;transform:none;transition:none;pointer-events:auto}
+@media (prefers-reduced-motion: reduce){.screen,.screen.prev{transform:none;transition:opacity .01s}.dots i{transition:none}}
+.sb{position:absolute;left:30px;right:30px;top:16px;display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--ink);z-index:2}
+.topbar{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.prog{display:flex;gap:5px}
+.prog i{width:18px;height:4px;border-radius:2px;background:var(--line)}
+.prog i.on{background:var(--acc)}
+.skipx{font-size:13px;font-weight:700;color:var(--mut);background:none;border:0;min-height:44px;padding:0 4px;cursor:pointer}
+.ttl{font-size:30px;font-weight:800;letter-spacing:-.8px;line-height:1.08;margin:0}
+.ttl em{font-style:normal;color:var(--deep)}
+.txt{font-size:14px;line-height:1.5;color:var(--mut);margin:10px 0 0}
+.grow{flex:1}
+.cta{width:100%;height:52px;border-radius:18px;border:0;background:var(--acc);color:#fff;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 10px 24px rgba(255,45,120,.3)}
+.cta2{width:100%;min-height:44px;border:0;background:none;color:var(--mut);font-size:13px;font-weight:700;margin-top:6px;cursor:pointer}
+.fine{font-size:11px;line-height:1.45;color:var(--mut);text-align:center;margin-top:8px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block}
+/* 1 boas-vindas */
+.welcome{align-items:center;text-align:center}
+.bigj{width:92px;height:92px;border-radius:24px;background:#0a0007;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 0 1px rgba(255,45,120,.3),0 16px 40px rgba(255,45,120,.28);margin-top:40px}
+.bigj::before{content:"";position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle,rgba(255,45,120,.4),transparent 70%)}
+.bigj b{position:relative;color:#ff2d78;font-size:50px;font-weight:800;letter-spacing:-.04em}
+.free{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:30px}
+.free b{font-size:96px;font-weight:800;letter-spacing:-4px;line-height:.85}
+.free span{font-size:20px;font-weight:800;color:var(--deep);line-height:1.1;text-align:left}
+.welcome .ttl{margin-top:22px;font-size:26px}
+.welcome .txt{max-width:290px}
+/* 2 incluso */
+.inc{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inc div{background:var(--card);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:112px}
+.inc div.wide{grid-column:span 2;flex-direction:row;align-items:center;min-height:auto;gap:12px}
+.inc .ic{width:40px;height:40px;border-radius:13px;background:var(--soft);color:var(--deep);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.inc b{font-size:15px}.inc small{font-size:12px;color:var(--mut);line-height:1.35}
+/* 3 linha do tempo */
+.tl{margin:22px 0 0;padding:0;list-style:none;position:relative}
+.tl::before{content:"";position:absolute;left:21px;top:20px;bottom:24px;width:2px;background:linear-gradient(var(--acc),var(--line))}
+.tl li{position:relative;display:flex;gap:14px;padding:0 0 20px}
+.tl .k{width:44px;height:44px;border-radius:50%;background:var(--card);border:2px solid var(--acc);display:flex;align-items:center;justify-content:center;color:var(--deep);flex-shrink:0;z-index:1}
+.tl li:first-child .k{background:var(--acc);color:#fff}
+.tl .d{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--deep)}
+.tl b{display:block;font-size:15px;margin-top:2px}.tl small{display:block;font-size:12.5px;color:var(--mut);margin-top:3px;line-height:1.4}
+.ok{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;margin-top:8px}
+.ok i{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--gsoft);color:var(--green);display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:12px}
+/* 4 Início + pílula */
+.home .hd{display:flex;align-items:center;gap:12px}
+.av{width:42px;height:42px;border-radius:50%;background:var(--soft);color:var(--deep);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;flex-shrink:0}
+.home .n{font-size:17px;font-weight:800}.home .dd{font-size:12px;color:var(--mut)}
+.novo{margin-left:auto;height:38px;padding:0 14px;border-radius:19px;background:var(--acc);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.heroc{margin-top:18px;background:var(--card);border-radius:20px;padding:18px}
+.heroc .l{font-size:12px;font-weight:600;color:var(--mut)}
+.heroc .v{font-size:36px;font-weight:800;letter-spacing:-1px;margin-top:6px}
+.heroc .bar8{height:8px;border-radius:4px;background:var(--soft);margin-top:12px;overflow:hidden}.heroc .bar8 i{display:block;height:100%;width:12%;background:var(--acc)}
+.g2{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g2 div{background:var(--card);border-radius:20px;padding:16px;min-height:110px;display:flex;flex-direction:column;gap:6px}
+.g2 .lb{font-size:11px;font-weight:600;color:var(--mut)}.g2 .vl{font-size:20px;font-weight:800}.g2 .sm{font-size:12px}
+.trial{position:absolute;left:50%;bottom:98px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;height:44px;padding:0 16px 0 8px;border-radius:999px;background:var(--glass);border:1px solid var(--glassbd);box-shadow:0 10px 30px rgba(17,17,20,.16);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);white-space:nowrap;cursor:pointer;color:var(--ink)}
+.trial .gift{width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--deep);display:flex;align-items:center;justify-content:center}
+.trial .tx{font-size:13px;font-weight:800}
+.trial .tx span{color:var(--mut);font-weight:700}
+.trial .seg7{display:flex;gap:3px}
+.trial .seg7 i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.trial .seg7 i.on{background:var(--acc)}
+.trial.last{background:var(--acc);border-color:transparent;color:#fff;box-shadow:0 10px 26px rgba(255,45,120,.4);padding-right:8px}
+.trial.last .gift{background:rgba(255,255,255,.22);color:#fff}
+.trial.last .tx span{color:rgba(255,255,255,.85)}
+.trial.last .go{height:30px;padding:0 12px;border-radius:999px;background:#fff;color:#d6105c;font-size:12px;font-weight:800;display:flex;align-items:center}
+.pillnav{position:absolute;left:16px;bottom:24px;width:288px;height:60px;border-radius:999px;background:var(--glass);border:1px solid var(--glassbd);box-shadow:0 10px 30px rgba(17,17,20,.14);display:flex;align-items:center;justify-content:space-around;padding:0 6px;color:var(--mut)}
+.pillnav .on{width:54px;height:46px;border-radius:999px;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center}
+.fab{position:absolute;right:20px;bottom:24px;width:60px;height:60px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(255,45,120,.35)}
+/* 5 planos */
+.endhero{background:var(--hero);color:#fff;border-radius:22px;padding:18px}
+.endhero .t{font-size:20px;font-weight:800;letter-spacing:-.4px}
+.endhero .s{font-size:12.5px;opacity:.78;margin-top:6px;line-height:1.45}
+.endhero .stats{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.endhero .stats span{font-size:11px;font-weight:800;background:rgba(255,255,255,.12);border-radius:999px;padding:5px 9px}
+.plans{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.plan{position:relative;text-align:left;width:100%;border:1.5px solid var(--line);background:var(--card);border-radius:18px;padding:13px 14px;cursor:pointer;display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:64px;transition:border-color .15s,transform .15s}
+.plan:active{transform:scale(.99)}
+.plan .rd{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);position:relative}
+.plan[aria-checked="true"]{border-color:var(--acc)}
+.plan[aria-checked="true"] .rd{border-color:var(--acc)}
+.plan[aria-checked="true"] .rd::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--acc)}
+.plan .nm{display:block;font-size:15px;font-weight:800}
+.plan .pm{display:block;font-size:12px;color:var(--mut);margin-top:2px}
+.plan .pr{text-align:right}
+.plan .pr b{display:block;font-size:18px;font-weight:800;white-space:nowrap}
+.plan .pr s{font-size:12px;color:var(--mut)}
+.plan .sv{display:inline-flex;gap:4px;align-items:center;margin-top:4px;font-size:10.5px;font-weight:800;color:var(--green);background:var(--gsoft);border-radius:999px;padding:2px 7px;white-space:nowrap}
+.plan .lim{position:absolute;top:-9px;right:12px;display:flex;gap:4px}
+.plan .lim span{font-size:10px;font-weight:800;letter-spacing:.03em;color:#fff;background:var(--acc);border-radius:999px;padding:3px 8px}
+.plan .lim span.pc{background:var(--ink);color:var(--card)}
+.keep{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:12.5px;color:var(--mut)}
+.keep i{width:22px;height:22px;border-radius:50%;background:var(--gsoft);color:var(--green);display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:12px;flex-shrink:0}
+.keep b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <span class="kick"><span class="logo">J</span>JobApp · onboarding · Linha do tempo</span>
+      <h1>Onboarding dos 7 dias grátis</h1>
+      <p class="lead">A proposta escolhida, Linha do tempo, nas 5 telas em sequência: boas-vindas, o que está incluso, a linha do tempo da cobrança, a entrada no app com a pílula do contador e o fim do teste com os planos em €.</p>
+    </div>
+    <div class="ctrl">
+      <small>Tema</small>
+      <div class="seg" role="group" aria-label="Tema"><button type="button" data-md="escuro" aria-pressed="true">Escuro</button><button type="button" data-md="claro" aria-pressed="false">Claro</button></div>
+    </div>
+  </header>
+
+  <section class="sec">
+    <h2>As 5 telas</h2>
+    <p class="sub">Use as setas, as bolinhas, a lista ou as setas do teclado. Os botões dentro do celular também avançam; "Pular" leva direto ao Início. Na tela 4, a pílula passa por 7, 3 e 1 dia; o seletor abaixo do celular fixa um dia.</p>
+    <div class="flow">
+      <ol class="steps" id="steps"></ol>
+      <div class="viewer">
+        <div class="ph-wrap"><div class="phone" id="main" data-md="escuro"></div></div>
+        <div class="nav">
+          <button type="button" class="arrow" id="prev" aria-label="Tela anterior">‹</button>
+          <div class="dots" id="dots"></div>
+          <button type="button" class="arrow" id="next" aria-label="Próxima tela">›</button>
+        </div>
+        <div class="daypick" id="daypick">Pílula no dia <div class="seg" role="group" aria-label="Dias que faltam"></div><button type="button" class="arrow" id="replay" aria-label="Ver de novo 7, 3 e 1 dia" style="width:38px;height:38px;font-size:15px">↻</button></div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="sec">
+    <h2>A pílula do contador: dias 7, 3 e 1</h2>
+    <p class="sub">Flutua acima da barra do app, com o mesmo vidro e o mesmo formato. Discreta nos dias normais; só no último dia ganha o acento e o atalho para os planos.</p>
+    <div class="pills3" id="pills3"></div>
+  </section>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 7H5a2 2 0 0 1 0-4h13v4"/><path d="M3 5v14a2 2 0 0 0 2 2h15V7"/><path d="M16 14h.01"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v9H5v-9M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+</svg>
+
+<script>
+const ic = (n, s = 22) => `<svg class="i" style="width:${s}px;height:${s}px" viewBox="0 0 24 24"><use href="#i-${n}"/></svg>`;
+const eur = (v) => "€ " + (Number.isInteger(v) ? String(v) : v.toFixed(2).replace(".", ","));
+let modo = "escuro", passo = 0, dia = 7, plano = "3m";
+
+const PLANOS = [
+  { id: "1m", nome: "1 mês", preco: 15, cheio: null, mes: 15 },
+  { id: "2m", nome: "2 meses", preco: 25, cheio: 30, mes: 12.5 },
+  { id: "3m", nome: "3 meses", preco: 30, cheio: 45, mes: 10 },
+];
+const pct = (p) => Math.round(((p.cheio - p.preco) / p.cheio) * 100);
+
+const topo = (i, pular = true) => `<div class="topbar"><div class="prog">${[0, 1, 2].map((k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("")}</div>${pular ? '<button class="skipx" data-skip>Pular</button>' : ""}</div>`;
+
+/* A pílula do contador (flutua acima da barra do app). */
+function pilula(d) {
+  const fal = d === 1 ? "Último dia" : `Faltam ${d} dias`;
+  const feitos = 8 - d;
+  if (d === 1)
+    return `<button class="trial last" type="button" aria-label="Último dia do teste grátis. Ver planos"><span class="gift">${ic("gift", 16)}</span><span class="tx">Último dia <span>do teste</span></span><span class="go">Ver planos</span></button>`;
+  return `<button class="trial" type="button" aria-label="Teste grátis: ${fal.toLowerCase()}"><span class="gift">${ic("gift", 16)}</span><span class="tx">${fal} <span>de teste</span></span><span class="seg7">${Array.from({ length: 7 }, (_, k) => `<i class="${k < feitos ? "on" : ""}"></i>`).join("")}</span></button>`;
+}
+
+const TELAS = [
+  { t: "Boas-vindas", s: "7 dias grátis", h: () => `
+    ${topo(0)}
+    <div class="welcome" style="display:flex;flex-direction:column;align-items:center;text-align:center">
+      <div class="bigj"><b>J</b></div>
+      <div class="free"><b>7</b><span>dias<br>grátis</span></div>
+      <p class="ttl">Sua semana <em>por nossa conta</em></p>
+      <p class="txt">Use o JobApp inteiro por 7 dias, sem pagar nada. Depois, você escolhe se quer continuar.</p>
+    </div>
+    <div class="grow"></div>
+    <button class="cta" data-next>Começar meus 7 dias</button>
+    <p class="fine">Não pedimos cartão agora.</p>` },
+  { t: "O que está incluso", s: "Agenda, Financeiro, Cofre, Rede, Jornada", h: () => `
+    ${topo(1)}
+    <p class="ttl" style="margin-top:14px">Tudo isso é <em>seu</em> nos 7 dias</p>
+    <div class="inc">
+      <div><span class="ic">${ic("cal")}</span><b>Agenda</b><small>quem vem, quando e quanto</small></div>
+      <div><span class="ic">${ic("wallet")}</span><b>Financeiro</b><small>o que entrou, o que saiu e suas metas</small></div>
+      <div><span class="ic">${ic("shield")}</span><b>Cofre</b><small>recibos e documentos com PIN</small></div>
+      <div><span class="ic">${ic("users")}</span><b>Rede</b><small>outras profissionais como você</small></div>
+      <div class="wide"><span class="ic">${ic("pulse")}</span><span><b style="display:block">Jornada</b><small>Glow e selos a cada passo, e metas como juntar para viajar</small></span></div>
+    </div>
+    <div class="grow"></div>
+    <button class="cta" data-next>Continuar</button>` },
+  { t: "Linha do tempo", s: "hoje, dia 5 e dia 7", h: () => `
+    ${topo(2)}
+    <p class="ttl" style="margin-top:14px">Como funciona, <em>sem surpresa</em></p>
+    <ul class="tl">
+      <li><span class="k">${ic("gift", 20)}</span><span><span class="d">Hoje</span><b>Tudo liberado</b><small>Use o app inteiro, sem limite.</small></span></li>
+      <li><span class="k">${ic("bell", 20)}</span><span><span class="d">Dia 5</span><b>A gente te avisa</b><small>Um lembrete de que faltam 2 dias.</small></span></li>
+      <li><span class="k">${ic("card", 20)}</span><span><span class="d">Dia 7</span><b>O teste termina</b><small>Para continuar, você escolhe um plano, a partir de ${eur(10)} por mês.</small></span></li>
+    </ul>
+    <div class="ok"><i>✓</i><span><b>Não pedimos cartão agora.</b></span></div>
+    <div class="ok"><i>✓</i><span><b>Cancela quando quiser,</b> nos Ajustes.</span></div>
+    <div class="grow"></div>
+    <button class="cta" data-next>Começar grátis</button>` },
+  { t: "Entrada no app", s: "Início com a pílula 7 / 3 / 1", h: (d) => `
+    <div class="home">
+      <div class="hd"><span class="av">M</span><div><div class="n">Olá, Miguel</div><div class="dd">Quarta, 23 de setembro</div></div><span class="novo">${ic("plus", 16)}Novo</span></div>
+      <div class="heroc"><div class="l">Faturamento · setembro</div><div class="v">${eur(430)}</div><div class="bar8"><i></i></div></div>
+      <div class="g2"><div><span style="color:var(--deep)">${ic("clock", 20)}</span><span class="lb">Próximo</span><span class="vl">14h00</span><span class="sm">Renata · sex 25</span></div><div><span style="color:var(--deep)">${ic("target", 20)}</span><span class="lb">Objetivos</span><span class="vl">1 de 4</span></div></div>
+    </div>
+    ${pilula(d)}
+    <div class="pillnav"><span class="on">${ic("home")}</span>${ic("cal")}${ic("wallet")}${ic("shield")}${ic("users")}</div>
+    <span class="fab">${ic("plus", 24)}</span>` },
+  { t: "Fim do teste (dia 8)", s: "planos em € e seus dados continuam", h: (d, sel) => `
+    <div class="endhero"><div class="t">Seus 7 dias terminaram</div><div class="s">Foi uma boa semana. Para seguir usando, escolha um plano.</div>
+      <div class="stats"><span>12 atendimentos</span><span>${eur(430)} registrados</span><span>3 recibos no Cofre</span></div></div>
+    <div class="plans" role="radiogroup" aria-label="Planos">${PLANOS.map((p) => `
+      <button type="button" class="plan" role="radio" aria-checked="${p.id === sel}" data-plan="${p.id}">
+        ${p.cheio ? `<span class="lim"><span class="pc">−${pct(p)}%</span><span>preço por tempo limitado</span></span>` : ""}
+        <span class="rd"></span>
+        <span><span class="nm">${p.nome}</span><span class="pm">${eur(p.mes)} por mês</span></span>
+        <span class="pr">${p.cheio ? `<s>${eur(p.cheio)}</s>` : ""}<b>${eur(p.preco)}</b>${p.cheio ? `<span class="sv">economiza ${eur(p.cheio - p.preco)}</span>` : ""}</span>
+      </button>`).join("")}</div>
+    <div class="keep"><i>✓</i><span><b>Seus dados continuam aqui.</b> Atendimentos, metas, Cofre e Glow ficam guardados.</span></div>
+    <div class="grow"></div>
+    <button class="cta" data-cta>Continuar com ${PLANOS.find((p) => p.id === sel).nome} · ${eur(PLANOS.find((p) => p.id === sel).preco)}</button>
+    <button class="cta2">Agora não</button>
+    <p class="fine" style="margin-top:0">Mesmo acesso a tudo em todos os planos. Cancele quando quiser.</p>` },
+];
+
+const sb = `<div class="sb"><span>9:41</span><span>●●●</span></div>`;
+
+function renderMain() {
+  const ph = document.getElementById("main");
+  ph.innerHTML = sb + TELAS.map((t, i) => `<section class="screen${i === passo ? " on" : i < passo ? " prev" : ""}" aria-hidden="${i !== passo}" aria-label="${t.t}">${t.h(dia, plano)}</section>`).join("");
+  document.querySelectorAll("#steps button").forEach((b, i) => b.setAttribute("aria-current", i === passo ? "step" : "false"));
+  document.querySelectorAll("#dots button").forEach((b, i) => b.setAttribute("aria-current", i === passo ? "step" : "false"));
+  document.getElementById("prev").disabled = passo === 0;
+  document.getElementById("next").disabled = passo === TELAS.length - 1;
+  document.getElementById("daypick").style.visibility = passo === 3 ? "visible" : "hidden";
+  ligar(ph, true);
+}
+
+function ligar(ph, principal) {
+  ph.querySelectorAll("[data-next]").forEach((b) => b.addEventListener("click", () => principal && ir(passo + 1)));
+  ph.querySelectorAll("[data-skip]").forEach((b) => b.addEventListener("click", () => principal && ir(3)));
+  ph.querySelectorAll(".plan").forEach((b) => b.addEventListener("click", () => { plano = b.dataset.plan; renderTudo(); }));
+  ph.querySelectorAll(".trial.last").forEach((b) => b.addEventListener("click", () => principal && ir(4)));
+}
+
+
+function renderPills() {
+  const g = document.getElementById("pills3");
+  const desc = { 7: "Dia 1 do teste: discreta, só informa.", 3: "Dia 5: o aviso chegou, a pílula continua discreta.", 1: "Último dia: ganha o acento e o atalho “Ver planos”." };
+  g.innerHTML = [7, 3, 1].map((d) => `<div class="pcard"><h3>${d === 1 ? "Falta 1 dia" : `Faltam ${d} dias`}<span>dia ${8 - d} de 7</span></h3><div class="pstage"><div class="phone" data-md="${modo}">${pilula(d)}</div></div><p>${desc[d]}</p></div>`).join("");
+}
+
+function renderTudo() { renderMain(); renderPills(); }
+let ciclo = null, manual = false;
+const reduz = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function marcarDia() { document.querySelectorAll("#daypick button").forEach((x) => x.setAttribute("aria-pressed", String(+x.dataset.dia === dia))); }
+function iniciarCiclo() {
+  clearInterval(ciclo); ciclo = null;
+  if (passo !== 3 || manual || reduz) return;
+  dia = 7; marcarDia(); renderMain();
+  const seq = [7, 3, 1]; let k = 0;
+  ciclo = setInterval(() => {
+    k++;
+    if (k >= seq.length) { clearInterval(ciclo); ciclo = null; return; }
+    dia = seq[k]; marcarDia(); renderMain();
+  }, 1600);
+}
+function ir(i) { const antes = passo; passo = Math.max(0, Math.min(TELAS.length - 1, i)); renderMain(); if (passo === 3 && antes !== 3) iniciarCiclo(); if (passo !== 3) { clearInterval(ciclo); ciclo = null; } }
+
+function montar() {
+  document.getElementById("steps").innerHTML = TELAS.map((t, i) => `<li><button type="button" data-go="${i}"><b>${i + 1}</b><span>${t.t}<small>${t.s}</small></span></button></li>`).join("");
+  document.getElementById("dots").innerHTML = TELAS.map((t, i) => `<button type="button" data-go="${i}" aria-label="Tela ${i + 1}: ${t.t}"><i></i></button>`).join("");
+  document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => ir(+b.dataset.go)));
+  document.getElementById("prev").addEventListener("click", () => ir(passo - 1));
+  document.getElementById("next").addEventListener("click", () => ir(passo + 1));
+  const seg = document.querySelector("#daypick .seg");
+  seg.innerHTML = [7, 3, 1].map((d) => `<button type="button" data-dia="${d}" aria-pressed="${d === dia}">${d}</button>`).join("");
+  seg.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    dia = +b.dataset.dia; manual = true;
+    seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    clearInterval(ciclo); ciclo = null; renderMain();
+  }));
+  document.querySelectorAll("[data-md]").forEach((b) => b.addEventListener("click", () => {
+    modo = b.dataset.md;
+    document.documentElement.dataset.page = modo;
+    document.querySelectorAll("[data-md]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    document.querySelectorAll(".phone").forEach((ph) => (ph.dataset.md = modo));
+  }));
+  document.getElementById("replay").addEventListener("click", () => { manual = false; iniciarCiclo(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("textarea,input")) return;
+    if (e.key === "ArrowRight") ir(passo + 1);
+    if (e.key === "ArrowLeft") ir(passo - 1);
+  });
+  renderTudo();
+}
+montar();
+</script>
+</body>
+</html>

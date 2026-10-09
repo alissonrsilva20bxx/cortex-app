@@ -48,6 +48,9 @@ import type { RedeAcessoTour } from "@/lib/appTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
+import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
+import { guardarPlanoEscolhido, type OnEscolherPlano } from "@/lib/planos";
+import { TRIAL_DIAS, type EstadoAssinatura } from "@/lib/assinatura";
 import { supabase, __setMockSupabaseClient } from "@/lib/supabase";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { createMockSupabaseClient } from "@/lib/mockSupabase";
@@ -248,6 +251,23 @@ export default function DevPreviewApp() {
       setPinHash(hash ?? "preview-lock-000000000000000000000000000000");
     w.__previewUnlock = () => setLocked(false);
     w.__previewOnboarding = () => setOnboardingPreview(true);
+    // Teste grátis: `__previewTrial(3)` = faltam 3 dias; `0` = terminou;
+    // `null` = volta ao do banco do laboratório. `__previewPlanos()` abre a
+    // escolha de plano.
+    (
+      w as unknown as Record<string, (n: number | null) => void>
+    ).__previewTrial = (faltam) =>
+      setTrialForcado(
+        faltam == null
+          ? undefined
+          : faltam <= 0
+            ? { status: "vencida", diasRestantes: 0 }
+            : {
+                status: "trial",
+                diasRestantes: Math.min(faltam, TRIAL_DIAS),
+              }
+      );
+    w.__previewPlanos = () => setAbrirPlanos((n) => n + 1);
     w.__previewTour = () => {
       setActiveTab("home");
       setTourOpen(true);
@@ -268,6 +288,8 @@ export default function DevPreviewApp() {
       delete w.__previewUnlock;
       delete w.__previewTour;
       delete w.__previewOnboarding;
+      delete w.__previewTrial;
+      delete w.__previewPlanos;
     };
   }, []);
 
@@ -333,6 +355,19 @@ export default function DevPreviewApp() {
     toast.success("Preview não tem sessão real — recarregando do zero.");
     window.location.reload();
   }
+
+  const [trialForcado, setTrialForcado] = useState<
+    EstadoAssinatura | null | undefined
+  >(undefined);
+  const [abrirPlanos, setAbrirPlanos] = useState(0);
+  // Espelha app/page.tsx: o ponto de entrada do Pagamento.
+  const escolherPlano: OnEscolherPlano = (plano) => {
+    guardarPlanoEscolhido(usuario.id, plano);
+    handleTabChange("ajustes");
+    toast.success(
+      `Plano de ${plano.nome} escolhido. O pagamento chega em breve.`
+    );
+  };
 
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
@@ -687,6 +722,19 @@ export default function DevPreviewApp() {
       )}
 
       {dataLoaded && <RecapSheet jobs={jobs} />}
+
+      {/* Espelha app/page.tsx: a pílula do teste e a escolha de plano. */}
+      <AssinaturaNoApp
+        userId={usuario.id}
+        noInicio={
+          activeTab === "home" && !tourOpen && !jornadaAberta && !fabOpen
+        }
+        podeMostrarPlanos={dataLoaded && !tourOpen}
+        jobs={jobs}
+        onEscolherPlano={escolherPlano}
+        estadoForcado={trialForcado}
+        abrirPlanosSinal={abrirPlanos}
+      />
 
       {jornadaAberta && (
         <JornadaScreen

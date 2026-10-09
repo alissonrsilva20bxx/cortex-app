@@ -43,6 +43,8 @@ import { AppTour } from "@/components/onboarding/AppTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
+import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
+import { guardarPlanoEscolhido, type OnEscolherPlano } from "@/lib/planos";
 import { supabase } from "@/lib/supabase";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
@@ -409,6 +411,19 @@ export default function Page() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
+
+  // Ponto de entrada do Pagamento (onboarding "Linha do tempo"): a tela de
+  // escolha de plano chama isto com o plano marcado. Enquanto o Pagamento
+  // não existe, guarda a escolha e leva ao fluxo de hoje, os Ajustes (onde
+  // mora "Assinatura e dados"), sem cobrar nada. O Pagamento troca esta
+  // função.
+  const escolherPlano: OnEscolherPlano = (plano) => {
+    if (usuario) guardarPlanoEscolhido(usuario.id, plano);
+    handleTabChange("ajustes");
+    toast.success(
+      `Plano de ${plano.nome} escolhido. O pagamento chega em breve.`
+    );
+  };
 
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
@@ -783,6 +798,20 @@ export default function Page() {
       )}
 
       {!isNewUser && usuario && dataLoaded && <RecapSheet jobs={jobs} />}
+
+      {/* Teste grátis (onboarding "Linha do tempo", telas 4 e 5): a pílula
+          do contador no Início e a escolha de plano no fim do teste. */}
+      {!isNewUser && usuario && (
+        <AssinaturaNoApp
+          userId={usuario.id}
+          noInicio={
+            activeTab === "home" && !tourOpen && !jornadaAberta && !fabOpen
+          }
+          podeMostrarPlanos={dataLoaded && !tourOpen}
+          jobs={jobs}
+          onEscolherPlano={escolherPlano}
+        />
+      )}
 
       {/* "Sua Jornada" (J15): a tela (J12) e o host de comemoração (J13),
           só no app autenticado. Com o PIN travado esta árvore não monta,

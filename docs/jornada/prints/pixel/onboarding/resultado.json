@@ -1,0 +1,223 @@
+{
+  "quando": "2026-10-09T05:05:47.509Z",
+  "baseUrl": "http://localhost:3112",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "resultados": [
+    {
+      "nome": "boas-vindas-390-claro",
+      "difPct": 0.0002,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "incluso-390-claro",
+      "difPct": 0,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "linha-do-tempo-390-claro",
+      "difPct": 0.0021,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia7-390-claro",
+      "difPct": 0.9601,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia3-390-claro",
+      "difPct": 0.9788,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia1-390-claro",
+      "difPct": 0.9041,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-390-claro",
+      "difPct": 10.7417,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-lista-390-claro",
+      "difPct": 0.005,
+      "tamanho": "780x686",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-botoes-390-claro",
+      "difPct": 0.0003,
+      "tamanho": "780x400",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "boas-vindas-390-escuro",
+      "difPct": 0.0002,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "incluso-390-escuro",
+      "difPct": 0,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "linha-do-tempo-390-escuro",
+      "difPct": 0.002,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia7-390-escuro",
+      "difPct": 0.8958,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia3-390-escuro",
+      "difPct": 0.8896,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia1-390-escuro",
+      "difPct": 0.9041,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-390-escuro",
+      "difPct": 9.6124,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-lista-390-escuro",
+      "difPct": 0.0034,
+      "tamanho": "780x686",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-botoes-390-escuro",
+      "difPct": 0.0003,
+      "tamanho": "780x400",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "boas-vindas-430-claro",
+      "difPct": 0.0002,
+      "tamanho": "860x1864",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "incluso-430-claro",
+      "difPct": 0.0129,
+      "tamanho": "860x1864",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "linha-do-tempo-430-claro",
+      "difPct": 0,
+      "tamanho": "860x1864",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia7-430-claro",
+      "difPct": 0.9601,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia3-430-claro",
+      "difPct": 0.9788,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia1-430-claro",
+      "difPct": 0.9041,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-430-claro",
+      "difPct": 9.1533,
+      "tamanho": "860x1864",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-lista-430-claro",
+      "difPct": 0.0046,
+      "tamanho": "860x686",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-botoes-430-claro",
+      "difPct": 0.0003,
+      "tamanho": "860x400",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "boas-vindas-430-escuro",
+      "difPct": 0.0002,
+      "tamanho": "860x1864",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "incluso-430-escuro",
+      "difPct": 0.0099,
+      "tamanho": "860x1864",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "linha-do-tempo-430-escuro",
+      "difPct": 0,
+      "tamanho": "860x1864",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia7-430-escuro",
+      "difPct": 0.8958,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia3-430-escuro",
+      "difPct": 0.8896,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "pilula-dia1-430-escuro",
+      "difPct": 0.9041,
+      "tamanho": "548x88",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-430-escuro",
+      "difPct": 7.926,
+      "tamanho": "860x1864",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-lista-430-escuro",
+      "difPct": 0.0031,
+      "tamanho": "860x686",
+      "mesmoTamanho": true
+    },
+    {
+      "nome": "planos-botoes-430-escuro",
+      "difPct": 0.0003,
+      "tamanho": "860x400",
+      "mesmoTamanho": true
+    }
+  ]
+}
