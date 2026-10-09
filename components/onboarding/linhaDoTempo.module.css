@@ -1,0 +1,701 @@
+/*
+ * Onboarding "Linha do tempo" (desenho aprovado em
+ * onboarding-linha-do-tempo.html): as 3 telas de boas-vindas, a pílula do
+ * contador do teste e a tela de escolha de plano. Medidas copiadas do
+ * desenho; cores só pelos tokens do app (--t-*), então valem nos 8 temas,
+ * claro e escuro. No pink-neon os valores dão os mesmos do desenho.
+ *
+ * Duas cores do desenho não são tokens e saem deles por color-mix:
+ *  - o fundo das telas: os brilhos do acento (30% e 10% no escuro, 10% no
+ *    claro) sobre o fundo do tema;
+ *  - o vidro da pílula: o cartão do tema a 82% (escuro) / 86% (claro).
+ */
+
+.ob {
+  --ob-bg:
+    radial-gradient(
+      ellipse 100% 55% at 50% -5%,
+      color-mix(in srgb, var(--t-acc) 30%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 55% 40% at 85% 105%,
+      color-mix(in srgb, var(--t-acc) 10%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--t-redebg);
+}
+:global([data-mode="light"]) .ob {
+  --ob-bg:
+    radial-gradient(
+      ellipse 100% 45% at 50% -8%,
+      color-mix(in srgb, var(--t-acc) 10%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--t-phbg);
+}
+
+/* Tela cheia: no desenho, 58px em cima (44 da barra de status + 14). No
+ * celular de verdade a área segura toma o lugar da barra de status. */
+.ob {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow-y: auto;
+  background: var(--ob-bg);
+  color: var(--t-ink);
+  /* O OnboardingFlow centraliza as etapas antigas; estas telas não. */
+  text-align: left;
+  font-family:
+    var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.tela {
+  min-height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(max(env(safe-area-inset-top, 0px), 44px) + 14px) 24px
+    calc(30px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  animation: obEntra 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes obEntra {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tela {
+    animation: none;
+  }
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+}
+.prog {
+  display: flex;
+  gap: 5px;
+}
+.prog i {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--t-line);
+}
+.prog i.on {
+  background: var(--t-acc);
+}
+.skipx {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--t-mut);
+  background: none;
+  border: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.ttl {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.08;
+  margin: 0;
+}
+.ttl em {
+  font-style: normal;
+  color: var(--t-deep);
+}
+.txt {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--t-mut);
+  margin: 10px 0 0;
+}
+.grow {
+  flex: 1;
+}
+.cta {
+  width: 100%;
+  height: 52px;
+  border-radius: 18px;
+  border: 0;
+  background: var(--t-acc);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--t-acc) 30%, transparent);
+}
+.cta2 {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--t-mut);
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 6px;
+  cursor: pointer;
+}
+.fine {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--t-mut);
+  text-align: center;
+  /* 1em embaixo: o <p> do desenho mantém a margem padrão do navegador, e
+   * é ela que põe o botão onde ele está. */
+  margin: 8px 0 1em;
+}
+.i {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+
+/* 1 · boas-vindas */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+/* O "J" é o ícone do app (app/pwa-icon): marca fixa, igual em todos os
+   temas, como no desenho. */
+.bigj {
+  width: 92px;
+  height: 92px;
+  border-radius: 24px;
+  background: #0a0007;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(255, 45, 120, 0.3),
+    0 16px 40px rgba(255, 45, 120, 0.28);
+  margin-top: 40px;
+}
+.bigj::before {
+  content: "";
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 45, 120, 0.4), transparent 70%);
+}
+.bigj b {
+  position: relative;
+  color: #ff2d78;
+  font-size: 50px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.free {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 30px;
+}
+.free b {
+  font-size: 96px;
+  font-weight: 800;
+  letter-spacing: -4px;
+  line-height: 0.85;
+}
+.free span {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--t-deep);
+  line-height: 1.1;
+  text-align: left;
+}
+.welcome .ttl {
+  margin-top: 22px;
+  font-size: 26px;
+}
+.welcome .txt {
+  max-width: 290px;
+}
+
+/* 2 · o que está incluso */
+.inc {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.inc > div {
+  background: var(--t-card);
+  border-radius: 20px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 112px;
+}
+.inc > div.wide {
+  grid-column: span 2;
+  flex-direction: row;
+  align-items: center;
+  min-height: auto;
+  gap: 12px;
+}
+.inc .ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: var(--t-soft);
+  color: var(--t-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.inc b {
+  font-size: 15px;
+}
+.inc small {
+  font-size: 12px;
+  color: var(--t-mut);
+  line-height: 1.35;
+}
+
+/* 3 · linha do tempo */
+.tl {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  position: relative;
+}
+.tl::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 20px;
+  bottom: 24px;
+  width: 2px;
+  background: linear-gradient(var(--t-acc), var(--t-line));
+}
+.tl li {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding: 0 0 20px;
+}
+.tl .k {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--t-card);
+  border: 2px solid var(--t-acc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t-deep);
+  flex-shrink: 0;
+  z-index: 1;
+}
+.tl li:first-child .k {
+  background: var(--t-acc);
+  color: #fff;
+}
+.tl .d {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--t-deep);
+}
+.tl b {
+  display: block;
+  font-size: 15px;
+  margin-top: 2px;
+}
+.tl small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--t-mut);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+.ok {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-top: 8px;
+}
+.ok i,
+.keep i {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--t-gsoft);
+  color: var(--t-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-style: normal;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* 4 · a pílula do contador, 14px acima da barra de abas */
+.trial {
+  --ob-glass: color-mix(in srgb, var(--t-card) 82%, transparent);
+  --ob-glassbd: rgba(255, 255, 255, 0.08);
+  position: fixed;
+  left: 50%;
+  bottom: calc(
+    var(--ob-pilula-bottom, 96px) + env(safe-area-inset-bottom, 0px)
+  );
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 16px 0 8px;
+  border-radius: 999px;
+  background: var(--ob-glass);
+  border: 1px solid var(--ob-glassbd);
+  box-shadow: 0 10px 30px rgba(17, 17, 20, 0.16);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  white-space: nowrap;
+  color: var(--t-ink);
+  font-family:
+    var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui,
+    sans-serif;
+}
+:global([data-mode="light"]) .trial {
+  --ob-glass: color-mix(in srgb, var(--t-card) 86%, transparent);
+  --ob-glassbd: rgba(17, 17, 20, 0.07);
+}
+.trial .gift,
+.aviso .gift {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--t-soft);
+  color: var(--t-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trial .tx {
+  font-size: 13px;
+  font-weight: 800;
+}
+.trial .tx span {
+  color: var(--t-mut);
+  font-weight: 700;
+}
+.trial .seg7 {
+  display: flex;
+  gap: 3px;
+}
+.trial .seg7 i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--t-line);
+}
+.trial .seg7 i.on {
+  background: var(--t-acc);
+}
+.trial.last {
+  background: var(--t-acc);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--t-acc) 40%, transparent);
+  padding-right: 8px;
+  cursor: pointer;
+}
+.trial.last .gift {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.trial.last .tx span {
+  color: rgba(255, 255, 255, 0.85);
+}
+.trial.last .go {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #fff;
+  /* O desenho fixa #d6105c: é o --t-deep do claro no pink-neon. No escuro
+   * o --t-deep é claro demais sobre o branco (2,9:1), então vale o acento
+   * do tema escurecido, que segue o tema e passa de 4,5:1. */
+  color: color-mix(in srgb, var(--t-acc) 84%, #000);
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+}
+
+/* 5 · fim do teste: os planos */
+.endhero {
+  background: var(--t-hero);
+  color: #fff;
+  border-radius: 22px;
+  padding: 18px;
+}
+.endhero .t {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+.endhero .s {
+  font-size: 12.5px;
+  opacity: 0.78;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+.endhero .stats {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.endhero .stats span {
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 5px 9px;
+}
+.plans {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.plan {
+  position: relative;
+  text-align: left;
+  width: 100%;
+  border: 1.5px solid var(--t-line);
+  background: var(--t-card);
+  color: var(--t-ink);
+  border-radius: 18px;
+  padding: 13px 14px;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 64px;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+.plan:active {
+  transform: scale(0.99);
+}
+.plan .rd {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--t-line);
+  position: relative;
+}
+.plan[aria-checked="true"] {
+  border-color: var(--t-acc);
+}
+.plan[aria-checked="true"] .rd {
+  border-color: var(--t-acc);
+}
+.plan[aria-checked="true"] .rd::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--t-acc);
+}
+.plan .nm {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+}
+.plan .pm {
+  display: block;
+  font-size: 12px;
+  color: var(--t-mut);
+  margin-top: 2px;
+}
+.plan .pr {
+  text-align: right;
+}
+.plan .pr b {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.plan .pr s {
+  font-size: 12px;
+  color: var(--t-mut);
+}
+.plan .sv {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--t-green);
+  background: var(--t-gsoft);
+  border-radius: 999px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.plan .lim {
+  position: absolute;
+  top: -9px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+}
+.plan .lim span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: var(--t-acc);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+.plan .lim span.pc {
+  background: var(--t-ink);
+  color: var(--t-card);
+}
+.keep {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--t-mut);
+}
+.keep b {
+  color: var(--t-ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan {
+    transition: none;
+  }
+}
+
+/* O desenho não define altura de linha nem o tamanho base do texto (ficam
+ * os do navegador: normal e 16px); o app herda 1,5 do Tailwind e 15px da
+ * base dele, o que desloca o texto dentro de cada linha. */
+.ob,
+.trial {
+  line-height: normal;
+  font-size: 16px;
+}
+
+:global([data-mode="light"]) .trial.last .go {
+  color: var(--t-deep);
+}
+
+/* ── O aviso do teste ("Faltam 2 dias do seu teste") ──────────────────
+   No lugar da pílula, com o mesmo vidro; uma vez, no dia em que a pílula
+   mostra 2 (AssinaturaNoApp). */
+.aviso {
+  --ob-glass: color-mix(in srgb, var(--t-card) 82%, transparent);
+  --ob-glassbd: rgba(255, 255, 255, 0.08);
+  position: fixed;
+  left: 50%;
+  bottom: calc(
+    var(--ob-pilula-bottom, 96px) + env(safe-area-inset-bottom, 0px)
+  );
+  transform: translateX(-50%);
+  z-index: 25;
+  width: min(358px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 12px 14px 12px 10px;
+  border-radius: 22px;
+  background: var(--ob-glass);
+  border: 1px solid var(--ob-glassbd);
+  box-shadow: 0 10px 30px rgba(17, 17, 20, 0.16);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  color: var(--t-ink);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: normal;
+  text-align: left;
+  animation: avisoEntra 0.35s ease both;
+}
+@keyframes avisoEntra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+}
+:global([data-mode="light"]) .aviso {
+  --ob-glass: color-mix(in srgb, var(--t-card) 86%, transparent);
+  --ob-glassbd: rgba(17, 17, 20, 0.07);
+}
+.avisoTx b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.avisoTx small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t-mut);
+}
+.avisoAcoes {
+  grid-column: 2;
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.avisoAcoes button {
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.avisoPlanos {
+  background: var(--t-acc);
+  color: #fff;
+}
+.avisoOk {
+  background: transparent;
+  color: var(--t-mut);
+}
+@media (prefers-reduced-motion: reduce) {
+  .aviso {
+    animation: none;
+  }
+}
