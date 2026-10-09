@@ -2041,6 +2041,7 @@ export function RedeTab({
             loadingMore={feedLoadingMore}
             segmento={segmento}
             onSegmentoChange={trocarSegmento}
+            ativa={active}
             sugestoes={sugestoes}
             sentRequests={sentRequests}
             onSendRequest={(id) => void sendRequest(id)}

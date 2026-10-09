@@ -322,6 +322,10 @@ interface Props {
   /** Aba Para você / Amigas / Descobrir — mora no RedeTab pra sobreviver a remounts. */
   segmento: AbaFeed;
   onSegmentoChange: (s: AbaFeed) => void;
+  /** A Rede está na tela (o `active` que o RedeTab recebe). Montada em
+   * segundo plano -- outra aba aberta, ou o remonte que a trava de PIN do
+   * app causa na árvore inteira -- ela não conta como visita à aba Amigas. */
+  ativa: boolean;
   /** Descobrir: pessoas sem relação ainda (as mesmas sugestões da tela Amigas). */
   sugestoes: PessoaResumo[];
   /** Ids com pedido de amizade já enviado ("Pedido enviado"). */
@@ -368,6 +372,7 @@ export function FeedScreen({
   loadingMore,
   segmento,
   onSegmentoChange,
+  ativa,
   sugestoes,
   sentRequests,
   onSendRequest,
@@ -388,7 +393,9 @@ export function FeedScreen({
 }: Props) {
   // Última visita à aba Amigas (neste aparelho). `corte` é a visita de
   // ANTES desta abertura da aba: é ele que separa "novas" de "já visto"
-  // enquanto ela está aberta; ao entrar, a visita de agora é gravada.
+  // enquanto ela está aberta; ao entrar, a visita de agora é gravada. Só
+  // conta com a Rede na tela (`ativa`): escondida, nada é gravado, e ao
+  // voltar a ficar ativa em Amigas a visita é gravada de novo.
   // Lido só depois de montar: o servidor não tem o localStorage.
   const [ultimaVisita, setUltimaVisita] = useState<string | null>(null);
   const [corte, setCorte] = useState<string | null>(null);
@@ -396,13 +403,13 @@ export function FeedScreen({
     setUltimaVisita(lerUltimaVisitaAmigas(usuario.id));
   }, [usuario.id]);
   useEffect(() => {
-    if (segmento !== "amigas") return;
+    if (!(segmento === "amigas" && ativa)) return;
     const anterior = lerUltimaVisitaAmigas(usuario.id);
     setCorte(anterior);
     const agora = new Date();
     gravarVisitaAmigas(usuario.id, agora);
     setUltimaVisita(agora.toISOString());
-  }, [segmento, usuario.id]);
+  }, [segmento, ativa, usuario.id]);
 
   const daAmigas = useMemo(
     () => postsDasAmigas(posts, friends, usuario.id),

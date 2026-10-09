@@ -67,7 +67,32 @@ describe("as abas presas no topo ao rolar", () => {
 describe("Amigas: novas desde a última visita", () => {
   it("ao abrir a aba, a visita de antes vira o corte e a de agora é gravada", () => {
     expect(feed).toMatch(
-      /if \(segmento !== "amigas"\) return;\s*const anterior = lerUltimaVisitaAmigas\(usuario\.id\);\s*setCorte\(anterior\);\s*const agora = new Date\(\);\s*gravarVisitaAmigas\(usuario\.id, agora\);/
+      /if \(!\(segmento === "amigas" && ativa\)\) return;\s*const anterior = lerUltimaVisitaAmigas\(usuario\.id\);\s*setCorte\(anterior\);\s*const agora = new Date\(\);\s*gravarVisitaAmigas\(usuario\.id, agora\);/
+    );
+  });
+
+  // Revisão da #218: com a Rede escondida (outra aba aberta, ou o remonte
+  // que a trava de PIN do app causa), a visita era gravada sem ninguém ter
+  // visto a aba -- as novas caíam em "Já visto" e o número zerava.
+  it("só grava a visita com a Rede na tela: o efeito depende de `ativa`", () => {
+    expect(feed).toMatch(/\bativa: boolean;/);
+    expect(feed).toMatch(/\}, \[segmento, ativa, usuario\.id\]\);/);
+    // nenhuma outra gravação da visita fora desse efeito
+    expect(feed.match(/gravarVisitaAmigas\(/g) ?? []).toHaveLength(1);
+  });
+
+  it('a flag vem do `active` do RedeTab (o mesmo que a página passa como activeTab === "rede")', () => {
+    expect(redeTab).toMatch(/<FeedScreen[\s\S]*?ativa=\{active\}/);
+    const gated = read("components/rede/RedeGatedTab.tsx");
+    expect(gated).toMatch(/<RedeTab[\s\S]*?active=\{active\}/);
+    const page = read("app/page.tsx");
+    expect(page).toMatch(
+      /<RedeGatedTab[\s\S]{0,120}active=\{activeTab === "rede"\}/
+    );
+    // o laboratório espelha a página (era o que deixava a falha invisível lá)
+    const lab = read("app/dev-preview/app/page.tsx");
+    expect(lab).toMatch(
+      /<RedeGatedTab[\s\S]{0,300}active=\{activeTab === "rede"\}/
     );
   });
 
