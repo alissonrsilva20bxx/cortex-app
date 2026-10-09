@@ -12,7 +12,6 @@ import {
 } from "@/lib/finance";
 import type { Job, Despesa, Meta, ReceitaAvulsa } from "@/lib/types";
 import { progressoMeta } from "./progressoMeta";
-import { FinanceiroGrafico } from "./FinanceiroGrafico";
 
 interface Props {
   jobs: Job[];
@@ -22,8 +21,6 @@ interface Props {
   totalDespMes: number;
   saldo: number;
   metas: Meta[];
-  /** Preferência real de Ajustes (barras ou área) do gráfico de palitos. */
-  chartType?: "bar" | "area";
 }
 
 /**
@@ -42,9 +39,9 @@ interface Props {
  *  - "N lançamentos" de Entradas: atendimentos cujo dinheiro entrou no mês
  *    (`diaDoDinheiro`) + receitas avulsas do mês.
  *
- * Abaixo dos 4 cards vem o gráfico de palitos (FinanceiroGrafico, a
- * preferência barras/área de Ajustes), que o mockup não tem: decisão do
- * operador, é o lugar dele antes da PR de pixel.
+ * Sem gráfico de palitos: o "Saldo do mês" já traz a barra entrou x saiu
+ * (verde e vermelho do tema), como o mockup normativo e o desenho que o
+ * operador aprovou (print de 09/10/2026); os 8 palitos (S1…S8) saíram.
  */
 
 /** Card do mockup: `background:var(--t-card);color:var(--t-ink);
@@ -103,7 +100,6 @@ export function FinanceiroHeroCard({
   totalDespMes,
   saldo,
   metas,
-  chartType = "bar",
 }: Props) {
   const now = new Date();
   const prevRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -274,17 +270,6 @@ export function FinanceiroHeroCard({
           <span style={APOIO}>por atendimento</span>
         </section>
       )}
-
-      {/* Gráfico de palitos logo abaixo dos 4 cards, onde estava antes da
-          PR de pixel (decisão do operador). Ocupa as 2 colunas; o gap de
-          10px da grade é o mesmo `gap-[10px]` da coluna de antes. */}
-      <div data-pixel="grafico-palitos" style={{ gridColumn: "span 2" }}>
-        <FinanceiroGrafico
-          jobs={jobs}
-          receitas={receitas}
-          chartType={chartType}
-        />
-      </div>
     </div>
   );
 }

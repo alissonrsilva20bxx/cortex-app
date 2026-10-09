@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -100,36 +100,71 @@ describe("FinanceiroHeroCard.tsx (issue #136) uses real data/calculations, never
   });
 });
 
-describe("FinanceiroGrafico.tsx keeps the real chart preference, at the top (palitos)", () => {
-  // Decisão do operador: o gráfico de palitos de antes da PR de pixel volta
-  // ao topo, logo abaixo dos 4 cards (mesmo bloco, ver
-  // financeiro-palitos-topo.test.ts), com os mesmos dados.
-  const src = read("components/financeiro/FinanceiroGrafico.tsx");
+// Correção do gráfico (print do operador de 09/10/2026): o aprovado são as
+// 2 barras horizontais do "Saldo do mês" (verde: entrou; vermelho: saiu),
+// não os 8 palitos verticais (S1…S8). Os palitos saíram por inteiro.
+describe("Financeiro sem palitos: só a barra entrou x saiu do Saldo do mês", () => {
   const hero = read("components/financeiro/FinanceiroHeroCard.tsx");
+  const semComentarios = hero
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
 
-  it("FinanceiroHeroCard mounts FinanceiroGrafico with the real Ajustes preference", () => {
-    expect(hero).toMatch(
-      /^import \{ FinanceiroGrafico \} from "\.\/FinanceiroGrafico";\r?$/m
+  it("o componente dos palitos e o gráfico de área foram apagados", () => {
+    for (const f of [
+      "components/financeiro/FinanceiroGrafico.tsx",
+      "components/charts/AreaSparkline.tsx",
+    ])
+      expect(existsSync(join(__dirname, "..", "..", f))).toBe(false);
+    expect(semComentarios).not.toMatch(/FinanceiroGrafico|grafico-palitos/);
+  });
+
+  it("nenhum palito em lugar nenhum do Financeiro", () => {
+    for (const f of readdirSync(
+      join(__dirname, "..", "..", "components", "financeiro")
+    ))
+      expect(read(`components/financeiro/${f}`)).not.toMatch(
+        /MiniBarChart|AreaSparkline|buildChartData|last30DaysSpark/
+      );
+  });
+
+  it("as funções de dados dos palitos saíram de lib/finance.ts", () => {
+    const fin = read("lib/finance.ts");
+    expect(fin).not.toMatch(/buildChartData|last30DaysSpark|ChartPeriod/);
+  });
+
+  it("a preferência 'Gráfico — Financeiro' (barras/área) saiu dos Ajustes e das páginas", () => {
+    expect(read("components/ajustes/AjustesTab.tsx")).not.toContain(
+      "Gráfico — Financeiro"
     );
-    expect(hero).toMatch(
-      /<FinanceiroGrafico\s+jobs=\{jobs\}\s+receitas=\{receitas\}\s+chartType=\{chartType\}/
+    expect(read("lib/types.ts")).not.toMatch(/financeiro: "bar" \| "area"/);
+    for (const p of ["app/page.tsx", "app/dev-preview/app/page.tsx"])
+      expect(read(p)).not.toMatch(/chartPrefs\.financeiro/);
+  });
+
+  it("a barra: verde (entrou) e vermelha (saiu) do tema, proporcionais aos totais do mês", () => {
+    expect(semComentarios).toMatch(
+      /flex: totalEntradaMes, background: "var\(--t-green\)"/
+    );
+    expect(semComentarios).toMatch(
+      /flex: totalDespMes, background: "var\(--t-red\)"/
+    );
+    expect(semComentarios).toContain(
+      "<span>Entrou {formatBRL(totalEntradaMes)}</span>"
+    );
+    expect(semComentarios).toContain(
+      "<span>Saiu {formatBRL(totalDespMes)}</span>"
     );
   });
 
-  it("computes the chart from real lib/finance.ts calls, not a static dataset", () => {
-    expect(src).toContain("buildChartData(jobs, receitas, chartPeriod)");
-    expect(src).toContain("last30DaysSpark(jobs, receitas)");
-  });
-
-  it("preserves the real bar/area chart preference (chartType prop) — never forces line-only, dropping the 'Barras' option", () => {
-    expect(src).toMatch(
-      /chartType === "area" \? \(\s*<AreaSparkline data=\{sparkData\} height=\{100\} id="fin-hero-area" \/>\s*\) : \(\s*<MiniBarChart data=\{chartData\} height=\{100\} id="fin-hero-bar" \/>/
+  it("no lugar do desenho: abaixo do saldo e acima dos 4 cards", () => {
+    const saldo = semComentarios.indexOf("{formatBRL(saldo)}");
+    const barra = semComentarios.indexOf('background: "var(--t-green)"');
+    const entradas = semComentarios.indexOf(
+      "<span style={ROTULO}>Entradas</span>"
     );
-  });
-
-  it("uses theme tokens through FinCard and the shared charts, no hardcoded pink", () => {
-    expect(src).toContain('color: "var(--text-muted)"');
-    expect(src).not.toMatch(/#ff2d78|#ff4f85|#ff376e/i);
+    expect(saldo).toBeGreaterThan(0);
+    expect(barra).toBeGreaterThan(saldo);
+    expect(entradas).toBeGreaterThan(barra);
   });
 });
 

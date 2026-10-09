@@ -99,7 +99,7 @@ const DEFAULT_HOME_CARDS: HomeCardConfig = {
   objetivos: true,
   agenda: true,
 };
-const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
+const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 export default function DevPreviewApp() {
   // Ativa o client mockado uma única vez, síncrono, antes de qualquer aba
@@ -674,7 +674,6 @@ export default function DevPreviewApp() {
           <FinanceiroTab
             userId={usuario.id}
             refreshTrigger={financeiroRefreshKey}
-            chartType={chartPrefs.financeiro}
             onInnerTabChange={setFinInnerTab}
             onAddDespesa={() => setDespesaFormOpen(true)}
             onAddReceita={() => setReceitaFormOpen(true)}
