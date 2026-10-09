@@ -1,240 +1,511 @@
+/*
+ * Abertura "Rota das metas" (proposta 2, aprovada em motion-atlas.html,
+ * 4,0 s). A cena é a do desenho, no quadro dele (390×844): cada medida é
+ * `calc(var(--u) * N)`, com `--u` = 1px do desenho na tela de agora. Em
+ * 390×844 dá 1px exato; em outras telas a cena inteira cresce ou encolhe
+ * junto, sem distorcer, e o fundo cobre a tela toda. Funciona já no HTML do
+ * servidor (sem medir nada em JS), então não há salto na hidratação.
+ *
+ * Cores só pelos tokens do app (--t-*): os 8 temas, claro e escuro. O
+ * fundo é o do desenho: o brilho do acento no topo e no canto, sobre o
+ * fundo liso do tema (`--t-redebg` no escuro, `--t-phbg` no claro).
+ */
 .motionScreen {
+  --u: min(calc(100vw / 390), calc(100vh / 844));
+  --rota-ink2: color-mix(in srgb, var(--t-ink) 70%, transparent);
   position: fixed;
   inset: 0;
   z-index: 9999;
-  isolation: isolate;
   overflow: hidden;
   cursor: default;
-  background: var(--body-bg);
-  color: var(--text);
-  padding-top: env(safe-area-inset-top, 0px);
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: normal;
+  -webkit-font-smoothing: antialiased;
+  color: var(--t-ink);
+  background:
+    radial-gradient(
+      ellipse 100% 55% at 50% -5%,
+      color-mix(in srgb, var(--t-acc) 30%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 55% 40% at 85% 105%,
+      color-mix(in srgb, var(--t-acc) 10%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--t-redebg);
+  -webkit-tap-highlight-color: transparent;
+  /* Saída do desenho: some e cresce 2%, sem desfoque (o desfoque deixava as
+     bordas transparentes e mostrava o fundo preto do <html> no claro). */
   transition:
     opacity 280ms ease,
-    filter 280ms ease,
-    transform 280ms cubic-bezier(0.4, 0, 1, 1);
+    transform 280ms ease;
+}
+
+@supports (height: 100dvh) {
+  .motionScreen {
+    --u: min(calc(100vw / 390), calc(100dvh / 844));
+  }
+}
+
+:global([data-mode="light"]) .motionScreen {
+  background:
+    radial-gradient(
+      ellipse 100% 45% at 50% -8%,
+      color-mix(in srgb, var(--t-acc) 10%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--t-phbg);
 }
 
 .motionLeaving {
   opacity: 0;
-  filter: blur(8px);
-  transform: scale(1.018);
+  transform: scale(1.02);
   pointer-events: none;
 }
 
-.grain {
+/* O quadro do desenho, centrado na tela. */
+.palco {
   position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.16;
-  mix-blend-mode: soft-light;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+  left: 50%;
+  top: 50%;
+  width: calc(var(--u) * 390);
+  height: calc(var(--u) * 844);
+  transform: translate(-50%, -50%);
+  /* Relógio da cena: o componente lê o tempo desta animação para sair aos
+     4,0 s contados da 1ª pintura, não da hidratação. */
+  animation: relogio 4s linear both;
 }
 
-.motionInner {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  max-width: 460px;
-  margin: 0 auto;
-}
-
-.route {
+.palco * {
   position: absolute;
-  inset: 9% 0 16%;
-  width: 100%;
-  height: 75%;
-  z-index: 2;
-}
-.route path {
-  fill: none;
-  stroke: var(--border-color);
-  stroke-width: 1;
-  stroke-dasharray: 5 8;
-  stroke-dashoffset: 90;
-  animation: routeDraw 1.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-.route circle {
-  fill: var(--accent);
-  filter: drop-shadow(0 0 8px rgb(var(--accent-rgb) / 0.75));
-  animation: dotIn 0.35s ease both;
-}
-.route circle:nth-of-type(2) {
-  animation-delay: 0.55s;
-}
-.route circle:nth-of-type(3) {
-  animation-delay: 1.05s;
 }
 
+/* ── Atlas: os lugares em inglês ─────────────────────────────────────── */
 .city {
-  position: absolute;
-  z-index: 3;
-  color: var(--text-2);
-  font-size: 7px;
-  font-weight: 600;
+  font-size: calc(var(--u) * 10);
+  font-weight: 700;
   letter-spacing: 0.22em;
-  opacity: 0;
-  animation: cityIn 0.55s ease forwards;
+  color: var(--t-mut);
+  opacity: 0.55;
+  animation: fade 0.6s 0.2s both;
 }
 .city small {
+  position: static;
   display: block;
-  margin-top: 5px;
-  color: var(--text-muted);
-  font-size: 6px;
-}
-.paris {
-  left: 12%;
-  top: 24%;
-  animation-delay: 0.25s;
+  font-size: calc(var(--u) * 8);
+  letter-spacing: 0.12em;
+  margin-top: calc(var(--u) * 3);
+  font-weight: 600;
 }
 .london {
-  right: 11%;
-  top: 39%;
-  animation-delay: 0.72s;
+  right: calc(var(--u) * 26);
+  top: calc(var(--u) * 330);
 }
 .rio {
-  left: 21%;
-  top: 61%;
-  animation-delay: 1.15s;
+  left: calc(var(--u) * 26);
+  top: calc(var(--u) * 430);
 }
 
-.plane {
-  position: absolute;
-  z-index: 4;
-  left: 50%;
-  top: 44%;
-  width: 11px;
-  height: 11px;
-  color: var(--accent-soft);
-  animation: planeTravel 1.75s cubic-bezier(0.45, 0, 0.2, 1) both;
+/* ── A rota: pontos que acendem em ordem ─────────────────────────────── */
+.rota {
+  left: 0;
+  top: 0;
+  width: calc(var(--u) * 390);
+  height: calc(var(--u) * 844);
+}
+.rota circle {
+  fill: var(--t-acc);
+  animation: fade 0.18s both;
 }
 
-.atlasLine {
-  position: absolute;
+/* ── As paradas: as abas do app ──────────────────────────────────────── */
+.stop {
+  width: calc(var(--u) * 46);
+  height: calc(var(--u) * 46);
+  transform-origin: center;
+  animation: pop 0.42s both;
+}
+.bubble {
+  position: static;
+  width: calc(var(--u) * 46);
+  height: calc(var(--u) * 46);
+  border-radius: 50%;
+  background: var(--t-card);
+  color: var(--t-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 calc(var(--u) * 6) calc(var(--u) * 18) rgba(17, 17, 20, 0.16),
+    0 0 0 calc(var(--u) * 1.5) var(--t-acc);
+}
+.bubble * {
+  position: static;
+}
+.home .bubble {
+  background: var(--t-acc);
+  color: #fff;
+}
+.ico {
+  display: block;
+  width: calc(var(--u) * 22);
+  height: calc(var(--u) * 22);
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blabel {
+  left: calc(var(--u) * -22);
+  top: calc(var(--u) * 52);
+  width: calc(var(--u) * 90);
+  font-size: calc(var(--u) * 11);
+  font-weight: 700;
+  color: var(--t-ink);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ── O ✦ que viaja pela rota ─────────────────────────────────────────── */
+.traveler {
+  left: 0;
+  top: 0;
+  width: calc(var(--u) * 18);
+  height: calc(var(--u) * 18);
+  margin: calc(var(--u) * -9) 0 0 calc(var(--u) * -9);
+  color: var(--t-acc);
+  fill: currentColor;
+  opacity: 0;
+  animation:
+    rotaViajante 2.5s 0.25s linear both,
+    rotaViajanteLuz 2.5s 0.25s linear both;
+}
+
+/* ── O destino: PARIS, a viagem ──────────────────────────────────────── */
+.dest {
+  left: calc(var(--u) * 176);
+  top: calc(var(--u) * 62);
+  width: calc(var(--u) * 48);
+  height: calc(var(--u) * 60);
+  color: var(--t-acc);
+  fill: currentColor;
+  animation: drop 0.5s 2.75s cubic-bezier(0.2, 1.5, 0.3, 1) both;
+}
+.destring {
+  left: calc(var(--u) * 170);
+  top: calc(var(--u) * 106);
+  width: calc(var(--u) * 60);
+  height: calc(var(--u) * 24);
+  border-radius: 50%;
+  border: calc(var(--u) * 2) solid var(--t-acc);
+  opacity: 0;
+  animation: ring 1s 3.1s ease-out forwards;
+}
+.destlab {
   left: 0;
   right: 0;
-  bottom: 24%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--border-color),
-    transparent
-  );
-  transform: scaleX(0);
-  animation: lineReveal 1.2s 1s ease forwards;
+  top: calc(var(--u) * 136);
+  text-align: center;
+  animation: up 0.45s 3s both;
+}
+.destlab * {
+  position: static;
+}
+.destlab b {
+  display: block;
+  font-size: calc(var(--u) * 13);
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  color: var(--t-ink);
+}
+.destlab small {
+  display: block;
+  font-size: calc(var(--u) * 10);
+  font-weight: 600;
+  color: var(--t-mut);
+  margin-top: calc(var(--u) * 3);
+  letter-spacing: 0.08em;
 }
 
+/* ── A marca ─────────────────────────────────────────────────────────── */
 .mark {
-  position: absolute;
-  left: 28px;
-  bottom: calc(42px + env(safe-area-inset-bottom, 0px));
-  z-index: 6;
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
+  left: 0;
+  right: 0;
+  top: calc(var(--u) * 770);
+  text-align: center;
+  animation: fade 0.45s 3.2s both;
+}
+.mark * {
+  position: static;
 }
 .mark b {
-  font-size: 28px;
+  display: block;
+  font-size: calc(var(--u) * 24);
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: var(--text);
+  color: var(--t-ink);
 }
 .mark i {
-  font-size: 7px;
+  display: block;
+  font-size: calc(var(--u) * 9);
+  margin-top: calc(var(--u) * 6);
   font-weight: 600;
   letter-spacing: 0.26em;
-  color: var(--text-muted);
   text-transform: uppercase;
+  color: var(--t-mut);
   font-style: normal;
 }
 
+/* ── Pular: tocar em qualquer lugar também pula ──────────────────────── */
 .skip {
   position: absolute;
-  top: calc(18px + env(safe-area-inset-top, 0px));
-  right: 20px;
+  right: calc(50% - var(--u) * 175);
+  top: max(
+    calc(50% - var(--u) * 392),
+    calc(env(safe-area-inset-top, 0px) + 8px)
+  );
   z-index: 10;
   min-width: 60px;
   min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
+  padding: 0;
   background: transparent;
-  color: var(--text-2);
+  color: var(--rota-ink2);
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--u) * 12);
   font-weight: 620;
-  letter-spacing: 0.01em;
-}
-.skip:hover {
-  color: var(--text);
+  cursor: pointer;
 }
 .skip:focus-visible {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--t-ink);
   outline-offset: 2px;
   border-radius: 8px;
 }
 
-@keyframes routeDraw {
+/* Relógio sem efeito visível: `visibility` é discreta e não cria camada de
+   composição (uma animação de opacidade, mesmo de 1 para 1, criava, e o
+   texto da cena perdia a suavização do desenho). */
+@keyframes relogio {
+  from,
   to {
-    stroke-dashoffset: 0;
+    visibility: visible;
   }
 }
-@keyframes dotIn {
+@keyframes fade {
   from {
     opacity: 0;
-    transform: scale(0);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
-@keyframes cityIn {
+@keyframes up {
   from {
     opacity: 0;
-    transform: translateY(7px);
+    transform: translateY(calc(var(--u) * 14));
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-@keyframes planeTravel {
+@keyframes pop {
   0% {
     opacity: 0;
-    transform: translate(-115px, 145px) rotate(-34deg);
+    transform: scale(0.4);
   }
-  15% {
+  70% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes ring {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+@keyframes drop {
+  0% {
+    opacity: 0;
+    transform: translateY(calc(var(--u) * -30)) scale(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rotaViajanteLuz {
+  0% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  92% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translate(120px, -155px) rotate(-34deg);
-  }
-}
-@keyframes lineReveal {
-  to {
-    transform: scaleX(1);
   }
 }
 
+/* O ✦ pela rota: 41 quadros do próprio traçado (extraídos do desenho com
+   getPointAtLength; os mesmos de QUADROS_DO_VIAJANTE em lib/entry/rotaDasMetas.ts). */
+@keyframes rotaViajante {
+  0% {
+    transform: translate(calc(var(--u) * 60), calc(var(--u) * 700));
+  }
+  2.5% {
+    transform: translate(calc(var(--u) * 64.7), calc(var(--u) * 675.8));
+  }
+  5% {
+    transform: translate(calc(var(--u) * 70.8), calc(var(--u) * 651.8));
+  }
+  7.5% {
+    transform: translate(calc(var(--u) * 78.6), calc(var(--u) * 628.4));
+  }
+  10% {
+    transform: translate(calc(var(--u) * 88.4), calc(var(--u) * 605.8));
+  }
+  12.5% {
+    transform: translate(calc(var(--u) * 100.5), calc(var(--u) * 584.3));
+  }
+  15% {
+    transform: translate(calc(var(--u) * 115.5), calc(var(--u) * 564.7));
+  }
+  17.5% {
+    transform: translate(calc(var(--u) * 133.6), calc(var(--u) * 547.8));
+  }
+  20% {
+    transform: translate(calc(var(--u) * 153.8), calc(var(--u) * 533.7));
+  }
+  22.5% {
+    transform: translate(calc(var(--u) * 175.5), calc(var(--u) * 522));
+  }
+  25% {
+    transform: translate(calc(var(--u) * 198.1), calc(var(--u) * 511.9));
+  }
+  27.5% {
+    transform: translate(calc(var(--u) * 221), calc(var(--u) * 502.8));
+  }
+  30% {
+    transform: translate(calc(var(--u) * 243.8), calc(var(--u) * 493.3));
+  }
+  32.5% {
+    transform: translate(calc(var(--u) * 266), calc(var(--u) * 482.5));
+  }
+  35% {
+    transform: translate(calc(var(--u) * 286.4), calc(var(--u) * 468.7));
+  }
+  37.5% {
+    transform: translate(calc(var(--u) * 290.6), calc(var(--u) * 446.6));
+  }
+  40% {
+    transform: translate(calc(var(--u) * 272.8), calc(var(--u) * 429.7));
+  }
+  42.5% {
+    transform: translate(calc(var(--u) * 251.5), calc(var(--u) * 417.2));
+  }
+  45% {
+    transform: translate(calc(var(--u) * 229.3), calc(var(--u) * 406.4));
+  }
+  47.5% {
+    transform: translate(calc(var(--u) * 206.8), calc(var(--u) * 396.4));
+  }
+  50% {
+    transform: translate(calc(var(--u) * 184.1), calc(var(--u) * 386.6));
+  }
+  52.5% {
+    transform: translate(calc(var(--u) * 161.4), calc(var(--u) * 376.9));
+  }
+  55% {
+    transform: translate(calc(var(--u) * 138.9), calc(var(--u) * 366.7));
+  }
+  57.5% {
+    transform: translate(calc(var(--u) * 116.8), calc(var(--u) * 355.7));
+  }
+  60% {
+    transform: translate(calc(var(--u) * 98.3), calc(var(--u) * 340.2));
+  }
+  62.5% {
+    transform: translate(calc(var(--u) * 106.7), calc(var(--u) * 318.4));
+  }
+  65% {
+    transform: translate(calc(var(--u) * 126.3), calc(var(--u) * 303.4));
+  }
+  67.5% {
+    transform: translate(calc(var(--u) * 147.9), calc(var(--u) * 291.4));
+  }
+  70% {
+    transform: translate(calc(var(--u) * 170.4), calc(var(--u) * 281.3));
+  }
+  72.5% {
+    transform: translate(calc(var(--u) * 193.4), calc(var(--u) * 272.4));
+  }
+  75% {
+    transform: translate(calc(var(--u) * 216.8), calc(var(--u) * 264.6));
+  }
+  77.5% {
+    transform: translate(calc(var(--u) * 240.5), calc(var(--u) * 257.7));
+  }
+  80% {
+    transform: translate(calc(var(--u) * 264.5), calc(var(--u) * 251.7));
+  }
+  82.5% {
+    transform: translate(calc(var(--u) * 288), calc(var(--u) * 244.3));
+  }
+  85% {
+    transform: translate(calc(var(--u) * 299.7), calc(var(--u) * 224.1));
+  }
+  87.5% {
+    transform: translate(calc(var(--u) * 291.7), calc(var(--u) * 201));
+  }
+  90% {
+    transform: translate(calc(var(--u) * 277.1), calc(var(--u) * 181.1));
+  }
+  92.5% {
+    transform: translate(calc(var(--u) * 259.8), calc(var(--u) * 163.5));
+  }
+  95% {
+    transform: translate(calc(var(--u) * 240.9), calc(var(--u) * 147.6));
+  }
+  97.5% {
+    transform: translate(calc(var(--u) * 221), calc(var(--u) * 133));
+  }
+  100% {
+    transform: translate(calc(var(--u) * 200), calc(var(--u) * 120));
+  }
+}
+
+/* Movimento reduzido: só o quadro final, parado, por pouco tempo. */
 @media (prefers-reduced-motion: reduce) {
   .motionScreen {
     transition: opacity 120ms ease;
   }
   .motionLeaving {
-    filter: none;
     transform: none;
   }
-  .route path,
-  .route circle,
-  .city,
-  .plane,
-  .atlasLine {
+  /* O relógio do .palco continua: não mexe em nada visível e é ele que
+     conta o quadro parado desde a 1ª pintura. */
+  .palco * {
     animation: none !important;
-    opacity: 1;
-    transform: none;
   }
-  .plane {
+  .traveler,
+  .destring {
     display: none;
   }
 }
