@@ -87,6 +87,5 @@ export interface CardStyleConfig {
 }
 
 export interface ChartPrefConfig {
-  financeiro: "bar" | "area";
   jobs: "bar" | "donut";
 }

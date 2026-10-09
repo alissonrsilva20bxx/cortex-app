@@ -6,7 +6,6 @@ import {
   Sun,
   Moon,
   BarChart2,
-  TrendingUp,
   LayoutGrid,
   Lock,
   LockOpen,
@@ -65,7 +64,7 @@ const DEFAULT_CARD_STYLES: CardStyleConfig = {
   nextJob: "standard",
   financeSummary: "standard",
 };
-const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
+const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 interface Props {
   userId: string;
@@ -812,46 +811,6 @@ export function AjustesTab({
 
             <GlassCard radius="md" className="p-4 space-y-4">
               <div>
-                <p
-                  className="text-xs font-semibold mb-2"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Gráfico — Financeiro
-                </p>
-                <SegmentedControl<"bar" | "area">
-                  size="sm"
-                  fullWidth
-                  value={chartPrefs.financeiro}
-                  onChange={(id) =>
-                    updateChartPrefs({ ...chartPrefs, financeiro: id })
-                  }
-                  options={[
-                    {
-                      id: "bar",
-                      label: (
-                        <span className="flex items-center justify-center gap-1.5">
-                          <BarChart2 size={14} /> Barras
-                        </span>
-                      ),
-                    },
-                    {
-                      id: "area",
-                      label: (
-                        <span className="flex items-center justify-center gap-1.5">
-                          <TrendingUp size={14} /> Área
-                        </span>
-                      ),
-                    },
-                  ]}
-                />
-              </div>
-
-              <div
-                style={{
-                  borderTop: "1px solid var(--border-color)",
-                  paddingTop: 16,
-                }}
-              >
                 <p
                   className="text-xs font-semibold mb-2"
                   style={{ color: "var(--text-muted)" }}

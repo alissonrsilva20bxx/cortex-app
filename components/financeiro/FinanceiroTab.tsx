@@ -50,7 +50,6 @@ const TABS: { id: InnerTab; label: string }[] = [
 interface Props {
   userId: string;
   refreshTrigger: number;
-  chartType?: "bar" | "area";
   onInnerTabChange?: (tab: string) => void;
   onAddDespesa?: () => void;
   onAddReceita?: () => void;
@@ -77,7 +76,6 @@ interface Props {
 export function FinanceiroTab({
   userId,
   refreshTrigger,
-  chartType = "bar",
   onInnerTabChange,
   onAddDespesa,
   onAddReceita,
@@ -392,7 +390,6 @@ export function FinanceiroTab({
             totalDespMes={totalDespMes}
             saldo={saldo}
             metas={metas}
-            chartType={chartType}
           />
 
           {/* Visão do mockup (Recentes + Mais lançamentos): sempre visível,
@@ -410,8 +407,7 @@ export function FinanceiroTab({
           />
 
           {/* Fora do mockup, preservado: as listas completas com exclusão
-              (Entradas, Saídas, Metas), abaixo do que o mockup mostra. O
-              gráfico de palitos mora no topo, no FinanceiroHeroCard. */}
+              (Entradas, Saídas, Metas), abaixo do que o mockup mostra. */}
           <div
             ref={detalhesRef}
             style={{

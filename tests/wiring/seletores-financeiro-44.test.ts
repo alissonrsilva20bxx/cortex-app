@@ -53,12 +53,9 @@ const usos = [...arquivosTsx("app"), ...arquivosTsx("components")]
     tagsSegmented(read(arquivo)).map((tag) => ({ arquivo, tag }))
   );
 
-// O Semana/Mês/Ano mora no FinanceiroGrafico, junto com o gráfico de
-// palitos (que o hero monta logo abaixo dos 4 cards).
-const FINANCEIRO = [
-  "components/financeiro/FinanceiroGrafico.tsx",
-  "components/financeiro/FinanceiroTab.tsx",
-];
+// O Semana/Mês/Ano saiu junto com o gráfico de palitos (correção do
+// gráfico, 09/10/2026): fica o seletor do FinanceiroTab.
+const FINANCEIRO = ["components/financeiro/FinanceiroTab.tsx"];
 
 describe("#174 — SegmentedControl ganha minTouchTarget opt-in", () => {
   it("a opção existe e vem desligada por padrão", () => {
@@ -98,7 +95,7 @@ describe("#174 — SegmentedControl ganha minTouchTarget opt-in", () => {
   });
 });
 
-describe("#174 — ligada só nos dois seletores do Financeiro", () => {
+describe("#174 — ligada só no seletor do Financeiro", () => {
   for (const arquivo of FINANCEIRO) {
     it(`${arquivo} liga minTouchTarget`, () => {
       const tags = usos.filter((u) => u.arquivo === arquivo);
@@ -109,10 +106,10 @@ describe("#174 — ligada só nos dois seletores do Financeiro", () => {
 
   it("nenhum outro uso do SegmentedControl liga a opção (Ajustes, Agenda, Meu espaço, Amigas ficam iguais)", () => {
     const outros = usos.filter((u) => !FINANCEIRO.includes(u.arquivo));
-    // Os 6 usos conhecidos fora do Financeiro.
+    // Os 5 usos conhecidos fora do Financeiro (o "Gráfico — Financeiro"
+    // dos Ajustes saiu junto com os palitos).
     expect(outros.map((u) => u.arquivo).sort()).toEqual(
       [
-        "components/ajustes/AjustesTab.tsx",
         "components/ajustes/AjustesTab.tsx",
         "components/ajustes/AjustesTab.tsx",
         "components/jobs/AgendaResumoSheet.tsx",

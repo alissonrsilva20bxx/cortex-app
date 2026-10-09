@@ -93,7 +93,7 @@ const DEFAULT_CARD_STYLES: CardStyleConfig = {
   nextJob: "standard",
   financeSummary: "standard",
 };
-const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
+const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 /** Falha de rede (offline / servidor inalcançável), não sessão inválida. */
 function isNetworkError(error: { name?: string; status?: number }): boolean {
@@ -693,7 +693,6 @@ export default function Page() {
               <FinanceiroTab
                 userId={usuario.id}
                 refreshTrigger={financeiroRefreshKey}
-                chartType={chartPrefs.financeiro}
                 onInnerTabChange={setFinInnerTab}
                 onAddDespesa={() => setDespesaFormOpen(true)}
                 onAddReceita={() => setReceitaFormOpen(true)}
