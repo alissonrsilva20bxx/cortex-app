@@ -423,6 +423,8 @@ export default function Page() {
   // escolha de plano.
   const [planoNoPagamento, setPlanoNoPagamento] = useState<Plano | null>(null);
   const [reabrirPlanos, setReabrirPlanos] = useState(0);
+  // Depois do Pagamento, a pílula e os planos releem a assinatura.
+  const [releituraAssinatura, setReleituraAssinatura] = useState(0);
   const escolherPlano: OnEscolherPlano = (plano) => {
     if (usuario) guardarPlanoEscolhido(usuario.id, plano);
     setPlanoNoPagamento(plano);
@@ -814,6 +816,7 @@ export default function Page() {
           jobs={jobs}
           onEscolherPlano={escolherPlano}
           abrirPlanosSinal={reabrirPlanos}
+          recarregarSinal={releituraAssinatura}
         />
       )}
       {usuario && planoNoPagamento && (
@@ -825,7 +828,11 @@ export default function Page() {
             setPlanoNoPagamento(null);
             setReabrirPlanos((n) => n + 1);
           }}
-          onConcluir={() => setPlanoNoPagamento(null)}
+          onConcluir={() => {
+            setPlanoNoPagamento(null);
+            setReleituraAssinatura((n) => n + 1);
+          }}
+          onAssinaturaAtiva={() => setReleituraAssinatura((n) => n + 1)}
         />
       )}
 

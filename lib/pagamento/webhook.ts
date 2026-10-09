@@ -13,7 +13,7 @@
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { AssinaturaStatus } from "@/lib/types";
-import { statusPeloStripe } from "./regras";
+import { assinaturaValendo, type AssinaturaDoStripe } from "./regras";
 
 /** Tolerância do carimbo de tempo, em segundos (o padrão do Stripe). */
 export const TOLERANCIA_SEGUNDOS = 300;
@@ -82,16 +82,33 @@ export interface AtualizacaoDaAssinatura {
 
 interface EventoDoStripe {
   type?: unknown;
-  data?: { object?: { status?: unknown; metadata?: Record<string, unknown> } };
+  data?: { object?: AssinaturaDoStripe };
+}
+
+/** A cliente do Stripe dona da assinatura do evento (para listar as outras). */
+export function clienteDoEvento(evento: EventoDoStripe): string | null {
+  const c = evento.data?.object?.customer;
+  return typeof c === "string" && c.length > 0 ? c : null;
 }
 
 /**
  * O que o evento muda: a conta (o `user_id` que a rota de assinatura grava
- * no metadata da assinatura) e o novo `assinatura_status`. `null` quando o
- * evento não é da assinatura, não diz de quem é, ou não muda nada.
+ * no metadata) e o novo `assinatura_status`, olhando TODAS as assinaturas
+ * da cliente (`daCliente`, listadas no Stripe na hora), não só a do evento:
+ *
+ *  - alguma sustenta "ativa" (`assinaturaValendo`): "ativa". Assim uma
+ *    assinatura velha que expira, é cancelada ou fica sem cartão nunca
+ *    rebaixa quem pagou em outra;
+ *  - nenhuma, e a do evento foi apagada, cancelada ou ficou `unpaid`:
+ *    "trial" (o `computeAssinatura` decide pela data se o teste ainda vale);
+ *  - nenhuma, e a do evento é `incomplete`, `incomplete_expired`, `paused`
+ *    ou `trialing` sem cartão: nada muda (nunca deu "ativa").
+ *
+ * `null` quando o evento não é da assinatura ou não diz de quem é.
  */
 export function atualizacaoDoEvento(
-  evento: EventoDoStripe
+  evento: EventoDoStripe,
+  daCliente: readonly AssinaturaDoStripe[] = []
 ): AtualizacaoDaAssinatura | null {
   if (
     typeof evento.type !== "string" ||
@@ -100,14 +117,23 @@ export function atualizacaoDoEvento(
     return null;
   const assinatura = evento.data?.object;
   const userId = assinatura?.metadata?.user_id;
-  if (typeof userId !== "string" || userId.length === 0) return null;
-  // Assinatura apagada no Stripe: volta para "trial" (a data decide se o
-  // teste ainda vale), mesmo que o objeto venha com outro status.
-  const status =
-    evento.type === "customer.subscription.deleted"
-      ? "trial"
-      : statusPeloStripe(
-          typeof assinatura?.status === "string" ? assinatura.status : null
-        );
-  return status ? { userId, assinaturaStatus: status } : null;
+  if (typeof userId !== "string" || userId.trim().length === 0) return null;
+  const apagada = evento.type === "customer.subscription.deleted";
+  // A lista do Stripe é a foto de agora; a do evento entra se não estiver
+  // nela (apagada ou ainda não visível na listagem).
+  const todas = [
+    ...daCliente,
+    ...(daCliente.some((s) => s.id && s.id === assinatura?.id)
+      ? []
+      : [apagada ? { ...assinatura, status: "canceled" } : (assinatura ?? {})]),
+  ];
+  if (todas.some(assinaturaValendo))
+    return { userId, assinaturaStatus: "ativa" };
+  if (
+    apagada ||
+    assinatura?.status === "canceled" ||
+    assinatura?.status === "unpaid"
+  )
+    return { userId, assinaturaStatus: "trial" };
+  return null;
 }

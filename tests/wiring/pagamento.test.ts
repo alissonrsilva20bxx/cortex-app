@@ -118,7 +118,9 @@ describe("o cartão nunca passa pelo nosso servidor", () => {
   });
 
   it("a rota só recebe o plano; nada de cartão no corpo", () => {
-    expect(cliente).toMatch(/body: JSON\.stringify\(\{ plano: plano\.id \}\)/);
+    expect(cliente).toMatch(
+      /body: JSON\.stringify\(\{ plano: plano\.id, abertura \}\)/
+    );
     expect(rota).not.toMatch(/card|cartao|cartão|number|cvc/i);
   });
 });
@@ -137,7 +139,9 @@ describe("webhook e middleware", () => {
     expect(webhook).toMatch(
       /getSupabaseAdmin\(\)\s*\.from\("configuracoes"\)\s*\.update\(\{ assinatura_status:/
     );
-    expect(tela).not.toMatch(/assinatura_status/);
+    // a tela só LÊ (para a pílula sumir depois do "Tudo certo"), nunca grava
+    expect(tela).not.toMatch(/\.update\(|\.upsert\(|\.insert\(/);
+    expect(tela).toMatch(/\.select\("assinatura_status"\)/);
     expect(rota).not.toMatch(/\.update\(/);
   });
 
@@ -157,10 +161,75 @@ describe("webhook e middleware", () => {
     const sql = readFileSync(p, "utf-8");
     expect(sql).toMatch(/ESCRITA, NÃO APLICADA/);
     expect(sql).toMatch(/new\.assinatura_status := old\.assinatura_status;/);
-    expect(sql).toMatch(/papel in \('authenticated', 'anon'\)/);
+    expect(sql).toMatch(
+      /public\.configuracoes_papel_da_sessao\(\) in \('authenticated', 'anon'\)/
+    );
+    // apagar e inserir de novo recomeçava o teste: DELETE recusado, e o
+    // INSERT pela sessão conta o teste do cadastro da conta
+    expect(sql).toMatch(/before delete on public\.configuracoes/);
+    expect(sql).toMatch(
+      /raise exception 'configuracoes: a própria conta não apaga esta linha'/
+    );
+    expect(sql).toMatch(
+      /new\.trial_started_at := coalesce\(\s*\(select u\.created_at from auth\.users u where u\.id = new\.user_id\),\s*now\(\)\s*\);/
+    );
     // sem JWT a configuração vem vazia: ''::jsonb derrubaria a escrita
     expect(sql).toMatch(
       /nullif\(current_setting\('request\.jwt\.claims', true\), ''\)::jsonb/
     );
+  });
+});
+
+describe("ajustes da revisão (#221)", () => {
+  it("assinatura com teste: cancela no fim se ficar sem cartão", () => {
+    expect(stripeApi).toMatch(
+      /trial_settings: noTeste\s*\?\s*\{ end_behavior: \{ missing_payment_method: "cancel" \} \}/
+    );
+  });
+
+  it("a rota usa prepararAssinatura (reaproveita/cancela abertas; idempotente)", () => {
+    expect(rota).toMatch(
+      /await prepararAssinatura\(stripe, \{[\s\S]{0,120}abertura,/
+    );
+    expect(rota).not.toMatch(/criarAssinatura\(/);
+    expect(stripeApi).toMatch(
+      /`jobapp-assinatura-\$\{userId\}-\$\{abertura\}`/
+    );
+  });
+
+  it("o webhook decide olhando todas as assinaturas da cliente", () => {
+    expect(webhook).toMatch(/daCliente = await assinaturasDaCliente\(/);
+    expect(webhook).toMatch(/atualizacaoDoEvento\(ev, daCliente\)/);
+  });
+
+  it("campo incompleto (validation_error) fica no formulário: não vai para a tela de erro", () => {
+    expect(tela).toMatch(
+      /if \(r\.error\) \{\s*if \(r\.error\.type === "validation_error"\) return;\s*setErro\(r\.error\);\s*setTela\("erro"\);/
+    );
+  });
+
+  it("guarda síncrona: dois toques nunca confirmam duas vezes, nem antes de o Stripe estar pronto", () => {
+    expect(tela).toMatch(
+      /if \(!s \|\| estado !== "pronto" \|\| pagandoRef\.current\) return;\s*pagandoRef\.current = true;/
+    );
+  });
+
+  it("uma abertura, um pedido (Strict Mode não pede duas vezes)", () => {
+    expect(tela).toMatch(/adaptador\.iniciar\(plano, abertura\.current\)/);
+    expect(cliente).toMatch(
+      /const ja = pedidos\.get\(chave\);\s*if \(ja\) return ja;/
+    );
+  });
+
+  it("depois do 'Tudo certo': relê a assinatura e a página relê a pílula", () => {
+    expect(tela).toMatch(
+      /if \(data\?\.assinatura_status === "ativa"\) \{\s*avisarAtiva\.current\?\.\(\);/
+    );
+    expect(page).toMatch(
+      /onAssinaturaAtiva=\{\(\) => setReleituraAssinatura\(\(n\) => n \+ 1\)\}/
+    );
+    expect(page).toMatch(/recarregarSinal=\{releituraAssinatura\}/);
+    const noApp = ler("components", "assinatura", "AssinaturaNoApp.tsx");
+    expect(noApp).toMatch(/\}, \[userId, recarregarSinal\]\);/);
   });
 });

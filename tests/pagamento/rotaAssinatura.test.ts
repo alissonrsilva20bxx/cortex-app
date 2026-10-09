@@ -31,29 +31,45 @@ const supabaseFalso = {
   auth: { getUser: async () => ({ data: { user: { email: "a@b.c" } } }) },
 };
 
-let chamadasStripe: { url: string; corpo: URLSearchParams }[] = [];
+let chamadasStripe: {
+  url: string;
+  metodo: string;
+  corpo: URLSearchParams;
+  idem?: string;
+}[] = [];
+let assinaturasExistentes: Record<string, unknown>[] = [];
 function stripeNoFetch() {
   chamadasStripe = [];
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, init: RequestInit) => {
       const corpo = new URLSearchParams(String(init.body ?? ""));
-      chamadasStripe.push({ url, corpo });
+      const h = (init.headers ?? {}) as Record<string, string>;
+      chamadasStripe.push({
+        url,
+        metodo: String(init.method),
+        corpo,
+        idem: h["Idempotency-Key"],
+      });
       const resp = url.includes("customers/search")
         ? { data: [{ id: "cus_1" }] }
         : url.includes("products/search")
           ? { data: [{ id: "prod_1" }] }
-          : corpo.get("trial_end")
-            ? {
-                id: "sub_1",
-                pending_setup_intent: { client_secret: "seti_secret" },
-              }
-            : {
-                id: "sub_1",
-                latest_invoice: {
-                  payment_intent: { client_secret: "pi_secret" },
-                },
-              };
+          : init.method === "GET" && url.includes("/v1/subscriptions")
+            ? { data: assinaturasExistentes }
+            : init.method === "DELETE"
+              ? { id: url.split("/").pop(), status: "canceled" }
+              : corpo.get("trial_end")
+                ? {
+                    id: "sub_1",
+                    pending_setup_intent: { client_secret: "seti_secret" },
+                  }
+                : {
+                    id: "sub_1",
+                    latest_invoice: {
+                      payment_intent: { client_secret: "pi_secret" },
+                    },
+                  };
       return new Response(JSON.stringify(resp), { status: 200 });
     })
   );
@@ -67,7 +83,9 @@ const pedir = (corpo: unknown) =>
     })
   );
 const assinaturaCriada = () =>
-  chamadasStripe.find((c) => c.url.endsWith("/v1/subscriptions"));
+  chamadasStripe.find(
+    (c) => c.metodo === "POST" && c.url.endsWith("/v1/subscriptions")
+  );
 
 describe("rota de assinatura (Stripe simulado)", () => {
   beforeEach(() => {
@@ -78,6 +96,7 @@ describe("rota de assinatura (Stripe simulado)", () => {
       userId: "user-1",
     });
     mocks.config = { trial_started_at: null, assinatura_status: "trial" };
+    assinaturasExistentes = [];
     stripeNoFetch();
   });
   afterEach(() => vi.unstubAllGlobals());
@@ -166,5 +185,65 @@ describe("rota de assinatura (Stripe simulado)", () => {
     const r = await pedir({ plano: "3m" });
     expect(r.status).toBe(502);
     expect((await r.json()).error).toMatch(/Não foi possível/);
+  });
+
+  it("abrir de novo o mesmo plano reaproveita a assinatura aberta (não cria outra)", async () => {
+    mocks.config = {
+      trial_started_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+      assinatura_status: "trial",
+    };
+    assinaturasExistentes = [
+      {
+        id: "sub_aberta",
+        status: "incomplete",
+        metadata: { plano: "3m" },
+        latest_invoice: {
+          payment_intent: { client_secret: "pi_reaproveitado" },
+        },
+      },
+    ];
+    const r = await pedir({ plano: "3m", abertura: "abertura-0001" });
+    expect(await r.json()).toMatchObject({ clientSecret: "pi_reaproveitado" });
+    expect(assinaturaCriada()).toBeUndefined();
+  });
+
+  it("outro plano: cancela a aberta e cria a nova com a chave de idempotência da abertura", async () => {
+    mocks.config = {
+      trial_started_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+      assinatura_status: "trial",
+    };
+    assinaturasExistentes = [
+      {
+        id: "sub_aberta",
+        status: "incomplete",
+        metadata: { plano: "1m" },
+        latest_invoice: { payment_intent: { client_secret: "pi_outro_plano" } },
+      },
+    ];
+    await pedir({ plano: "3m", abertura: "abertura-0002" });
+    expect(
+      chamadasStripe.some(
+        (c) => c.metodo === "DELETE" && c.url.endsWith("/sub_aberta")
+      )
+    ).toBe(true);
+    expect(assinaturaCriada()!.idem).toBe(
+      "jobapp-assinatura-user-1-abertura-0002"
+    );
+  });
+
+  it("já paga no Stripe (mesmo com o banco ainda em 'trial'): 409, sem criar", async () => {
+    assinaturasExistentes = [
+      { id: "sub_v", status: "active", default_payment_method: "pm" },
+    ];
+    const r = await pedir({ plano: "3m" });
+    expect(r.status).toBe(409);
+    expect(assinaturaCriada()).toBeUndefined();
+  });
+
+  it("abertura inválida vinda do aparelho é trocada por uma do servidor", async () => {
+    await pedir({ plano: "3m", abertura: "x'; drop" });
+    expect(assinaturaCriada()!.idem).toMatch(
+      /^jobapp-assinatura-user-1-[0-9a-f-]{36}$/
+    );
   });
 });

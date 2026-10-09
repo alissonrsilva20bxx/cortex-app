@@ -22,12 +22,22 @@ const cabecalho = (corpo: string, t = agora(), segredo = SEGREDO) =>
 const evento = (
   type: string,
   status: string | null,
-  metadata: Record<string, string> = { user_id: "user-1", plano: "3m" }
+  metadata: Record<string, string> = { user_id: "user-1", plano: "3m" },
+  extra: Record<string, unknown> = {}
 ) =>
   JSON.stringify({
     id: "evt_1",
     type,
-    data: { object: { id: "sub_1", object: "subscription", status, metadata } },
+    data: {
+      object: {
+        id: "sub_1",
+        object: "subscription",
+        customer: "cus_1",
+        status,
+        metadata,
+        ...extra,
+      },
+    },
   });
 
 describe("verificação da assinatura do Stripe", () => {
@@ -92,6 +102,16 @@ describe("verificação da assinatura do Stripe", () => {
     ).toEqual({ ok: true });
   });
 
+  it("carimbo no FUTURO (mais de 5 min à frente): recusado", () => {
+    expect(
+      verificarAssinaturaDoStripe(
+        corpo,
+        cabecalho(corpo, agora() + 600),
+        SEGREDO
+      )
+    ).toEqual({ ok: false, motivo: "fora-do-prazo" });
+  });
+
   it("sem cabeçalho ou malformado: recusado", () => {
     expect(verificarAssinaturaDoStripe(corpo, null, SEGREDO).ok).toBe(false);
     expect(verificarAssinaturaDoStripe(corpo, "lixo", SEGREDO)).toEqual({
@@ -114,43 +134,123 @@ describe("verificação da assinatura do Stripe", () => {
 
 describe("o que cada evento muda", () => {
   const ev = (s: string) => JSON.parse(s);
+  const COM_CARTAO = { default_payment_method: "pm_1" };
 
-  it("assinatura criada/atualizada ativa ou no teste: 'ativa' para a conta do metadata", () => {
+  it("paga (active/past_due): 'ativa' para a conta do metadata", () => {
+    expect(
+      atualizacaoDoEvento(ev(evento("customer.subscription.updated", "active")))
+    ).toEqual({ userId: "user-1", assinaturaStatus: "ativa" });
+    expect(
+      atualizacaoDoEvento(
+        ev(evento("customer.subscription.updated", "past_due"))
+      )
+    ).toEqual({ userId: "user-1", assinaturaStatus: "ativa" });
+  });
+
+  it("no teste COM cartão: 'ativa'", () => {
+    expect(
+      atualizacaoDoEvento(
+        ev(
+          evento(
+            "customer.subscription.updated",
+            "trialing",
+            undefined,
+            COM_CARTAO
+          )
+        )
+      )
+    ).toEqual({ userId: "user-1", assinaturaStatus: "ativa" });
+  });
+
+  it("no teste SEM cartão (só abriu o Pagamento): nada muda", () => {
     expect(
       atualizacaoDoEvento(
         ev(evento("customer.subscription.created", "trialing"))
       )
-    ).toEqual({ userId: "user-1", assinaturaStatus: "ativa" });
-    expect(
-      atualizacaoDoEvento(ev(evento("customer.subscription.updated", "active")))
-    ).toEqual({ userId: "user-1", assinaturaStatus: "ativa" });
+    ).toBeNull();
   });
 
-  it("cancelada ou apagada: volta a 'trial'", () => {
-    expect(
-      atualizacaoDoEvento(
-        ev(evento("customer.subscription.updated", "canceled"))
-      )
-    ).toEqual({ userId: "user-1", assinaturaStatus: "trial" });
-    expect(
-      atualizacaoDoEvento(ev(evento("customer.subscription.deleted", "active")))
-    ).toEqual({ userId: "user-1", assinaturaStatus: "trial" });
+  it("cancelada, sem pagamento ou apagada, sem outra que valha: volta a 'trial'", () => {
+    for (const [tipo, st] of [
+      ["customer.subscription.updated", "canceled"],
+      ["customer.subscription.updated", "unpaid"],
+      ["customer.subscription.deleted", "active"],
+    ])
+      expect(atualizacaoDoEvento(ev(evento(tipo, st)))).toEqual({
+        userId: "user-1",
+        assinaturaStatus: "trial",
+      });
   });
 
-  it("pagamento incompleto, outro evento ou sem dona: nada muda", () => {
+  it("incompleta ou expirada sem pagar: nada muda (nunca deu 'ativa')", () => {
     expect(
       atualizacaoDoEvento(
         ev(evento("customer.subscription.created", "incomplete"))
       )
     ).toBeNull();
     expect(
-      atualizacaoDoEvento(ev(evento("invoice.paid", "active")))
-    ).toBeNull();
-    expect(
       atualizacaoDoEvento(
-        ev(evento("customer.subscription.updated", "active", {}))
+        ev(evento("customer.subscription.updated", "incomplete_expired"))
       )
     ).toBeNull();
+  });
+
+  // Duas assinaturas da mesma conta: a velha que expira ou é cancelada não
+  // rebaixa quem pagou na outra.
+  it("A (velha) expira ou é cancelada enquanto B está paga: continua 'ativa'", () => {
+    const daCliente = [
+      { id: "sub_1", status: "incomplete_expired" },
+      { id: "sub_2", status: "active", default_payment_method: "pm_2" },
+    ];
+    for (const st of ["incomplete_expired", "canceled"])
+      expect(
+        atualizacaoDoEvento(
+          ev(evento("customer.subscription.updated", st)),
+          daCliente
+        )
+      ).toEqual({ userId: "user-1", assinaturaStatus: "ativa" });
+    expect(
+      atualizacaoDoEvento(
+        ev(evento("customer.subscription.deleted", "canceled")),
+        daCliente
+      )
+    ).toEqual({ userId: "user-1", assinaturaStatus: "ativa" });
+  });
+
+  it("A cancelada e B no teste SEM cartão: B não sustenta, volta a 'trial'", () => {
+    const daCliente = [{ id: "sub_2", status: "trialing" }];
+    expect(
+      atualizacaoDoEvento(
+        ev(evento("customer.subscription.updated", "canceled")),
+        daCliente
+      )
+    ).toEqual({ userId: "user-1", assinaturaStatus: "trial" });
+  });
+
+  it("a foto da listagem vale mais que o objeto do evento (mesmo id)", () => {
+    // O evento chegou atrasado dizendo "active", mas a assinatura já foi
+    // cancelada no Stripe: não pode voltar a "ativa".
+    expect(
+      atualizacaoDoEvento(
+        ev(evento("customer.subscription.updated", "active")),
+        [{ id: "sub_1", status: "canceled" }]
+      )
+    ).toBeNull();
+  });
+
+  it("outro evento, ou sem dona (user_id ausente, vazio ou só espaço): nada muda", () => {
+    expect(
+      atualizacaoDoEvento(ev(evento("invoice.paid", "active")))
+    ).toBeNull();
+    for (const metadata of [{}, { user_id: "" }, { user_id: "   " }] as Record<
+      string,
+      string
+    >[])
+      expect(
+        atualizacaoDoEvento(
+          ev(evento("customer.subscription.updated", "active", metadata))
+        )
+      ).toBeNull();
   });
 });
 
@@ -235,5 +335,54 @@ describe("rota do webhook (Stripe simulado)", () => {
     const r = await chamar(corpo, cabecalho(corpo));
     expect(r.status).toBe(200);
     expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("duas assinaturas da mesma conta: a velha expira e a conta segue 'ativa' (lista o Stripe)", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_123";
+    const pedidos: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        pedidos.push(url);
+        return new Response(
+          JSON.stringify({
+            data: [
+              { id: "sub_1", status: "incomplete_expired" },
+              { id: "sub_2", status: "active", default_payment_method: "pm_2" },
+            ],
+          }),
+          { status: 200 }
+        );
+      })
+    );
+    const corpo = evento("customer.subscription.updated", "incomplete_expired");
+    const r = await chamar(corpo, cabecalho(corpo));
+    expect(r.status).toBe(200);
+    expect(decodeURIComponent(pedidos[0])).toContain(
+      "subscriptions?customer=cus_1"
+    );
+    expect(decodeURIComponent(pedidos[0])).toContain("status=all");
+    expect(mocks.update).toHaveBeenCalledWith("configuracoes", {
+      assinatura_status: "ativa",
+    });
+    expect(mocks.update).not.toHaveBeenCalledWith("configuracoes", {
+      assinatura_status: "trial",
+    });
+    vi.unstubAllGlobals();
+    delete process.env.STRIPE_SECRET_KEY;
+  });
+
+  it("Stripe não responde a listagem: 500 (o Stripe reenvia) e nada é gravado", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_123";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 500 }))
+    );
+    const corpo = evento("customer.subscription.updated", "canceled");
+    const r = await chamar(corpo, cabecalho(corpo));
+    expect(r.status).toBe(500);
+    expect(mocks.update).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+    delete process.env.STRIPE_SECRET_KEY;
   });
 });

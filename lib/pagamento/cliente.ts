@@ -57,7 +57,9 @@ export interface PagamentoAdapter {
   /** A chave publicável (vazia = pagamento indisponível). */
   chave(): string;
   carregarStripe(chave: string): Promise<StripeJs>;
-  iniciar(plano: Plano): Promise<ResultadoDoInicio>;
+  /** `abertura`: um id por abertura da tela (reaproveita a assinatura e é
+   * a chave de idempotência no servidor). */
+  iniciar(plano: Plano, abertura: string): Promise<ResultadoDoInicio>;
 }
 
 let carregando: Promise<StripeJs> | null = null;
@@ -87,41 +89,61 @@ function carregarStripeJs(chave: string): Promise<StripeJs> {
   return carregando;
 }
 
+/** Um pedido por abertura: o efeito duplo do Strict Mode (e qualquer
+ * repetição) reaproveita a mesma resposta em vez de pedir de novo. */
+const pedidos = new Map<string, Promise<ResultadoDoInicio>>();
+
 export const pagamentoStripe: PagamentoAdapter = {
   chave: () => CHAVE_PUBLICAVEL,
   carregarStripe: carregarStripeJs,
-  async iniciar(plano) {
-    try {
-      const r = await fetch("/api/pagamento/assinatura", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plano: plano.id }),
-      });
-      const json = (await r.json().catch(() => ({}))) as {
-        tipo?: "payment" | "setup";
-        clientSecret?: string;
-        indisponivel?: boolean;
-        error?: string;
-      };
-      if (r.ok && json.clientSecret && json.tipo)
-        return {
-          ok: true,
-          inicio: { tipo: json.tipo, clientSecret: json.clientSecret },
-        };
-      return {
-        ok: false,
-        indisponivel: Boolean(json.indisponivel),
-        erro: json.error ?? "Não foi possível iniciar o pagamento agora.",
-      };
-    } catch {
-      return {
-        ok: false,
-        indisponivel: false,
-        erro: "Sem conexão. Tente de novo.",
-      };
-    }
+  iniciar(plano, abertura) {
+    const chave = `${abertura}:${plano.id}`;
+    const ja = pedidos.get(chave);
+    if (ja) return ja;
+    const pedido = pedirAssinatura(plano, abertura);
+    pedidos.set(chave, pedido);
+    // Falhou: a próxima tentativa pede de novo.
+    void pedido.then((r) => {
+      if (!r.ok) pedidos.delete(chave);
+    });
+    return pedido;
   },
 };
+
+async function pedirAssinatura(
+  plano: Plano,
+  abertura: string
+): Promise<ResultadoDoInicio> {
+  try {
+    const r = await fetch("/api/pagamento/assinatura", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plano: plano.id, abertura }),
+    });
+    const json = (await r.json().catch(() => ({}))) as {
+      tipo?: "payment" | "setup";
+      clientSecret?: string;
+      indisponivel?: boolean;
+      error?: string;
+    };
+    if (r.ok && json.clientSecret && json.tipo)
+      return {
+        ok: true,
+        inicio: { tipo: json.tipo, clientSecret: json.clientSecret },
+      };
+    return {
+      ok: false,
+      indisponivel: Boolean(json.indisponivel),
+      erro: json.error ?? "Não foi possível iniciar o pagamento agora.",
+    };
+  } catch {
+    return {
+      ok: false,
+      indisponivel: false,
+      erro: "Sem conexão. Tente de novo.",
+    };
+  }
+}
 
 let atual: PagamentoAdapter = pagamentoStripe;
 /** O laboratório troca pelo Stripe simulado. */

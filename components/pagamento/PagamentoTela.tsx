@@ -128,8 +128,22 @@ interface Props {
   onVoltar: () => void;
   /** Volta para o app (confirmado, ou "Agora não" no erro). */
   onConcluir: () => void;
+  /** O webhook do Stripe já marcou a conta como "ativa": quem chama relê a
+   * assinatura (a pílula do teste e os planos somem sem recarregar). */
+  onAssinaturaAtiva?: () => void;
   /** Laboratório: o cenário da cobrança sem ler o banco. */
   cenarioForcado?: CenarioDaCobranca;
+}
+
+/** Depois do "Tudo certo": quanto tempo esperar o webhook gravar "ativa". */
+const RELEITURA_A_CADA_MS = 1500;
+const RELEITURA_TENTATIVAS = 8;
+
+/** Um id por abertura da tela (sem depender de crypto.randomUUID). */
+function novaAbertura(): string {
+  const c = globalThis.crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  return `ab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function PagamentoTela({
@@ -138,8 +152,13 @@ export function PagamentoTela({
   nome,
   onVoltar,
   onConcluir,
+  onAssinaturaAtiva,
   cenarioForcado,
 }: Props) {
+  // Uma abertura, um pedido: reaproveita a assinatura aberta no servidor e
+  // é a chave de idempotência da criação.
+  const abertura = useRef<string>("");
+  if (!abertura.current) abertura.current = novaAbertura();
   const [cenario, setCenario] = useState<CenarioDaCobranca | null>(
     cenarioForcado ?? null
   );
@@ -190,7 +209,7 @@ export function PagamentoTela({
     let vivo = true;
     let desmontar: (() => void) | null = null;
     void (async () => {
-      const r = await adaptador.iniciar(plano);
+      const r = await adaptador.iniciar(plano, abertura.current);
       if (!vivo) return;
       if (!r.ok) {
         setEstado(r.indisponivel ? "indisponivel" : "falhou");
@@ -230,9 +249,45 @@ export function PagamentoTela({
     };
   }, [cenario, plano]);
 
+  // Confirmado no Stripe: quem grava "ativa" é o webhook, no servidor. A
+  // tela relê `configuracoes` até ver "ativa" (ou desistir) e avisa a
+  // página, para a pílula do teste e os planos sumirem na hora.
+  const avisarAtiva = useRef(onAssinaturaAtiva);
+  avisarAtiva.current = onAssinaturaAtiva;
+  useEffect(() => {
+    if (tela !== "confirmado") return;
+    let vivo = true;
+    let tentativas = 0;
+    let timer: number | undefined;
+    const reler = async () => {
+      tentativas++;
+      const { data } = await supabase
+        .from("configuracoes")
+        .select("assinatura_status")
+        .eq("user_id", userId)
+        .single();
+      if (!vivo) return;
+      if (data?.assinatura_status === "ativa") {
+        avisarAtiva.current?.();
+        return;
+      }
+      if (tentativas < RELEITURA_TENTATIVAS)
+        timer = window.setTimeout(() => void reler(), RELEITURA_A_CADA_MS);
+    };
+    void reler();
+    return () => {
+      vivo = false;
+      window.clearTimeout(timer);
+    };
+  }, [tela, userId]);
+
+  // Guarda síncrona: dois toques no mesmo instante ainda veriam o estado
+  // `pagando` antigo; o ref barra o segundo antes de confirmar duas vezes.
+  const pagandoRef = useRef(false);
   async function pagar() {
     const s = stripeRef.current;
-    if (!s || estado !== "pronto" || pagando) return;
+    if (!s || estado !== "pronto" || pagandoRef.current) return;
+    pagandoRef.current = true;
     setPagando(true);
     const opcoes = {
       elements: s.elements,
@@ -245,6 +300,7 @@ export function PagamentoTela({
       s.inicio.tipo === "setup"
         ? await s.stripe.confirmSetup(opcoes)
         : await s.stripe.confirmPayment(opcoes);
+    pagandoRef.current = false;
     setPagando(false);
     if (r.error) {
       // Campo incompleto ou inválido: o próprio Stripe mostra no formulário.

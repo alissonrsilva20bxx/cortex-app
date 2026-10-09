@@ -12,11 +12,24 @@ import type {
   StripeJs,
 } from "./cliente";
 
-export type ResultadoSimulado = "aprovado" | "recusado";
+export type ResultadoSimulado = "aprovado" | "recusado" | "incompleto";
 
 let resultado: ResultadoSimulado = "aprovado";
 export function resultadoDoLaboratorio(r: ResultadoSimulado) {
   resultado = r;
+}
+
+/** Quantas vezes o simulado confirmou (o teste do toque duplo lê isto). */
+let confirmacoes = 0;
+export function confirmacoesDoLaboratorio(): number {
+  return confirmacoes;
+}
+
+/** O "webhook" do laboratório: o que fazer quando o simulado aprova (o
+ * laboratório marca a conta como "ativa" no Supabase simulado). */
+let aoAprovar: (() => void) | null = null;
+export function quandoAprovarNoLaboratorio(fn: (() => void) | null) {
+  aoAprovar = fn;
 }
 
 const CAMPOS = `
@@ -45,18 +58,30 @@ function elementoSimulado(): StripeElementoPagamento {
   };
 }
 
-const confirmar = async () =>
-  resultado === "aprovado"
-    ? {}
-    : {
-        error: {
-          type: "card_error",
-          code: "card_declined",
-          decline_code: "insufficient_funds",
-          message: "Seu cartão não tem saldo suficiente.",
-          payment_method: { card: { last4: "9995" } },
-        },
-      };
+const confirmar = async () => {
+  confirmacoes++;
+  if (resultado === "aprovado") {
+    aoAprovar?.();
+    return {};
+  }
+  if (resultado === "incompleto")
+    return {
+      error: {
+        type: "validation_error",
+        code: "incomplete_number",
+        message: "O número do cartão está incompleto.",
+      },
+    };
+  return {
+    error: {
+      type: "card_error",
+      code: "card_declined",
+      decline_code: "insufficient_funds",
+      message: "Seu cartão não tem saldo suficiente.",
+      payment_method: { card: { last4: "9995" } },
+    },
+  };
+};
 
 const stripeSimulado: StripeJs = {
   elements: () => ({ create: () => elementoSimulado() }),

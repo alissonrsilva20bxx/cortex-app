@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { resolveGateAuth } from "../../../../lib/devPreview/serverAuth";
@@ -7,9 +8,10 @@ import { PLANOS, type PlanoId } from "../../../../lib/planos";
 import { cenarioDaCobranca } from "../../../../lib/pagamento/regras";
 import {
   ErroDoStripe,
+  ErroJaAtiva,
   clienteDaConta,
-  criarAssinatura,
   criarClienteStripe,
+  prepararAssinatura,
   produtoDoApp,
 } from "../../../../lib/pagamento/stripeApi";
 
@@ -43,7 +45,15 @@ export async function POST(request: NextRequest) {
 
   const corpo = (await request.json().catch(() => null)) as {
     plano?: unknown;
+    abertura?: unknown;
   } | null;
+  // Um id por abertura da tela: reaproveita a assinatura e é a chave de
+  // idempotência da criação (toque duplo nunca cria duas).
+  const abertura =
+    typeof corpo?.abertura === "string" &&
+    /^[A-Za-z0-9-]{8,64}$/.test(corpo.abertura)
+      ? corpo.abertura
+      : randomUUID();
   const plano = PLANOS.find((p) => p.id === (corpo?.plano as PlanoId));
   if (!plano)
     return NextResponse.json({ error: "Plano inválido" }, { status: 400 });
@@ -70,12 +80,13 @@ export async function POST(request: NextRequest) {
       quem.user?.email ?? null
     );
     const produto = await produtoDoApp(stripe);
-    const criada = await criarAssinatura(stripe, {
+    const criada = await prepararAssinatura(stripe, {
       cliente,
       produto,
       plano,
       userId,
       cenario,
+      abertura,
     });
     return NextResponse.json({
       tipo: criada.tipo,
@@ -84,6 +95,11 @@ export async function POST(request: NextRequest) {
         cenario.tipo === "fimDoTeste" ? cenario.em.toISOString() : null,
     });
   } catch (e) {
+    if (e instanceof ErroJaAtiva)
+      return NextResponse.json(
+        { error: "Sua assinatura já está ativa." },
+        { status: 409 }
+      );
     const status = e instanceof ErroDoStripe ? 502 : 500;
     return NextResponse.json(
       { error: "Não foi possível iniciar o pagamento agora." },

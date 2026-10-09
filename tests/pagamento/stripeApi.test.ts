@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   ErroDoStripe,
+  ErroJaAtiva,
   VERSAO_DA_API_STRIPE,
+  prepararAssinatura,
   clienteDaConta,
   codificarParaStripe,
   criarAssinatura,
@@ -62,6 +64,10 @@ describe("a chamada ao Stripe", () => {
     expect(await clienteDaConta(b.stripe, "user-1", "a@b.c")).toBe("cus_novo");
     expect(b.chamadas[1].corpo.get("metadata[user_id]")).toBe("user-1");
     expect(b.chamadas[1].corpo.get("email")).toBe("a@b.c");
+    // idempotente: duas aberturas seguidas não criam duas clientes
+    expect(
+      (b.chamadas[1].init.headers as Record<string, string>)["Idempotency-Key"]
+    ).toBe("jobapp-cliente-user-1");
   });
 
   it("erro do Stripe vira ErroDoStripe", async () => {
@@ -106,6 +112,9 @@ describe("criar a assinatura do plano", () => {
     expect(c.get("payment_behavior")).toBe("default_incomplete");
     expect(c.get("metadata[user_id]")).toBe("user-1");
     expect(c.get("trial_end")).toBeNull();
+    expect(
+      c.get("trial_settings[end_behavior][missing_payment_method]")
+    ).toBeNull();
   });
 
   it("teste correndo: trial_end = fim do teste, nada hoje, SetupIntent", async () => {
@@ -128,6 +137,12 @@ describe("criar a assinatura do plano", () => {
     expect(chamadas[0].corpo.get("trial_end")).toBe(
       String(em.getTime() / 1000)
     );
+    // Teste acabou sem cartão: o Stripe CANCELA (não tenta cobrar).
+    expect(
+      chamadas[0].corpo.get(
+        "trial_settings[end_behavior][missing_payment_method]"
+      )
+    ).toBe("cancel");
     expect(chamadas[0].corpo.get("items[0][price_data][unit_amount]")).toBe(
       "1500"
     );
@@ -144,5 +159,153 @@ describe("criar a assinatura do plano", () => {
         cenario: { tipo: "agora" },
       })
     ).rejects.toBeInstanceOf(ErroDoStripe);
+  });
+});
+
+describe("uma assinatura por conta (nunca uma nova a cada abertura)", () => {
+  const plano3 = planoPorId("3m");
+  const base = {
+    cliente: "cus_1",
+    produto: "prod_1",
+    userId: "user-1",
+    abertura: "ab-123456789",
+  };
+  const metodo = (c: { init: RequestInit }) => c.init.method;
+
+  it("já há uma que vale: ErroJaAtiva, sem criar nem cancelar nada", async () => {
+    const { stripe, chamadas } = stripeSimulado([
+      {
+        data: [{ id: "sub_v", status: "active", default_payment_method: "pm" }],
+      },
+    ]);
+    await expect(
+      prepararAssinatura(stripe, {
+        ...base,
+        plano: plano3,
+        cenario: { tipo: "agora" },
+      })
+    ).rejects.toBeInstanceOf(ErroJaAtiva);
+    expect(chamadas.map(metodo)).toEqual(["GET"]);
+  });
+
+  it("aberta do MESMO plano e cenário: reaproveita o mesmo formulário", async () => {
+    const { stripe, chamadas } = stripeSimulado([
+      {
+        data: [
+          {
+            id: "sub_a",
+            status: "incomplete",
+            metadata: { plano: "3m" },
+            latest_invoice: {
+              payment_intent: { client_secret: "pi_a_secret" },
+            },
+          },
+        ],
+      },
+    ]);
+    const r = await prepararAssinatura(stripe, {
+      ...base,
+      plano: plano3,
+      cenario: { tipo: "agora" },
+    });
+    expect(r).toEqual({
+      tipo: "payment",
+      clientSecret: "pi_a_secret",
+      assinaturaId: "sub_a",
+    });
+    expect(chamadas.map(metodo)).toEqual(["GET"]);
+  });
+
+  it("no teste: reaproveita a trialing sem cartão do mesmo plano (SetupIntent)", async () => {
+    const { stripe } = stripeSimulado([
+      {
+        data: [
+          {
+            id: "sub_t",
+            status: "trialing",
+            metadata: { plano: "3m" },
+            pending_setup_intent: { client_secret: "seti_t_secret" },
+          },
+        ],
+      },
+    ]);
+    const r = await prepararAssinatura(stripe, {
+      ...base,
+      plano: plano3,
+      cenario: { tipo: "fimDoTeste", em: new Date("2026-10-15T10:00:00Z") },
+    });
+    expect(r).toEqual({
+      tipo: "setup",
+      clientSecret: "seti_t_secret",
+      assinaturaId: "sub_t",
+    });
+  });
+
+  it("abertas de OUTRO plano: cancela todas e cria a nova, com a chave da abertura", async () => {
+    const { stripe, chamadas } = stripeSimulado([
+      {
+        data: [
+          {
+            id: "sub_x",
+            status: "incomplete",
+            metadata: { plano: "1m" },
+            // tem formulário pronto: só não pode ser reaproveitada por ser
+            // de OUTRO plano
+            latest_invoice: { payment_intent: { client_secret: "pi_x" } },
+          },
+          { id: "sub_y", status: "trialing", metadata: { plano: "2m" } },
+          { id: "sub_velha", status: "canceled", metadata: { plano: "3m" } },
+        ],
+      },
+      {},
+      {},
+      {
+        id: "sub_nova",
+        latest_invoice: { payment_intent: { client_secret: "pi_n" } },
+      },
+    ]);
+    const r = await prepararAssinatura(stripe, {
+      ...base,
+      plano: plano3,
+      cenario: { tipo: "agora" },
+    });
+    expect(r.assinaturaId).toBe("sub_nova");
+    expect(chamadas.map((c) => `${metodo(c)} ${c.url.split("?")[0]}`)).toEqual([
+      "GET https://api.stripe.com/v1/subscriptions",
+      "DELETE https://api.stripe.com/v1/subscriptions/sub_x",
+      "DELETE https://api.stripe.com/v1/subscriptions/sub_y",
+      "POST https://api.stripe.com/v1/subscriptions",
+    ]);
+    const criar = chamadas[3];
+    expect(
+      (criar.init.headers as Record<string, string>)["Idempotency-Key"]
+    ).toBe("jobapp-assinatura-user-1-ab-123456789");
+    expect(criar.corpo.get("metadata[abertura]")).toBe("ab-123456789");
+  });
+
+  it("aberta do mesmo plano mas no cenário errado (teste x hoje): cancela e cria", async () => {
+    const { stripe, chamadas } = stripeSimulado([
+      {
+        data: [
+          {
+            id: "sub_t",
+            status: "trialing",
+            metadata: { plano: "3m" },
+            pending_setup_intent: { client_secret: "seti" },
+          },
+        ],
+      },
+      {},
+      {
+        id: "sub_n",
+        latest_invoice: { payment_intent: { client_secret: "pi" } },
+      },
+    ]);
+    await prepararAssinatura(stripe, {
+      ...base,
+      plano: plano3,
+      cenario: { tipo: "agora" },
+    });
+    expect(chamadas.map(metodo)).toEqual(["GET", "DELETE", "POST"]);
   });
 });

@@ -5,8 +5,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAdmin } from "../../../../lib/supabaseAdmin";
 import {
   atualizacaoDoEvento,
+  clienteDoEvento,
   verificarAssinaturaDoStripe,
 } from "../../../../lib/pagamento/webhook";
+import {
+  assinaturasDaCliente,
+  criarClienteStripe,
+} from "../../../../lib/pagamento/stripeApi";
+import type { AssinaturaDoStripe } from "../../../../lib/pagamento/regras";
 
 export const runtime = "nodejs";
 
@@ -48,9 +54,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Corpo inválido." }, { status: 400 });
   }
 
-  const atualizacao = atualizacaoDoEvento(
-    evento as Parameters<typeof atualizacaoDoEvento>[0]
-  );
+  const ev = evento as Parameters<typeof atualizacaoDoEvento>[0];
+  // A decisão olha TODAS as assinaturas da cliente, listadas agora no
+  // Stripe: uma velha que expira ou é cancelada nunca rebaixa quem pagou em
+  // outra. Sem a chave secreta, decide só pelo evento. Se a listagem
+  // falhar: 500, e o Stripe reenvia (nunca grava um palpite).
+  let daCliente: AssinaturaDoStripe[] = [];
+  const chave = process.env.STRIPE_SECRET_KEY;
+  const cliente = clienteDoEvento(ev);
+  if (chave && cliente) {
+    try {
+      daCliente = await assinaturasDaCliente(
+        criarClienteStripe(chave),
+        cliente
+      );
+    } catch {
+      return NextResponse.json(
+        { error: "Não foi possível consultar o Stripe." },
+        { status: 500 }
+      );
+    }
+  }
+  const atualizacao = atualizacaoDoEvento(ev, daCliente);
   // Evento que não muda nada: 200, para o Stripe não reenviar.
   if (!atualizacao) return NextResponse.json({ recebido: true });
 

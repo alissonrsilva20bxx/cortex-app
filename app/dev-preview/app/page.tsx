@@ -52,7 +52,9 @@ import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
 import { PagamentoTela } from "@/components/pagamento/PagamentoTela";
 import { usarPagamento } from "@/lib/pagamento/cliente";
 import {
+  confirmacoesDoLaboratorio,
   pagamentoDeLaboratorio,
+  quandoAprovarNoLaboratorio,
   resultadoDoLaboratorio,
   type ResultadoSimulado,
 } from "@/lib/pagamento/laboratorio";
@@ -301,6 +303,16 @@ export default function DevPreviewApp() {
       >
     ).__previewPagamento = (o = {}) => {
       usarPagamento(o.simulado ? pagamentoDeLaboratorio : null);
+      // O "webhook" do laboratório: aprovado marca a conta como "ativa" no
+      // Supabase simulado, como o webhook do Stripe faria no servidor.
+      // (o builder do Supabase só executa no `then`: sem ele, nada grava)
+      quandoAprovarNoLaboratorio(() => {
+        void supabase
+          .from("configuracoes")
+          .update({ assinatura_status: "ativa" })
+          .eq("user_id", usuario.id)
+          .then(() => undefined);
+      });
       resultadoDoLaboratorio(o.resultado ?? "aprovado");
       const hoje = new Date();
       setCenarioPagamento(
@@ -319,6 +331,9 @@ export default function DevPreviewApp() {
       );
       setPlanoNoPagamento(planoPorId(o.plano ?? "3m"));
     };
+    (
+      w as unknown as Record<string, () => number>
+    ).__previewPagamentoConfirmacoes = confirmacoesDoLaboratorio;
     w.__previewTour = () => {
       setActiveTab("home");
       setTourOpen(true);
@@ -342,9 +357,13 @@ export default function DevPreviewApp() {
       delete w.__previewTrial;
       delete w.__previewPlanos;
       delete w.__previewPagamento;
+      delete w.__previewPagamentoConfirmacoes;
+      quandoAprovarNoLaboratorio(null);
       usarPagamento(null);
     };
-  }, []);
+    // `usuario` do laboratório é fixo (a conta simulada): o efeito roda uma
+    // vez, como antes.
+  }, [usuario.id]);
 
   useEffect(() => {
     if (locked) return;
@@ -415,6 +434,7 @@ export default function DevPreviewApp() {
   const [abrirPlanos, setAbrirPlanos] = useState(0);
   // Espelha app/page.tsx: o ponto de entrada do Pagamento.
   const [planoNoPagamento, setPlanoNoPagamento] = useState<Plano | null>(null);
+  const [releituraAssinatura, setReleituraAssinatura] = useState(0);
   const [cenarioPagamento, setCenarioPagamento] = useState<
     CenarioDaCobranca | undefined
   >(undefined);
@@ -788,6 +808,7 @@ export default function DevPreviewApp() {
         onEscolherPlano={escolherPlano}
         estadoForcado={trialForcado}
         abrirPlanosSinal={abrirPlanos}
+        recarregarSinal={releituraAssinatura}
       />
       {planoNoPagamento && (
         <PagamentoTela
@@ -799,7 +820,11 @@ export default function DevPreviewApp() {
             setPlanoNoPagamento(null);
             setAbrirPlanos((n) => n + 1);
           }}
-          onConcluir={() => setPlanoNoPagamento(null)}
+          onConcluir={() => {
+            setPlanoNoPagamento(null);
+            setReleituraAssinatura((n) => n + 1);
+          }}
+          onAssinaturaAtiva={() => setReleituraAssinatura((n) => n + 1)}
         />
       )}
 

@@ -171,6 +171,79 @@ for (const w of [390, 430])
   await ctx.close();
 }
 
+// 6. ajustes da revisão (#221)
+{
+  // toque duplo no mesmo instante: confirma uma vez só
+  const { ctx, p } = await abrir();
+  await p.evaluate(() =>
+    window.__previewPagamento({ simulado: true, caso: "dia8", plano: "3m" })
+  );
+  await p.locator('[data-stripe="pronto"]').waitFor();
+  const antes = await p.evaluate(() => window.__previewPagamentoConfirmacoes());
+  await p.evaluate(() => {
+    const b = document.querySelector("[data-pagar]");
+    b.click();
+    b.click();
+  });
+  await p.locator('[data-pagamento="confirmado"]').waitFor();
+  const depois = await p.evaluate(() =>
+    window.__previewPagamentoConfirmacoes()
+  );
+  ok(
+    "toque duplo em 'Pagar': o Stripe confirma uma vez só",
+    depois - antes === 1,
+    `${depois - antes} confirmação(ões)`
+  );
+  await ctx.close();
+}
+{
+  // campo incompleto: o próprio Stripe avisa no formulário; nada de tela de erro
+  const { ctx, p } = await abrir();
+  await p.evaluate(() =>
+    window.__previewPagamento({
+      simulado: true,
+      caso: "dia8",
+      plano: "3m",
+      resultado: "incompleto",
+    })
+  );
+  await p.locator('[data-stripe="pronto"]').waitFor();
+  await p.locator("[data-pagar]").click();
+  await p.waitForTimeout(400);
+  ok(
+    "campo incompleto (validation_error): continua no Pagamento, sem tela de erro",
+    (await p.locator('[data-pagamento="pagamento"]').count()) === 1 &&
+      (await p.locator("[data-erro]").count()) === 0
+  );
+  await ctx.close();
+}
+{
+  // depois do "Tudo certo", a pílula do teste some sem recarregar o app
+  const { ctx, p } = await abrir();
+  await p.locator("[data-pilula-teste]").waitFor({ timeout: 15000 });
+  const tinha = await p.locator("[data-pilula-teste]").count();
+  await p.evaluate(() =>
+    window.__previewPagamento({ simulado: true, caso: "antes", plano: "3m" })
+  );
+  await p.locator('[data-stripe="pronto"]').waitFor();
+  await p.locator("[data-pagar]").click();
+  await p.locator('[data-pagamento="confirmado"]').waitFor();
+  await p.locator("[data-voltar-app]").click();
+  const sumiu = await p
+    .waitForFunction(
+      () => !document.querySelector("[data-pilula-teste]"),
+      null,
+      { timeout: 6000 }
+    )
+    .then(() => true)
+    .catch(() => false);
+  ok(
+    "depois do 'Tudo certo' a pílula do teste some sem recarregar",
+    tinha === 1 && sumiu
+  );
+  await ctx.close();
+}
+
 // 3 e 4. onboarding → Pagamento → Voltar reabre os planos
 {
   const { ctx, p } = await abrir();

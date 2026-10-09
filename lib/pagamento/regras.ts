@@ -10,7 +10,6 @@
  *   na hora.
  * - Sem teste grátis na tela de pagamento; sem Pix (só cartão).
  */
-import type { AssinaturaStatus } from "@/lib/types";
 import { diasDoTeste } from "@/lib/assinatura";
 import type { Plano } from "@/lib/planos";
 
@@ -80,30 +79,45 @@ export function emSegundos(d: Date): number {
   return Math.floor(d.getTime() / 1000);
 }
 
+/** O pedaço de uma assinatura do Stripe que as regras leem. */
+export interface AssinaturaDoStripe {
+  id?: string;
+  status?: unknown;
+  /** O cartão que o Stripe vai cobrar (o SetupIntent/PaymentIntent
+   * confirmado grava aqui, com `save_default_payment_method`). */
+  default_payment_method?: unknown;
+  customer?: unknown;
+  metadata?: Record<string, unknown> | null;
+}
+
 /**
- * O `assinatura_status` do app a partir do status da assinatura no Stripe:
- *  - `active` / `trialing` / `past_due`: "ativa" (pagou ou assinou no teste;
- *    em `past_due` o Stripe ainda tenta cobrar de novo);
- *  - `canceled` / `unpaid` / `incomplete_expired`: "trial", e o
- *    `computeAssinatura` decide pela data se o teste ainda vale ou venceu;
- *  - `incomplete` / outros: nenhuma mudança (null): o pagamento ainda não
- *    terminou.
+ * Esta assinatura sustenta "ativa" no app?
+ *  - `active` e `past_due` (o Stripe ainda tenta cobrar): sim;
+ *  - `trialing`: só COM cartão. Assinatura com teste nasce `trialing` na
+ *    hora, antes de qualquer cartão; sem esta regra, abrir o Pagamento e
+ *    voltar já deixava a conta "ativa" sem pagar nada;
+ *  - o resto (`incomplete`, `incomplete_expired`, `canceled`, `unpaid`,
+ *    `paused`): não.
  */
-export function statusPeloStripe(
-  statusStripe: string | null | undefined
-): AssinaturaStatus | null {
-  switch (statusStripe) {
+export function assinaturaValendo(sub: AssinaturaDoStripe): boolean {
+  switch (sub.status) {
     case "active":
-    case "trialing":
     case "past_due":
-      return "ativa";
-    case "canceled":
-    case "unpaid":
-    case "incomplete_expired":
-      return "trial";
+      return true;
+    case "trialing":
+      return Boolean(sub.default_payment_method);
     default:
-      return null;
+      return false;
   }
+}
+
+/** Aberta e ainda sem cartão: pode ser reaproveitada ou cancelada antes de
+ * criar outra (nunca cobra; nunca deu "ativa"). */
+export function assinaturaAberta(sub: AssinaturaDoStripe): boolean {
+  return (
+    sub.status === "incomplete" ||
+    (sub.status === "trialing" && !sub.default_payment_method)
+  );
 }
 
 /** A chave do Stripe está em modo teste? (pk_test_… / sk_test_…) */

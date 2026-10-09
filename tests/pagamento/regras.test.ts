@@ -9,7 +9,8 @@ import {
   inicioDaCobranca,
   nomeDoPeriodo,
   renovaEm,
-  statusPeloStripe,
+  assinaturaAberta,
+  assinaturaValendo,
 } from "@/lib/pagamento/regras";
 import { PLANOS, planoPorId } from "@/lib/planos";
 
@@ -102,25 +103,39 @@ describe("renovação e datas do desenho", () => {
   });
 });
 
-describe("assinatura_status a partir do Stripe", () => {
-  it("pagou ou assinou no teste: ativa", () => {
-    expect(statusPeloStripe("active")).toBe("ativa");
-    expect(statusPeloStripe("trialing")).toBe("ativa");
-    expect(statusPeloStripe("past_due")).toBe("ativa");
+describe("qual assinatura do Stripe vale 'ativa'", () => {
+  it("paga (active) ou em nova tentativa (past_due): vale", () => {
+    expect(assinaturaValendo({ status: "active" })).toBe(true);
+    expect(assinaturaValendo({ status: "past_due" })).toBe(true);
   });
 
-  it("cancelada ou sem pagamento: volta a 'trial' (a data decide)", () => {
-    expect(statusPeloStripe("canceled")).toBe("trial");
-    expect(statusPeloStripe("unpaid")).toBe("trial");
-    expect(statusPeloStripe("incomplete_expired")).toBe("trial");
+  it("no teste: só vale COM cartão (default_payment_method)", () => {
+    expect(assinaturaValendo({ status: "trialing" })).toBe(false);
+    expect(
+      assinaturaValendo({ status: "trialing", default_payment_method: "pm_1" })
+    ).toBe(true);
   });
 
-  it("pagamento ainda em andamento ou desconhecido: não muda nada", () => {
-    expect(statusPeloStripe("incomplete")).toBeNull();
-    expect(statusPeloStripe("paused")).toBeNull();
-    expect(statusPeloStripe(null)).toBeNull();
+  it("incompleta, expirada, cancelada, sem pagamento, pausada: não vale", () => {
+    for (const status of [
+      "incomplete",
+      "incomplete_expired",
+      "canceled",
+      "unpaid",
+      "paused",
+      undefined,
+    ])
+      expect(assinaturaValendo({ status })).toBe(false);
   });
 
+  it("aberta (pode ser reaproveitada ou cancelada): incompleta, ou no teste sem cartão", () => {
+    expect(assinaturaAberta({ status: "incomplete" })).toBe(true);
+    expect(assinaturaAberta({ status: "trialing" })).toBe(true);
+    expect(
+      assinaturaAberta({ status: "trialing", default_payment_method: "pm_1" })
+    ).toBe(false);
+    expect(assinaturaAberta({ status: "active" })).toBe(false);
+  });
   it("modo teste pelas chaves", () => {
     expect(chaveDeTeste("pk_test_123")).toBe(true);
     expect(chaveDeTeste("sk_test_123")).toBe(true);
