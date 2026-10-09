@@ -263,9 +263,11 @@
   transform: scale(0.96);
 }
 
-/* Durante a conferência o teclado não aceita toque (disabled). Só esmaece
-   no "Verificando…": no erro e no acerto ele fica como no desenho. */
-.page:not([data-estado]) .pad button:disabled {
+/* Durante a conferência e na espera do limite de tentativas o teclado não
+   aceita toque (disabled) e esmaece; no erro e no acerto ele fica como no
+   desenho. */
+.page:not([data-estado]) .pad button:disabled,
+.page[data-estado="espera"] .pad button:disabled {
   opacity: 0.55;
 }
 
@@ -293,7 +295,7 @@
   color: var(--t-deep);
 }
 
-/* "Esqueci o PIN" aberto: explica o que existe, no lugar do teclado. */
+/* "Esqueci o PIN" aberto: a confirmação da conta, no lugar do teclado. */
 .ajuda {
   display: flex;
   flex-direction: column;
@@ -312,19 +314,6 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--t-mut);
-}
-
-.page .ajudaAcao {
-  min-height: 52px;
-  border-radius: 16px;
-  background: var(--t-acc);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.page .ajudaAcao:active {
-  transform: scale(0.98);
 }
 
 /* Celular baixo (iPhone SE, 667px): teclado e casas encolhem para a

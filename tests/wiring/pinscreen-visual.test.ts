@@ -51,7 +51,7 @@ describe("PinScreen — Cartão Cofre aprovado", () => {
   it("4 casas de 56×64: a próxima em destaque, vermelhas no erro, verdes no acerto", () => {
     expect(codigo).toMatch(/\[0, 1, 2, 3\]\.map/);
     expect(codigo).toMatch(
-      /const estado = unlocked \? "ok" : error \? "err" : undefined;/
+      /const estado = unlocked\s*\?\s*"ok"\s*:\s*error\s*\?\s*"err"\s*:\s*emEspera\s*\?\s*"espera"\s*:\s*undefined;/
     );
     expect(codigo).toMatch(/data-estado=\{estado\}/);
     expect(regra(".boxes i")).toMatch(/width: 56px;[\s\S]*height: 64px/);
@@ -149,7 +149,7 @@ describe("PinScreen — Voltar sempre no mesmo lugar", () => {
   });
 });
 
-describe("PinScreen — 'Esqueci o PIN' aponta pro que já existe (sem inventar recuperação)", () => {
+describe("PinScreen — 'Esqueci o PIN' (link discreto; o fluxo seguro está em pin-seguranca.test.ts)", () => {
   it("link discreto embaixo do teclado, onde ficava o Face ID", () => {
     expect(codigo).toMatch(
       /className=\{styles\.forgot\}[\s\S]{0,120}Esqueci o PIN/
@@ -158,39 +158,21 @@ describe("PinScreen — 'Esqueci o PIN' aponta pro que já existe (sem inventar 
     expect(regra(".page .forgot")).toContain("var(--t-mut)");
   });
 
-  it("no Cofre leva a Ajustes › Segurança e PIN (onAbrirAjustes → aba ajustes)", () => {
-    expect(codigo).toMatch(/onClick=\{onAbrirAjustes\}/);
-    expect(cofreSrc).toMatch(/onAbrirAjustes=\{onAbrirAjustes\}/);
-    expect(pageSrc).toMatch(
-      /onAbrirAjustes=\{\(\) => handleTabChange\("ajustes"\)\}/
-    );
-    expect(labSrc).toMatch(
-      /onAbrirAjustes=\{\(\) => handleTabChange\("ajustes"\)\}/
-    );
+  it("o antigo atalho para Ajustes saiu (desligar o PIN também pede a conta)", () => {
+    expect(codigo).not.toMatch(/onAbrirAjustes/);
+    expect(cofreSrc).not.toMatch(/onAbrirAjustes/);
+    expect(pageSrc).not.toMatch(/onAbrirAjustes/);
+    expect(labSrc).not.toMatch(/onAbrirAjustes/);
   });
 
-  it("na trava do app oferece sair da conta (handleSignOut real) e diz que o PIN não se recupera", () => {
-    expect(codigo).toMatch(/onClick=\{onSair\}/);
-    expect(pageSrc).toMatch(/<PinScreen[\s\S]{0,160}onSair=\{handleSignOut\}/);
-    expect(labSrc).toMatch(/<PinScreen[\s\S]{0,160}onSair=\{handleSignOut\}/);
-    expect(codigo).toContain("não dá para mostrá-lo nem recuperá-lo por aqui");
-    expect(codigo).toContain("o mesmo PIN continua sendo pedido");
-  });
-
-  it("cada contexto mostra só a sua saída (Ajustes no Cofre, Sair no app)", () => {
-    expect(codigo).toMatch(
-      /\{vault\s*\?\s*onAbrirAjustes && \([\s\S]*?\)\s*:\s*onSair && \(/
-    );
-  });
-
-  it("não chama nenhuma API nova de recuperação (e-mail, reset, Supabase)", () => {
+  it("a tela não fala com o Supabase direto: tudo passa pelo adaptador de confirmação", () => {
     expect(codigo).not.toMatch(/supabase|resetPassword|fetch\(|\/api\//);
   });
 });
 
 describe("PinScreen — segurança e estados preservados 1:1 (só visual muda)", () => {
   it("continua usando o mesmo verifyPin/hash real, sem verificação paralela", () => {
-    expect(codigo).toContain('import { verifyPin } from "@/lib/pin"');
+    expect(codigo).toContain('import { hashPin, verifyPin } from "@/lib/pin"');
     expect(codigo).toMatch(/verifyPin\(digits\.join\(""\), pinHash\)/);
     expect(codigo).toMatch(/if \(digits\.length !== 4\) return;/);
     expect(codigo).toMatch(
@@ -203,20 +185,18 @@ describe("PinScreen — segurança e estados preservados 1:1 (só visual muda)",
     expect(codigo).toContain("}, 200);");
   });
 
-  it("não aceita toque durante a conferência (disabled) e não esmaece no erro/acerto", () => {
-    expect(codigo).toMatch(/disabled=\{verifying\}/);
-    expect(codigo).toMatch(/if \(verifying\) return;/);
+  it("não aceita toque durante a conferência nem na espera (disabled) e não esmaece no erro/acerto", () => {
+    expect(codigo).toMatch(/disabled=\{verifying \|\| emEspera\}/);
+    expect(codigo).toMatch(/if \(verifying \|\| emEspera\) return;/);
     expect(css).toMatch(
-      /\.page:not\(\[data-estado\]\) \.pad button:disabled \{\s*opacity: 0\.55;/
+      /\.page:not\(\[data-estado\]\) \.pad button:disabled,\s*\.page\[data-estado="espera"\] \.pad button:disabled \{\s*opacity: 0\.55;/
     );
   });
 
-  it("não inventa contagem de tentativas nem bloqueio por excesso — nenhum dos dois existe em lib/pin.ts hoje", () => {
+  it("o hash continua só em lib/pin.ts; o limite de tentativas mora em lib/pinTentativas.ts", () => {
     const libPinSrc = ler("lib", "pin.ts");
-    expect(libPinSrc).not.toMatch(
-      /tentativa|lockout|maxAttempts|attemptCount/i
-    );
-    expect(codigo).not.toMatch(/tentativa|lockout|maxAttempts|attemptCount/i);
+    expect(libPinSrc).not.toMatch(/tentativa|lockout|maxAttempts/i);
+    expect(codigo).toMatch(/from "@\/lib\/pinTentativas"/);
   });
 
   it("continua sem <input> nativo e sem scrollIntoView/scrollTo/autoFocus/.focus()", () => {

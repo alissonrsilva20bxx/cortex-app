@@ -28,6 +28,9 @@ import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { PinSetup } from "@/components/pin/PinSetup";
+import { ReauthModal } from "@/components/pin/ReauthModal";
+import { limparReauthDaUrl, reauthAtual } from "@/lib/reauth";
+import type { MotivoReauth } from "@/lib/reauthRegras";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Switch } from "@/components/ui/Switch";
@@ -290,6 +293,51 @@ export function AjustesTab({
       .from("configuracoes")
       .upsert({ user_id: userId, tema: t }, { onConflict: "user_id" });
   }
+
+  // Desligar ou trocar o PIN pede a senha da conta ou o Google antes
+  // (ReauthModal). Criar o 1º PIN, sem nenhum ativo, não pede.
+  const [reauthMotivo, setReauthMotivo] = useState<MotivoReauth | null>(null);
+
+  function pedirDesligarPin() {
+    setReauthMotivo("desligar-pin");
+  }
+
+  function abrirPinSetup() {
+    if (pinEnabled) setReauthMotivo("trocar-pin");
+    else setPinSetupOpen(true);
+  }
+
+  function contaConfirmada(motivo: MotivoReauth) {
+    setReauthMotivo(null);
+    if (motivo === "desligar-pin") void handleDisablePin();
+    else if (motivo === "trocar-pin") setPinSetupOpen(true);
+  }
+
+  // Volta do Google pedida aqui: abre Segurança e PIN e, se a confirmação
+  // valer, termina a ação. O ref segura a resposta no remonte do StrictMode.
+  const retornoGoogle = useRef<{
+    motivo: MotivoReauth;
+    ok: Promise<boolean>;
+  } | null>(null);
+  useEffect(() => {
+    const reauth = reauthAtual();
+    if (!retornoGoogle.current) {
+      const motivo = reauth.motivoPendente();
+      if (motivo !== "desligar-pin" && motivo !== "trocar-pin") return;
+      retornoGoogle.current = { motivo, ok: reauth.retornoDoGoogle(motivo) };
+      setActivePage("security");
+    }
+    const { motivo, ok } = retornoGoogle.current;
+    let vivo = true;
+    void ok.then((valeu) => {
+      limparReauthDaUrl();
+      if (vivo && valeu) contaConfirmada(motivo);
+    });
+    return () => {
+      vivo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleDisablePin() {
     await supabase
@@ -654,9 +702,7 @@ export function AjustesTab({
           <div className="space-y-3">
             <GlassCard
               radius="md"
-              onClick={
-                pinEnabled ? handleDisablePin : () => setPinSetupOpen(true)
-              }
+              onClick={pinEnabled ? pedirDesligarPin : abrirPinSetup}
               className="flex items-center gap-3.5 px-4 py-4"
             >
               <div
@@ -1107,6 +1153,14 @@ export function AjustesTab({
           </span>
         </button>
       </div>
+
+      <ReauthModal
+        open={reauthMotivo !== null}
+        motivo={reauthMotivo ?? "desligar-pin"}
+        onClose={() => setReauthMotivo(null)}
+        onConfirmado={() => reauthMotivo && contaConfirmada(reauthMotivo)}
+        onSair={onSignOut}
+      />
 
       <PinSetup
         open={pinSetupOpen}

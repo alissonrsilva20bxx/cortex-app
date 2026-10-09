@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { verifyPin } from "@/lib/pin";
+import { hashPin, verifyPin } from "@/lib/pin";
+import {
+  formatarEspera,
+  gravarTentativas,
+  lerTentativas,
+  registrarErro,
+  restanteDaEspera,
+  SEM_TENTATIVAS,
+  zerarTentativas,
+  type EstadoTentativas,
+} from "@/lib/pinTentativas";
+import { limparReauthDaUrl, reauthAtual } from "@/lib/reauth";
+import type { ReauthAdapter } from "@/lib/reauthRegras";
+import { ReauthModal } from "./ReauthModal";
 import styles from "./PinScreen.module.css";
 
 /**
@@ -12,11 +25,18 @@ import styles from "./PinScreen.module.css";
  * ficava o Face ID. Cores só pelos tokens do app (--t-*): funciona nos 8
  * temas, claro e escuro.
  *
- * A segurança é a de antes, sem mudança: o mesmo `verifyPin` (SHA-256 de
- * lib/pin.ts), 4 dígitos, erro limpa em 700ms e o acerto libera em 200ms.
- * Não há contagem de erros nem bloqueio por tempo (não existem em
- * lib/pin.ts, e esta tela não inventa).
+ * Segurança:
+ *  - o mesmo `verifyPin` (SHA-256 de lib/pin.ts), 4 dígitos; erro limpa em
+ *    700ms e o acerto libera em 200ms;
+ *  - limite de tentativas (lib/pinTentativas.ts): o 5º erro trava o teclado
+ *    por 1 minuto, e cada erro depois dobra a espera (2, 4, 8… até 1 hora);
+ *    o contador é da conta, neste aparelho, e vale para a trava do app e a
+ *    do Cofre;
+ *  - "Esqueci o PIN" pede a senha da conta ou o Google (ReauthModal) e só
+ *    então deixa criar um PIN novo, digitado duas vezes. O PIN antigo nunca
+ *    aparece (o app só guarda o hash).
  */
+
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
 
 /** Ícones do desenho aprovado, traço a traço (22px; cor e ponta no CSS). */
@@ -53,33 +73,63 @@ interface Props {
   pinHash: string;
   onUnlock: () => void;
   context?: "app" | "vault";
+  /** Dona do PIN: chave do contador de tentativas e da gravação do PIN novo. */
+  usuarioId: string;
   /** Voltar sem digitar o PIN. Só o Cofre passa: a trava do app inteiro
    * não tem pra onde voltar, então ali o lugar do Voltar fica reservado e
    * vazio (nada muda de posição entre as duas telas). */
   onCancel?: () => void;
-  /** "Esqueci o PIN" no Cofre: o app já está aberto, então o caminho que
-   * existe é Ajustes › Segurança e PIN (desligar e criar outro). */
-  onAbrirAjustes?: () => void;
-  /** "Esqueci o PIN" na trava do app: o único caminho que existe é sair da
-   * conta. Não há recuperação de PIN (ADR 0003); a tela diz isso. */
+  /** PIN novo salvo depois do "Esqueci o PIN": quem chama troca o hash; a
+   * tela libera pelo mesmo `onUnlock` de sempre. */
+  onPinRedefinido?: (hash: string) => void;
+  /** Conta sem senha nem Google: a confirmação oferece sair da conta. */
   onSair?: () => void;
+  /** Laboratório e testes trocam a confirmação da conta. */
+  reauth?: ReauthAdapter;
 }
+
+/** teclado: digitar o PIN · reauth: confirmar a conta · novo/confirmar: PIN novo. */
+type Etapa = "teclado" | "reauth" | "novo" | "confirmar";
 
 export function PinScreen({
   pinHash,
   onUnlock: unlock,
   context = "app",
+  usuarioId,
   onCancel,
-  onAbrirAjustes,
+  onPinRedefinido,
   onSair,
+  reauth: reauthProp,
 }: Props) {
+  const reauth = reauthProp ?? reauthAtual();
   const [digits, setDigits] = useState<string[]>([]);
   const [shake, setShake] = useState(false);
   const [error, setError] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-  const [esqueci, setEsqueci] = useState(false);
+  const [etapa, setEtapa] = useState<Etapa>("teclado");
+  const [primeiro, setPrimeiro] = useState<string | null>(null);
+  const [falhaAoGravar, setFalhaAoGravar] = useState(false);
   const vault = context === "vault";
+
+  // Limite de tentativas: o contador mora no aparelho (por conta), então
+  // fechar e abrir a tela não zera a espera.
+  const [tentativas, setTentativas] = useState<EstadoTentativas>(() =>
+    lerTentativas(usuarioId)
+  );
+  const [agora, setAgora] = useState(() => Date.now());
+  useEffect(() => {
+    setTentativas(lerTentativas(usuarioId));
+    setAgora(Date.now());
+  }, [usuarioId]);
+  useEffect(() => {
+    if (!tentativas.esperaAte) return;
+    setAgora(Date.now());
+    const id = window.setInterval(() => setAgora(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [tentativas.esperaAte]);
+  const espera = etapa === "teclado" ? restanteDaEspera(tentativas, agora) : 0;
+  const emEspera = espera > 0;
 
   useEffect(() => {
     if (digits.length !== 4) return;
@@ -92,14 +142,77 @@ export function PinScreen({
         if (!cancelled) unlock();
       }, 200);
     };
+
+    // PIN novo, 1ª vez: guarda e pede de novo.
+    if (etapa === "novo") {
+      setPrimeiro(digits.join(""));
+      setDigits([]);
+      setEtapa("confirmar");
+      return;
+    }
+
+    // PIN novo, 2ª vez: tem que ser igual; aí grava o hash na conta.
+    if (etapa === "confirmar") {
+      const novo = digits.join("");
+      if (novo !== primeiro) {
+        setShake(true);
+        setError(true);
+        window.setTimeout(() => {
+          if (cancelled) return;
+          setShake(false);
+          setError(false);
+          setDigits([]);
+          setPrimeiro(null);
+          setEtapa("novo");
+        }, 700);
+        return () => {
+          cancelled = true;
+        };
+      }
+      setVerifying(true);
+      void (async () => {
+        const hash = await hashPin(novo);
+        const gravou = await reauth.gravarPin(usuarioId, hash);
+        if (cancelled) return;
+        if (!gravou) {
+          setFalhaAoGravar(true);
+          setDigits([]);
+          setPrimeiro(null);
+          setVerifying(false);
+          setEtapa("novo");
+          return;
+        }
+        zerarTentativas(usuarioId);
+        setTentativas(SEM_TENTATIVAS);
+        setUnlocked(true);
+        unlockTimer = window.setTimeout(() => {
+          if (cancelled) return;
+          onPinRedefinido?.(hash);
+          unlock();
+        }, 200);
+      })();
+      return () => {
+        cancelled = true;
+        if (unlockTimer) window.clearTimeout(unlockTimer);
+      };
+    }
+
     setVerifying(true);
 
     verifyPin(digits.join(""), pinHash).then((ok) => {
       if (ok) {
         onUnlock();
+        zerarTentativas(usuarioId);
         return;
       }
+      // O erro conta ANTES do `cancelled`: sair da tela logo depois do 4º
+      // dígito não escapa do contador. Lido de novo do aparelho: a trava do
+      // app e a do Cofre dividem o mesmo contador.
+      const depois = registrarErro(lerTentativas(usuarioId), Date.now());
+      gravarTentativas(usuarioId, depois);
       if (cancelled) return;
+      setTentativas(depois);
+      setAgora(Date.now());
 
       setShake(true);
       setError(true);
@@ -116,18 +229,56 @@ export function PinScreen({
       cancelled = true;
       if (unlockTimer) window.clearTimeout(unlockTimer);
     };
-  }, [digits, pinHash, unlock]);
+  }, [
+    digits,
+    pinHash,
+    unlock,
+    etapa,
+    primeiro,
+    usuarioId,
+    reauth,
+    onPinRedefinido,
+  ]);
 
   function press(key: string) {
-    if (verifying) return;
+    if (verifying || emEspera) return;
     if (key === "del") {
       setDigits((current) => current.slice(0, -1));
     } else if (key) {
+      setFalhaAoGravar(false);
       setDigits((current) =>
         current.length < 4 ? [...current, key] : current
       );
     }
   }
+
+  function voltarAoTeclado() {
+    setDigits([]);
+    setPrimeiro(null);
+    setFalhaAoGravar(false);
+    setEtapa("teclado");
+  }
+
+  // Volta do Google ("Esqueci o PIN" pelo Google): a confirmação vale uma
+  // vez, e o ref segura a resposta no remonte do StrictMode.
+  const retornoGoogle = useRef<Promise<boolean> | null>(null);
+  useEffect(() => {
+    if (!retornoGoogle.current) {
+      if (reauth.motivoPendente() !== "esqueci-pin") return;
+      retornoGoogle.current = reauth.retornoDoGoogle("esqueci-pin");
+    }
+    let vivo = true;
+    void retornoGoogle.current.then((ok) => {
+      limparReauthDaUrl();
+      if (vivo && ok) {
+        setDigits([]);
+        setEtapa("novo");
+      }
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [reauth]);
 
   // Modal de verdade: o que fica atrás da trava (no Cofre ela é um portal
   // por cima do app inteiro) não recebe Tab nem toque, e some da tela. A
@@ -155,9 +306,10 @@ export function PinScreen({
       });
   }, []);
 
-  // Teclado físico (computador, teclado bluetooth): 0–9 e Backspace.
+  // Teclado físico (computador, teclado bluetooth): 0–9 e Backspace. Fora
+  // na confirmação da conta (a senha é digitada no campo dela).
   useEffect(() => {
-    if (esqueci) return;
+    if (etapa === "reauth") return;
     function onKey(e: KeyboardEvent) {
       if (/^[0-9]$/.test(e.key)) press(e.key);
       else if (e.key === "Backspace") press("del");
@@ -168,16 +320,46 @@ export function PinScreen({
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const estado = unlocked ? "ok" : error ? "err" : undefined;
+  const pinNovo = etapa === "novo" || etapa === "confirmar";
+  const estado = unlocked
+    ? "ok"
+    : error
+      ? "err"
+      : emEspera
+        ? "espera"
+        : undefined;
   const mensagem = error
-    ? "Esse PIN não confere. Tente de novo."
+    ? etapa === "confirmar"
+      ? "Os dois PINs não são iguais. Comece de novo."
+      : "Esse PIN não confere. Tente de novo."
     : unlocked
       ? "Tudo certo, abrindo…"
       : verifying
-        ? "Verificando…"
+        ? pinNovo
+          ? "Salvando o PIN novo…"
+          : "Verificando…"
+        : emEspera
+          ? `Muitas tentativas. Tente de novo em ${formatarEspera(espera)}.`
+          : falhaAoGravar
+            ? "Não foi possível salvar o PIN. Tente de novo."
+            : etapa === "novo"
+              ? "Digite 4 números para o PIN novo."
+              : etapa === "confirmar"
+                ? "Digite o PIN novo mais uma vez."
+                : vault
+                  ? "Digite seu PIN para ver seus arquivos protegidos."
+                  : "Confirme que é você para entrar no JobApp.";
+  const titulo = unlocked
+    ? pinNovo
+      ? "PIN novo salvo"
+      : "Acesso liberado"
+    : etapa === "novo"
+      ? "Crie um PIN novo"
+      : etapa === "confirmar"
+        ? "Confirme o PIN novo"
         : vault
-          ? "Digite seu PIN para ver seus arquivos protegidos."
-          : "Confirme que é você para entrar no JobApp.";
+          ? "Abra seu Cofre"
+          : "Digite seu PIN";
 
   return (
     <main
@@ -214,11 +396,7 @@ export function PinScreen({
           <div>
             <div className={styles.eyebrow}>{vault ? "Cofre" : "JobApp"}</div>
             <h1 id="pin-screen-title" className={styles.title}>
-              {unlocked
-                ? "Acesso liberado"
-                : vault
-                  ? "Abra seu Cofre"
-                  : "Digite seu PIN"}
+              {titulo}
             </h1>
           </div>
         </div>
@@ -232,7 +410,7 @@ export function PinScreen({
         {[0, 1, 2, 3].map((index) => (
           <i
             key={index}
-            className={`${digits.length > index || unlocked ? styles.filled : ""} ${digits.length === index && !error && !unlocked && !verifying ? styles.current : ""}`}
+            className={`${digits.length > index || unlocked ? styles.filled : ""} ${digits.length === index && !error && !unlocked && !verifying && !emEspera ? styles.current : ""}`}
           />
         ))}
       </div>
@@ -242,49 +420,20 @@ export function PinScreen({
       </p>
 
       <div className={styles.sheet}>
-        {esqueci ? (
-          <div
-            key="ajuda"
-            className={styles.ajuda}
-            role="region"
-            aria-label="Esqueci o PIN"
-            data-pin-ajuda
-          >
-            <strong>Esqueci o PIN</strong>
-            <p>
-              {vault
-                ? "O JobApp não guarda o seu PIN, então não dá para mostrá-lo. Em Ajustes › Segurança e PIN você pode desligar o PIN e criar um novo."
-                : "O JobApp não guarda o seu PIN, então não dá para mostrá-lo nem recuperá-lo por aqui. Você pode sair da conta, mas ao entrar de novo com a sua senha o mesmo PIN continua sendo pedido."}
-            </p>
-            {vault
-              ? onAbrirAjustes && (
-                  <button
-                    type="button"
-                    className={styles.ajudaAcao}
-                    onClick={onAbrirAjustes}
-                    data-pin-ajuda-acao="ajustes"
-                  >
-                    Abrir Ajustes
-                  </button>
-                )
-              : onSair && (
-                  <button
-                    type="button"
-                    className={styles.ajudaAcao}
-                    onClick={onSair}
-                    data-pin-ajuda-acao="sair"
-                  >
-                    Sair da conta
-                  </button>
-                )}
-            <button
-              type="button"
-              className={styles.forgot}
-              onClick={() => setEsqueci(false)}
-              data-pin-ajuda-voltar
-            >
-              Voltar ao teclado
-            </button>
+        {etapa === "reauth" ? (
+          <div key="reauth" className={styles.ajuda} data-pin-ajuda>
+            <ReauthModal
+              inline
+              open
+              motivo="esqueci-pin"
+              adapter={reauth}
+              onClose={voltarAoTeclado}
+              onConfirmado={() => {
+                setDigits([]);
+                setEtapa("novo");
+              }}
+              onSair={onSair}
+            />
           </div>
         ) : (
           // Chaves distintas nos dois ramos: sem elas o React reaproveitava
@@ -292,14 +441,16 @@ export function PinScreen({
           <div key="teclado">
             <div className={styles.pad} aria-label="Teclado do PIN">
               {KEYS.map((key, index) => {
-                if (!key) return <span key={index} aria-hidden="true" />;
+                // Chave própria: com `key={index}` (9) a casa vazia
+                // colidia com a tecla "9".
+                if (!key) return <span key="vazio" aria-hidden="true" />;
                 const isDelete = key === "del";
                 return (
                   <button
                     key={key}
                     type="button"
                     onClick={() => press(key)}
-                    disabled={verifying}
+                    disabled={verifying || emEspera}
                     className={isDelete ? styles.del : undefined}
                     aria-label={
                       isDelete ? "Apagar último dígito" : `Dígito ${key}`
@@ -311,14 +462,25 @@ export function PinScreen({
                 );
               })}
             </div>
-            <button
-              type="button"
-              className={styles.forgot}
-              onClick={() => setEsqueci(true)}
-              data-pin-esqueci
-            >
-              Esqueci o PIN
-            </button>
+            {pinNovo ? (
+              <button
+                type="button"
+                className={styles.forgot}
+                onClick={voltarAoTeclado}
+                data-pin-novo-cancelar
+              >
+                Cancelar
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={styles.forgot}
+                onClick={() => setEtapa("reauth")}
+                data-pin-esqueci
+              >
+                Esqueci o PIN
+              </button>
+            )}
           </div>
         )}
       </div>

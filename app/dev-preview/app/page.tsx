@@ -40,6 +40,8 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
+import { usarReauth } from "@/lib/reauth";
+import { reauthDeLaboratorio } from "@/lib/reauthLaboratorio";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { AppTour } from "@/components/onboarding/AppTour";
 import type { RedeAcessoTour } from "@/lib/appTour";
@@ -212,6 +214,15 @@ export default function DevPreviewApp() {
   // vazios próprios (não os do app, que têm seed) só pra forçar os 4 passos
   // (welcome/goal/job/aha) a aparecerem; `onOpenJobForm` reaproveita o
   // `JobForm` já montado abaixo.
+  // Sem Supabase aqui: a confirmação da conta ("Esqueci o PIN", desligar
+  // ou trocar o PIN) usa o adaptador do laboratório (senha "senha123").
+  // Instalado já no 1º render, antes dos filhos lerem o adaptador.
+  // O efeito instala de novo: no StrictMode a limpeza roda no meio.
+  useState(() => usarReauth(reauthDeLaboratorio));
+  useEffect(() => {
+    usarReauth(reauthDeLaboratorio);
+    return () => usarReauth(null);
+  }, []);
   const [onboardingPreview, setOnboardingPreview] = useState(false);
   // Tour guiado (espelha app/page.tsx); `__previewTour()` abre direto.
   const [tourOpen, setTourOpen] = useState(false);
@@ -386,6 +397,8 @@ export default function DevPreviewApp() {
       <PinScreen
         pinHash={pinHash}
         onUnlock={() => setLocked(false)}
+        usuarioId={usuario.id}
+        onPinRedefinido={(hash) => setPinHash(hash)}
         onSair={handleSignOut}
       />
     );
@@ -576,7 +589,7 @@ export default function DevPreviewApp() {
             pinHash={pinHash}
             active={activeTab === "cofre"}
             onExit={() => handleTabChange(abaAntesDoCofre.current)}
-            onAbrirAjustes={() => handleTabChange("ajustes")}
+            onPinHashChange={(h) => setPinHash(h)}
             // Sem este sinal o azulejo "Enviar" nasce desabilitado (meio
             // transparente), e a referência o desenha ativo. O sheet mora na
             // página, FORA da trava do Cofre, de propósito: o seletor de
