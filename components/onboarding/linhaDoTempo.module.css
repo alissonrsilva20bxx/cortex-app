@@ -387,7 +387,8 @@
   --ob-glass: color-mix(in srgb, var(--t-card) 86%, transparent);
   --ob-glassbd: rgba(17, 17, 20, 0.07);
 }
-.trial .gift {
+.trial .gift,
+.aviso .gift {
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -612,4 +613,89 @@
 
 :global([data-mode="light"]) .trial.last .go {
   color: var(--t-deep);
+}
+
+/* ── O aviso do teste ("Faltam 2 dias do seu teste") ──────────────────
+   No lugar da pílula, com o mesmo vidro; uma vez, no dia em que a pílula
+   mostra 2 (AssinaturaNoApp). */
+.aviso {
+  --ob-glass: color-mix(in srgb, var(--t-card) 82%, transparent);
+  --ob-glassbd: rgba(255, 255, 255, 0.08);
+  position: fixed;
+  left: 50%;
+  bottom: calc(
+    var(--ob-pilula-bottom, 96px) + env(safe-area-inset-bottom, 0px)
+  );
+  transform: translateX(-50%);
+  z-index: 25;
+  width: min(358px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 12px 14px 12px 10px;
+  border-radius: 22px;
+  background: var(--ob-glass);
+  border: 1px solid var(--ob-glassbd);
+  box-shadow: 0 10px 30px rgba(17, 17, 20, 0.16);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  color: var(--t-ink);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: normal;
+  text-align: left;
+  animation: avisoEntra 0.35s ease both;
+}
+@keyframes avisoEntra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+}
+:global([data-mode="light"]) .aviso {
+  --ob-glass: color-mix(in srgb, var(--t-card) 86%, transparent);
+  --ob-glassbd: rgba(17, 17, 20, 0.07);
+}
+.avisoTx b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.avisoTx small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t-mut);
+}
+.avisoAcoes {
+  grid-column: 2;
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.avisoAcoes button {
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.avisoPlanos {
+  background: var(--t-acc);
+  color: #fff;
+}
+.avisoOk {
+  background: transparent;
+  color: var(--t-mut);
+}
+@media (prefers-reduced-motion: reduce) {
+  .aviso {
+    animation: none;
+  }
 }

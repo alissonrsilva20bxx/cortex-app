@@ -13,12 +13,13 @@ import {
   type OnEscolherPlano,
   type PlanoId,
 } from "@/lib/planos";
-import { TRIAL_DIAS } from "@/lib/assinatura";
 
 interface Props {
   /** O que ela já fez no teste (os chips do cartão do topo). Só o que for
    * maior que zero aparece. */
   resumo: { atendimentos: number; registrado: string | null };
+  /** Quantos dias o teste desta conta teve (7, ou 14 antes do corte). */
+  diasDoTeste: number;
   /** Ponto de entrada do Pagamento: chamado com o plano marcado. */
   onEscolherPlano: OnEscolherPlano;
   /** "Agora não": fecha e continua no app. */
@@ -32,7 +33,12 @@ interface Props {
  * limitado"), "Seus dados continuam aqui", o botão do plano marcado e
  * "Agora não". Nenhum plano Garçom.
  */
-export function PlanosTela({ resumo, onEscolherPlano, onAgoraNao }: Props) {
+export function PlanosTela({
+  resumo,
+  diasDoTeste,
+  onEscolherPlano,
+  onAgoraNao,
+}: Props) {
   const [marcado, setMarcado] = useState<PlanoId>(PLANO_PADRAO);
   const plano = planoPorId(marcado);
   const chips = [
@@ -53,7 +59,7 @@ export function PlanosTela({ resumo, onEscolherPlano, onAgoraNao }: Props) {
       <div className={styles.tela}>
         <div className={styles.endhero}>
           <div className={styles.t} id="planos-titulo">
-            Seus {TRIAL_DIAS} dias terminaram
+            Seus {diasDoTeste} dias terminaram
           </div>
           <div className={styles.s}>
             Foi uma boa semana. Para seguir usando, escolha um plano.

@@ -33,6 +33,23 @@ Números em `resultado.json`.
   subpixel (LCD); o medidor abre o Chrome com `--disable-lcd-text` para
   comparar igual.
 
+- **"Dia 6" na tela 3:** o desenho diz "Dia 5 · A gente te avisa · faltam
+  2 dias", mas pela contagem da própria pílula o dia 5 é "Faltam 3". O app
+  avisa no dia em que a pílula mostra 2, o dia 6
+  (`TRIAL_DIAS + 1 - AVISO_FALTAM_DIAS`), e a tela 3 diz o mesmo. O medidor
+  troca só esse texto no desenho antes de comparar, e a tela continua em
+  0% a 0,002%.
+
+## Aviso dos 2 dias e conta antiga
+
+`aviso/`, em 390 e 430, claro e escuro:
+- `aviso-2-dias-*`: o aviso "Faltam 2 dias do seu teste" no Início, no
+  lugar da pílula, uma vez só.
+- `pilula-14-dias-*`: a pílula de quem começou o teste antes do corte, com
+  14 bolinhas.
+
+Não há desenho para estes dois; seguem o vidro e as cores da pílula.
+
 ## Temas
 
 `temas/`: a primeira tela nos 8 temas, claro e escuro (390). O botão e os

@@ -252,19 +252,21 @@ export default function DevPreviewApp() {
     w.__previewUnlock = () => setLocked(false);
     w.__previewOnboarding = () => setOnboardingPreview(true);
     // Teste grátis: `__previewTrial(3)` = faltam 3 dias; `0` = terminou;
-    // `null` = volta ao do banco do laboratório. `__previewPlanos()` abre a
-    // escolha de plano.
+    // `null` = volta ao do banco do laboratório; o 2º argumento é o teste
+    // da conta (7, ou 14 de quem começou antes do corte). `__previewPlanos()`
+    // abre a escolha de plano.
     (
-      w as unknown as Record<string, (n: number | null) => void>
-    ).__previewTrial = (faltam) =>
+      w as unknown as Record<string, (n: number | null, dias?: number) => void>
+    ).__previewTrial = (faltam, dias = TRIAL_DIAS) =>
       setTrialForcado(
         faltam == null
           ? undefined
           : faltam <= 0
-            ? { status: "vencida", diasRestantes: 0 }
+            ? { status: "vencida", diasRestantes: 0, diasDoTeste: dias }
             : {
                 status: "trial",
-                diasRestantes: Math.min(faltam, TRIAL_DIAS),
+                diasRestantes: Math.min(faltam, dias),
+                diasDoTeste: dias,
               }
       );
     w.__previewPlanos = () => setAbrirPlanos((n) => n + 1);

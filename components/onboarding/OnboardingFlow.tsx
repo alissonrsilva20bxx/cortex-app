@@ -7,7 +7,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { HeroCard } from "@/components/home/HeroCard";
 import { PinSetup } from "@/components/pin/PinSetup";
 import { hasNoRealGoal } from "@/lib/onboarding";
-import { TRIAL_DIAS } from "@/lib/assinatura";
+import { AVISO_FALTAM_DIAS, TRIAL_DIAS } from "@/lib/assinatura";
 import { formatarEuro, menorPrecoPorMes } from "@/lib/planos";
 import type { Job, Meta, Usuario } from "@/lib/types";
 import styles from "./linhaDoTempo.module.css";
@@ -176,9 +176,15 @@ function BoasVindasTeste({
                   <Icone n="bell" s={20} />
                 </span>
                 <span>
-                  <span className={styles.d}>Dia {TRIAL_DIAS - 2}</span>
+                  {/* O dia em que a pílula mostra "Faltam 2" e o aviso
+                      aparece no app (AssinaturaNoApp): o dia 6. */}
+                  <span className={styles.d}>
+                    Dia {TRIAL_DIAS + 1 - AVISO_FALTAM_DIAS}
+                  </span>
                   <b>A gente te avisa</b>
-                  <small>Um lembrete de que faltam 2 dias.</small>
+                  <small>
+                    Um lembrete de que faltam {AVISO_FALTAM_DIAS} dias.
+                  </small>
                 </span>
               </li>
               <li>

@@ -3,18 +3,24 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
+  AVISO_FALTAM_DIAS,
   computeAssinatura,
   estadoDaPilula,
+  TRIAL_DIAS,
   type EstadoAssinatura,
 } from "@/lib/assinatura";
 import { formatBRL, totalEarnings } from "@/lib/finance";
 import type { OnEscolherPlano } from "@/lib/planos";
 import type { AssinaturaStatus, Job } from "@/lib/types";
+import { AvisoTeste } from "./AvisoTeste";
 import { PilulaTeste } from "./PilulaTeste";
 import { PlanosTela } from "./PlanosTela";
 
 /** "Já viu os planos hoje": a tela do fim do teste aparece uma vez por dia. */
 const chavePlanosVistos = (userId: string) => `jobapp-planos-vistos:${userId}`;
+/** "Já viu o aviso dos 2 dias": aparece uma vez só. Não é por data: os 2
+ * dias contam da hora em que o teste começou e atravessam a meia-noite. */
+const chaveAvisoTeste = (userId: string) => `jobapp-aviso-teste:${userId}`;
 const hoje = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
@@ -54,6 +60,7 @@ export function AssinaturaNoApp({
 }: Props) {
   const [estado, setEstado] = useState<EstadoAssinatura | null>(null);
   const [planosAbertos, setPlanosAbertos] = useState(false);
+  const [avisoAberto, setAvisoAberto] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -97,18 +104,44 @@ export function AssinaturaNoApp({
 
   const pilula = estadoDaPilula(efetivo);
 
+  // O aviso que a tela 3 do onboarding promete: no Início, uma vez, no dia
+  // em que a pílula mostra 2. Sem servidor e sem migration.
+  const faltam = pilula?.faltam;
+  useEffect(() => {
+    if (!podeMostrarPlanos || !noInicio || faltam !== AVISO_FALTAM_DIAS) return;
+    try {
+      if (localStorage.getItem(chaveAvisoTeste(userId))) return;
+      localStorage.setItem(chaveAvisoTeste(userId), String(faltam));
+    } catch {
+      return; /* sem storage: sem aviso, para não repetir a cada abertura */
+    }
+    setAvisoAberto(true);
+  }, [podeMostrarPlanos, noInicio, faltam, userId]);
+
   return (
     <>
-      {pilula && noInicio && !planosAbertos && (
+      {pilula && noInicio && !planosAbertos && avisoAberto && (
+        <AvisoTeste
+          faltam={pilula.faltam}
+          onVerPlanos={() => {
+            setAvisoAberto(false);
+            setPlanosAbertos(true);
+          }}
+          onFechar={() => setAvisoAberto(false)}
+        />
+      )}
+      {pilula && noInicio && !planosAbertos && !avisoAberto && (
         <PilulaTeste
           faltam={pilula.faltam}
           feitos={pilula.feitos}
+          total={pilula.total}
           ultimo={pilula.ultimo}
           onVerPlanos={() => setPlanosAbertos(true)}
         />
       )}
       {planosAbertos && podeMostrarPlanos && (
         <PlanosTela
+          diasDoTeste={efetivo?.diasDoTeste ?? TRIAL_DIAS}
           resumo={{
             atendimentos: jobs.filter((j) => j.status === "concluído").length,
             registrado:

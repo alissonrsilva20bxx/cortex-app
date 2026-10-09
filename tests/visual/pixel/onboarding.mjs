@@ -188,6 +188,11 @@ async function desenho(largura, modo, passo, dia = 7) {
       const ph = document.getElementById("main");
       ph.dataset.md = m;
       renderTudo();
+      // Única troca no desenho: o aviso cai no dia em que a pílula mostra
+      // "Faltam 2" (o dia 6, não o 5 do desenho, que lá é "Faltam 3"). O
+      // app usa TRIAL_DIAS + 1 - AVISO_FALTAM_DIAS; ver RESIDUOS.md.
+      for (const el of document.querySelectorAll("#main .tl .d"))
+        if (el.textContent === "Dia 5") el.textContent = "Dia 6";
       const st = document.createElement("style");
       st.textContent = `#main{position:fixed!important;left:0!important;top:0!important;transform:none!important;width:${w}px!important;height:${h}px!important;border-radius:0!important;box-shadow:none!important;z-index:2147483647}#main .sb{display:none!important}.screen{transition:none!important}`;
       document.head.appendChild(st);

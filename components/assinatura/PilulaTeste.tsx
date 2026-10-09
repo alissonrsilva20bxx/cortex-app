@@ -6,7 +6,6 @@ import {
   BOTTOM_NAV_FAB_SIZE,
   BOTTOM_NAV_OFFSET,
 } from "@/lib/bottomNavCompactStyle";
-import { TRIAL_DIAS } from "@/lib/assinatura";
 
 /** 14px acima da barra de abas, como no desenho (24 + 60 + 14 = 98 lá; a
  * barra do app fica a 22 do fundo). */
@@ -15,8 +14,11 @@ const BOTTOM = BOTTOM_NAV_OFFSET + BOTTOM_NAV_FAB_SIZE + 14;
 interface Props {
   /** Quantos dias faltam (7 no 1º dia, 1 no último). */
   faltam: number;
-  /** Dias já passados, para as 7 bolinhas. */
+  /** Dias já passados, para as bolinhas. */
   feitos: number;
+  /** O teste desta conta (7, ou 14 para quem começou antes do corte): uma
+   * bolinha por dia. */
+  total: number;
   ultimo: boolean;
   /** Só no último dia: abre a escolha de plano. */
   onVerPlanos: () => void;
@@ -28,7 +30,13 @@ interface Props {
  * Discreta nos dias normais (só informa); no último dia ganha o acento e o
  * atalho "Ver planos".
  */
-export function PilulaTeste({ faltam, feitos, ultimo, onVerPlanos }: Props) {
+export function PilulaTeste({
+  faltam,
+  feitos,
+  total,
+  ultimo,
+  onVerPlanos,
+}: Props) {
   const estilo = { "--ob-pilula-bottom": `${BOTTOM}px` } as React.CSSProperties;
   if (ultimo) {
     return (
@@ -65,7 +73,7 @@ export function PilulaTeste({ faltam, feitos, ultimo, onVerPlanos }: Props) {
         Faltam {faltam} dias <span>de teste</span>
       </span>
       <span className={styles.seg7} aria-hidden="true">
-        {Array.from({ length: TRIAL_DIAS }, (_, k) => (
+        {Array.from({ length: total }, (_, k) => (
           <i key={k} className={k < feitos ? styles.on : undefined} />
         ))}
       </span>

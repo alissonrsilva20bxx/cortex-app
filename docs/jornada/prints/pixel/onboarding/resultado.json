@@ -1,5 +1,5 @@
 {
-  "quando": "2026-10-09T05:05:47.509Z",
+  "quando": "2026-10-09T05:55:01.208Z",
   "baseUrl": "http://localhost:3112",
   "metrica": "pixelmatch YIQ, limiar 0.1",
   "resultados": [
@@ -41,7 +41,7 @@
     },
     {
       "nome": "planos-390-claro",
-      "difPct": 10.7417,
+      "difPct": 11.1577,
       "tamanho": "780x1688",
       "mesmoTamanho": true
     },
@@ -95,7 +95,7 @@
     },
     {
       "nome": "planos-390-escuro",
-      "difPct": 9.6124,
+      "difPct": 10.0278,
       "tamanho": "780x1688",
       "mesmoTamanho": true
     },
@@ -149,7 +149,7 @@
     },
     {
       "nome": "planos-430-claro",
-      "difPct": 9.1533,
+      "difPct": 9.495,
       "tamanho": "860x1864",
       "mesmoTamanho": true
     },
@@ -203,7 +203,7 @@
     },
     {
       "nome": "planos-430-escuro",
-      "difPct": 7.926,
+      "difPct": 8.2671,
       "tamanho": "860x1864",
       "mesmoTamanho": true
     },
