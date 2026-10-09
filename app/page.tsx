@@ -44,7 +44,12 @@ import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
 import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
-import { guardarPlanoEscolhido, type OnEscolherPlano } from "@/lib/planos";
+import {
+  guardarPlanoEscolhido,
+  type OnEscolherPlano,
+  type Plano,
+} from "@/lib/planos";
+import { PagamentoTela } from "@/components/pagamento/PagamentoTela";
 import { supabase } from "@/lib/supabase";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
@@ -413,16 +418,14 @@ export default function Page() {
   }
 
   // Ponto de entrada do Pagamento (onboarding "Linha do tempo"): a tela de
-  // escolha de plano chama isto com o plano marcado. Enquanto o Pagamento
-  // não existe, guarda a escolha e leva ao fluxo de hoje, os Ajustes (onde
-  // mora "Assinatura e dados"), sem cobrar nada. O Pagamento troca esta
-  // função.
+  // escolha de plano chama isto com o plano marcado, e abre o Pagamento
+  // "C Transparente" (Stripe embutido). "Voltar" no Pagamento reabre a
+  // escolha de plano.
+  const [planoNoPagamento, setPlanoNoPagamento] = useState<Plano | null>(null);
+  const [reabrirPlanos, setReabrirPlanos] = useState(0);
   const escolherPlano: OnEscolherPlano = (plano) => {
     if (usuario) guardarPlanoEscolhido(usuario.id, plano);
-    handleTabChange("ajustes");
-    toast.success(
-      `Plano de ${plano.nome} escolhido. O pagamento chega em breve.`
-    );
+    setPlanoNoPagamento(plano);
   };
 
   function handleTabChange(tab: TabId) {
@@ -810,6 +813,19 @@ export default function Page() {
           podeMostrarPlanos={dataLoaded && !tourOpen}
           jobs={jobs}
           onEscolherPlano={escolherPlano}
+          abrirPlanosSinal={reabrirPlanos}
+        />
+      )}
+      {usuario && planoNoPagamento && (
+        <PagamentoTela
+          plano={planoNoPagamento}
+          userId={usuario.id}
+          nome={usuario.nome.split(" ")[0]}
+          onVoltar={() => {
+            setPlanoNoPagamento(null);
+            setReabrirPlanos((n) => n + 1);
+          }}
+          onConcluir={() => setPlanoNoPagamento(null)}
         />
       )}
 

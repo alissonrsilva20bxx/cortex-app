@@ -49,7 +49,21 @@ import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
 import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
-import { guardarPlanoEscolhido, type OnEscolherPlano } from "@/lib/planos";
+import { PagamentoTela } from "@/components/pagamento/PagamentoTela";
+import { usarPagamento } from "@/lib/pagamento/cliente";
+import {
+  pagamentoDeLaboratorio,
+  resultadoDoLaboratorio,
+  type ResultadoSimulado,
+} from "@/lib/pagamento/laboratorio";
+import type { CenarioDaCobranca } from "@/lib/pagamento/regras";
+import {
+  guardarPlanoEscolhido,
+  planoPorId,
+  type OnEscolherPlano,
+  type Plano,
+  type PlanoId,
+} from "@/lib/planos";
 import { TRIAL_DIAS, type EstadoAssinatura } from "@/lib/assinatura";
 import { supabase, __setMockSupabaseClient } from "@/lib/supabase";
 import { useTabSwipe } from "@/lib/useTabSwipe";
@@ -270,6 +284,41 @@ export default function DevPreviewApp() {
               }
       );
     w.__previewPlanos = () => setAbrirPlanos((n) => n + 1);
+    // Pagamento (Stripe): sem chaves aqui. `__previewPagamento()` abre a tela
+    // como ela fica hoje ("pagamento ainda não disponível");
+    // `{ simulado: true }` liga o Stripe simulado (lib/pagamento/
+    // laboratorio.ts), `resultado` "aprovado" | "recusado", `caso` "antes"
+    // (teste correndo, cobrança em 7 dias) | "dia8" (paga hoje), `plano`.
+    (
+      w as unknown as Record<
+        string,
+        (o?: {
+          simulado?: boolean;
+          resultado?: ResultadoSimulado;
+          caso?: "antes" | "dia8";
+          plano?: PlanoId;
+        }) => void
+      >
+    ).__previewPagamento = (o = {}) => {
+      usarPagamento(o.simulado ? pagamentoDeLaboratorio : null);
+      resultadoDoLaboratorio(o.resultado ?? "aprovado");
+      const hoje = new Date();
+      setCenarioPagamento(
+        o.caso === "dia8"
+          ? { tipo: "agora" }
+          : o.caso === "antes"
+            ? {
+                tipo: "fimDoTeste",
+                em: new Date(
+                  hoje.getFullYear(),
+                  hoje.getMonth(),
+                  hoje.getDate() + 7
+                ),
+              }
+            : undefined
+      );
+      setPlanoNoPagamento(planoPorId(o.plano ?? "3m"));
+    };
     w.__previewTour = () => {
       setActiveTab("home");
       setTourOpen(true);
@@ -292,6 +341,8 @@ export default function DevPreviewApp() {
       delete w.__previewOnboarding;
       delete w.__previewTrial;
       delete w.__previewPlanos;
+      delete w.__previewPagamento;
+      usarPagamento(null);
     };
   }, []);
 
@@ -363,12 +414,13 @@ export default function DevPreviewApp() {
   >(undefined);
   const [abrirPlanos, setAbrirPlanos] = useState(0);
   // Espelha app/page.tsx: o ponto de entrada do Pagamento.
+  const [planoNoPagamento, setPlanoNoPagamento] = useState<Plano | null>(null);
+  const [cenarioPagamento, setCenarioPagamento] = useState<
+    CenarioDaCobranca | undefined
+  >(undefined);
   const escolherPlano: OnEscolherPlano = (plano) => {
     guardarPlanoEscolhido(usuario.id, plano);
-    handleTabChange("ajustes");
-    toast.success(
-      `Plano de ${plano.nome} escolhido. O pagamento chega em breve.`
-    );
+    setPlanoNoPagamento(plano);
   };
 
   function handleTabChange(tab: TabId) {
@@ -737,6 +789,19 @@ export default function DevPreviewApp() {
         estadoForcado={trialForcado}
         abrirPlanosSinal={abrirPlanos}
       />
+      {planoNoPagamento && (
+        <PagamentoTela
+          plano={planoNoPagamento}
+          userId={usuario.id}
+          nome={usuario.nome.split(" ")[0]}
+          cenarioForcado={cenarioPagamento}
+          onVoltar={() => {
+            setPlanoNoPagamento(null);
+            setAbrirPlanos((n) => n + 1);
+          }}
+          onConcluir={() => setPlanoNoPagamento(null)}
+        />
+      )}
 
       {jornadaAberta && (
         <JornadaScreen
