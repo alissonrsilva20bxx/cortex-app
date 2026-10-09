@@ -71,13 +71,16 @@ describe("AssinaturaNoApp nas duas páginas", () => {
       expect(src).toMatch(/podeMostrarPlanos=\{dataLoaded && !tourOpen\}/);
     });
 
-    it(`${nome}: escolherPlano guarda a escolha e leva aos Ajustes`, () => {
+    // O Pagamento (Stripe, tests/wiring/pagamento.test.ts) trocou o "leva
+    // aos Ajustes" provisório: escolher o plano agora abre o Pagamento.
+    it(`${nome}: escolherPlano guarda a escolha e abre o Pagamento`, () => {
       const corpo = src.match(
         /const escolherPlano: OnEscolherPlano = \(plano\) => \{[\s\S]*?\n {2}\};/
       )?.[0];
       expect(corpo).toBeTruthy();
       expect(corpo).toMatch(/guardarPlanoEscolhido\(usuario\.id, plano\)/);
-      expect(corpo).toMatch(/handleTabChange\("ajustes"\)/);
+      expect(corpo).toMatch(/setPlanoNoPagamento\(plano\)/);
+      expect(corpo).not.toMatch(/handleTabChange\("ajustes"\)/);
     });
   }
 

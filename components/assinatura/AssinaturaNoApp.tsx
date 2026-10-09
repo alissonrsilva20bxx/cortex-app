@@ -38,6 +38,9 @@ interface Props {
   estadoForcado?: EstadoAssinatura | null;
   /** Laboratório: abre a tela de planos agora. */
   abrirPlanosSinal?: number;
+  /** Relê `configuracoes` (depois do Pagamento: a pílula e os planos somem
+   * sem recarregar o app). */
+  recarregarSinal?: number;
 }
 
 /**
@@ -57,6 +60,7 @@ export function AssinaturaNoApp({
   onEscolherPlano,
   estadoForcado,
   abrirPlanosSinal,
+  recarregarSinal,
 }: Props) {
   const [estado, setEstado] = useState<EstadoAssinatura | null>(null);
   const [planosAbertos, setPlanosAbertos] = useState(false);
@@ -82,7 +86,7 @@ export function AssinaturaNoApp({
     return () => {
       vivo = false;
     };
-  }, [userId]);
+  }, [userId, recarregarSinal]);
 
   const efetivo = estadoForcado !== undefined ? estadoForcado : estado;
 

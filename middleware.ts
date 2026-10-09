@@ -91,6 +91,13 @@ export async function middleware(request: NextRequest) {
     // cron acima. Precisa valer em produção -- é onde o smoke test dos
     // amigos roda (Preview mockuptesterede -> Supabase de produção).
     path === "/api/rede/foto-upload" ||
+    // Pagamento (Stripe): o webhook é chamado pelo Stripe, sem sessão; ele
+    // se autentica pela assinatura do Stripe (`Stripe-Signature`, conferida
+    // em app/api/pagamento/webhook). A rota de assinatura faz o próprio
+    // gate de sessão (`resolveGateAuth` -> 401 JSON), como a foto-upload.
+    // Sem estas linhas, as duas caíam no 307 -> /login acima.
+    path === "/api/pagamento/webhook" ||
+    path === "/api/pagamento/assinatura" ||
     (isDevPreviewEnvironment() && isDevPreviewSessionBootstrapPath(path));
 
   if (!user && !isPublic) {

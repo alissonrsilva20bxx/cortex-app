@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="pt-BR" data-mode="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobApp · Pagamento Transparente via Stripe</title>
+<style>
+:root{
+  --t-phbg: radial-gradient(130% 42% at 50% -6%, rgba(255,45,120,.2), transparent 70%), #0a0007;
+  --t-card:#25121c; --t-ink:#faeef5; --t-mut:#9a8f96; --t-line:#3a2832; --t-sub:#20151c; --t-ring:#4d434a;
+  --t-acc:#ff2d78; --t-deep:#ff528f; --t-soft:#51172e;
+  --t-green:#50dc78; --t-gsoft:#2c322b; --t-red:#ff5a5a; --t-rsoft:#481e26; --t-blue:#64b4ff; --t-bsoft:#2f2c40;
+  --t-glass-sh: rgba(0,0,0,.45); --t-plus-sh: rgba(255,45,120,.4);
+  --page:#07050a; --page-ink:#efe6ec; --page-mut:#9a8f96; --page-card:#140c11; --page-line:#2a1c24;
+  /* Payment Element: aparência "night" com as variáveis do app */
+  --pe-bg:#1b0e15; --pe-input:#2a1620; --pe-border:#44303b; --pe-text:#faeef5; --pe-label:#b6aab1;
+}
+[data-mode="light"]{
+  --t-phbg:#f5f5f7; --t-card:#fff; --t-ink:#0f0f0f; --t-mut:#6b6b74; --t-line:#ececf0; --t-sub:#f4f4f6; --t-ring:#d8d8de;
+  --t-acc:#ff2d78; --t-deep:#d6105c; --t-soft:#fde3ec;
+  --t-green:#0f8a52; --t-gsoft:#e3f6ec; --t-red:#e0364f; --t-rsoft:#fde8eb; --t-blue:#1d4ed8; --t-bsoft:#e6effd;
+  --t-glass-sh: rgba(17,17,20,.12); --t-plus-sh: rgba(255,45,120,.3);
+  --page:#ececf1; --page-ink:#141217; --page-mut:#5d5a63; --page-card:#ffffff; --page-line:#dcdce3;
+  --pe-bg:#ffffff; --pe-input:#ffffff; --pe-border:#e0e0e6; --pe-text:#0f0f0f; --pe-label:#5d5a63;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--page);color:var(--page-ink);font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+button,input{font:inherit;color:inherit}
+button{border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.wrap{max-width:1500px;margin:0 auto;padding:26px 20px 70px}
+header.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:44px;height:44px;border-radius:10px;background:#0a0007;display:grid;place-items:center;position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,45,120,.25)}
+.logo::before{content:"";position:absolute;width:60%;height:60%;border-radius:50%;background:radial-gradient(ellipse,rgba(255,45,120,.45),transparent 70%)}
+.logo span{position:relative;color:#ff2d78;font-weight:800;font-size:23px;letter-spacing:-.04em;line-height:1}
+h1{margin:0;font-size:27px;letter-spacing:-.03em;font-weight:800}
+header.top p{margin:6px 0 0;color:var(--page-mut);font-size:14px;max-width:800px;line-height:1.5}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;background:var(--page-card);border:1px solid var(--page-line);border-radius:999px;padding:3px}
+.seg button{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;color:var(--page-mut);min-height:36px}
+.seg button[aria-pressed="true"]{background:#ff2d78;color:#fff}
+.sim{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--page-mut);font-weight:600;padding:0 6px}
+.sim input{accent-color:#ff2d78;width:16px;height:16px}
+h2.sec{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--page-mut);margin:34px 0 14px;font-weight:800}
+.panel{background:var(--page-card);border:1px solid var(--page-line);border-radius:20px;padding:16px 18px;font-size:13.5px;line-height:1.55}
+.k{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#ff2d78;margin-bottom:3px;font-weight:800}
+/* Fluxo */
+.flow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:860px){.flow{grid-template-columns:1fr}}
+.flow-side{max-width:420px;display:grid;gap:12px}
+.nav{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px}
+.arrow{width:44px;height:44px;border-radius:50%;background:var(--page-card);border:1px solid var(--page-line);display:grid;place-items:center;font-size:20px;font-weight:800}
+.arrow:disabled{opacity:.35;cursor:default}
+.dots{display:flex}
+.dots button{width:32px;height:44px;display:grid;place-items:center}
+.dots button::before{content:"";width:12px;height:12px;border-radius:6px;background:var(--page-line);transition:width .2s,background .2s}
+.dots button[aria-current="step"]::before{background:#ff2d78;width:26px}
+.stepname{text-align:center;font-weight:800;font-size:14px;margin-top:6px}
+/* Variantes lado a lado */
+.vars{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:22px;align-items:start}
+@media (max-width:1100px){.vars{grid-template-columns:1fr}}
+.var{background:var(--page-card);border:1px solid var(--page-line);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.var h3{margin:0;font-size:18px;letter-spacing:-.02em}
+.var .lbl{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.var .lbl i{font-style:normal;width:24px;height:24px;border-radius:7px;background:#ff2d78;color:#fff;display:grid;place-items:center;font-size:12px}
+.var .rec-chip{font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;background:#ff2d78;color:#fff;margin-left:auto}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12.5px;line-height:1.5}
+.pc div{border-radius:12px;padding:9px 11px;background:var(--page)}
+.pc b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.pc .pro b{color:#2fbf6b}.pc .con b{color:#ff5a7a}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);align-items:center}
+.pair .to{text-align:center;color:#ff2d78;font-weight:800;font-size:22px}
+.pair .cap{font-size:12px;font-weight:800;text-align:center;margin-bottom:6px;color:var(--page-mut)}
+@media (max-width:620px){.pair{grid-template-columns:1fr}.pair .to{transform:rotate(90deg)}}
+.recbox{margin-top:22px;border-left:4px solid #ff2d78}
+.recbox ul{margin:6px 0 0;padding-left:18px}
+/* Grade das 5 telas */
+.grid5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:start}
+@media (max-width:1100px){.grid5{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:18px}}
+@media (max-width:560px){.grid5{grid-template-columns:1fr}}
+.cell{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 10px}
+.cell .lab{font-size:12.5px;font-weight:800;display:flex;align-items:center;gap:6px;text-align:center}
+.cell .lab i{font-style:normal;width:22px;height:22px;border-radius:50%;background:#ff2d78;color:#fff;display:grid;place-items:center;font-size:11px;flex-shrink:0}
+.cell:not(:last-child)::after{content:"→";position:absolute;right:-9px;top:46%;font-size:20px;font-weight:800;color:#ff2d78;opacity:.8}
+@media (max-width:1100px){.cell::after{display:none}}
+/* Moldura 390×844 */
+.fit{width:100%;display:flex;justify-content:center}
+.scaler{transform-origin:top center}
+.phone{width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #050405,0 0 0 11px #2b2b30,0 30px 60px rgba(0,0,0,.35);isolation:isolate;background:var(--t-phbg);color:var(--t-ink)}
+.notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:34px;border-radius:20px;background:#000;z-index:30}
+.status{position:absolute;top:0;left:0;right:0;height:54px;display:flex;justify-content:space-between;align-items:center;padding:0 34px;font-size:15px;font-weight:700;z-index:25;color:var(--t-ink);pointer-events:none}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:58px 18px 28px;scrollbar-width:none;display:flex;flex-direction:column}
+.screen::-webkit-scrollbar{display:none}
+.toast{position:absolute;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);opacity:0;background:rgba(20,16,20,.92);color:#fff;font-size:13px;font-weight:700;padding:10px 16px;border-radius:999px;transition:.25s;z-index:40;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.fade-in{animation:fadein .28s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}50%{transform:translateX(7px)}75%{transform:translateX(-4px)}}
+@keyframes rise{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(-280px) rotate(220deg);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes glow{0%,100%{box-shadow:0 18px 40px var(--t-plus-sh),0 0 0 0 var(--t-plus-sh)}50%{box-shadow:0 18px 40px var(--t-plus-sh),0 0 0 16px transparent}}
+.ph-top{display:flex;align-items:center;justify-content:space-between;min-height:44px;margin-bottom:6px}
+.ph-back{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 10px 0 2px;font-weight:700;font-size:15px}
+.ph-back svg{width:22px;height:22px}
+.mini-logo{width:30px;height:30px;border-radius:8px;background:#0a0007;display:grid;place-items:center;position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(255,45,120,.25)}
+.mini-logo::before{content:"";position:absolute;width:70%;height:70%;border-radius:50%;background:radial-gradient(ellipse,rgba(255,45,120,.45),transparent 70%)}
+.mini-logo span{position:relative;color:#ff2d78;font-weight:800;font-size:16px;letter-spacing:-.04em}
+h3.t{margin:4px 0 0;font-size:24px;letter-spacing:-.025em;font-weight:800;line-height:1.15}
+.lead{margin:6px 0 0;color:var(--t-mut);font-size:13.5px;line-height:1.5}
+.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:999px;background:var(--t-acc);color:#fff;font-weight:800;font-size:16px;box-shadow:0 10px 24px var(--t-plus-sh);transition:transform .12s;flex-shrink:0}
+.cta:active{transform:scale(.98)}
+.ghost{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;border-radius:999px;font-weight:800;font-size:15px;box-shadow:inset 0 0 0 1.5px var(--t-line);margin-top:10px}
+.link{display:block;margin:6px auto 0;min-height:44px;font-size:13.5px;font-weight:700;color:var(--t-mut);text-decoration:underline;text-underline-offset:3px}
+.tiny{font-size:11.5px;color:var(--t-mut);line-height:1.5;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:999px}
+.b-off{background:var(--t-acc);color:#fff}
+.b-lim{background:var(--t-soft);color:var(--t-deep)}
+.strike{text-decoration:line-through;color:var(--t-mut);font-weight:600}
+.save{color:var(--t-green);font-weight:800}
+.notice{display:flex;gap:10px;align-items:flex-start;background:var(--t-bsoft);color:var(--t-ink);border-radius:16px;padding:11px 13px;font-size:13px;line-height:1.45;margin-top:12px}
+.notice svg{width:18px;height:18px;flex-shrink:0;color:var(--t-blue);margin-top:1px}
+.seg2{display:grid;grid-template-columns:repeat(3,1fr);background:var(--t-sub);border-radius:16px;padding:4px;gap:4px;margin:14px 0 0}
+.seg2 button{border-radius:12px;padding:9px 4px;min-height:52px;font-weight:800;font-size:14px;color:var(--t-mut)}
+.seg2 button[aria-checked="true"]{background:var(--t-card);color:var(--t-ink);box-shadow:0 2px 8px var(--t-glass-sh)}
+.seg2 small{display:block;font-size:10.5px;font-weight:800;color:var(--t-green);margin-top:1px}
+.price{background:var(--t-card);border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 0 0 1px var(--t-line);text-align:center}
+.price .big{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1.05}
+.price .pm{font-size:13px;color:var(--t-mut);font-weight:600;margin-top:4px}
+.price .rowb{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.timeline{list-style:none;margin:0 0 14px;padding:0}
+.timeline li{position:relative;padding:0 0 12px 34px;font-size:13px;line-height:1.45}
+.timeline li::before{content:"";position:absolute;left:11px;top:22px;bottom:0;width:2px;background:var(--t-line)}
+.timeline li:last-child::before{display:none}
+.timeline .dot{position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--t-soft);color:var(--t-deep)}
+.timeline .dot svg{width:13px;height:13px}
+.timeline b{display:block;font-size:13.5px}
+.timeline span{color:var(--t-mut)}
+.sum{background:var(--t-card);border-radius:18px;padding:12px 14px;box-shadow:0 0 0 1px var(--t-line);margin:10px 0 12px}
+.sum .l{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:4px 0}
+.sum .l.t{border-top:1px solid var(--t-line);margin-top:4px;padding-top:9px;font-weight:800;font-size:15px}
+.sum .l span:last-child{font-weight:700;white-space:nowrap}
+.spinner{width:18px;height:18px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite}
+/* Bloco Stripe (Payment Element embutido, aparência do app) */
+.stripe-block{border-radius:18px;padding:12px;background:var(--pe-bg);box-shadow:0 0 0 1px var(--pe-border);position:relative;margin-bottom:12px}
+.stripe-head{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;font-weight:800;margin-bottom:10px}
+.stripe-head span{display:inline-flex;gap:6px;align-items:center}
+.stripe-head svg{width:14px;height:14px;color:var(--t-green)}
+.iframe-tag{position:absolute;top:-9px;right:12px;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--t-blue);color:#fff;padding:3px 7px;border-radius:999px}
+.wallets{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.wallet{min-height:44px;border-radius:10px;background:#000;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:4px}
+[data-mode="light"] .wallet{background:#000}
+.or{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--pe-label);margin:0 0 10px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--pe-border)}
+.pe-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.pe-tab{border-radius:10px;padding:8px 10px;box-shadow:0 0 0 1px var(--pe-border);background:var(--pe-input);font-size:12.5px;font-weight:700;text-align:left;color:var(--pe-label);min-height:44px}
+.pe-tab.on{box-shadow:0 0 0 2px var(--t-acc);color:var(--pe-text)}
+.pe-tab svg{width:16px;height:16px;display:block;margin-bottom:2px}
+.pe-label{font-size:12px;font-weight:600;color:var(--pe-label);margin:0 0 4px}
+.pe-input{min-height:44px;border-radius:12px;background:var(--pe-input);box-shadow:0 0 0 1px var(--pe-border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:15px;color:var(--pe-text);margin-bottom:9px;font-variant-numeric:tabular-nums}
+.pe-input.err{box-shadow:0 0 0 2px var(--t-red)}
+.pe-input small{font-size:11px;color:var(--pe-label);font-weight:700;letter-spacing:.04em}
+.pe-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pe-error{color:var(--t-red);font-size:12.5px;font-weight:600;margin:-3px 0 8px}
+.powered{text-align:center;font-size:11px;color:var(--pe-label);margin-top:4px}
+/* Stripe Checkout hospedado (tela do Stripe, marca do JobApp nas cores) */
+.phone:has(.checkout) .status{color:#1a1a1a}
+.checkout{position:absolute;inset:0;background:#ffffff;color:#1a1a1a;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif}
+.co-bar{position:absolute;top:54px;left:12px;right:12px;height:30px;border-radius:9px;background:#f0f0f3;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#5d5a63;font-weight:600;z-index:2}
+.co-bar svg{width:12px;height:12px;color:#2a7d4f}
+.co-body{flex:1;overflow:auto;padding:96px 20px 20px;scrollbar-width:none}
+.co-merchant{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#5d5a63}
+.co-merchant .mini-logo{width:24px;height:24px;border-radius:6px}
+.co-merchant .mini-logo span{font-size:13px}
+.co-back{font-size:13px;color:#5d5a63;display:inline-flex;align-items:center;gap:2px;min-height:44px}
+.co-back svg{width:16px;height:16px}
+.co-what{margin-top:8px;font-size:14px;color:#5d5a63}
+.co-amount{font-size:32px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.co-amount small{font-size:13px;font-weight:500;color:#6b6b74;letter-spacing:0;margin-left:4px}
+.co-lines{margin-top:12px;border-top:1px solid #ececf0;padding-top:10px;font-size:13px}
+.co-lines div{display:flex;justify-content:space-between;padding:4px 0;color:#3a3a40}
+.co-lines .muted{color:#8a8a92}
+.co-pay{margin-top:16px}
+.co-wallet{min-height:46px;border-radius:8px;background:#000;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:15px;width:100%}
+.co-label{font-size:13px;font-weight:600;color:#3a3a40;margin:12px 0 5px}
+.co-input{min-height:44px;border:1px solid #e0e0e6;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:15px;color:#1a1a1a}
+.co-group{border:1px solid #e0e0e6;border-radius:8px;overflow:hidden}
+.co-group .co-input{border:0;border-radius:0}
+.co-group .co-input+.co-input,.co-group .two{border-top:1px solid #e0e0e6}
+.co-group .two{display:grid;grid-template-columns:1fr 1fr}
+.co-group .two .co-input+.co-input{border-top:0;border-left:1px solid #e0e0e6}
+.co-btn{margin-top:16px;width:100%;min-height:48px;border-radius:8px;background:#ff2d78;color:#fff;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.co-fine{font-size:11.5px;color:#8a8a92;line-height:1.5;margin-top:10px;text-align:center}
+.co-foot{text-align:center;font-size:11px;color:#a0a0a8;padding:10px 0 26px}
+.co-err{color:#df1b41;font-size:13px;font-weight:600;margin-top:8px}
+/* Sucesso, erro, dia 8 */
+.win{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:40px;flex:1}
+.medal{width:132px;height:132px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#ffd1e2,var(--t-acc) 55%,#a30c47);color:#fff;animation:pop .6s ease, glow 2.4s ease-in-out .6s infinite}
+.medal svg{width:58px;height:58px}
+.win h3{margin:22px 0 0;font-size:26px;letter-spacing:-.03em;font-weight:800}
+.win p{margin:8px 0 0;color:var(--t-mut);font-size:14px;line-height:1.5;max-width:310px}
+.glowtag{display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:8px 14px;border-radius:999px;background:var(--t-soft);color:var(--t-deep);font-weight:800;font-size:15px}
+.glowtag svg{width:16px;height:16px}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:20}
+.confetti i{position:absolute;bottom:-10px;width:8px;height:12px;border-radius:2px;animation:rise 1.6s ease-out forwards}
+.err-ic{width:72px;height:72px;border-radius:50%;background:var(--t-rsoft);color:var(--t-red);display:grid;place-items:center;margin:20px auto 0;animation:shake .45s ease}
+.err-ic svg{width:34px;height:34px}
+.kept{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.kept>div{background:var(--t-card);border-radius:16px;padding:12px;box-shadow:0 0 0 1px var(--t-line)}
+.kept b{display:block;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.kept small{font-size:11.5px;color:var(--t-mut);font-weight:600}
+.meta-bar{height:6px;border-radius:3px;background:var(--t-line);overflow:hidden;margin-top:7px}
+.meta-bar i{display:block;height:100%;width:40%;background:var(--t-acc)}
+.safe{display:flex;gap:10px;align-items:center;background:var(--t-gsoft);border-radius:16px;padding:11px 13px;font-size:13px;font-weight:600;line-height:1.4}
+.safe svg{width:20px;height:20px;color:var(--t-green);flex-shrink:0}
+.stripe-msg{background:var(--t-sub);border-radius:14px;padding:10px 12px;font-size:12.5px;line-height:1.45;margin-top:12px;color:var(--t-mut)}
+.stripe-msg b{color:var(--t-ink)}
+.push{margin-top:auto;padding-top:14px}
+.ico{width:20px;height:20px;display:block}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  .confetti{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><span>J</span></div>
+      <div>
+        <h1>Pagamento Transparente · via Stripe</h1>
+        <p>Proposta C, com o Stripe cuidando do cartão: o JobApp <b>não desenha campos de cartão nem guarda dado de cartão</b>. Quando e quanto ela paga aparece antes de pedir o cartão. O teste grátis é oferecido só no onboarding; aqui, se ela assinar antes do fim do teste, aparece só um aviso calmo.</p>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Variante do pagamento">
+        <button type="button" data-var="A" aria-pressed="true">A · Stripe embutido</button>
+        <button type="button" data-var="B" aria-pressed="false">B · Stripe Checkout</button>
+      </div>
+      <div class="seg" role="group" aria-label="Caso">
+        <button type="button" data-caso="dia8" aria-pressed="true">Dia 8 · teste acabou</button>
+        <button type="button" data-caso="antes" aria-pressed="false">Assinando antes do fim</button>
+      </div>
+      <div class="seg" role="group" aria-label="Modo">
+        <button type="button" data-mode-set="dark" aria-pressed="true">Escuro</button>
+        <button type="button" data-mode-set="light" aria-pressed="false">Claro</button>
+      </div>
+      <label class="sim"><input type="checkbox" id="recusa"> Simular cartão recusado</label>
+      <label class="sim"><input type="checkbox" id="wallet" checked> Aparelho com Apple Pay / Google Pay</label>
+    </div>
+  </header>
+
+  <h2 class="sec">Tela 2 · as duas variantes lado a lado</h2>
+  <div class="vars">
+    <article class="var">
+      <div style="display:flex;align-items:center;gap:10px"><span class="lbl"><i>A</i>Variante A</span><span class="rec-chip">Recomendada</span></div>
+      <h3>Stripe embutido no app (Payment Element)</h3>
+      <div class="fit" data-fixa="A"><div class="scaler"><div class="phone"></div></div></div>
+      <div class="pc"><div class="pro"><b>Prós</b>Ela nunca sai do app; o formulário do Stripe ganha as cores pink-neon, claro/escuro e a fonte do app; Apple Pay/Google Pay aparecem quando o aparelho tem.</div><div class="con"><b>Contras</b>Mais trabalho de integração (Payment Element, confirmação, 3-D Secure dentro do app); a tela fica mais longa.</div></div>
+    </article>
+    <article class="var">
+      <span class="lbl"><i>B</i>Variante B</span>
+      <h3>Stripe Checkout hospedado (sai e volta)</h3>
+      <div class="pair">
+        <div><div class="cap">No app: resumo e botão</div><div class="fit" data-fixa="B1"><div class="scaler"><div class="phone"></div></div></div></div>
+        <div class="to">→</div>
+        <div><div class="cap">Na página do Stripe (volta ao app no fim)</div><div class="fit" data-fixa="B2"><div class="scaler"><div class="phone"></div></div></div></div>
+      </div>
+      <div class="pc"><div class="pro"><b>Prós</b>Integração mais simples e rápida; o Stripe cuida de tudo (3-D Secure, carteiras, recibo, idioma); menos código no app.</div><div class="con"><b>Contras</b>Ela sai do app para uma página branca do Stripe, só com logo e cor da marca; num PWA a ida e a volta pelo navegador podem confundir.</div></div>
+    </article>
+  </div>
+  <div class="panel recbox">
+    <span class="k">Minha recomendação: A · Stripe embutido</span>
+    <ul>
+      <li>Mantém ela dentro do app do começo ao fim: num PWA, sair para outra página e voltar é o ponto onde mais gente desiste ou se perde.</li>
+      <li>O Payment Element aceita a aparência do app (<code>appearance: { theme: 'night' | 'stripe', variables: { colorPrimary: '#ff2d78', borderRadius: '14px', fontFamily: 'Plus Jakarta Sans' } }</code>), então a transparência e o tom ficam iguais em todas as telas.</li>
+      <li>O Checkout (B) é um bom plano para lançar mais rápido e trocar depois: as telas 1, 3, 4 e 5 servem para as duas.</li>
+    </ul>
+  </div>
+
+  <h2 class="sec">O fluxo, uma tela por vez</h2>
+  <div class="flow">
+    <div>
+      <div class="fit" id="flowfit" style="width:414px;max-width:100%"><div class="scaler"><div class="phone" id="flowphone"></div></div></div>
+      <div class="nav">
+        <button type="button" class="arrow" id="prev" aria-label="Tela anterior">‹</button>
+        <div class="dots" id="dots" role="tablist" aria-label="Telas"></div>
+        <button type="button" class="arrow" id="next" aria-label="Próxima tela">›</button>
+      </div>
+      <div class="stepname" id="stepname"></div>
+    </div>
+    <div class="flow-side">
+      <div class="panel"><span class="k">Planos (mesmo acesso a tudo)</span>1 mês € 15 · 2 meses € 25 (de € 30, −17%) · 3 meses € 30 (de € 45, −33%). Selo "preço por tempo limitado" no de 2 e 3 meses; sempre com o preço por mês.</div>
+      <div class="panel"><span class="k">Dia 8</span>O teste acabou ontem (07/10). A cobrança é hoje e o plano começa na hora; a linha do tempo mostra hoje e a renovação antes do cartão.</div>
+      <div class="panel"><span class="k">Antes do fim do teste</span>Aviso calmo: "Seu teste continua até 15/10; a primeira cobrança é nessa data." Hoje: € 0. O Stripe guarda o cartão para essa data (assinatura com início em 15/10).</div>
+      <div class="panel"><span class="k">Erro</span>A mensagem do Stripe vem traduzida (ex.: <code>card_declined</code> / <code>insufficient_funds</code> → "O banco recusou o cartão: saldo insuficiente"). Nada é cobrado e há saída clara.</div>
+      <div class="panel"><span class="k">Como testar</span>Use as setas e bolinhas ou os botões do celular. Troque A/B no topo para ver a tela 2 de cada jeito; na B, "Ir para o pagamento" abre a página do Stripe dentro do mesmo celular.</div>
+    </div>
+  </div>
+
+  <h2 class="sec">As 5 telas lado a lado</h2>
+  <div class="grid5" id="grid5"></div>
+</div>
+
+<script>
+const PLANOS = [
+  { id:1, meses:1, preco:15, cheio:null },
+  { id:2, meses:2, preco:25, cheio:30 },
+  { id:3, meses:3, preco:30, cheio:45 },
+];
+const pct = p => p.cheio ? Math.round((1 - p.preco / p.cheio) * 100) : 0;
+const eco = p => p.cheio ? p.cheio - p.preco : 0;
+const porMes = p => p.preco / p.meses;
+const m = v => "€ " + v.toLocaleString("pt-BR", { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 });
+const m2 = v => "€ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nMeses = p => p.meses + (p.meses > 1 ? " meses" : " mês");
+const DATAS = {
+  dia8:  { inicio:"08/10", renova:{1:"08/11",2:"08/12",3:"08/01"} },
+  antes: { inicio:"15/10", renova:{1:"15/11",2:"15/12",3:"15/01"} },
+};
+const RM = matchMedia("(prefers-reduced-motion: reduce)");
+const S = { caso:"dia8", variante:"A", plano:3, passo:0, pagando:false, noStripe:false };
+const NOMES = ["Escolha do plano","Pagamento via Stripe","Confirmação","Erro de pagamento","Teste acabou (dia 8)"];
+
+const I = {
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  spark:'<svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  card:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>',
+  open:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>',
+  repeat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+};
+
+/* ---------------- Peças ---------------- */
+function topo(volta){ return `<div class="ph-top">${volta===null?'<div class="mini-logo"><span>J</span></div>':`<button type="button" class="ph-back" data-go="${volta}">${I.back}Voltar</button>`}<span></span></div>`; }
+function aviso(){ return S.caso==="antes" ? `<div class="notice">${I.info}<span>Seu teste continua até <b>15/10</b>; a primeira cobrança é nessa data.</span></div>` : ""; }
+function linhaDoTempo(p){
+  const d = DATAS[S.caso];
+  const hoje = S.caso==="dia8"
+    ? `<li><span class="dot">${I.card}</span><b>Hoje, ${d.inicio}: ${m(p.preco)}</b><span>Seu plano de ${nMeses(p)} começa na hora.</span></li>`
+    : `<li><span class="dot">${I.open}</span><b>Hoje: ${m(0)}</b><span>Nada muda até o fim do seu teste.</span></li><li><span class="dot">${I.card}</span><b>${d.inicio}: ${m(p.preco)}</b><span>Primeira cobrança, no fim do teste.</span></li>`;
+  return `<ul class="timeline">${hoje}<li><span class="dot">${I.repeat}</span><b>${d.renova[p.id]}: renova por ${m(p.preco)}</b><span>A cada ${nMeses(p)}. Cancele quando quiser nos Ajustes, sem multa.</span></li></ul>`;
+}
+function resumo(p){
+  const d = DATAS[S.caso]; const hoje = S.caso==="dia8";
+  return `<div class="sum">
+    <div class="l"><span>Plano de ${nMeses(p)}</span><span>${p.cheio?`<span class="strike">${m(p.cheio)}</span> `:''}${m(p.preco)}</span></div>
+    ${p.cheio?`<div class="l"><span>Desconto (${pct(p)}%)</span><span class="save">− ${m(eco(p))}</span></div>`:''}
+    <div class="l"><span>Equivale a</span><span>${m(porMes(p))}/mês</span></div>
+    <div class="l t"><span>${hoje?'Total hoje':'Hoje'}</span><span>${hoje?m(p.preco):m(0)}</span></div>
+    ${hoje?'':`<div class="l"><span>Em ${d.inicio}</span><span>${m(p.preco)}</span></div>`}
+    <div class="l" style="color:var(--t-mut)"><span>Renova em ${d.renova[p.id]}</span><span>${m(p.preco)}</span></div>
+  </div>`;
+}
+function rotuloPagar(p){ return S.caso==="dia8" ? `Pagar ${m(p.preco)}` : `Assinar · cobrança em ${DATAS.antes.inicio}`; }
+
+/* Tela 2 · A: Payment Element embutido */
+function telaA(o){
+  const p = PLANOS[S.plano-1]; const erro = o.erroInline;
+  const wallets = document.getElementById("wallet").checked;
+  return `${topo(0)}<div class="fade-in" style="display:flex;flex-direction:column;flex:1">
+    <h3 class="t" style="font-size:22px">Pagamento</h3>${aviso()}
+    ${resumo(p)}
+    <div class="stripe-block">
+      <span class="iframe-tag">Formulário do Stripe</span>
+      <div class="stripe-head"><span>${I.lock} Pagamento seguro por Stripe</span><span style="color:var(--pe-label);font-weight:600">€ · EUR</span></div>
+      ${wallets?`<div class="wallets"><div class="wallet">Apple Pay</div><div class="wallet">Google Pay</div></div><div class="or">ou pague com cartão</div>`:''}
+      <div class="pe-tabs"><div class="pe-tab on">${I.card}Cartão</div><div class="pe-tab" style="opacity:.55">${I.lock}Link</div></div>
+      <div class="pe-label">Número do cartão</div>
+      <div class="pe-input ${erro?'err':''}">4000 0000 0000 9995<small>VISA</small></div>
+      ${erro?`<div class="pe-error">Seu cartão não tem saldo suficiente.</div>`:''}
+      <div class="pe-row"><div><div class="pe-label">Validade</div><div class="pe-input">12 / 28</div></div><div><div class="pe-label">Código de segurança</div><div class="pe-input">123</div></div></div>
+      <div class="pe-label">País</div><div class="pe-input">Portugal<small>▾</small></div>
+      <div class="powered">Os dados do cartão vão direto para o Stripe; o JobApp não vê nem guarda.</div>
+    </div>
+    <div class="push"><button type="button" class="cta" data-pay>${o.pagando?'<span class="spinner"></span> Confirmando…':rotuloPagar(p)}</button></div></div>`;
+}
+/* Tela 2 · B (no app): resumo + ir ao Stripe Checkout */
+function telaB1(o){
+  const p = PLANOS[S.plano-1];
+  return `${topo(0)}<div class="fade-in" style="display:flex;flex-direction:column;flex:1">
+    <h3 class="t" style="font-size:22px">Revise e pague</h3>${aviso()}
+    ${resumo(p)}
+    <div class="stripe-block" style="text-align:center">
+      <div class="stripe-head" style="justify-content:center"><span>${I.lock} Pagamento seguro por Stripe</span></div>
+      <p class="lead" style="margin:0">Você vai para a página do Stripe para pôr o cartão${document.getElementById("wallet").checked?' ou usar Apple Pay / Google Pay':''}. Ao terminar, volta direto para cá.</p>
+    </div>
+    <div class="push"><button type="button" class="cta" data-checkout>${I.ext.replace('<svg','<svg style="width:18px;height:18px"')} Ir para o pagamento</button>
+    <p class="tiny" style="margin-top:8px">O JobApp não vê nem guarda os dados do cartão.</p></div></div>`;
+}
+/* Tela 2 · B (página do Stripe Checkout) */
+function telaB2(o){
+  const p = PLANOS[S.plano-1]; const d = DATAS[S.caso]; const hoje = S.caso==="dia8";
+  return `<div class="checkout fade-in">
+    <div class="co-bar">${I.lock.replace('<svg','<svg style="width:12px;height:12px;color:#2a7d4f"')} checkout.stripe.com</div>
+    <div class="co-body">
+      <button type="button" class="co-back" data-go="1">${I.back.replace('<svg','<svg style="width:16px;height:16px"')} <span class="co-merchant"><span class="mini-logo"><span>J</span></span>JobApp</span></button>
+      <div class="co-what">${hoje?`Assinar Plano de ${nMeses(p)}`:`Assinatura com início em ${d.inicio}`}</div>
+      <div class="co-amount">${hoje?m2(p.preco):m2(0)}<small>${hoje?`a cada ${nMeses(p)}`:'hoje'}</small></div>
+      <div class="co-lines">
+        <div><span>Plano de ${nMeses(p)}</span><span>${m2(p.preco)}</span></div>
+        ${hoje?'':`<div><span>Primeira cobrança em ${d.inicio}</span><span>${m2(p.preco)}</span></div>`}
+        <div class="muted"><span>Depois, a cada ${nMeses(p)}</span><span>${m2(p.preco)}</span></div>
+      </div>
+      <div class="co-pay">
+        ${document.getElementById("wallet").checked?`<button type="button" class="co-wallet" data-copay>Apple Pay</button><div class="or" style="margin:12px 0 0;color:#8a8a92">ou pague com cartão</div>`:''}
+        <div class="co-label">E-mail</div><div class="co-input">miguel@exemplo.com</div>
+        <div class="co-label">Dados do cartão</div>
+        <div class="co-group"><div class="co-input">4000 0000 0000 9995</div><div class="two"><div class="co-input">12 / 28</div><div class="co-input">123</div></div></div>
+        ${o.erroCheckout?`<div class="co-err">Seu cartão foi recusado. Tente outro cartão.</div>`:''}
+        <div class="co-label">País</div><div class="co-input">Portugal</div>
+        <button type="button" class="co-btn" data-copay>${o.pagando?'<span class="spinner"></span>':(hoje?'Assinar':'Começar assinatura')}</button>
+        <p class="co-fine">${hoje?`Você autoriza o JobApp a cobrar ${m2(p.preco)} a cada ${nMeses(p)} até cancelar.`:`Nada é cobrado hoje. Em ${d.inicio}, ${m2(p.preco)}; depois a cada ${nMeses(p)} até cancelar.`}</p>
+      </div>
+    </div>
+    <div class="co-foot">Desenvolvido por Stripe · Termos · Privacidade</div>
+  </div>`;
+}
+function tela2(o){ if (S.variante==="A") return telaA(o); return o.noStripe ? telaB2(o) : telaB1(o); }
+
+const TELAS = [
+  o => { const p = PLANOS[S.plano-1]; return `${topo(S.caso==="dia8"?4:null)}<div class="fade-in" style="display:flex;flex-direction:column;flex:1">
+    <h3 class="t">Escolha seu plano</h3>
+    <p class="lead">Todos liberam tudo: Agenda, Financeiro, Cofre, Rede e sua Jornada. Só muda o período.</p>
+    ${aviso()}
+    <div class="seg2" role="radiogroup" aria-label="Período">${PLANOS.map(q=>`<button type="button" role="radio" aria-checked="${S.plano===q.id}" data-plano="${q.id}">${nMeses(q)}<small>${q.cheio?`−${pct(q)}%`:'&nbsp;'}</small></button>`).join('')}</div>
+    <div class="price">
+      ${p.cheio?`<div><span class="strike" style="font-size:16px">${m(p.cheio)}</span></div>`:''}
+      <div class="big">${m(p.preco)}</div>
+      <div class="pm">por ${nMeses(p)} · ${m(porMes(p))}/mês</div>
+      <div class="rowb">${p.cheio?`<span class="badge b-off">−${pct(p)}% · economize ${m(eco(p))}</span><span class="badge b-lim">Preço por tempo limitado</span>`:`<span class="badge b-lim">Sem compromisso longo</span>`}</div>
+    </div>
+    ${linhaDoTempo(p)}
+    <div class="push"><button type="button" class="cta" data-go="1">Continuar com ${nMeses(p)}</button></div></div>`; },
+  o => tela2(o),
+  o => { const p = PLANOS[S.plano-1]; const d = DATAS[S.caso]; return `<div class="win fade-in">
+    <div class="medal">${I.spark}</div>
+    <h3>Tudo certo, Miguel!</h3>
+    <p>${S.caso==="dia8" ? `Seu plano de ${nMeses(p)} está ativo. Tudo continua como você deixou.` : `Seu plano de ${nMeses(p)} começa em ${d.inicio}, no fim do seu teste. Até lá, nada muda.`}</p>
+    <span class="glowtag">${I.spark} +50 Glow na sua Jornada</span>
+    <p style="font-size:12.5px">Selo novo: <b style="color:var(--t-ink)">Investi em mim</b></p>
+    <p style="font-size:12px;margin-top:14px">O Stripe enviou o recibo para o seu e-mail · próxima cobrança em ${d.renova[p.id]}: ${m(p.preco)}</p>
+    <div class="push" style="width:100%"><button type="button" class="cta" data-app>Voltar para o app</button></div></div>`; },
+  o => { return `${topo(1)}<div class="fade-in" style="display:flex;flex-direction:column;flex:1">
+    <div class="err-ic">${I.x}</div>
+    <h3 class="t" style="text-align:center;margin-top:16px">O pagamento não foi aprovado</h3>
+    <p class="lead" style="text-align:center">O banco recusou o cartão terminado em 9995: <b style="color:var(--t-ink)">saldo insuficiente</b>. Nada foi cobrado.</p>
+    <div class="stripe-msg">Mensagem do Stripe, traduzida: <b>"Seu cartão não tem saldo suficiente."</b> (código <code>card_declined</code> · <code>insufficient_funds</code>)</div>
+    <div class="safe" style="margin-top:12px">${I.shield}<span>${S.caso==="dia8"?'Seus dados continuam guardados. Pode tentar de novo agora ou depois.':'Seu teste continua normalmente até 15/10.'}</span></div>
+    <div class="push">
+      <button type="button" class="cta" data-go="1">Tentar de novo</button>
+      <button type="button" class="ghost" data-go="1">Usar outro cartão</button>
+      <button type="button" class="link" data-app>Agora não</button>
+    </div></div>`; },
+  o => `${topo(null)}<div class="fade-in" style="display:flex;flex-direction:column;flex:1">
+    <h3 class="t">Seu teste terminou. Seus dados continuam aqui.</h3>
+    <p class="lead">Seus 7 dias acabaram ontem, 07/10. Nada foi apagado: assim que você escolher um plano, tudo volta como estava.</p>
+    <div class="kept">
+      <div><b>23</b><small>atendimentos na Agenda</small></div>
+      <div><b>${m(1240)}</b><small>lançados no Financeiro</small></div>
+      <div><b>8</b><small>arquivos no Cofre</small></div>
+      <div><b>305 Glow</b><small>e 3 selos na Jornada</small></div>
+      <div style="grid-column:1/-1"><b style="font-size:15px">Meta: Fundo Viagem</b><small>${m(120)} de ${m(300)} guardados</small><div class="meta-bar"><i></i></div></div>
+    </div>
+    <div class="push"><button type="button" class="cta" data-go="0" data-dia8>Escolher um plano</button>
+    <p class="tiny" style="margin-top:10px">1 mês ${m(15)} · 2 meses ${m(25)} · 3 meses ${m(30)}</p></div></div>`,
+];
+
+/* ---------------- Celulares ---------------- */
+const status = '<div class="notch"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="toast"></div>';
+const PH = [];
+function novo(el, tipo){ const o = { el, tipo, pagando:false, noStripe:false, erroInline:false, erroCheckout:false }; PH.push(o); el.addEventListener("click", e=>clique(o,e)); return o; }
+const flow = novo(document.getElementById("flowphone"), "fluxo");
+const fixA = novo(document.querySelector('[data-fixa="A"] .phone'), "A");
+const fixB1 = novo(document.querySelector('[data-fixa="B1"] .phone'), "B1");
+const fixB2 = novo(document.querySelector('[data-fixa="B2"] .phone'), "B2"); fixB2.noStripe = true;
+const grid = document.getElementById("grid5");
+const gridO = NOMES.map((n,i)=>{ const c=document.createElement("div"); c.className="cell"; c.innerHTML=`<div class="lab"><i>${i+1}</i>${n}</div><div class="fit"><div class="scaler"><div class="phone"></div></div></div>`; grid.appendChild(c); const o=novo(c.querySelector(".phone"), "grade"); o.tela=i; return o; });
+const dots = document.getElementById("dots");
+NOMES.forEach((n,i)=>{ const b=document.createElement("button"); b.type="button"; b.setAttribute("aria-label",`Tela ${i+1}: ${n}`); b.addEventListener("click",()=>ir(i)); dots.appendChild(b); });
+document.getElementById("prev").addEventListener("click",()=>ir(S.passo-1));
+document.getElementById("next").addEventListener("click",()=>ir(S.passo+1));
+
+function render(o, tela){
+  if (o.tipo==="A"){ const v=S.variante; S.variante="A"; o.el.innerHTML = status + `<div class="screen">${telaA(o)}</div>`; S.variante=v; return; }
+  if (o.tipo==="B1"){ o.el.innerHTML = status + `<div class="screen">${telaB1(o)}</div>`; return; }
+  if (o.tipo==="B2"){ o.el.innerHTML = status + telaB2(o); return; }
+  const html = TELAS[tela](o);
+  o.el.innerHTML = status + (tela===1 && S.variante==="B" && o.noStripe ? html : `<div class="screen">${html}</div>`);
+}
+function desenhar(){
+  render(flow, S.passo);
+  [fixA, fixB1, fixB2].forEach(o=>render(o));
+  gridO.forEach(o=>render(o, o.tela));
+  [...dots.children].forEach((b,i)=>{ if(i===S.passo) b.setAttribute("aria-current","step"); else b.removeAttribute("aria-current"); });
+  document.getElementById("prev").disabled = S.passo===0;
+  document.getElementById("next").disabled = S.passo===4;
+  document.getElementById("stepname").textContent = `${S.passo+1} de 5 · ${NOMES[S.passo]}${S.passo===1?` (variante ${S.variante})`:''}`;
+  encaixar();
+}
+function ir(i){ S.passo=Math.max(0,Math.min(4,i)); Object.assign(flow,{pagando:false,noStripe:false,erroInline:false,erroCheckout:false}); desenhar(); if(S.passo===2) confete(flow.el); }
+function toast(o,txt){ const t=o.el.querySelector(".toast"); if(!t) return; t.textContent=txt; t.classList.add("on"); setTimeout(()=>t.classList.remove("on"),1800); }
+function confete(el){
+  if (RM.matches) return;
+  const c=document.createElement("div"); c.className="confetti"; const cores=["#ff2d78","#ff80ab","#ffcf6b","#ffd1e2","#ff528f"];
+  for(let i=0;i<34;i++){ const s=document.createElement("i"); s.style.left=(Math.random()*100)+"%"; s.style.background=cores[i%cores.length]; s.style.animationDelay=(Math.random()*.5)+"s"; s.style.animationDuration=(1.2+Math.random()*.9)+"s"; c.appendChild(s); }
+  el.appendChild(c); setTimeout(()=>c.remove(),2600);
+}
+const recusa = () => document.getElementById("recusa").checked;
+function pagar(o, viaCheckout){
+  if (o.pagando) return;
+  if (o!==flow){ toast(o, "Use o celular do fluxo, mais abaixo, para pagar de verdade"); return; }
+  o.pagando=true; render(o, S.passo);
+  setTimeout(()=>{
+    o.pagando=false;
+    if (recusa()){
+      if (viaCheckout){ o.erroCheckout=true; render(o, S.passo); toast(o,"No Checkout, o erro aparece na página do Stripe"); setTimeout(()=>ir(3), RM.matches?50:1600); }
+      else { o.erroInline=true; render(o, S.passo); setTimeout(()=>ir(3), RM.matches?50:1100); }
+    } else {
+      if (viaCheckout) toast(o, "Voltando para o JobApp…");
+      setTimeout(()=>ir(2), viaCheckout && !RM.matches ? 700 : 0);
+    }
+  }, RM.matches ? 50 : 1000);
+}
+function clique(o,e){
+  const pl=e.target.closest("[data-plano]"); if(pl){ S.plano=+pl.dataset.plano; return desenhar(); }
+  if(e.target.closest("[data-pay]")) return pagar(o,false);
+  if(e.target.closest("[data-copay]")) return pagar(o,true);
+  if(e.target.closest("[data-checkout]")){ if(o===flow){ o.noStripe=true; render(o,S.passo); } else toast(o,"Abre a página do Stripe (ao lado)"); return; }
+  if(e.target.closest("[data-app]")) return toast(o,"Volta para o Início do app");
+  const go=e.target.closest("[data-go]"); if(go){
+    if(o!==flow){ toast(o,"Navegue pelo celular do fluxo"); return; }
+    if(go.hasAttribute("data-dia8")) setCaso("dia8");
+    if(+go.dataset.go===1 && S.passo===1 && o.noStripe){ o.noStripe=false; o.erroCheckout=false; return render(o,1); }
+    ir(+go.dataset.go);
+  }
+}
+function setCaso(c){ S.caso=c; document.querySelectorAll("[data-caso]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.caso===c)); }
+document.querySelectorAll("[data-caso]").forEach(b=>b.addEventListener("click",()=>{ setCaso(b.dataset.caso); desenhar(); }));
+document.querySelectorAll("[data-var]").forEach(b=>b.addEventListener("click",()=>{ S.variante=b.dataset.var; document.querySelectorAll("[data-var]").forEach(x=>x.setAttribute("aria-pressed",x===b)); flow.noStripe=false; desenhar(); }));
+document.getElementById("wallet").addEventListener("change", desenhar);
+document.querySelectorAll("[data-mode-set]").forEach(b=>b.addEventListener("click",()=>{
+  document.documentElement.setAttribute("data-mode", b.dataset.modeSet);
+  document.querySelectorAll("[data-mode-set]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+}));
+function encaixar(){
+  document.querySelectorAll(".fit").forEach(f=>{ const sc=f.querySelector(".scaler"); const k=Math.min(1,(f.clientWidth-(f.id==="flowfit"?24:8))/410); sc.style.transform=`scale(${k})`; f.style.height=(864*k+12)+"px"; sc.style.marginTop="11px"; });
+}
+addEventListener("resize",encaixar);
+desenhar(); setTimeout(encaixar,200);
+</script>
+</body>
+</html>
