@@ -1,0 +1,57 @@
+{
+  "quando": "2026-10-08T19:13:14.895Z",
+  "etapa": "antes",
+  "baseUrl": "http://localhost:3113",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "relogio": "2026-09-23T13:00:00.000Z",
+  "linhas": [
+    {
+      "sufixo": "pink-neon-claro-390",
+      "erros": 8
+    },
+    {
+      "sufixo": "ocean-claro-390",
+      "erros": 8
+    },
+    {
+      "sufixo": "gold-claro-390",
+      "erros": 8
+    },
+    {
+      "sufixo": "pink-neon-escuro-390",
+      "erros": 8
+    },
+    {
+      "sufixo": "ocean-escuro-390",
+      "erros": 8
+    },
+    {
+      "sufixo": "gold-escuro-390",
+      "erros": 8
+    },
+    {
+      "sufixo": "pink-neon-claro-430",
+      "erros": 8
+    },
+    {
+      "sufixo": "ocean-claro-430",
+      "erros": 8
+    },
+    {
+      "sufixo": "gold-claro-430",
+      "erros": 8
+    },
+    {
+      "sufixo": "pink-neon-escuro-430",
+      "erros": 8
+    },
+    {
+      "sufixo": "ocean-escuro-430",
+      "erros": 8
+    },
+    {
+      "sufixo": "gold-escuro-430",
+      "erros": 8
+    }
+  ]
+}

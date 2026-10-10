@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { AlertCircle, Plus } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { AlertCircle } from "lucide-react";
+import { AvatarAjustes, BotaoNovo } from "@/components/ui/cabecalho";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -49,10 +50,11 @@ const TABS: { id: InnerTab; label: string }[] = [
 interface Props {
   userId: string;
   refreshTrigger: number;
-  chartType?: "bar" | "area";
   onInnerTabChange?: (tab: string) => void;
   onAddDespesa?: () => void;
   onAddReceita?: () => void;
+  /** Avatar do cabeçalho (como o do Início): abre Ajustes. Pixel do mockup. */
+  avatar?: { inicial: string; foto?: string | null; onOpenAjustes: () => void };
   objetivos: Objetivo[];
   onObjetivoAdded: () => void;
   onToggleObjetivo: (id: string, done: boolean) => Promise<void>;
@@ -74,10 +76,10 @@ interface Props {
 export function FinanceiroTab({
   userId,
   refreshTrigger,
-  chartType = "bar",
   onInnerTabChange,
   onAddDespesa,
   onAddReceita,
+  avatar,
   objetivos,
   onObjetivoAdded,
   onToggleObjetivo,
@@ -91,6 +93,8 @@ export function FinanceiroTab({
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<InnerTab>("visao");
   const monthYearLabel = useMemo(getMonthYearLabel, []);
+  // "Extrato ›" (mockup) leva até as listas completas, abaixo do gráfico.
+  const detalhesRef = useRef<HTMLDivElement>(null);
 
   // Estado de erro (issue #136, mesmo padrão já estabelecido em
   // JobsTab.tsx/Agenda #135 — RedeTab.tsx antes disso): distingue "falha
@@ -168,6 +172,7 @@ export function FinanceiroTab({
             status: r.status,
             observacoes: r.observacoes ?? undefined,
             criadoEm: r.criado_em,
+            pagoEm: r.pago_em ?? null,
           }))
         );
       }
@@ -257,43 +262,36 @@ export function FinanceiroTab({
   }
 
   return (
-    <div className="pb-4">
-      {/* Cabeçalho no visual novo (Jornada J04, mockup
-          5-telas-8-temas-claro-escuro.html): "Financeiro" com o mês por
-          extenso embaixo e o botão "Novo" à direita. O avatar do mockup
-          não está aqui: ele abre Ajustes, e essa ligação mora em
-          app/page.tsx, fora do escopo deste ticket. */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="min-w-0 flex-grow">
+    <div
+      className="pb-4"
+      style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+    >
+      {/* Cabeçalho do mockup Financeiro A (5-telas-8-temas-claro-escuro.html):
+          avatar 42px (abre Ajustes, como no Início), "Financeiro" 17px/800
+          com o mês em 12px embaixo, e o "Novo" de 38px. Avatar e "Novo" são
+          as peças da casca (components/ui/cabecalho): desenho do mockup,
+          toque de 44px. */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        {avatar && (
+          <AvatarAjustes
+            inicial={avatar.inicial}
+            foto={avatar.foto}
+            onClick={avatar.onOpenAjustes}
+            aria-label="Abrir Ajustes"
+          />
+        )}
+        <div style={{ flexGrow: 1, minWidth: 0 }}>
           <h1
-            className="font-extrabold truncate"
-            style={{ fontSize: "17px", lineHeight: 1.3, color: "var(--text)" }}
+            className="truncate"
+            style={{ margin: 0, fontSize: "17px", fontWeight: 800 }}
           >
             Financeiro
           </h1>
-          <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+          <div style={{ fontSize: "12px", color: "var(--t-mut)" }}>
             {monthYearLabel}
-          </p>
+          </div>
         </div>
-        {acaoNovo && (
-          <button
-            type="button"
-            onClick={acaoNovo}
-            data-fab-avoid
-            className="flex items-center gap-1.5 shrink-0 rounded-full font-bold transition-opacity active:opacity-80"
-            style={{
-              minHeight: "44px",
-              padding: "0 14px",
-              fontSize: "13px",
-              // #175: texto e fundo de acento com contraste de 4,5:1.
-              background: "var(--accent-fill)",
-              color: "var(--on-accent)",
-            }}
-          >
-            <Plus size={16} strokeWidth={2.6} aria-hidden="true" />
-            Novo
-          </button>
-        )}
+        {acaoNovo && <BotaoNovo onClick={acaoNovo}>Novo</BotaoNovo>}
       </div>
 
       {/* Falha ao revalidar com dado já carregado — mesmo padrão visual
@@ -392,50 +390,71 @@ export function FinanceiroTab({
             totalDespMes={totalDespMes}
             saldo={saldo}
             metas={metas}
-            chartType={chartType}
           />
 
-          <SegmentedControl
-            className="mb-5"
-            // #174: abas internas com alvo de toque de 44px.
-            minTouchTarget
-            options={TABS}
-            value={tab}
-            onChange={changeTab}
+          {/* Visão do mockup (Recentes + Mais lançamentos): sempre visível,
+              logo abaixo dos cards, como no Financeiro A. */}
+          <VisaoTab
+            jobs={jobs}
+            despesas={despesas}
+            receitas={receitas}
+            onExtrato={() =>
+              detalhesRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              })
+            }
           />
 
-          {tab === "visao" && (
-            <VisaoTab jobs={jobs} despesas={despesas} receitas={receitas} />
-          )}
-          {tab === "entradas" && (
-            <EntradasTab
-              jobs={jobs}
-              receitas={receitas}
-              totalEntradaMes={totalEntradaMes}
-              onAddReceita={onAddReceita}
-              onDeleteReceita={deleteReceita}
+          {/* Fora do mockup, preservado: as listas completas com exclusão
+              (Entradas, Saídas, Metas), abaixo do que o mockup mostra. */}
+          <div
+            ref={detalhesRef}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              marginTop: "6px",
+            }}
+          >
+            <SegmentedControl
+              // #174: abas internas com alvo de toque de 44px.
+              minTouchTarget
+              options={TABS}
+              value={tab}
+              onChange={changeTab}
             />
-          )}
-          {tab === "saidas" && (
-            <SaidasTab
-              despesas={despesas}
-              despMes={despMes}
-              totalDespMes={totalDespMes}
-              onAddDespesa={onAddDespesa}
-              onDeleteDespesa={deleteDespesa}
-            />
-          )}
-          {tab === "metas" && (
-            <MetasTab
-              jobs={jobs}
-              receitas={receitas}
-              metas={metas}
-              objetivos={objetivos}
-              userId={userId}
-              onObjetivoAdded={onObjetivoAdded}
-              onToggleObjetivo={onToggleObjetivo}
-            />
-          )}
+
+            {tab === "entradas" && (
+              <EntradasTab
+                jobs={jobs}
+                receitas={receitas}
+                totalEntradaMes={totalEntradaMes}
+                onAddReceita={onAddReceita}
+                onDeleteReceita={deleteReceita}
+              />
+            )}
+            {tab === "saidas" && (
+              <SaidasTab
+                despesas={despesas}
+                despMes={despMes}
+                totalDespMes={totalDespMes}
+                onAddDespesa={onAddDespesa}
+                onDeleteDespesa={deleteDespesa}
+              />
+            )}
+            {tab === "metas" && (
+              <MetasTab
+                jobs={jobs}
+                receitas={receitas}
+                metas={metas}
+                objetivos={objetivos}
+                userId={userId}
+                onObjetivoAdded={onObjetivoAdded}
+                onToggleObjetivo={onToggleObjetivo}
+              />
+            )}
+          </div>
         </>
       )}
     </div>

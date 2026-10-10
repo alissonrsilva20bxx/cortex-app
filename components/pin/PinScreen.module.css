@@ -1,11 +1,10 @@
 /*
- * Teclado circular T9 — geometria portada 1:1 de
- * components/ios-prototype/IosPrototypeApp.module.css (.pinPrototypeScreen
- * e afins, ticket #138), cor sempre var(--accent)/var(--accent-rgb) —
- * nunca o rosa fixo do protótipo (cor de marca ilustrativa). Fundo continua
- * fixo escuro (convenção já estabelecida antes desta ticket): uma tela
- * de bloqueio se comporta como a do sistema operacional, sempre escura,
- * independente do tema claro/escuro do resto do app.
+ * Tela de bloqueio "Cartão Cofre" — medidas copiadas 1:1 de
+ * docs/jornada/referencias/tela-bloqueio-cartao-cofre.html (classe .v2),
+ * cores SÓ pelos tokens do app (--t-*, styles/globals.css): segue o tema e
+ * o modo claro/escuro escolhidos, nos 8 temas. O brilho do cartão era o
+ * rosa fixo da referência; aqui é o acento do tema (no pink-neon dá o
+ * mesmo rgba(255,45,120,.45)).
  *
  * `.page` NUNCA declara `position` própria — colide em especificidade
  * com a classe utilitária `fixed` do Tailwind no bundle de produção e
@@ -13,313 +12,357 @@
  * tests/wiring/pinscreen-fixed-position.test.ts).
  */
 .page {
-  --pin-accent: var(--accent);
-  --pin-accent-rgb: var(--accent-rgb);
-  min-height: 100dvh;
   overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background: #08080a;
-  color: #f5f1f3;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  background: var(--t-phbg);
+  color: var(--t-ink);
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: normal;
+  -webkit-font-smoothing: antialiased;
 }
 
-.atmosphere {
-  position: absolute;
-  inset: 0;
+.page > * {
+  flex-shrink: 0;
+}
+
+.page svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+}
+
+.page button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Cartão do topo ───────────────────────────────────────────────── */
+.hero {
+  background: var(--t-hero);
+  color: #fff;
+  /* 60px da referência já contam a barra de status; no iPhone com notch
+     (PWA em tela cheia) o recuo real do sistema manda. */
+  padding: max(60px, calc(env(safe-area-inset-top, 0px) + 12px)) 18px 26px;
+  border-radius: 0 0 34px 34px;
+  position: relative;
   overflow: hidden;
-  pointer-events: none;
+  box-shadow: 0 18px 40px var(--t-glass-sh);
 }
 
-.atmosphere::before {
+.hero::after {
   content: "";
   position: absolute;
-  top: -170px;
-  left: 50%;
-  width: 460px;
-  height: 460px;
-  transform: translateX(-50%);
+  right: -60px;
+  top: -60px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgb(var(--pin-accent-rgb) / 0.2),
-    rgb(var(--pin-accent-rgb) / 0.08) 42%,
+    color-mix(in srgb, var(--t-acc) 45%, transparent),
     transparent 70%
   );
 }
 
-.atmosphere i {
-  position: absolute;
-  border: 1px solid rgb(var(--pin-accent-rgb) / 0.1);
-  border-radius: 50%;
-}
-
-.atmosphere i:nth-child(1) {
-  top: 92px;
-  left: 50%;
-  width: 230px;
-  height: 230px;
-  transform: translateX(-50%);
-}
-
-.atmosphere i:nth-child(2) {
-  top: 126px;
-  left: 50%;
-  width: 162px;
-  height: 162px;
-  transform: translateX(-50%);
-}
-
-.atmosphere i:nth-child(3) {
-  top: 158px;
-  left: 50%;
-  width: 98px;
-  height: 98px;
-  transform: translateX(-50%);
-}
-
-.content {
+/* O Voltar mora sempre aqui (44px de toque). Na trava do app, que não tem
+   pra onde voltar, o espaço fica reservado e nada muda de lugar. */
+.backslot {
+  height: 44px;
   position: relative;
-  flex: 1;
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* Topo reduzido (achado da revisão visual #131 v3: o conjunto
-     wordmark/cadeado/título ficava concentrado demais no meio, sobrando
-     espaço não usado embaixo) -- desloca o bloco de entrada pra cima,
-     ainda proporcional à altura real via vh, nunca um valor fixo pra um
-     aparelho específico. */
-  /* dvh, não vh: no Safari com barra de endereço, a unidade vh mede a
-     viewport GRANDE (barra recolhida), maior que a área visível de fato. */
-  padding: clamp(12px, 4dvh, 40px) 28px clamp(16px, 3.5dvh, 32px);
-  text-align: center;
+  z-index: 1;
 }
 
-.wordmark {
-  color: #d2c9cd;
+.page .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 14px 0 4px;
+  border-radius: 999px;
   font-size: 15px;
-  font-weight: 760;
-  letter-spacing: -0.025em;
+  font-weight: 700;
+  color: #fff;
 }
 
-/* margin-top responsivo (clamp) em vez do 27px fixo do protótipo — decisão
-   deliberada: o mock roda num frame fixo, a tela real de verdade cobre
-   viewports de ~390 a ~932px de altura (protocolo #133), então precisa
-   respirar em telas curtas e não desperdiçar espaço em telas altas.
-   Os demais números da seção (título 34px/-0.04em, selo 68px/23px de
-   margem) batem 1:1 com IosPrototypeApp.module.css .pinIntro/.pinLockSeal. */
-.intro {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* Reduzido junto com o padding-top de .content acima (achado #131 v3) --
-     as duas margens juntas erguiam o bloco JobApp/cadeado/título alto
-     demais no centro da tela, deixando o teclado e o aviso de segurança
-     espremidos embaixo. */
-  margin-top: clamp(8px, 2.5dvh, 20px);
-}
-
-.lockSeal {
-  width: clamp(52px, 8dvh, 68px);
-  height: clamp(52px, 8dvh, 68px);
+.backCirculo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  margin-bottom: clamp(12px, 2.8dvh, 23px);
-  border: 1px solid rgb(var(--pin-accent-rgb) / 0.3);
-  border-radius: 50%;
-  color: var(--pin-accent);
-  background: rgb(var(--pin-accent-rgb) / 0.12);
-  box-shadow: 0 16px 42px rgb(0 0 0 / 0.28);
+  background: rgba(255, 255, 255, 0.14);
 }
 
-.intro h1 {
-  margin: 0;
-  /* Fundação Visual (#142): removida a família Plus Jakarta Sans -- o
-     protótipo (.pinIntro h1) nunca troca de família tipográfica, herda a
-     pilha nativa de .page (linha 26-27 deste arquivo). */
-  font-size: clamp(26px, 4.4dvh, 34px);
-  font-weight: 620;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
+.back:active .backCirculo {
+  background: rgba(255, 255, 255, 0.26);
 }
 
-.intro p {
-  min-height: 40px;
-  max-width: 300px;
-  margin: 10px 0 0;
-  color: #aaa0a5;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.dots {
+.row {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   align-items: center;
+  margin-top: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.shield {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  transition: 0.25s;
+}
+
+.page[data-estado="ok"] .shield {
+  background: var(--t-green);
+  animation: pinPop 0.45s;
+}
+
+.page[data-estado="err"] .shield {
+  background: rgba(255, 90, 90, 0.28);
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t-hero-mut);
+}
+
+.title {
+  margin: 2px 0 0;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: normal;
+}
+
+/* ── 4 casas ──────────────────────────────────────────────────────── */
+.boxes {
+  display: flex;
+  gap: 10px;
   justify-content: center;
-  /* Achado #131 v3: margem vertical era simétrica (mesmo valor acima e
-     abaixo) -- a distância que precisava crescer era especificamente até
-     o teclado, não até o título. Topo ligeiramente menor (o bloco de
-     cima já ficou mais compacto), base maior. */
-  margin: clamp(14px, 3dvh, 22px) 0 clamp(20px, 5dvh, 42px);
+  margin: 28px 0 0;
 }
 
-.dots i {
-  width: 11px;
-  height: 11px;
-  border: 1px solid rgb(255 255 255 / 0.3);
+.boxes i {
+  width: 56px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--t-card);
+  box-shadow: inset 0 0 0 1.5px var(--t-line);
+  display: grid;
+  place-items: center;
+  transition: 0.18s;
+}
+
+.boxes i.current {
+  box-shadow: inset 0 0 0 2px var(--t-acc);
+}
+
+.boxes i.filled::after {
+  content: "";
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: transparent;
-  transition:
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 180ms ease,
-    border-color 180ms ease;
+  background: var(--t-acc);
+  animation: pinPop 0.25s;
 }
 
-.dots i.dotFilled,
-.dots[data-unlocked="true"] i {
-  border-color: var(--pin-accent);
-  background: var(--pin-accent);
-  transform: scale(1.08);
+.page[data-estado="err"] .boxes i {
+  box-shadow: inset 0 0 0 2px var(--t-red);
+  background: var(--t-rsoft);
 }
 
-.dots i.dotInvalid {
-  border-color: #ff6262;
-  background: #ff6262;
+.page[data-estado="err"] .boxes i.filled::after {
+  background: var(--t-red);
 }
 
-.keypad {
-  width: min(100%, 300px);
+.page[data-estado="ok"] .boxes i {
+  box-shadow: inset 0 0 0 2px var(--t-green);
+  background: var(--t-gsoft);
+}
+
+.page[data-estado="ok"] .boxes i.filled::after {
+  background: var(--t-green);
+}
+
+.shake {
+  animation: pinShake 0.45s ease;
+}
+
+.msg {
+  font-size: 13.5px;
+  color: var(--t-mut);
+  line-height: 1.45;
+  min-height: 40px;
+  text-align: center;
+  margin: 14px 0 0;
+  padding: 0 30px;
+  transition: color 0.2s;
+}
+
+.page[data-estado="err"] .msg {
+  color: var(--t-red);
+  font-weight: 700;
+}
+
+.page[data-estado="ok"] .msg {
+  color: var(--t-green);
+  font-weight: 700;
+}
+
+/* ── Folha do teclado ─────────────────────────────────────────────── */
+.sheet {
+  margin-top: auto;
+  background: var(--t-card);
+  border-radius: 30px 30px 0 0;
+  padding: 16px 18px calc(26px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 30px var(--t-glass-sh);
+}
+
+.pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  /* Achado #131 v3: 10px de row-gap fixo deixava as 4 linhas espremidas
-     mesmo em telas altas, enquanto o espaço sobrando se acumulava todo
-     depois do teclado (.privacy tem margin-top: auto). vh-based, não um
-     px fixo pra um aparelho -- cresce em telas altas, ainda cabe em
-     telas curtas (390×667 confirmado sem cortar/rolar). Column-gap
-     inalterado: só a distância ENTRE as linhas devia crescer, as colunas
-     continuam alinhadas. */
-  gap: clamp(12px, 3.2dvh, 30px) 22px;
-  margin-bottom: clamp(12px, 3dvh, 26px);
+  gap: 8px;
 }
 
-/* Tamanho contínuo (não um degrau de breakpoint): o antigo
-   `max-height: 700px` derrubava tudo de uma vez pro modo compacto (58px,
-   gap 12px) e, logo acima de 700, o layout cheio já não cabia -- no
-   iPhone pelo Safari (área visível ~700) o teclado ficava miúdo e
-   espremido com um vão enorme embaixo. Agora botões, gaps, selo e título
-   encolhem juntos e proporcionalmente; a partir de ~760px de altura vale
-   o tamanho cheio aprovado no #131 (68px). */
-.keypad > button,
-.keypad > span {
-  width: clamp(56px, 9dvh, 68px);
-  height: clamp(56px, 9dvh, 68px);
-  justify-self: center;
+.pad button,
+.pad span {
+  height: 60px;
 }
 
-.keypad > button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgb(255 255 255 / 0.11);
-  border-radius: 50%;
-  color: #f5f1f3;
-  background: rgb(255 255 255 / 0.045);
-  transition:
-    transform 120ms ease,
-    background-color 120ms ease,
-    border-color 120ms ease;
-}
-
-.keypad > button:active {
-  transform: scale(0.92);
-  border-color: rgb(var(--pin-accent-rgb) / 0.34);
-  background: rgb(var(--pin-accent-rgb) / 0.12);
-}
-
-.keypad > button:disabled {
-  opacity: 0.62;
-}
-
-.keypad strong {
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 520;
+.page .pad button {
+  border-radius: 16px;
+  background: var(--t-sub);
+  font-size: 25px;
+  font-weight: 700;
+  transition: 0.1s;
   font-variant-numeric: tabular-nums;
 }
 
-.keypad small {
-  min-height: 8px;
-  margin-top: 3px;
-  font-size: 7px;
-  font-weight: 720;
-  letter-spacing: 0.16em;
+.page .pad button:active {
+  background: var(--t-soft);
+  color: var(--t-deep);
+  transform: scale(0.96);
 }
 
-.keypad svg {
-  color: #a69ca1;
+/* Durante a conferência e na espera do limite de tentativas o teclado não
+   aceita toque (disabled) e esmaece; no erro e no acerto ele fica como no
+   desenho. */
+.page:not([data-estado]) .pad button:disabled,
+.page[data-estado="espera"] .pad button:disabled {
+  opacity: 0.55;
 }
 
-/* "Cancelar" do Cofre: texto solto, sem o círculo das teclas -- como o
-   "Cancelar" do código de acesso do iOS. */
-.keypad > button[data-key="cancel"] {
-  border-color: transparent;
+.page .pad button.del {
   background: transparent;
+  color: var(--t-mut);
+  display: grid;
+  place-items: center;
 }
 
-.keypad > button[data-key="cancel"]:active {
-  transform: none;
-  border-color: transparent;
-  background: transparent;
-  opacity: 0.5;
+.page .forgot {
+  display: block;
+  margin: 10px auto 0;
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--t-mut);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--t-mut) 45%, transparent);
+  text-underline-offset: 3px;
 }
 
-.textKey {
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: #f5f1f3;
+.page .forgot:active {
+  color: var(--t-deep);
 }
 
-.privacy {
+/* "Esqueci o PIN" aberto: a confirmação da conta, no lugar do teclado. */
+.ajuda {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: auto 0 0;
-  color: #8e858a;
-  font-size: 11px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 4px 0;
 }
 
-.privacy svg {
-  color: var(--pin-accent);
-  flex-shrink: 0;
+.ajuda strong {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
-.page :focus-visible {
-  outline: 2px solid #f7f2f4;
-  outline-offset: -3px;
+.ajuda p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--t-mut);
 }
 
-/* Só telas realmente baixas (paisagem, iPhone SE 1ª geração): o resto
-   já escala sozinho pelos clamp()/dvh acima. */
-@media (max-height: 620px) {
-  .intro p {
-    min-height: 0;
+/* Celular baixo (iPhone SE, 667px): teclado e casas encolhem para a
+   folha não passar da tela. Em 844 e 932 nada disto vale. */
+@media (max-height: 720px) {
+  .boxes {
+    margin-top: 20px;
   }
+  .pad button,
+  .pad span {
+    height: 50px;
+  }
+}
 
-  .keypad {
-    row-gap: 10px;
+@keyframes pinShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-9px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes pinPop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dots i {
-    transition: background-color 120ms ease;
+  .shake,
+  .boxes i.filled::after,
+  .page[data-estado="ok"] .shield {
+    animation: none;
   }
 }

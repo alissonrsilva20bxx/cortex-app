@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -63,25 +63,10 @@ describe("FinanceiroTab.tsx keeps the 4 real sub-tabs, no reduction to a single 
 describe("FinanceiroHeroCard.tsx (issue #136) uses real data/calculations, never a hardcoded lab value", () => {
   const src = read("components/financeiro/FinanceiroHeroCard.tsx");
 
-  it("computes the chart from real lib/finance.ts calls, not a static dataset", () => {
-    expect(src).toContain("buildChartData(");
-    expect(src).toContain("last30DaysSpark(");
-  });
-
   it("formats every displayed value through formatBRL(prop), never a literal currency string", () => {
     expect(src).toContain("formatBRL(totalEntradaMes");
     expect(src).toContain("formatBRL(totalDespMes");
     expect(src).toContain("formatBRL(saldo");
-  });
-
-  it("uses the line-chart component (AreaSparkline, gradient fill + var(--accent), no hardcoded pink) as the 'area' preference option", () => {
-    expect(src).toContain("<AreaSparkline");
-    expect(src).not.toMatch(/#ff2d78|#ff4f85|#ff376e/i);
-  });
-
-  it("preserves the real bar/area chart preference (chartType prop) — never forces line-only, dropping the 'Barras' option", () => {
-    expect(src).toContain("<MiniBarChart");
-    expect(src).toMatch(/chartType\s*===\s*"area"/);
   });
 
   it("does not contain any of the lab's hardcoded FinanceScreen numbers/text", () => {
@@ -115,6 +100,114 @@ describe("FinanceiroHeroCard.tsx (issue #136) uses real data/calculations, never
   });
 });
 
+// Correção do gráfico (print do operador de 09/10/2026): o aprovado são as
+// 2 barras horizontais do "Saldo do mês" (verde: entrou; vermelho: saiu),
+// não os 8 palitos verticais (S1…S8). Os palitos saíram por inteiro.
+describe("Financeiro sem palitos: só a barra entrou x saiu do Saldo do mês", () => {
+  const hero = read("components/financeiro/FinanceiroHeroCard.tsx");
+  const semComentarios = hero
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+
+  it("o componente dos palitos e o gráfico de área foram apagados", () => {
+    for (const f of [
+      "components/financeiro/FinanceiroGrafico.tsx",
+      "components/charts/AreaSparkline.tsx",
+    ])
+      expect(existsSync(join(__dirname, "..", "..", f))).toBe(false);
+    expect(semComentarios).not.toMatch(/FinanceiroGrafico|grafico-palitos/);
+  });
+
+  it("nenhum palito em lugar nenhum do Financeiro", () => {
+    for (const f of readdirSync(
+      join(__dirname, "..", "..", "components", "financeiro")
+    ))
+      expect(read(`components/financeiro/${f}`)).not.toMatch(
+        /MiniBarChart|AreaSparkline|buildChartData|last30DaysSpark/
+      );
+  });
+
+  it("as funções de dados dos palitos saíram de lib/finance.ts", () => {
+    const fin = read("lib/finance.ts");
+    expect(fin).not.toMatch(/buildChartData|last30DaysSpark|ChartPeriod/);
+  });
+
+  it("a preferência 'Gráfico — Financeiro' (barras/área) saiu dos Ajustes e das páginas", () => {
+    expect(read("components/ajustes/AjustesTab.tsx")).not.toContain(
+      "Gráfico — Financeiro"
+    );
+    expect(read("lib/types.ts")).not.toMatch(/financeiro: "bar" \| "area"/);
+    for (const p of ["app/page.tsx", "app/dev-preview/app/page.tsx"])
+      expect(read(p)).not.toMatch(/chartPrefs\.financeiro/);
+  });
+
+  it("a barra: verde (entrou) e vermelha (saiu) do tema, proporcionais aos totais do mês", () => {
+    expect(semComentarios).toMatch(
+      /flex: totalEntradaMes, background: "var\(--t-green\)"/
+    );
+    expect(semComentarios).toMatch(
+      /flex: totalDespMes, background: "var\(--t-red\)"/
+    );
+    expect(semComentarios).toContain(
+      "<span>Entrou {formatBRL(totalEntradaMes)}</span>"
+    );
+    expect(semComentarios).toContain(
+      "<span>Saiu {formatBRL(totalDespMes)}</span>"
+    );
+  });
+
+  it("no lugar do desenho: abaixo do saldo e acima dos 4 cards", () => {
+    const saldo = semComentarios.indexOf("{formatBRL(saldo)}");
+    const barra = semComentarios.indexOf('background: "var(--t-green)"');
+    const entradas = semComentarios.indexOf(
+      "<span style={ROTULO}>Entradas</span>"
+    );
+    expect(saldo).toBeGreaterThan(0);
+    expect(barra).toBeGreaterThan(saldo);
+    expect(entradas).toBeGreaterThan(barra);
+  });
+});
+
+// Correção da barra (09/10/2026): ela sempre aparece. Antes, com o mês
+// zerado (R$ 0 de entrada e de saída), não desenhava nada.
+describe("barra entrou x saiu do Saldo do mês: sempre desenhada", () => {
+  const hero = read("components/financeiro/FinanceiroHeroCard.tsx")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+
+  it("a barra não depende de haver movimento no mês (nada de `movimento > 0 &&` em volta)", () => {
+    expect(hero).not.toMatch(/\{movimento > 0 && \(\s*<div/);
+    expect(hero).toMatch(
+      /<div\s+data-saldo-barra=\{movimento > 0 \? "movimento" : "vazia"\}/
+    );
+  });
+
+  it("mês zerado: a trilha cinza vazia (--t-line), mesma altura e lugar", () => {
+    const barra = hero.slice(hero.indexOf("data-saldo-barra"));
+    expect(barra).toMatch(/height: "8px",/);
+    expect(barra).toMatch(/borderRadius: "4px",/);
+    expect(barra).toMatch(
+      /background: movimento > 0 \? undefined : "var\(--t-line\)",/
+    );
+  });
+
+  it("cada lado só aparece com valor: só entrada é verde inteiro; só saída, vermelho inteiro", () => {
+    expect(hero).toMatch(
+      /\{totalEntradaMes > 0 && \(\s*<span\s+style=\{\{ flex: totalEntradaMes, background: "var\(--t-green\)" \}\}/
+    );
+    expect(hero).toMatch(
+      /\{totalDespMes > 0 && \(\s*<span style=\{\{ flex: totalDespMes, background: "var\(--t-red\)" \}\} \/>/
+    );
+  });
+
+  it("o laboratório monta os 3 casos pelo ?financeiro=", () => {
+    const lab = read("app/dev-preview/app/page.tsx");
+    expect(lab).toMatch(
+      /aplicarCasoFinanceiro\(\s*buildMockAppSeed\(\{ objetivosCount \}\),\s*ehCasoFinanceiro\(financeiroParam\) \? financeiroParam : null\s*\)/
+    );
+  });
+});
+
 describe("Honesty rule (issue #136) — variação % only with a real, non-zero previous period", () => {
   const src = read("components/financeiro/FinanceiroHeroCard.tsx");
 
@@ -128,8 +221,21 @@ describe("Honesty rule (issue #136) — variação % only with a real, non-zero 
     expect(src).toMatch(/prevSaldo !== 0[\s\S]{0,100}: null/);
   });
 
-  it("the badge only renders when variacaoPct is not null (real, computable value)", () => {
-    expect(src).toContain("{variacaoPct !== null && (");
+  it("the badge only SHOWS a number when variacaoPct is not null; otherwise it is an invisible, number-free placeholder that keeps the row height", () => {
+    const chip = src.slice(src.indexOf("data-saldo-chip"));
+    expect(chip).toMatch(
+      /^data-saldo-chip=\{variacaoPct !== null \? "visivel" : "reservado"\}/
+    );
+    expect(chip).toMatch(/aria-hidden=\{variacaoPct === null \|\| undefined\}/);
+    expect(chip).toMatch(
+      /visibility: variacaoPct !== null \? undefined : "hidden",/
+    );
+    // O texto reservado é um espaço não separável: nenhum "0%" inventado.
+    expect(chip).toMatch(
+      /\{variacaoPct !== null\s*\? `\$\{sobe \? "\+" : ""\}\$\{Math\.round\(variacaoPct\)\}% vs \$\{mesAnterior\}`\s*: "\\u00a0"\}/
+    );
+    // O chip não some mais do DOM (sumir encolhia a linha e subia a barra).
+    expect(src).not.toContain("{variacaoPct !== null && (");
   });
 });
 
@@ -137,10 +243,15 @@ describe("VisaoTab.tsx (issue #136) — Movimentações recentes, 100% real, nev
   const src = read("components/financeiro/VisaoTab.tsx");
 
   it("merges real jobs concluídos + receitas + despesas, sorted by real date — never a static array", () => {
-    expect(src).toContain('.filter((j) => j.status === "concluído")');
-    expect(src).toContain("despesas.map((d) =>");
-    expect(src).toContain("receitas.map((r) =>");
-    expect(src).toContain(".sort((a, b) => b.data.localeCompare(a.data))");
+    // A conta mora em movimentos.ts (testável sem JSX); a VisaoTab só a usa.
+    expect(src).toContain(
+      'import { buildMovements, type Movement } from "./movimentos";'
+    );
+    const mov = read("components/financeiro/movimentos.ts");
+    expect(mov).toContain('.filter((j) => j.status === "concluído")');
+    expect(mov).toContain("despesas.map((d) =>");
+    expect(mov).toContain("receitas.map((r) =>");
+    expect(mov).toContain(".sort((a, b) => b.data.localeCompare(a.data))");
   });
 
   it("does not contain the lab's hardcoded movement rows", () => {

@@ -21,6 +21,9 @@ export interface Job {
   status: JobStatus;
   observacoes?: string;
   criadoEm: string; // ISO timestamp
+  /** Dia em que o dinheiro entrou (YYYY-MM-DD); sem ele, o do atendimento.
+   * O Financeiro lança a entrada nesse dia (migration 0037). */
+  pagoEm?: string | null;
 }
 
 export interface Meta {
@@ -60,6 +63,9 @@ export interface Usuario {
   nome: string;
   email: string;
   avatarUrl?: string;
+  /** Telefone da conta (Supabase `phone` ou o do cadastro), quando houver.
+   * Vai no cartão do "Lembrar cliente"; sem ele, a linha some. */
+  telefone?: string | null;
 }
 
 export interface HomeCardConfig {
@@ -81,6 +87,5 @@ export interface CardStyleConfig {
 }
 
 export interface ChartPrefConfig {
-  financeiro: "bar" | "area";
   jobs: "bar" | "donut";
 }

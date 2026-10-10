@@ -1,0 +1,548 @@
+/*
+ * Pagamento "C Transparente" (desenho aprovado em
+ * pagamento-transparente-stripe.html, variante A: Stripe embutido): as telas
+ * 2 (Pagamento), 3 (Confirmação) e 4 (Erro). Medidas do desenho; cores só
+ * pelos tokens do app (--t-*), nos 8 temas, claro e escuro.
+ *
+ * --pe-*: as cores do bloco do Stripe (o Payment Element, um iframe do
+ * Stripe que recebe estas cores em rgb() pela `appearance`). No pink-neon
+ * são as do desenho; nos outros temas saem dos tokens.
+ */
+.ob {
+  --pe-bg: color-mix(in srgb, var(--t-card) 62%, var(--t-redebg));
+  --pe-input: color-mix(in srgb, var(--t-card), var(--t-line) 25%);
+  --pe-border: color-mix(in srgb, var(--t-line), var(--t-ink) 8%);
+  --pe-text: var(--t-ink);
+  --pe-label: color-mix(in srgb, var(--t-mut), var(--t-ink) 30%);
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--t-phbg);
+  color: var(--t-ink);
+  font-family:
+    var(--font-jakarta),
+    "Plus Jakarta Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    system-ui,
+    sans-serif;
+  font-size: 16px;
+  line-height: normal;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: none;
+}
+.ob::-webkit-scrollbar {
+  display: none;
+}
+:global([data-mode="light"]) .ob {
+  --pe-bg: var(--t-card);
+  --pe-input: var(--t-card);
+  --pe-border: color-mix(in srgb, var(--t-line), var(--t-mut) 12%);
+  --pe-text: var(--t-ink);
+  --pe-label: color-mix(in srgb, var(--t-mut), var(--t-ink) 15%);
+}
+:global([data-theme="pink-neon"]) .ob {
+  --pe-bg: #1b0e15;
+  --pe-input: #2a1620;
+  --pe-border: #44303b;
+  --pe-text: #faeef5;
+  --pe-label: #b6aab1;
+}
+:global([data-mode="light"][data-theme="pink-neon"]) .ob {
+  --pe-bg: #ffffff;
+  --pe-input: #ffffff;
+  --pe-border: #e0e0e6;
+  --pe-text: #0f0f0f;
+  --pe-label: #5d5a63;
+}
+
+.screen {
+  min-height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  /* 58px do desenho já contam a barra de status; no iPhone com notch o
+     recuo do sistema manda. */
+  padding: max(58px, calc(env(safe-area-inset-top, 0px) + 8px)) 18px
+    calc(28px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+}
+.screen[hidden] {
+  display: none;
+}
+.coluna {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.screen button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.screen svg {
+  display: block;
+}
+
+/* ── Topo ── */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  margin-bottom: 6px;
+}
+.screen .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 10px 0 2px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.back svg {
+  width: 22px;
+  height: 22px;
+}
+.titulo {
+  margin: 4px 0 0;
+  font-size: 22px;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.lead {
+  margin: 6px 0 0;
+  color: var(--t-mut);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* ── Aviso do teste ── */
+.notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--t-bsoft);
+  color: var(--t-ink);
+  border-radius: 16px;
+  padding: 11px 13px;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-top: 12px;
+}
+.notice svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--t-blue);
+  margin-top: 1px;
+}
+
+/* ── Resumo ── */
+.sum {
+  background: var(--t-card);
+  border-radius: 18px;
+  padding: 12px 14px;
+  box-shadow: 0 0 0 1px var(--t-line);
+  margin: 10px 0 12px;
+}
+.linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13.5px;
+  padding: 4px 0;
+}
+.linha span:last-child {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.linha.total {
+  border-top: 1px solid var(--t-line);
+  margin-top: 4px;
+  padding-top: 9px;
+  font-weight: 800;
+  font-size: 15px;
+}
+.linha.mut {
+  color: var(--t-mut);
+}
+.strike {
+  text-decoration: line-through;
+  color: var(--t-mut);
+  font-weight: 600;
+}
+.save {
+  color: var(--t-green);
+  font-weight: 800;
+}
+
+/* ── Bloco do Stripe ── */
+.stripeBloco {
+  border-radius: 18px;
+  padding: 12px;
+  background: var(--pe-bg);
+  box-shadow: 0 0 0 1px var(--pe-border);
+  position: relative;
+  margin-bottom: 12px;
+  color: var(--pe-text);
+}
+.stripeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.stripeHead span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.stripeHead svg {
+  width: 14px;
+  height: 14px;
+  color: var(--t-green);
+}
+.moeda {
+  color: var(--pe-label);
+  font-weight: 600;
+}
+.powered {
+  text-align: center;
+  font-size: 11px;
+  color: var(--pe-label);
+  margin-top: 4px;
+}
+.indisponivel {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--pe-label);
+  padding: 4px 2px 6px;
+}
+.indisponivel b {
+  display: block;
+  color: var(--pe-text);
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+.carregando {
+  min-height: 228px;
+  display: grid;
+  place-items: center;
+  color: var(--pe-label);
+  font-size: 13px;
+}
+/* O Stripe simulado do laboratório desenha os mesmos campos do desenho. */
+.stripeBloco :global(.pe-tabs) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.stripeBloco :global(.pe-tab) {
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 0 0 1px var(--pe-border);
+  background: var(--pe-input);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: left;
+  color: var(--pe-label);
+  min-height: 44px;
+}
+.stripeBloco :global(.pe-tab.on) {
+  box-shadow: 0 0 0 2px var(--t-acc);
+  color: var(--pe-text);
+}
+.stripeBloco :global(.pe-tab svg) {
+  width: 16px;
+  height: 16px;
+  display: block;
+  margin-bottom: 2px;
+}
+.stripeBloco :global(.pe-label) {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pe-label);
+  margin: 0 0 4px;
+}
+.stripeBloco :global(.pe-input) {
+  min-height: 44px;
+  border-radius: 12px;
+  background: var(--pe-input);
+  box-shadow: 0 0 0 1px var(--pe-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-size: 15px;
+  color: var(--pe-text);
+  margin-bottom: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.stripeBloco :global(.pe-input small) {
+  font-size: 11px;
+  color: var(--pe-label);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.stripeBloco :global(.pe-row) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ── Botões ── */
+.push {
+  margin-top: auto;
+  padding-top: 14px;
+}
+.screen .cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 54px;
+  border-radius: 999px;
+  background: var(--t-acc);
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+  box-shadow: 0 10px 24px var(--t-plus-sh);
+  transition: transform 0.12s;
+  flex-shrink: 0;
+}
+.screen .cta:active {
+  transform: scale(0.98);
+}
+.screen .cta:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.screen .ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 50px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: inset 0 0 0 1.5px var(--t-line);
+  margin-top: 10px;
+}
+.screen .link {
+  display: block;
+  margin: 6px auto 0;
+  min-height: 44px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--t-mut);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
+  border-right-color: transparent;
+  animation: girar 0.7s linear infinite;
+}
+
+/* ── Confirmação ── */
+.win {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 40px;
+  flex: 1;
+}
+.medal {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in srgb, var(--t-acc) 25%, #fff),
+    var(--t-acc) 55%,
+    color-mix(in srgb, var(--t-acc) 60%, #000)
+  );
+  color: #fff;
+  animation:
+    pop 0.6s ease,
+    brilho 2.4s ease-in-out 0.6s infinite;
+}
+.medal svg {
+  width: 58px;
+  height: 58px;
+}
+.win h3 {
+  margin: 22px 0 0;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+.win p {
+  margin: 8px 0 0;
+  color: var(--t-mut);
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 310px;
+}
+.win .pushWin {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+/* ── Erro ── */
+.errIc {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--t-rsoft);
+  color: var(--t-red);
+  display: grid;
+  place-items: center;
+  margin: 20px auto 0;
+  animation: tremer 0.45s ease;
+}
+.errIc svg {
+  width: 34px;
+  height: 34px;
+}
+.centro {
+  text-align: center;
+}
+.titulo.centro {
+  margin-top: 16px;
+  font-size: 24px;
+}
+.stripeMsg {
+  background: var(--t-sub);
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin-top: 12px;
+  color: var(--t-mut);
+}
+.stripeMsg b {
+  color: var(--t-ink);
+}
+.stripeMsg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+.safe {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--t-gsoft);
+  border-radius: 16px;
+  padding: 11px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 12px;
+}
+.safe svg {
+  width: 20px;
+  height: 20px;
+  color: var(--t-green);
+  flex-shrink: 0;
+}
+
+.entra {
+  animation: entra 0.28s ease;
+}
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes tremer {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-7px);
+  }
+  50% {
+    transform: translateX(7px);
+  }
+  75% {
+    transform: translateX(-4px);
+  }
+}
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes brilho {
+  0%,
+  100% {
+    box-shadow:
+      0 18px 40px var(--t-plus-sh),
+      0 0 0 0 var(--t-plus-sh);
+  }
+  50% {
+    box-shadow:
+      0 18px 40px var(--t-plus-sh),
+      0 0 0 16px transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entra,
+  .medal,
+  .errIc,
+  .spinner {
+    animation: none;
+  }
+}
+
+:global([data-theme="pink-neon"]) .medal {
+  background: radial-gradient(
+    circle at 35% 30%,
+    #ffd1e2,
+    var(--t-acc) 55%,
+    #a30c47
+  );
+}

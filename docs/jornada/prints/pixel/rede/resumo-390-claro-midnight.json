@@ -1,0 +1,30 @@
+{
+  "quando": "2026-10-08T01:07:41.062Z",
+  "baseUrl": "http://localhost:3111",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "relogio": "2026-09-23T13:00:00.000Z",
+  "meta": "difPct < 0,5",
+  "resultados": [
+    {
+      "tela": "rede",
+      "largura": 390,
+      "modo": "claro",
+      "tema": "midnight",
+      "layout": "E",
+      "metrica": "pixelmatch YIQ, limiar 0.1",
+      "difPct": 3.61,
+      "pixelsDiferentes": 47531,
+      "tamanho": "780x1688",
+      "mesmoTamanho": true,
+      "reflowDoMockup": false,
+      "estilos": null,
+      "erros": [
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML.",
+        "Text content does not match server-rendered HTML."
+      ]
+    }
+  ]
+}

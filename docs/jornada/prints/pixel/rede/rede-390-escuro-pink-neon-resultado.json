@@ -1,0 +1,21 @@
+{
+  "tela": "rede",
+  "largura": 390,
+  "modo": "escuro",
+  "tema": "pink-neon",
+  "layout": "E",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "difPct": 4.8812,
+  "pixelsDiferentes": 64268,
+  "tamanho": "780x1688",
+  "mesmoTamanho": true,
+  "reflowDoMockup": false,
+  "estilos": null,
+  "erros": [
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML."
+  ]
+}

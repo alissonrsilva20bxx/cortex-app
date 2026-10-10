@@ -19,6 +19,7 @@ import {
   Camera,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { useJornada } from "@/components/jornada/useJornada";
 import { FeedScreen } from "./FeedScreen";
 import { SearchScreen } from "./SearchScreen";
 import { AmigasScreen } from "./AmigasScreen";
@@ -117,6 +118,7 @@ import {
   type Notificacao,
 } from "@/lib/rede/notificacoes";
 import * as redeCache from "@/lib/rede/redeCache";
+import type { AbaFeed } from "@/lib/rede/abasFeed";
 import {
   processarFotoParaAvatar,
   FotoInvalidaError,
@@ -212,6 +214,8 @@ interface Props {
   /** Incrementa a cada toque na aba Rede já ativa: com subtela aberta,
    * volta pra raiz (Feed); já no Feed, rola suave pro topo. */
   reselectSignal?: number;
+  /** Incrementa a cada toque no "+" da Rede (Postar): abre o compositor. */
+  postarSignal?: number;
   /** Simula o teclado abrindo — repassado até a página, que esconde a BottomNav. */
   onChatFocusChange?: (focused: boolean) => void;
   /** Foto de perfil salva na Rede (null = perfil sem foto), pra o Início
@@ -223,10 +227,12 @@ export function RedeTab({
   usuario,
   active = true,
   reselectSignal,
+  postarSignal,
   onChatFocusChange,
   onFotoPerfilChange,
 }: Props) {
   const toast = useToast();
+  const { registrar } = useJornada(usuario.id);
 
   // ── Semente do cache (síncrona, 1x por conta) ──
   // Lida no 1º render pra que os inicializadores de estado abaixo já
@@ -462,10 +468,10 @@ export function RedeTab({
   const [feedLoadingMore, setFeedLoadingMore] = useState(false);
   // Filtro Para você / Amigas -- lembrado entre remounts (o remount do PIN
   // não deve jogar a pessoa de volta pra "Para você").
-  const [segmento, setSegmento] = useState<"paraVoce" | "amigas">(() =>
+  const [segmento, setSegmento] = useState<AbaFeed>(() =>
     redeCache.segmentoLembrado()
   );
-  const trocarSegmento = useCallback((valor: "paraVoce" | "amigas") => {
+  const trocarSegmento = useCallback((valor: AbaFeed) => {
     setSegmento(valor);
     redeCache.lembrarSegmento(valor);
   }, []);
@@ -998,6 +1004,15 @@ export function RedeTab({
 
   // ── Sheets ──
   const [composerOpen, setComposerOpen] = useState(false);
+
+  // O "+" da Rede (Postar, pixel do mockup) abre o mesmo compositor do
+  // "Postar" do feed. O valor inicial do sinal não é um toque.
+  const ultimoPostar = useRef(postarSignal);
+  useEffect(() => {
+    if (postarSignal === ultimoPostar.current) return;
+    ultimoPostar.current = postarSignal;
+    setComposerOpen(true);
+  }, [postarSignal]);
   const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
   const [menuPost, setMenuPost] = useState<FeedPost | null>(null);
@@ -1841,6 +1856,8 @@ export function RedeTab({
         setWishlistItems((prev) =>
           prev.map((w) => (w.id === atualizado.id ? atualizado : w))
         );
+        if (atualizado.valorAtual > existing.valorAtual)
+          void registrar("guardar_meta");
         toast.success("Desejo atualizado!");
       } else {
         const criado = await criarWishlistItem(supabase, {
@@ -1852,6 +1869,7 @@ export function RedeTab({
           privacidade: form.privacidade,
         });
         setWishlistItems((prev) => [criado, ...prev]);
+        if (criado.valorAtual > 0) void registrar("guardar_meta");
         toast.success("Desejo adicionado!");
       }
       setWishlistFormOpen(false);
@@ -2013,7 +2031,6 @@ export function RedeTab({
             usuarioFotoUrl={fotoPropria}
             posts={posts}
             friends={friends.map((f) => f.id)}
-            amigas={friends}
             wishlistItems={wishlistItems}
             pendingRequestsCount={requests.length}
             unreadChats={unreadChats}
@@ -2024,6 +2041,10 @@ export function RedeTab({
             loadingMore={feedLoadingMore}
             segmento={segmento}
             onSegmentoChange={trocarSegmento}
+            ativa={active}
+            sugestoes={sugestoes}
+            sentRequests={sentRequests}
+            onSendRequest={(id) => void sendRequest(id)}
             onLoadMore={loadMorePosts}
             onRefresh={atualizarFeedPuxando}
             onOpenSearch={() => push({ type: "busca" })}
@@ -2038,7 +2059,6 @@ export function RedeTab({
               push({ type: "amigas" });
             }}
             onOpenWishlist={() => push({ type: "wishlist" })}
-            onOpenComposer={() => setComposerOpen(true)}
             onOpenAutor={openAutor}
             {...postActions}
           />

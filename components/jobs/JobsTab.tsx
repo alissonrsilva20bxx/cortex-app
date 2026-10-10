@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -17,7 +23,11 @@ import { JobDetailSheet } from "./JobDetailSheet";
 import { AgendaResumoSheet } from "./AgendaResumoSheet";
 import { NotasSection } from "./NotasSection";
 import { AgendaProximoCard } from "./AgendaProximoCard";
+import { LembrarClienteSheet } from "./LembrarClienteSheet";
+import type { Profissional } from "@/lib/lembrete/cartaoAgenda";
 import { AgendaAcoes } from "./AgendaAcoes";
+import { IconeBusca, IconeSino } from "./agendaIcones";
+import { BotaoRedondo } from "@/components/ui/cabecalho";
 import { EstaSemanaSection, ProximasSemanasSection } from "./AgendaListas";
 import {
   addDays,
@@ -25,7 +35,10 @@ import {
   atendimentosProximasSemanas,
   buildWeekStrip,
   formatHora,
+  paginaAoAssentar,
   proximoAtendimento,
+  rotuloDaSemana,
+  semanasDesdeHoje,
   startOfWeek,
   toISODate,
 } from "./agendaSemana";
@@ -43,6 +56,13 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "concluído", label: "Concluído" },
   { id: "cancelado", label: "Cancelado" },
 ];
+
+/** Faixa da semana com catraca: entre uma semana e a outra, o mesmo vão de
+ * 5px que separa os dias (no meio do gesto, o sábado de uma e o domingo da
+ * outra não encostam). O passo de uma página é a largura da faixa mais esse
+ * vão. */
+const VAO_ENTRE_SEMANAS = 5;
+const passoDaFaixa = (el: HTMLElement) => el.clientWidth + VAO_ENTRE_SEMANAS;
 
 /**
  * Lacuna entre dois atendimentos consecutivos só ganha uma nota de
@@ -92,6 +112,7 @@ function dbRowToJob(row: {
   status: JobStatus;
   observacoes: string | null;
   criado_em: string;
+  pago_em?: string | null;
 }): Job {
   return {
     id: row.id,
@@ -104,6 +125,7 @@ function dbRowToJob(row: {
     status: row.status,
     observacoes: row.observacoes ?? undefined,
     criadoEm: row.criado_em,
+    pagoEm: row.pago_em ?? null,
   };
 }
 
@@ -211,6 +233,8 @@ interface Props {
    */
   onEditJob: (job: Job | null) => void;
   chartType?: "bar" | "donut";
+  /** Nome e telefone dela, para o cartão do "Lembrar cliente". */
+  profissional?: Profissional;
 }
 
 export function JobsTab({
@@ -218,6 +242,7 @@ export function JobsTab({
   refreshTrigger,
   onEditJob,
   chartType = "bar",
+  profissional,
 }: Props) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filter, setFilter] = useState<Filter>("todos");
@@ -250,6 +275,13 @@ export function JobsTab({
   // Resumo/Anotações — composição aprovada de /dev-preview/ios (issue
   // #135), substitui o card colapsável único de antes.
   const [detailJob, setDetailJob] = useState<Job | null>(null);
+  // "Lembrar cliente": guarda o id e lê o agendamento atual da lista, para
+  // o cartão ser refeito na hora se o agendamento mudar.
+  const [lembrarId, setLembrarId] = useState<string | null>(null);
+  const setLembrarJobId = (job: Job) => setLembrarId(job.id);
+  const lembrarJob = lembrarId
+    ? (jobs.find((j) => j.id === lembrarId) ?? null)
+    : null;
   const [resumoOpen, setResumoOpen] = useState(false);
   const [anotacoesOpen, setAnotacoesOpen] = useState(false);
 
@@ -355,6 +387,104 @@ export function JobsTab({
     setSelectedDate(nextSelected);
   }
 
+  // Faixa da semana com catraca: 3 páginas (semana anterior, a visível e a
+  // seguinte) num rolador horizontal com `scroll-snap` por semana inteira.
+  // Parada, a faixa mostra sempre a página do meio -- o mesmo desenho de
+  // antes, no mesmo lugar (pixel da Agenda). Quando a rolagem assenta numa
+  // página vizinha, a semana troca (`goToWeek`) e a faixa volta pro meio
+  // antes da pintura, já com as semanas novas em volta.
+  const faixaRef = useRef<HTMLDivElement>(null);
+  const semanaAtual = semanasDesdeHoje(weekStart, now);
+  const paginas = [-1, 0, 1].map((offset) => {
+    const inicio = addDays(weekStart, offset * 7);
+    return {
+      offset,
+      inicio,
+      weekStrip: offset === 0 ? weekStrip : buildWeekStrip(inicio, filtered),
+      // O ponto de "dia com atendimento" só aparece fora da semana
+      // corrente: na corrente os atendimentos já estão listados logo
+      // abaixo, em "Esta semana", e o mockup normativo desenha a faixa sem
+      // pontos (ordem do operador, pixel da Agenda). Por página: a vizinha
+      // da semana visível pode ser a corrente.
+      naSemanaCorrente: semanasDesdeHoje(inicio, now) === 0,
+    };
+  });
+
+  // Estável (só lê o ref): entra nas dependências dos dois efeitos abaixo.
+  const centralizarFaixa = useCallback(() => {
+    const el = faixaRef.current;
+    if (el) el.scrollLeft = passoDaFaixa(el);
+  }, []);
+
+  // A cada troca de semana, a faixa volta pra página do meio antes da pintura.
+  useLayoutEffect(() => {
+    centralizarFaixa();
+  }, [weekStart, centralizarFaixa]);
+
+  function aoAssentarFaixa() {
+    const el = faixaRef.current;
+    if (!el) return;
+    const pagina =
+      el.clientWidth > 0
+        ? paginaAoAssentar(el.scrollLeft, passoDaFaixa(el))
+        : null;
+    if (pagina === -1 || pagina === 1) goToWeek(pagina);
+  }
+  // Os ouvintes abaixo ficam presos ao 1º render; o ref aponta sempre pra
+  // versão atual (com a semana e o dia de agora).
+  const assentarRef = useRef(aoAssentarFaixa);
+  assentarRef.current = aoAssentarFaixa;
+
+  useEffect(() => {
+    const el = faixaRef.current;
+    if (!el) return;
+    // A aba nasce escondida (largura 0): ao aparecer, ou ao girar o
+    // aparelho, a faixa volta pra página do meio.
+    const observador = new ResizeObserver(centralizarFaixa);
+    observador.observe(el);
+    // `scrollend` quando o navegador tem (assenta depois do dedo e do
+    // snap); senão, um pouco depois do último `scroll`. `paginaAoAssentar`
+    // só troca a semana numa borda de página, nunca no meio de um arrasto.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const assentar = () => assentarRef.current();
+    const rolar = () => {
+      clearTimeout(timer);
+      timer = setTimeout(assentar, 120);
+    };
+    const temScrollEnd = "onscrollend" in window;
+    if (temScrollEnd) el.addEventListener("scrollend", assentar);
+    else el.addEventListener("scroll", rolar, { passive: true });
+    return () => {
+      observador.disconnect();
+      clearTimeout(timer);
+      el.removeEventListener("scrollend", assentar);
+      el.removeEventListener("scroll", rolar);
+    };
+  }, [centralizarFaixa]);
+
+  /** As setas do painel giram a mesma catraca, com a animação do snap. */
+  function passarSemana(delta: -1 | 1) {
+    const el = faixaRef.current;
+    if (!el || el.clientWidth === 0) {
+      goToWeek(delta);
+      return;
+    }
+    const reduzir = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    el.scrollTo({
+      left: passoDaFaixa(el) * (1 + delta),
+      behavior: reduzir ? "auto" : "smooth",
+    });
+  }
+
+  function voltarParaHoje() {
+    const hoje = new Date();
+    setRatchetDirection(semanaAtual > 0 ? "backward" : "forward");
+    setWeekStart(startOfWeek(hoje));
+    setSelectedDate(toISODate(hoje));
+  }
+
   return (
     <div className="pb-4 flex flex-col" style={{ gap: "16px" }}>
       {/* Animação "catraca" — transportada do laboratório
@@ -373,6 +503,9 @@ export function JobsTab({
           (cubic-bezier(0.34,1.56,0.64,1)) em vez de herdar essa referência
           quebrada. */}
       <style jsx>{`
+        .agenda-semanas::-webkit-scrollbar {
+          display: none;
+        }
         .agenda-ratchet-day {
           transform-origin: center 72%;
           transition:
@@ -380,9 +513,6 @@ export function JobsTab({
             background-color 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
             box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
             transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .agenda-ratchet-day[data-selected="true"] {
-          transform: translateY(-3px) scale(1.035);
         }
         .agenda-ratchet-day[data-selected="true"] .agenda-ratchet-number {
           animation: agenda-ratchet-tick 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -436,21 +566,40 @@ export function JobsTab({
           continua no painel do dia logo abaixo. A busca e o sino do mockup
           não entram: o ticket não pede e não há ação ligada a eles na
           Agenda. */}
-      <h1
-        style={{
-          fontSize: "24px",
-          fontWeight: 800,
-          letterSpacing: "-0.5px",
-          color: "var(--text)",
-        }}
-      >
-        Agenda
-      </h1>
+      <div className="flex items-center" style={{ gap: "10px" }}>
+        <h1
+          className="flex-grow"
+          style={{
+            fontSize: "24px",
+            fontWeight: 800,
+            letterSpacing: "-0.5px",
+            lineHeight: 1.1,
+            color: "var(--text)",
+          }}
+        >
+          Agenda
+        </h1>
+        {/* Busca e sino do mockup (pixel do mockup, layout C). A Agenda não
+            tem busca nem notificação ligadas: ficam desabilitados, como o
+            "Bloquear" (J03: não criar ação nova), e listados no PR. */}
+        {[
+          { rotulo: "Buscar", Icone: IconeBusca },
+          { rotulo: "Notificações", Icone: IconeSino },
+        ].map(({ rotulo, Icone }) => (
+          <BotaoRedondo key={rotulo} rotulo={rotulo}>
+            <Icone size={20} />
+          </BotaoRedondo>
+        ))}
+      </div>
 
       {/* Próximo atendimento em destaque (J03). Só depois da 1ª carga
           bem-sucedida: antes disso "nenhum agendado" seria mentira. */}
       {hasLoadedOnce && (
-        <AgendaProximoCard job={proximo} onOpen={setDetailJob} />
+        <AgendaProximoCard
+          job={proximo}
+          onOpen={setDetailJob}
+          onLembrar={setLembrarJobId}
+        />
       )}
 
       {/* As 4 ações do mockup. "Novo" abre o mesmo JobForm do "+";
@@ -468,31 +617,6 @@ export function JobsTab({
       />
 
       <div>
-        {/* Navegação de semana — sem equivalente no mockup, que mostra
-            uma semana fixa. Necessária no app real (ver `goToWeek`).
-            Setas 44×44px. */}
-        <div className="flex items-center justify-between mb-2">
-          <button
-            onClick={() => goToWeek(-1)}
-            aria-label="Semana anterior"
-            className="flex items-center justify-center active:opacity-70"
-            style={{ minWidth: "44px", minHeight: "44px" }}
-          >
-            <ChevronLeft size={18} style={{ color: "var(--text-muted)" }} />
-          </button>
-          <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-            {formatWeekRangeLabel(weekStart)}
-          </span>
-          <button
-            onClick={() => goToWeek(1)}
-            aria-label="Próxima semana"
-            className="flex items-center justify-center active:opacity-70"
-            style={{ minWidth: "44px", minHeight: "44px" }}
-          >
-            <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
-          </button>
-        </div>
-
         {/* Tira da semana (J03) — 7 pílulas de 58px sobre `--card-solid`,
             letra do dia em cima e número embaixo, como o mockup. Três
             marcas independentes por dia: selecionado (fundo cheio no
@@ -501,355 +625,135 @@ export function JobsTab({
             atendimento). Hoje e dia com atendimento nunca usam a mesma
             marca. As datas vêm de `buildWeekStrip`, que segue a semana
             real, inclusive na virada do mês. */}
-        <div className="grid grid-cols-7" style={{ gap: "5px" }}>
-          {weekStrip.map(({ iso, letter, day, hasJobs }) => {
-            const selected = iso === selectedDate;
-            const isToday = iso === today;
-            return (
-              <button
-                key={iso}
-                onClick={() => selectDay(iso)}
-                aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}`}
-                aria-pressed={selected}
-                data-selected={selected}
-                className="agenda-ratchet-day flex flex-col items-center justify-center"
-                style={{
-                  height: "58px",
-                  borderRadius: "29px",
-                  background: selected ? "var(--accent)" : "var(--card-solid)",
-                  color: "var(--text)",
-                  boxShadow: selected ? "var(--glow-sm)" : "none",
-                  border:
-                    isToday && !selected ? "1px solid var(--accent)" : "none",
-                }}
-              >
-                <span style={{ fontSize: "10px", fontWeight: 600 }}>
-                  {letter}
-                </span>
-                <strong
-                  className="agenda-ratchet-number"
-                  style={{
-                    fontSize: "15px",
-                    fontWeight: 800,
-                    color: isToday && !selected ? "var(--accent)" : undefined,
-                  }}
-                >
-                  {day}
-                </strong>
-                <span
-                  className="rounded-full"
-                  style={{
-                    marginTop: "2px",
-                    width: "4px",
-                    height: "4px",
-                    background: hasJobs
-                      ? selected
-                        ? "var(--text)"
-                        : "var(--accent)"
-                      : "transparent",
-                  }}
-                />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Painel do dia selecionado — data por extenso + contagem real +
-          filtro de status (dado real preservado, escopado ao dia) +
-          timeline/estado vazio. Remonta a cada troca de dia (`key`) pra
-          tocar a animação. */}
-      <div
-        key={selectedDate}
-        data-direction={ratchetDirection}
-        className="agenda-ratchet-panel"
-      >
-        <div className="mb-2.5">
-          <div
-            className="flex items-center gap-2"
-            style={{ color: "var(--text-muted)" }}
-          >
-            <CalendarDays size={14} />
-            <h2 className="font-medium" style={{ fontSize: "11px" }}>
-              {formatSelectedDateLabel(selectedDate)}
-            </h2>
-          </div>
-          {!initialLoading && !blockingError && (
-            <p
-              className="mt-1"
-              style={{ fontSize: "11px", color: "var(--text-muted)" }}
-            >
-              {selectedDayJobs.length === 0
-                ? "Nenhum atendimento"
-                : selectedDayJobs.length === 1
-                  ? "1 atendimento"
-                  : `${selectedDayJobs.length} atendimentos`}
-            </p>
-          )}
-        </div>
-
-        {/* Falha ao revalidar com dado já carregado (issue #135, revisão
-            pós-fechamento) — os dados antigos continuam abaixo intactos
-            (`jobs` nunca é zerado em erro, ver o efeito de fetch), só um
-            aviso não-bloqueante + "Tentar novamente". Mesmo padrão visual
-            do banner `offline` de ChatListScreen.tsx (Rede) — reaproveita
-            a linguagem já estabelecida no app pra esse tipo de aviso, em
-            vez de inventar uma nova. */}
-        {loadError && hasLoadedOnce && (
-          <div
-            className="flex items-center gap-2 px-3.5 py-2.5 mb-3 text-xs font-medium"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--danger)",
-              borderRadius: "var(--radius-lg)",
-              color: "var(--text-2)",
-            }}
-          >
-            <AlertCircle
-              size={14}
-              className="shrink-0"
-              style={{ color: "var(--danger)" }}
-            />
-            <span className="flex-1">
-              Não foi possível atualizar. Mostrando dados já carregados.
-            </span>
-            <button
-              onClick={retryLoadJobs}
-              disabled={loading}
-              className="font-bold shrink-0 active:opacity-70 disabled:opacity-50"
-              style={{ color: "var(--accent)" }}
-            >
-              {loading ? "Tentando…" : "Tentar novamente"}
-            </button>
-          </div>
-        )}
-
-        {blockingError ? (
-          // 1ª carga falhou, sem nenhum dado confirmado ainda — distinto
-          // de "carregou e o dia está vazio de verdade" (achado real da
-          // revisão: antes, `data ? ... : []` tratava as duas situações
-          // como idênticas, um silêncio que engana a usuária). Sem
-          // filtros/timeline/total aqui: não há dado nenhum pra filtrar
-          // ou somar ainda.
-          <GlassCard
-            radius="md"
-            className="flex flex-col items-center justify-center px-6 text-center"
-            style={{
-              backdropFilter: "none",
-              WebkitBackdropFilter: "none",
-              background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
-              border: "1px solid var(--danger)",
-              minHeight: "160px",
-            }}
-          >
-            <AlertCircle size={22} style={{ color: "var(--danger)" }} />
-            <p
-              className="font-semibold mt-3"
-              style={{ fontSize: "12px", color: "var(--text)" }}
-            >
-              Não foi possível carregar sua agenda
-            </p>
-            <p
-              className="mt-1"
-              style={{ fontSize: "10px", color: "var(--text-muted)" }}
-            >
-              Verifique sua conexão e tente novamente.
-            </p>
-            <button
-              onClick={retryLoadJobs}
-              disabled={loading}
-              className="mt-4 px-4 rounded-xl text-xs font-bold active:opacity-70 disabled:opacity-50"
+        <div
+          ref={faixaRef}
+          // A troca de aba por gesto ignora este rolador: deslizar aqui
+          // troca a semana, nunca a aba.
+          data-no-tab-swipe=""
+          className="agenda-semanas"
+          aria-label="Semanas"
+          style={{
+            display: "flex",
+            gap: `${VAO_ENTRE_SEMANAS}px`,
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollSnapType: "x mandatory",
+            overscrollBehaviorX: "contain",
+            scrollbarWidth: "none",
+          }}
+        >
+          {paginas.map(({ offset, inicio, weekStrip, naSemanaCorrente }) => (
+            <div
+              key={toISODate(inicio)}
+              data-semana={offset}
+              // Só a semana do meio é lida e recebe foco; as vizinhas são
+              // o que aparece durante o gesto.
+              aria-hidden={offset !== 0}
+              className="grid grid-cols-7"
               style={{
-                minHeight: "44px",
-                color: "var(--accent)",
-                border: "1px solid var(--accent)",
+                flex: "0 0 100%",
+                gap: "5px",
+                // Catraca: uma semana inteira por gesto, nunca duas.
+                scrollSnapAlign: "start",
+                scrollSnapStop: "always",
               }}
             >
-              {loading ? "Tentando…" : "Tentar novamente"}
-            </button>
-          </GlassCard>
-        ) : (
-          <>
-            {/* Filtro de status — reimplementado localmente (não o
-                componente compartilhado `FilterChips`, usado também no
-                Cofre): o relatório de paridade encontrou que
-                `FilterChips` renderiza ~28px de altura, abaixo do alvo
-                mínimo de 44px, mas é compartilhado fora do escopo deste
-                ticket (mudar o componente afetaria o Cofre, "não amplie
-                para... outras abas"). Mesmo visual, só com alvo de toque
-                corrigido. */}
-            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar mb-3 mt-2.5">
-              {FILTERS.map(({ id, label }) => {
-                const active = filter === id;
+              {weekStrip.map(({ iso, letter, day, hasJobs }) => {
+                const selected = iso === selectedDate;
+                const isToday = iso === today;
                 return (
                   <button
-                    key={id}
-                    onClick={() => setFilter(id)}
-                    aria-pressed={active}
-                    className="shrink-0 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center justify-center"
+                    key={iso}
+                    onClick={() => selectDay(iso)}
+                    tabIndex={offset === 0 ? undefined : -1}
+                    aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}`}
+                    aria-pressed={selected}
+                    data-selected={selected}
+                    // Pixel do mockup: o dia escolhido não sobe nem brilha, e
+                    // letra e número têm 2px entre si.
+                    className="agenda-ratchet-day relative flex flex-col items-center justify-center"
                     style={{
-                      minHeight: "44px",
-                      background: active
-                        ? "rgb(var(--accent-rgb) / 0.18)"
-                        : "var(--surface)",
-                      border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
-                      // #175: mesmo ajuste do FilterChips -- --accent sobre o
-                      // próprio tom ficava abaixo de 4,5:1.
-                      color: active
-                        ? "var(--accent-deep-2)"
-                        : "var(--text-muted)",
-                      boxShadow: active ? "var(--glow-sm)" : "none",
+                      height: "58px",
+                      borderRadius: "29px",
+                      gap: "2px",
+                      background: selected
+                        ? "var(--accent)"
+                        : "var(--card-solid)",
+                      color: "var(--text)",
+                      border:
+                        isToday && !selected
+                          ? "1px solid var(--accent)"
+                          : "none",
                     }}
                   >
-                    {label}
+                    <span style={{ fontSize: "10px", fontWeight: 600 }}>
+                      {letter}
+                    </span>
+                    <strong
+                      className="agenda-ratchet-number"
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: 800,
+                        color:
+                          isToday && !selected ? "var(--accent)" : undefined,
+                      }}
+                    >
+                      {day}
+                    </strong>
+                    {/* Ponto de dia com atendimento (J03), só fora da semana
+                          corrente (ver `naSemanaCorrente`). Fora do fluxo, pra
+                          letra e número ficarem onde o mockup põe. */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute rounded-full"
+                      style={{
+                        bottom: "6px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: "4px",
+                        height: "4px",
+                        background:
+                          hasJobs && !naSemanaCorrente
+                            ? selected
+                              ? "var(--text)"
+                              : "var(--accent)"
+                            : "transparent",
+                      }}
+                    />
                   </button>
                 );
               })}
             </div>
+          ))}
+        </div>
 
-            {initialLoading ? (
-              <div className="flex justify-center pt-8">
-                <div
-                  className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-                  style={{ borderColor: "var(--accent)" }}
-                />
-              </div>
-            ) : selectedDayJobs.length === 0 ? (
-              // Fundação Visual (#142): style só com o `minHeight`
-              // genuinamente próprio deste card vazio — o resto vem do
-              // material neutro compartilhado de `.glass-card`
-              // (globals.css), mesma correção já feita em Início (achado
-              // #131) pro `SOLID_SURFACE_STYLE` com `border:
-              // var(--border-color)` tingido por tema.
-              <GlassCard
-                radius="md"
-                className="flex flex-col items-center justify-center px-6 text-center"
-                style={{ minHeight: "118px" }}
-              >
-                <CalendarDays
-                  size={22}
-                  style={{ color: "var(--text-muted)" }}
-                />
-                <p
-                  className="font-semibold mt-3"
-                  style={{ fontSize: "12px", color: "var(--text)" }}
-                >
-                  Nenhum compromisso neste dia
-                </p>
-                <p
-                  className="mt-1"
-                  style={{ fontSize: "10px", color: "var(--text-muted)" }}
-                >
-                  {filter === "todos"
-                    ? "Toque no + para adicionar um atendimento."
-                    : `Nenhum atendimento "${filter}" neste dia.`}
-                </p>
-              </GlassCard>
-            ) : (
-              // Timeline por horário (issue #135, composição de
-              // /dev-preview/ios) — substitui a lista plana anterior. Linha
-              // vertical contínua + um ponto por atendimento + o card
-              // (JobCard, já sem a própria coluna de hora — ela mora aqui,
-              // fora do card) + indicador decorativo de lacuna entre
-              // atendimentos (ver `buildTimelineItems`).
-              <div className="relative">
-                <div
-                  className="absolute"
-                  style={{
-                    left: "40px",
-                    top: "6px",
-                    bottom: "6px",
-                    width: "1px",
-                    background: "var(--border-color)",
-                  }}
-                />
-                <div className="space-y-4">
-                  {timelineItems.map((item, i) =>
-                    item.kind === "job" ? (
-                      <div
-                        key={item.job.id}
-                        className="relative grid items-start gap-3"
-                        style={{ gridTemplateColumns: "34px 1fr" }}
-                      >
-                        <span
-                          className="font-semibold tabular-nums text-right"
-                          style={{
-                            fontSize: "11px",
-                            color: "var(--text-muted)",
-                            paddingTop: "14px",
-                          }}
-                        >
-                          {formatHora(item.job.hora)}
-                        </span>
-                        <span
-                          className="absolute rounded-full"
-                          style={{
-                            // Centralizado na linha vertical (left: 40px, o
-                            // meio dos 12px de gap entre a coluna de hora e o
-                            // card — gap-3), nunca em cima da própria coluna
-                            // de hora (0–34px): sobrepor o texto era um bug
-                            // real, achado na validação visual desta ticket
-                            // (o "0" de "14h00" ficava escondido atrás do
-                            // ponto).
-                            left: "35px",
-                            top: "16px",
-                            width: "10px",
-                            height: "10px",
-                            background: "var(--accent)",
-                            boxShadow: "0 0 8px rgb(var(--accent-rgb) / 0.5)",
-                          }}
-                        />
-                        <GlassCard radius="md" className="p-3.5">
-                          <JobCard job={item.job} onClick={setDetailJob} />
-                        </GlassCard>
-                      </div>
-                    ) : (
-                      // Nota neutra, sem caixa/borda tracejada (que sugeriria
-                      // um slot reservável) — só uma linha de texto discreta
-                      // no fluxo: separação puramente visual, sem nenhuma
-                      // alegação sobre o espaço entre os dois atendimentos.
-                      <div
-                        key={`next-note-${i}`}
-                        className="flex items-center gap-2"
-                        style={{
-                          paddingLeft: "46px",
-                          color: "var(--text-muted)",
-                        }}
-                      >
-                        <Clock3 size={12} className="shrink-0" />
-                        <span style={{ fontSize: "11px" }}>
-                          Próximo atendimento às {item.nextLabel}
-                        </span>
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Total do dia — soma real dos atendimentos visíveis
-                (respeita o filtro ativo, mesmo dado que a timeline acima
-                mostra; nunca um valor de "previsão" separado que
-                incluiria atendimentos escondidos pelo filtro). Rótulo
-                muda conforme o dia selecionado seja hoje ou não —
-                "previsto hoje" só faz sentido pra hoje. */}
-            {!initialLoading && selectedDayJobs.length > 0 && (
-              <div
-                className="flex items-center justify-between mt-5 pt-4"
-                style={{ borderTop: "1px solid var(--border-color)" }}
-              >
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {isViewingToday ? "Total de hoje" : "Total do dia"}
-                </span>
-                <strong
-                  className="font-bold tabular-nums"
-                  style={{ fontSize: "20px", color: "var(--accent)" }}
-                >
-                  {formatBRL(dayTotal, 2)}
-                </strong>
-              </div>
-            )}
-          </>
+        {/* Indicador de qual semana a faixa mostra e a volta para hoje: só
+            fora da semana corrente (na corrente a tela é a do mockup). */}
+        {semanaAtual !== 0 && (
+          <div
+            className="flex items-center justify-between"
+            style={{ marginTop: "6px" }}
+          >
+            <span
+              aria-live="polite"
+              style={{ fontSize: "11px", color: "var(--text-muted)" }}
+            >
+              {rotuloDaSemana(semanaAtual)} · {formatWeekRangeLabel(weekStart)}
+            </span>
+            <button
+              type="button"
+              onClick={voltarParaHoje}
+              className="font-bold active:opacity-70"
+              style={{
+                minHeight: "44px",
+                padding: "0 4px 0 12px",
+                fontSize: "12px",
+                color: "var(--accent)",
+              }}
+            >
+              Voltar para hoje
+            </button>
+          </div>
         )}
       </div>
 
@@ -866,6 +770,345 @@ export function JobsTab({
           />
         </>
       )}
+
+      {/* Explorar a agenda (pixel do mockup, layout C): o mockup não tem
+          navegação de semana, painel do dia nem filtro; a tela dele vai da
+          tira direto pra "Esta semana" e "Próximas semanas". Pra a tela ser
+          a do mockup sem tirar nada do que o app já faz, esses controles
+          descem pra cá, depois das listas. A tira lá em cima continua
+          escolhendo o dia; as setas daqui trocam a semana dela. */}
+      <div>
+        {/* Navegação de semana — sem equivalente no mockup, que mostra
+              uma semana fixa. Necessária no app real (ver `goToWeek`).
+              Setas 44×44px. */}
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={() => passarSemana(-1)}
+            aria-label="Semana anterior"
+            className="flex items-center justify-center active:opacity-70"
+            style={{ minWidth: "44px", minHeight: "44px" }}
+          >
+            <ChevronLeft size={18} style={{ color: "var(--text-muted)" }} />
+          </button>
+          <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+            {formatWeekRangeLabel(weekStart)}
+          </span>
+          <button
+            onClick={() => passarSemana(1)}
+            aria-label="Próxima semana"
+            className="flex items-center justify-center active:opacity-70"
+            style={{ minWidth: "44px", minHeight: "44px" }}
+          >
+            <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
+          </button>
+        </div>
+
+        {/* Painel do dia selecionado — data por extenso + contagem real +
+            filtro de status (dado real preservado, escopado ao dia) +
+            timeline/estado vazio. Remonta a cada troca de dia (`key`) pra
+            tocar a animação. */}
+        <div
+          key={selectedDate}
+          data-direction={ratchetDirection}
+          className="agenda-ratchet-panel"
+        >
+          <div className="mb-2.5">
+            <div
+              className="flex items-center gap-2"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <CalendarDays size={14} />
+              <h2 className="font-medium" style={{ fontSize: "11px" }}>
+                {formatSelectedDateLabel(selectedDate)}
+              </h2>
+            </div>
+            {!initialLoading && !blockingError && (
+              <p
+                className="mt-1"
+                style={{ fontSize: "11px", color: "var(--text-muted)" }}
+              >
+                {selectedDayJobs.length === 0
+                  ? "Nenhum atendimento"
+                  : selectedDayJobs.length === 1
+                    ? "1 atendimento"
+                    : `${selectedDayJobs.length} atendimentos`}
+              </p>
+            )}
+          </div>
+
+          {/* Falha ao revalidar com dado já carregado (issue #135, revisão
+              pós-fechamento) — os dados antigos continuam abaixo intactos
+              (`jobs` nunca é zerado em erro, ver o efeito de fetch), só um
+              aviso não-bloqueante + "Tentar novamente". Mesmo padrão visual
+              do banner `offline` de ChatListScreen.tsx (Rede) — reaproveita
+              a linguagem já estabelecida no app pra esse tipo de aviso, em
+              vez de inventar uma nova. */}
+          {loadError && hasLoadedOnce && (
+            <div
+              className="flex items-center gap-2 px-3.5 py-2.5 mb-3 text-xs font-medium"
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--danger)",
+                borderRadius: "var(--radius-lg)",
+                color: "var(--text-2)",
+              }}
+            >
+              <AlertCircle
+                size={14}
+                className="shrink-0"
+                style={{ color: "var(--danger)" }}
+              />
+              <span className="flex-1">
+                Não foi possível atualizar. Mostrando dados já carregados.
+              </span>
+              <button
+                onClick={retryLoadJobs}
+                disabled={loading}
+                className="font-bold shrink-0 active:opacity-70 disabled:opacity-50"
+                style={{ color: "var(--accent)" }}
+              >
+                {loading ? "Tentando…" : "Tentar novamente"}
+              </button>
+            </div>
+          )}
+
+          {blockingError ? (
+            // 1ª carga falhou, sem nenhum dado confirmado ainda — distinto
+            // de "carregou e o dia está vazio de verdade" (achado real da
+            // revisão: antes, `data ? ... : []` tratava as duas situações
+            // como idênticas, um silêncio que engana a usuária). Sem
+            // filtros/timeline/total aqui: não há dado nenhum pra filtrar
+            // ou somar ainda.
+            <GlassCard
+              radius="md"
+              className="flex flex-col items-center justify-center px-6 text-center"
+              style={{
+                backdropFilter: "none",
+                WebkitBackdropFilter: "none",
+                background: "color-mix(in srgb, var(--surface) 92%, var(--bg))",
+                border: "1px solid var(--danger)",
+                minHeight: "160px",
+              }}
+            >
+              <AlertCircle size={22} style={{ color: "var(--danger)" }} />
+              <p
+                className="font-semibold mt-3"
+                style={{ fontSize: "12px", color: "var(--text)" }}
+              >
+                Não foi possível carregar sua agenda
+              </p>
+              <p
+                className="mt-1"
+                style={{ fontSize: "10px", color: "var(--text-muted)" }}
+              >
+                Verifique sua conexão e tente novamente.
+              </p>
+              <button
+                onClick={retryLoadJobs}
+                disabled={loading}
+                className="mt-4 px-4 rounded-xl text-xs font-bold active:opacity-70 disabled:opacity-50"
+                style={{
+                  minHeight: "44px",
+                  color: "var(--accent)",
+                  border: "1px solid var(--accent)",
+                }}
+              >
+                {loading ? "Tentando…" : "Tentar novamente"}
+              </button>
+            </GlassCard>
+          ) : (
+            <>
+              {/* Filtro de status — reimplementado localmente (não o
+                  componente compartilhado `FilterChips`, usado também no
+                  Cofre): o relatório de paridade encontrou que
+                  `FilterChips` renderiza ~28px de altura, abaixo do alvo
+                  mínimo de 44px, mas é compartilhado fora do escopo deste
+                  ticket (mudar o componente afetaria o Cofre, "não amplie
+                  para... outras abas"). Mesmo visual, só com alvo de toque
+                  corrigido. */}
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar mb-3 mt-2.5">
+                {FILTERS.map(({ id, label }) => {
+                  const active = filter === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setFilter(id)}
+                      aria-pressed={active}
+                      className="shrink-0 px-3.5 rounded-full text-xs font-semibold transition-all flex items-center justify-center"
+                      style={{
+                        minHeight: "44px",
+                        background: active
+                          ? "rgb(var(--accent-rgb) / 0.18)"
+                          : "var(--surface)",
+                        border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
+                        // #175: mesmo ajuste do FilterChips -- --accent sobre o
+                        // próprio tom ficava abaixo de 4,5:1.
+                        color: active
+                          ? "var(--accent-deep-2)"
+                          : "var(--text-muted)",
+                        boxShadow: active ? "var(--glow-sm)" : "none",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {initialLoading ? (
+                <div className="flex justify-center pt-8">
+                  <div
+                    className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+                    style={{ borderColor: "var(--accent)" }}
+                  />
+                </div>
+              ) : selectedDayJobs.length === 0 ? (
+                // Fundação Visual (#142): style só com o `minHeight`
+                // genuinamente próprio deste card vazio — o resto vem do
+                // material neutro compartilhado de `.glass-card`
+                // (globals.css), mesma correção já feita em Início (achado
+                // #131) pro `SOLID_SURFACE_STYLE` com `border:
+                // var(--border-color)` tingido por tema.
+                <GlassCard
+                  radius="md"
+                  className="flex flex-col items-center justify-center px-6 text-center"
+                  style={{ minHeight: "118px" }}
+                >
+                  <CalendarDays
+                    size={22}
+                    style={{ color: "var(--text-muted)" }}
+                  />
+                  <p
+                    className="font-semibold mt-3"
+                    style={{ fontSize: "12px", color: "var(--text)" }}
+                  >
+                    Nenhum compromisso neste dia
+                  </p>
+                  <p
+                    className="mt-1"
+                    style={{ fontSize: "10px", color: "var(--text-muted)" }}
+                  >
+                    {filter === "todos"
+                      ? "Toque no + para adicionar um atendimento."
+                      : `Nenhum atendimento "${filter}" neste dia.`}
+                  </p>
+                </GlassCard>
+              ) : (
+                // Timeline por horário (issue #135, composição de
+                // /dev-preview/ios) — substitui a lista plana anterior. Linha
+                // vertical contínua + um ponto por atendimento + o card
+                // (JobCard, já sem a própria coluna de hora — ela mora aqui,
+                // fora do card) + indicador decorativo de lacuna entre
+                // atendimentos (ver `buildTimelineItems`).
+                <div className="relative">
+                  <div
+                    className="absolute"
+                    style={{
+                      left: "40px",
+                      top: "6px",
+                      bottom: "6px",
+                      width: "1px",
+                      background: "var(--border-color)",
+                    }}
+                  />
+                  <div className="space-y-4">
+                    {timelineItems.map((item, i) =>
+                      item.kind === "job" ? (
+                        <div
+                          key={item.job.id}
+                          className="relative grid items-start gap-3"
+                          style={{ gridTemplateColumns: "34px 1fr" }}
+                        >
+                          <span
+                            className="font-semibold tabular-nums text-right"
+                            style={{
+                              fontSize: "11px",
+                              color: "var(--text-muted)",
+                              paddingTop: "14px",
+                            }}
+                          >
+                            {formatHora(item.job.hora)}
+                          </span>
+                          <span
+                            className="absolute rounded-full"
+                            style={{
+                              // Centralizado na linha vertical (left: 40px, o
+                              // meio dos 12px de gap entre a coluna de hora e o
+                              // card — gap-3), nunca em cima da própria coluna
+                              // de hora (0–34px): sobrepor o texto era um bug
+                              // real, achado na validação visual desta ticket
+                              // (o "0" de "14h00" ficava escondido atrás do
+                              // ponto).
+                              left: "35px",
+                              top: "16px",
+                              width: "10px",
+                              height: "10px",
+                              background: "var(--accent)",
+                              boxShadow: "0 0 8px rgb(var(--accent-rgb) / 0.5)",
+                            }}
+                          />
+                          <GlassCard radius="md" className="p-3.5">
+                            <JobCard job={item.job} onClick={setDetailJob} />
+                          </GlassCard>
+                        </div>
+                      ) : (
+                        // Nota neutra, sem caixa/borda tracejada (que sugeriria
+                        // um slot reservável) — só uma linha de texto discreta
+                        // no fluxo: separação puramente visual, sem nenhuma
+                        // alegação sobre o espaço entre os dois atendimentos.
+                        <div
+                          key={`next-note-${i}`}
+                          className="flex items-center gap-2"
+                          style={{
+                            paddingLeft: "46px",
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          <Clock3 size={12} className="shrink-0" />
+                          <span style={{ fontSize: "11px" }}>
+                            Próximo atendimento às {item.nextLabel}
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Total do dia — soma real dos atendimentos visíveis
+                  (respeita o filtro ativo, mesmo dado que a timeline acima
+                  mostra; nunca um valor de "previsão" separado que
+                  incluiria atendimentos escondidos pelo filtro). Rótulo
+                  muda conforme o dia selecionado seja hoje ou não —
+                  "previsto hoje" só faz sentido pra hoje. */}
+              {!initialLoading && selectedDayJobs.length > 0 && (
+                <div
+                  className="flex items-center justify-between mt-5 pt-4"
+                  style={{ borderTop: "1px solid var(--border-color)" }}
+                >
+                  <span
+                    style={{ fontSize: "12px", color: "var(--text-muted)" }}
+                  >
+                    {isViewingToday ? "Total de hoje" : "Total do dia"}
+                  </span>
+                  <strong
+                    className="font-bold tabular-nums"
+                    style={{ fontSize: "20px", color: "var(--accent)" }}
+                  >
+                    {formatBRL(dayTotal, 2)}
+                  </strong>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <LembrarClienteSheet
+        job={lembrarJob}
+        profissional={profissional ?? { nome: "" }}
+        onClose={() => setLembrarId(null)}
+      />
 
       <JobDetailSheet
         job={detailJob}

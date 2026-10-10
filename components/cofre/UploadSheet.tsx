@@ -5,6 +5,7 @@ import { FileUp, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { FilterChips } from "@/components/ui/FilterChips";
+import { useJornada } from "@/components/jornada/useJornada";
 
 type Categoria = "comprovantes" | "conversas" | "documentos" | "pessoal";
 
@@ -28,6 +29,7 @@ export function UploadSheet({ open, userId, onClose, onUploaded }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { registrar } = useJornada(userId);
 
   function handleClose() {
     setFile(null);
@@ -46,6 +48,7 @@ export function UploadSheet({ open, userId, onClose, onUploaded }: Props) {
       .upload(path, file, { contentType: file.type });
     setUploading(false);
     if (err) return setError(err.message);
+    if (categoria === "comprovantes") void registrar("comprovante_cofre");
     setFile(null);
     onUploaded();
     onClose();

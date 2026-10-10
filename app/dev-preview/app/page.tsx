@@ -12,6 +12,23 @@ import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { CofreCard } from "@/components/home/CofreCard";
 import { SemanaSection } from "@/components/home/SemanaSection";
 import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
+import { JornadaCard } from "@/components/home/JornadaCard";
+import { destinoDoProximoPasso } from "@/components/jornada/progresso";
+import { JornadaScreen } from "@/components/jornada/JornadaScreen";
+import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
+import {
+  lojaDaUsuaria,
+  usarTransporteDeLaboratorio,
+} from "@/lib/jornada/cliente";
+import {
+  criarTransporteJornadaLaboratorio,
+  estadoJornadaAno,
+  estadoJornadaContaNova,
+  estadoJornadaExemplo,
+  NOME_DO_PROTOTIPO,
+  prepararComemoracaoDeLaboratorio,
+  type DemoDeComemoracao,
+} from "@/lib/mockJornada";
 import { JobsTab } from "@/components/jobs/JobsTab";
 import { JobForm } from "@/components/jobs/JobForm";
 import { FinanceiroTab } from "@/components/financeiro/FinanceiroTab";
@@ -23,16 +40,42 @@ import { UploadSheet } from "@/components/cofre/UploadSheet";
 import { RedeGatedTab } from "@/components/rede/RedeGatedTab";
 import { AjustesTab } from "@/components/ajustes/AjustesTab";
 import { PinScreen } from "@/components/pin/PinScreen";
+import { usarReauth } from "@/lib/reauth";
+import { reauthDeLaboratorio } from "@/lib/reauthLaboratorio";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { AppTour } from "@/components/onboarding/AppTour";
 import type { RedeAcessoTour } from "@/lib/appTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
+import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
+import { PagamentoTela } from "@/components/pagamento/PagamentoTela";
+import { usarPagamento } from "@/lib/pagamento/cliente";
+import {
+  confirmacoesDoLaboratorio,
+  pagamentoDeLaboratorio,
+  quandoAprovarNoLaboratorio,
+  resultadoDoLaboratorio,
+  type ResultadoSimulado,
+} from "@/lib/pagamento/laboratorio";
+import type { CenarioDaCobranca } from "@/lib/pagamento/regras";
+import {
+  guardarPlanoEscolhido,
+  planoPorId,
+  type OnEscolherPlano,
+  type Plano,
+  type PlanoId,
+} from "@/lib/planos";
+import { TRIAL_DIAS, type EstadoAssinatura } from "@/lib/assinatura";
 import { supabase, __setMockSupabaseClient } from "@/lib/supabase";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { createMockSupabaseClient } from "@/lib/mockSupabase";
-import { buildMockAppSeed, MOCK_APP_USUARIO } from "@/lib/mockAppData";
+import {
+  buildMockAppSeed,
+  MOCK_APP_USUARIO,
+  aplicarCasoFinanceiro,
+  ehCasoFinanceiro,
+} from "@/lib/mockAppData";
 import {
   enableDevPreviewGateSession,
   disableDevPreviewGateSession,
@@ -61,7 +104,7 @@ const DEFAULT_HOME_CARDS: HomeCardConfig = {
   objetivos: true,
   agenda: true,
 };
-const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
+const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 export default function DevPreviewApp() {
   // Ativa o client mockado uma única vez, síncrono, antes de qualquer aba
@@ -81,16 +124,51 @@ export default function DevPreviewApp() {
       objetivosParam !== null && /^\d+$/.test(objetivosParam)
         ? Number(objetivosParam)
         : undefined;
+    // `?financeiro=vazio|so-entradas|so-saidas` — só diagnóstico da barra
+    // entrou x saiu do Financeiro (mês zerado, só entradas, só saídas).
+    const financeiroParam =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("financeiro")
+        : null;
     __setMockSupabaseClient(
       createMockSupabaseClient(
-        buildMockAppSeed({ objetivosCount }),
+        aplicarCasoFinanceiro(
+          buildMockAppSeed({ objetivosCount }),
+          ehCasoFinanceiro(financeiroParam) ? financeiroParam : null
+        ),
         MOCK_APP_USUARIO.id
+      )
+    );
+    // "Sua Jornada" (J12): sem servidor, o estado vem de lib/mockJornada.ts.
+    // `?jornada=nova` mostra a conta nova (tudo zero); sem o parâmetro, uma
+    // usuária com algumas semanas de Jornada.
+    const jornadaParam =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("jornada")
+        : null;
+    usarTransporteDeLaboratorio(
+      criarTransporteJornadaLaboratorio(
+        jornadaParam === "nova"
+          ? estadoJornadaContaNova()
+          : jornadaParam === "ano"
+            ? estadoJornadaAno()
+            : estadoJornadaExemplo()
       )
     );
   }
 
   const toast = useToast();
-  const usuario = MOCK_APP_USUARIO;
+  // `?jornada=agora|ano`: a usuária do protótipo da Jornada (Bella), pra a
+  // tela sair igual à referência; sem o parâmetro, a usuária dos mockups.
+  const [usuario] = useState(() => {
+    const jornada =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("jornada")
+        : null;
+    return jornada === "agora" || jornada === "ano"
+      ? { ...MOCK_APP_USUARIO, nome: NOME_DO_PROTOTIPO }
+      : MOCK_APP_USUARIO;
+  });
 
   // Só afeta as duas chamadas reais do Gate da Rede (solicitar-beta,
   // convites) — anexa um bearer token de uma conta de teste local
@@ -115,6 +193,7 @@ export default function DevPreviewApp() {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [redeReselect, setRedeReselect] = useState(0);
   const [fabOpen, setFabOpen] = useState(false);
+  const [jornadaAberta, setJornadaAberta] = useState(false);
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
@@ -141,7 +220,7 @@ export default function DevPreviewApp() {
   // evolução" do HeroCard — issue #134) — ver comentário de `focusTab` em
   // FinanceiroTab.tsx (redesign iOS #122/#125).
   const [financeiroFocusTab, setFinanceiroFocusTab] = useState<
-    "metas" | "visao" | null
+    "metas" | "visao" | "saidas" | null
   >(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -168,32 +247,137 @@ export default function DevPreviewApp() {
   // vazios próprios (não os do app, que têm seed) só pra forçar os 4 passos
   // (welcome/goal/job/aha) a aparecerem; `onOpenJobForm` reaproveita o
   // `JobForm` já montado abaixo.
+  // Sem Supabase aqui: a confirmação da conta ("Esqueci o PIN", desligar
+  // ou trocar o PIN) usa o adaptador do laboratório (senha "senha123").
+  // Instalado já no 1º render, antes dos filhos lerem o adaptador.
+  // O efeito instala de novo: no StrictMode a limpeza roda no meio.
+  useState(() => usarReauth(reauthDeLaboratorio));
+  useEffect(() => {
+    usarReauth(reauthDeLaboratorio);
+    return () => usarReauth(null);
+  }, []);
   const [onboardingPreview, setOnboardingPreview] = useState(false);
   // Tour guiado (espelha app/page.tsx); `__previewTour()` abre direto.
   const [tourOpen, setTourOpen] = useState(false);
   const [redeAcesso, setRedeAcesso] = useState<RedeAcessoTour>("pendente");
+  // "+" da Rede (Postar): cada toque abre o compositor da Rede.
+  const [redePostar, setRedePostar] = useState(0);
   // Foto do perfil da Rede: o Início mostra a mesma (cai na da conta Google
   // quando a Rede não tem foto ou não está liberada).
   const [fotoRede, setFotoRede] = useState<string | null>(null);
   useEffect(() => {
     const w = window as unknown as Record<string, () => void>;
-    w.__previewLock = () => {
-      setPinHash((h) => h ?? "preview-lock-000000000000000000000000000000");
+    // `hash` opcional: os testes passam o SHA-256 de um PIN conhecido para
+    // conferir o acerto; sem ele vale um hash que nenhum PIN gera.
+    const ganchos = w as unknown as Record<string, (hash?: string) => void>;
+    ganchos.__previewLock = (hash) => {
+      setPinHash(
+        (h) => hash ?? h ?? "preview-lock-000000000000000000000000000000"
+      );
       setLocked(true);
     };
+    // Só liga o PIN, sem travar o app: o Cofre passa a pedir o PIN.
+    ganchos.__previewPin = (hash) =>
+      setPinHash(hash ?? "preview-lock-000000000000000000000000000000");
     w.__previewUnlock = () => setLocked(false);
     w.__previewOnboarding = () => setOnboardingPreview(true);
+    // Teste grátis: `__previewTrial(3)` = faltam 3 dias; `0` = terminou;
+    // `null` = volta ao do banco do laboratório; o 2º argumento é o teste
+    // da conta (7, ou 14 de quem começou antes do corte). `__previewPlanos()`
+    // abre a escolha de plano.
+    (
+      w as unknown as Record<string, (n: number | null, dias?: number) => void>
+    ).__previewTrial = (faltam, dias = TRIAL_DIAS) =>
+      setTrialForcado(
+        faltam == null
+          ? undefined
+          : faltam <= 0
+            ? { status: "vencida", diasRestantes: 0, diasDoTeste: dias }
+            : {
+                status: "trial",
+                diasRestantes: Math.min(faltam, dias),
+                diasDoTeste: dias,
+              }
+      );
+    w.__previewPlanos = () => setAbrirPlanos((n) => n + 1);
+    // Pagamento (Stripe): sem chaves aqui. `__previewPagamento()` abre a tela
+    // como ela fica hoje ("pagamento ainda não disponível");
+    // `{ simulado: true }` liga o Stripe simulado (lib/pagamento/
+    // laboratorio.ts), `resultado` "aprovado" | "recusado", `caso` "antes"
+    // (teste correndo, cobrança em 7 dias) | "dia8" (paga hoje), `plano`.
+    (
+      w as unknown as Record<
+        string,
+        (o?: {
+          simulado?: boolean;
+          resultado?: ResultadoSimulado;
+          caso?: "antes" | "dia8";
+          plano?: PlanoId;
+        }) => void
+      >
+    ).__previewPagamento = (o = {}) => {
+      usarPagamento(o.simulado ? pagamentoDeLaboratorio : null);
+      // O "webhook" do laboratório: aprovado marca a conta como "ativa" no
+      // Supabase simulado, como o webhook do Stripe faria no servidor.
+      // (o builder do Supabase só executa no `then`: sem ele, nada grava)
+      quandoAprovarNoLaboratorio(() => {
+        void supabase
+          .from("configuracoes")
+          .update({ assinatura_status: "ativa" })
+          .eq("user_id", usuario.id)
+          .then(() => undefined);
+      });
+      resultadoDoLaboratorio(o.resultado ?? "aprovado");
+      const hoje = new Date();
+      setCenarioPagamento(
+        o.caso === "dia8"
+          ? { tipo: "agora" }
+          : o.caso === "antes"
+            ? {
+                tipo: "fimDoTeste",
+                em: new Date(
+                  hoje.getFullYear(),
+                  hoje.getMonth(),
+                  hoje.getDate() + 7
+                ),
+              }
+            : undefined
+      );
+      setPlanoNoPagamento(planoPorId(o.plano ?? "3m"));
+    };
+    (
+      w as unknown as Record<string, () => number>
+    ).__previewPagamentoConfirmacoes = confirmacoesDoLaboratorio;
     w.__previewTour = () => {
       setActiveTab("home");
       setTourOpen(true);
     };
+    // "Sua Jornada": toca a mesma comemoração que o botão de demonstração do
+    // protótipo (selo | estagio | meta), pelo caminho de verdade: o próximo
+    // registro do laboratório devolve a fila e o palco toca.
+    (
+      w as unknown as Record<string, (demo: DemoDeComemoracao) => void>
+    ).__previewComemoracao = (demo) => {
+      const { acao } = prepararComemoracaoDeLaboratorio(demo);
+      void lojaDaUsuaria(MOCK_APP_USUARIO.id).registrar(acao);
+    };
     return () => {
+      delete w.__previewComemoracao;
       delete w.__previewLock;
+      delete w.__previewPin;
       delete w.__previewUnlock;
       delete w.__previewTour;
       delete w.__previewOnboarding;
+      delete w.__previewTrial;
+      delete w.__previewPlanos;
+      delete w.__previewPagamento;
+      delete w.__previewPagamentoConfirmacoes;
+      quandoAprovarNoLaboratorio(null);
+      usarPagamento(null);
     };
-  }, []);
+    // `usuario` do laboratório é fixo (a conta simulada): o efeito roda uma
+    // vez, como antes.
+  }, [usuario.id]);
 
   useEffect(() => {
     if (locked) return;
@@ -214,6 +398,7 @@ export default function DevPreviewApp() {
             status: j.status as Job["status"],
             observacoes: (j.observacoes as string | null) ?? undefined,
             criadoEm: j.criado_em as string,
+            pagoEm: (j.pago_em as string | null | undefined) ?? null,
           }))
         );
       }
@@ -257,8 +442,26 @@ export default function DevPreviewApp() {
     window.location.reload();
   }
 
+  const [trialForcado, setTrialForcado] = useState<
+    EstadoAssinatura | null | undefined
+  >(undefined);
+  const [abrirPlanos, setAbrirPlanos] = useState(0);
+  // Espelha app/page.tsx: o ponto de entrada do Pagamento.
+  const [planoNoPagamento, setPlanoNoPagamento] = useState<Plano | null>(null);
+  const [releituraAssinatura, setReleituraAssinatura] = useState(0);
+  const [cenarioPagamento, setCenarioPagamento] = useState<
+    CenarioDaCobranca | undefined
+  >(undefined);
+  const escolherPlano: OnEscolherPlano = (plano) => {
+    guardarPlanoEscolhido(usuario.id, plano);
+    setPlanoNoPagamento(plano);
+  };
+
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
+    // A barra fica por cima da Sua Jornada (protótipo): tocar numa aba fecha
+    // a Jornada e vai pra aba.
+    setJornadaAberta(false);
     // Mesmo gesto da rota real (app/page.tsx): tocar de novo na aba ativa
     // volta a Rede pra raiz ou rola a aba pro topo.
     if (tab === activeTab) {
@@ -280,6 +483,8 @@ export default function DevPreviewApp() {
       else setDespesaFormOpen(true);
     } else if (activeTab === "cofre") {
       setUploadOpen(true);
+    } else if (activeTab === "rede") {
+      setRedePostar((n) => n + 1);
     }
   }
 
@@ -311,7 +516,15 @@ export default function DevPreviewApp() {
   });
 
   if (locked && pinHash) {
-    return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
+    return (
+      <PinScreen
+        pinHash={pinHash}
+        onUnlock={() => setLocked(false)}
+        usuarioId={usuario.id}
+        onPinRedefinido={(hash) => setPinHash(hash)}
+        onSair={handleSignOut}
+      />
+    );
   }
 
   if (onboardingPreview) {
@@ -376,20 +589,43 @@ export default function DevPreviewApp() {
               pequenos (Próximo, Objetivos, Falta pra meta, Cofre), "Esta semana" e
               "Próximos atendimentos". Stack explícito com `grid`+`gap` (achado
               #131: nada de `space-y-*`, que depende de seletor de irmão). */}
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-[var(--space-section)]">
+          <div
+            // Mockup normativo (Início): coluna com gap de 12px e 18px
+            // entre o cabeçalho e a grade (gap 12 + margin-top 6).
+            className="grid grid-cols-[minmax(0,1fr)]"
+            style={{ gap: "12px", marginTop: "18px" }}
+          >
             {/* Grade de 2 colunas do mockup; o card principal ocupa as duas. Com
     quantidade ímpar de cards pequenos (um deles desligado em Ajustes,
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
     um buraco. */}
             <div className="grid grid-cols-2 gap-[10px] [&>:last-child:nth-child(even)]:col-span-2">
-              {/* `data-tour` do tour guiado (lib/appTour.ts); ocupa as 2 colunas. */}
-              <div data-tour="home-hero" className="col-span-2">
-                <HeroCard
-                  jobs={jobs}
-                  metas={metas}
-                  onGoToFinanceiro={() => {
-                    handleTabChange("financeiro");
-                    setFinanceiroFocusTab("visao");
+              {/* O card principal e o card "Sua Jornada" (J12) ocupam as 2
+                  colunas, um embaixo do outro com o gap de 10px da grade, como no
+                  protótipo da Jornada (`.grid2 > .span2.jcard` logo depois da
+                  receita). Juntos num bloco só, pra não mudar a contagem que
+                  decide se o último card pequeno ocupa a linha toda. Sem estado
+                  da Jornada o card não aparece (nunca trava o Início). */}
+              <div className="col-span-2 flex flex-col gap-[10px]">
+                {/* `data-tour` do tour guiado (lib/appTour.ts). */}
+                <div data-tour="home-hero">
+                  <HeroCard
+                    jobs={jobs}
+                    metas={metas}
+                    onGoToFinanceiro={() => {
+                      handleTabChange("financeiro");
+                      setFinanceiroFocusTab("visao");
+                    }}
+                  />
+                </div>
+                <JornadaCard
+                  userId={usuario.id}
+                  onAbrir={() => setJornadaAberta(true)}
+                  onProximoPasso={(acao) => {
+                    const destino = destinoDoProximoPasso(acao);
+                    handleTabChange(destino.aba);
+                    if (destino.financeiro)
+                      setFinanceiroFocusTab(destino.financeiro);
                   }}
                 />
               </div>
@@ -440,6 +676,7 @@ export default function DevPreviewApp() {
             userId={usuario.id}
             refreshTrigger={jobsRefreshKey}
             chartType={chartPrefs.jobs}
+            profissional={{ nome: usuario.nome, telefone: usuario.telefone }}
             onEditJob={(job) => {
               setEditingJob(job);
               setJobFormOpen(true);
@@ -451,10 +688,14 @@ export default function DevPreviewApp() {
           <FinanceiroTab
             userId={usuario.id}
             refreshTrigger={financeiroRefreshKey}
-            chartType={chartPrefs.financeiro}
             onInnerTabChange={setFinInnerTab}
             onAddDespesa={() => setDespesaFormOpen(true)}
             onAddReceita={() => setReceitaFormOpen(true)}
+            avatar={{
+              inicial: usuario.nome.trim().charAt(0).toUpperCase(),
+              foto: fotoRede || usuario.avatarUrl,
+              onOpenAjustes: () => handleTabChange("ajustes"),
+            }}
             objetivos={objetivos}
             onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
             onToggleObjetivo={handleToggleObjetivo}
@@ -470,6 +711,12 @@ export default function DevPreviewApp() {
             pinHash={pinHash}
             active={activeTab === "cofre"}
             onExit={() => handleTabChange(abaAntesDoCofre.current)}
+            onPinHashChange={(h) => setPinHash(h)}
+            // Sem este sinal o azulejo "Enviar" nasce desabilitado (meio
+            // transparente), e a referência o desenha ativo. O sheet mora na
+            // página, FORA da trava do Cofre, de propósito: o seletor de
+            // arquivo do sistema tira o foco e o Cofre trava na hora.
+            onEnviar={() => setUploadOpen(true)}
           />
         </TabPanel>
 
@@ -494,8 +741,12 @@ export default function DevPreviewApp() {
           )}
           <RedeGatedTab
             usuario={usuario}
+            // Espelha app/page.tsx: sem isto a Rede do laboratório se achava
+            // sempre na tela (o padrão é `true`), mesmo com outra aba aberta.
+            active={activeTab === "rede"}
             reselectSignal={redeReselect}
             onChatFocusChange={setChatComposerFocused}
+            postarSignal={redePostar}
             onAcessoChange={setRedeAcesso}
             onFotoPerfilChange={setFotoRede}
           />
@@ -525,16 +776,24 @@ export default function DevPreviewApp() {
             activeTab={activeTab}
             onChange={handleTabChange}
             holdOpen={fabOpen || tourOpen}
-            renderFab={(compact) => (
-              <FAB
-                activeTab={activeTab}
-                financeiroSubTab={finInnerTab}
-                open={fabOpen}
-                onToggle={() => setFabOpen((v) => !v)}
-                onAction={handleFabAction}
-                compact={compact}
-              />
-            )}
+            pilulaDaJornada={jornadaAberta}
+            renderFab={
+              // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
+              // de convite a pílula ocupa a linha toda.
+              activeTab === "rede" && redeAcesso !== "liberado"
+                ? undefined
+                : (compact) => (
+                    <FAB
+                      activeTab={activeTab}
+                      financeiroSubTab={finInnerTab}
+                      open={fabOpen}
+                      onToggle={() => setFabOpen((v) => !v)}
+                      onAction={handleFabAction}
+                      compact={compact}
+                      cobertoPorTela={jornadaAberta}
+                    />
+                  )
+            }
           />
         </>
       )}
@@ -550,6 +809,55 @@ export default function DevPreviewApp() {
       )}
 
       {dataLoaded && <RecapSheet jobs={jobs} />}
+
+      {/* Espelha app/page.tsx: a pílula do teste e a escolha de plano. */}
+      <AssinaturaNoApp
+        userId={usuario.id}
+        noInicio={
+          activeTab === "home" && !tourOpen && !jornadaAberta && !fabOpen
+        }
+        podeMostrarPlanos={dataLoaded && !tourOpen}
+        jobs={jobs}
+        onEscolherPlano={escolherPlano}
+        estadoForcado={trialForcado}
+        abrirPlanosSinal={abrirPlanos}
+        recarregarSinal={releituraAssinatura}
+      />
+      {planoNoPagamento && (
+        <PagamentoTela
+          plano={planoNoPagamento}
+          userId={usuario.id}
+          nome={usuario.nome.split(" ")[0]}
+          cenarioForcado={cenarioPagamento}
+          onVoltar={() => {
+            setPlanoNoPagamento(null);
+            setAbrirPlanos((n) => n + 1);
+          }}
+          onConcluir={() => {
+            setPlanoNoPagamento(null);
+            setReleituraAssinatura((n) => n + 1);
+          }}
+          onAssinaturaAtiva={() => setReleituraAssinatura((n) => n + 1)}
+        />
+      )}
+
+      {jornadaAberta && (
+        <JornadaScreen
+          userId={usuario.id}
+          nome={usuario.nome.trim().split(/\s+/)[0] ?? ""}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
+          onVoltar={() => setJornadaAberta(false)}
+          onIrPara={(aba) => {
+            setJornadaAberta(false);
+            handleTabChange(aba);
+          }}
+        />
+      )}
+      <ComemoracaoHost
+        userId={usuario.id}
+        inicial={usuario.nome.trim().charAt(0).toUpperCase()}
+        onVerJornada={() => setJornadaAberta(true)}
+      />
 
       <JobForm
         open={jobFormOpen}

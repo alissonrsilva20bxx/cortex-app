@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Bell, MessageCircle } from "lucide-react";
+import { Search, Bell, MessageCircle, Users } from "lucide-react";
 import { Avatar } from "./Avatar";
 
 interface Props {
@@ -12,6 +12,10 @@ interface Props {
   onOpenNotifs: () => void;
   onOpenChat: () => void;
   onOpenMeuEspaco: () => void;
+  /** Ícone de pessoas (proposta "Três abas"): Amigas, solicitações e
+   * descobrir pessoas, com o número de pedidos esperando resposta. */
+  onOpenAmigas?: () => void;
+  pendingRequestsCount?: number;
 }
 
 function IconButton({
@@ -30,28 +34,37 @@ function IconButton({
       onClick={onClick}
       aria-label={label}
       className="relative flex items-center justify-center rounded-full transition-opacity active:opacity-70"
-      // Jornada J06: fundo neutro do mockup (--surface-sub, token da J01).
-      // 44px, não os 40px desenhados: alvo de toque mínimo do app.
-      style={{ width: 44, height: 44, background: "var(--surface-sub)" }}
+      // O círculo que se vê tem os 40px do mockup; o botão fica com 44 de
+      // alvo de toque e margem negativa de 2px, a mesma receita já aprovada
+      // no #198 (JornadaScreen) -- assim o desenho é o do mockup sem perder
+      // o mínimo de toque.
+      style={{ width: 44, height: 44, margin: -2 }}
     >
-      {children}
+      <span
+        aria-hidden
+        className="absolute flex items-center justify-center rounded-full"
+        style={{ width: 40, height: 40, background: "var(--surface-sub)" }}
+      >
+        {children}
+      </span>
       {!!badge && (
+        // A referência marca "tem coisa nova" com um PONTO de 8px no
+        // acento, não com um número: `top:6 right:7; width:8; height:8;
+        // border-radius:50%; background: var(--t-acc)`. O número ficava
+        // maior que o ponto e com outra cor, e aparecia em toda abertura
+        // da tela. A contagem continua acessível onde ela importa, dentro
+        // de cada folha (notificações e conversas).
         <span
-          className="absolute flex items-center justify-center rounded-full font-bold"
+          aria-hidden
+          className="absolute rounded-full"
           style={{
-            top: -2,
-            right: -2,
-            minWidth: 16,
-            height: 16,
-            padding: "0 3px",
-            fontSize: 9,
-            background: "var(--danger)",
-            color: "#fff",
-            boxShadow: "0 0 0 2px var(--bg)",
+            top: 6,
+            right: 7,
+            width: 8,
+            height: 8,
+            background: "var(--accent)",
           }}
-        >
-          {badge > 9 ? "9+" : badge}
-        </span>
+        />
       )}
     </button>
   );
@@ -66,15 +79,24 @@ export function RedeHeader({
   onOpenNotifs,
   onOpenChat,
   onOpenMeuEspaco,
+  onOpenAmigas,
+  pendingRequestsCount = 0,
 }: Props) {
   return (
-    <div className="flex items-center justify-between gap-2 mb-4">
+    <div
+      className="flex items-center justify-between gap-2"
+      style={{ marginBottom: "12px" }}
+    >
       {/* Jornada J06 (mockup 5-telas-8-temas-claro-escuro.html, tela Rede):
           título 24px/800, -0.5px. */}
       <h2
         className="font-extrabold shrink-0"
         style={{
           fontSize: "24px",
+          // A referência não declara line-height no título: ele herda 1.1 do
+          // corpo da tela. No app a herança vinha de 1.5 (36px), o que
+          // empurrava o cabeçalho e tudo abaixo dele.
+          lineHeight: 1.1,
           letterSpacing: "-0.5px",
           color: "var(--text)",
         }}
@@ -84,17 +106,26 @@ export function RedeHeader({
 
       <div className="flex items-center gap-2">
         <IconButton onClick={onSearch} label="Buscar">
-          <Search size={18} style={{ color: "var(--text)" }} />
+          <Search size={20} style={{ color: "var(--text)" }} />
         </IconButton>
+        {onOpenAmigas && (
+          <IconButton
+            onClick={onOpenAmigas}
+            label="Amigas, solicitações e descobrir pessoas"
+            badge={pendingRequestsCount}
+          >
+            <Users size={20} style={{ color: "var(--text)" }} />
+          </IconButton>
+        )}
         <IconButton
           onClick={onOpenNotifs}
           label="Notificações"
           badge={unreadNotifs}
         >
-          <Bell size={18} style={{ color: "var(--text)" }} />
+          <Bell size={20} style={{ color: "var(--text)" }} />
         </IconButton>
         <IconButton onClick={onOpenChat} label="Conversas" badge={unreadChats}>
-          <MessageCircle size={18} style={{ color: "var(--text)" }} />
+          <MessageCircle size={20} style={{ color: "var(--text)" }} />
         </IconButton>
         {/* Alvo do tour do app (lib/appTour.ts, passo "rede-perfil"). */}
         <span data-tour="rede-perfil" className="inline-flex rounded-full">

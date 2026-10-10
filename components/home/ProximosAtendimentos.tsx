@@ -23,46 +23,61 @@ export function ProximosAtendimentos({ jobs }: Props) {
   const proximos = atendimentosDepoisDaSemana(jobs);
   if (proximos.length === 0) return null;
 
+  // Valores do mockup normativo (tela Início, "Próximos atendimentos").
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="font-extrabold" style={{ fontSize: "15px" }}>
+    <section style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <h2 style={{ margin: "6px 0 0", fontSize: "15px", fontWeight: 800 }}>
         Próximos atendimentos
       </h2>
       <InicioCard style={{ padding: "4px 16px" }}>
         {proximos.map((job, i) => (
           <div
             key={job.id}
-            className="flex items-center gap-3 py-3"
-            style={
-              i < proximos.length - 1
-                ? { borderBottom: "1px solid var(--card-border)" }
-                : undefined
-            }
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "12px 0",
+              ...(i < proximos.length - 1
+                ? { borderBottom: "1px solid var(--t-line)" }
+                : undefined),
+            }}
           >
             <span
-              className="grid place-items-center shrink-0 font-extrabold"
               style={{
                 width: "40px",
                 height: "40px",
-                borderRadius: "var(--radius-sm)",
-                background: "var(--accent-tint)",
-                color: "var(--accent-deep)",
+                borderRadius: "12px",
+                background: "var(--t-soft)",
+                color: "var(--t-deep)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 800,
+                flexShrink: 0,
               }}
               aria-hidden
             >
               {job.clienteNome.charAt(0).toUpperCase()}
             </span>
-            <div className="min-w-0 flex-grow">
-              <p className="font-bold truncate" style={{ fontSize: "14px" }}>
+            <div style={{ flexGrow: 1, minWidth: 0 }}>
+              <div
+                className="truncate"
+                style={{ fontSize: "14px", fontWeight: 700 }}
+              >
                 {job.clienteNome}
-              </p>
-              <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                {rotuloDiaFrase(job.data)} · {formatHora(job.hora)}
-              </p>
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--t-mut)" }}>
+                {`${rotuloDiaFrase(job.data)} · ${formatHora(job.hora)}`}
+              </div>
             </div>
             <span
-              className="font-extrabold tabular-nums shrink-0"
-              style={{ fontSize: "14px" }}
+              style={{
+                fontSize: "14px",
+                fontWeight: 800,
+                color: "var(--t-ink)",
+                flexShrink: 0,
+              }}
             >
               {formatBRL(job.valor)}
             </span>

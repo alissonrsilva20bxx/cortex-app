@@ -20,6 +20,8 @@ interface Props {
   /** Incrementa a cada toque na aba Rede JÁ ativa (gesto do iOS: volta a
    * pilha pra raiz / rola o Feed pro topo). */
   reselectSignal?: number;
+  /** Incrementa a cada toque no "+" da Rede (Postar): abre o compositor. */
+  postarSignal?: number;
   onChatFocusChange?: (focused: boolean) => void;
   /** Avisa o pai se a Rede está liberada ou na vitrine de convite -- o tour
    * do app troca os passos do feed/perfil pelos da vitrine. */
@@ -56,6 +58,7 @@ export function RedeGatedTab({
   usuario,
   active = true,
   reselectSignal,
+  postarSignal,
   onChatFocusChange,
   onAcessoChange,
   onFotoPerfilChange,
@@ -320,6 +323,7 @@ export function RedeGatedTab({
         usuario={usuario}
         active={active}
         reselectSignal={reselectSignal}
+        postarSignal={postarSignal}
         onChatFocusChange={onChatFocusChange}
         onFotoPerfilChange={onFotoPerfilChange}
       />

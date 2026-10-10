@@ -5,6 +5,7 @@ import { Delete } from "lucide-react";
 import { hashPin } from "@/lib/pin";
 import { supabase } from "@/lib/supabase";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { useJornada } from "@/components/jornada/useJornada";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"];
 
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export function PinSetup({ open, userId, onClose, onSaved }: Props) {
+  // Jornada de Começo (0036): criar o PIN é o 1º passo.
+  const { registrar } = useJornada(userId);
   const [step, setStep] = useState<Step>("enter");
   const [first, setFirst] = useState<string[]>([]);
   const [digits, setDigits] = useState<string[]>([]);
@@ -80,6 +83,7 @@ export function PinSetup({ open, userId, onClose, onSaved }: Props) {
       return;
     }
 
+    void registrar("criar_pin");
     onSaved(h);
     handleClose();
   }

@@ -9,6 +9,12 @@
  * poucos px (o bug antigo usava `translateY(42%)`, que lia como
  * "esconder", não "compactar").
  *
+ * Medidas e cores = as do mockup aprovado das 5 telas (`.b2` em
+ * docs/jornada/referencias/5-telas-8-temas-claro-escuro.html): pílula de
+ * 288×60 em vidro do tema, abas de 46×44 (a ativa 54×44, sem brilho),
+ * "+" de 60, recolhida em 50, tudo a 22px do fundo. O vidro e a sombra
+ * são os mesmos aberta e recolhida (tokens --glass*).
+ *
  * Extraído como dado puro (em vez de inline no componente) pra poder ser
  * testado sem depender de DOM/React.
  */
@@ -22,9 +28,7 @@ export interface BottomNavCompactStyle {
   fabSize: number;
   /** Acomodo vertical sutil, em px — não é um recolhimento pra fora da tela. */
   translateY: number;
-  /** Opacidade do fundo (canal alfa de `--bg-rgb`). */
-  backgroundOpacity: number;
-  /** `box-shadow` completo — mais leve no compacto, pílula "pesa" menos. */
+  /** `box-shadow` completo (o do mockup, igual aberta e recolhida). */
   shadow: string;
 }
 
@@ -35,8 +39,22 @@ export interface BottomNavCompactStyle {
  */
 export const BOTTOM_NAV_MIN_TOUCH_TARGET = 44;
 
-/** Largura do botão da aba ativa na pílula aberta. */
-export const BOTTOM_NAV_ACTIVE_WIDTH = 56;
+/** Largura do botão da aba ativa na pílula aberta (mockup: 54). */
+export const BOTTOM_NAV_ACTIVE_WIDTH = 54;
+
+/** Largura das outras abas na pílula aberta (mockup: 46×44). */
+export const BOTTOM_NAV_ITEM_WIDTH = 46;
+
+/** Largura da pílula aberta (mockup: 288, fixa). */
+export const BOTTOM_NAV_PILL_WIDTH = 288;
+
+/** Com a Jornada aberta, a pílula segue o protótipo da Jornada
+ * (`.bar .pill { width: calc(100% - 70px) }`): a linha inteira menos o "+"
+ * (60) e o respiro (10). Em 390 dá os mesmos 288; em 430, 328. */
+export const BOTTOM_NAV_FAB_SIZE = 60;
+
+/** Distância da pílula e do "+" até o fundo da tela (mockup: 22). */
+export const BOTTOM_NAV_OFFSET = 22;
 
 /** Respiro da linha até as bordas da tela, e entre a pílula e o "+". */
 export const BOTTOM_NAV_EDGE = 16;
@@ -47,17 +65,15 @@ export const BOTTOM_NAV_EXPANDED: BottomNavCompactStyle = {
   pillHeight: 60,
   fabSize: 60,
   translateY: 0,
-  backgroundOpacity: 0.72,
-  shadow: "0 16px 40px rgb(0 0 0 / 0.45)",
+  shadow: "0 10px 30px var(--glass-shadow)",
 };
 
 export const BOTTOM_NAV_COMPACT: BottomNavCompactStyle = {
   collapsed: true,
-  pillHeight: 52,
-  fabSize: 52,
-  translateY: 4,
-  backgroundOpacity: 0.9,
-  shadow: "0 6px 20px rgb(0 0 0 / 0.3)",
+  pillHeight: 50,
+  fabSize: 50,
+  translateY: 0,
+  shadow: "0 10px 30px var(--glass-shadow)",
 };
 
 export function getBottomNavCompactStyle(

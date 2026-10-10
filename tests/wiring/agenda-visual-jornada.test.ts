@@ -70,8 +70,9 @@ describe("JobsTab monta a composição do mockup com os componentes novos", () =
   });
 
   it("segue a ordem do mockup: título, próximo, ações, tira, Esta semana, Próximas semanas", () => {
+    // O título agora divide a linha com a busca e o sino (pixel do mockup).
     const ordem = [
-      ">\n        Agenda\n      </h1>",
+      ">\n          Agenda\n        </h1>",
       "<AgendaProximoCard",
       "<AgendaAcoes",
       "{weekStrip.map(",
@@ -87,7 +88,7 @@ describe("JobsTab monta a composição do mockup com os componentes novos", () =
 
   it("o título Agenda é grande e em negrito forte (24px/800)", () => {
     expect(jobsTab).toMatch(
-      /fontSize: "24px",\s*fontWeight: 800,[\s\S]{0,120}Agenda\s*<\/h1>/
+      /fontSize: "24px",\s*fontWeight: 800,[\s\S]{0,160}Agenda\s*<\/h1>/
     );
   });
 
@@ -105,10 +106,20 @@ describe("JobsTab monta a composição do mockup com os componentes novos", () =
   it("a tira usa buildWeekStrip e marca hoje e dia com atendimento de formas diferentes", () => {
     expect(jobsTab).toContain("buildWeekStrip(weekStart, filtered)");
     // hoje = anel; dia com atendimento = ponto. Nunca a mesma marca.
-    expect(jobsTab).toContain(
-      'isToday && !selected ? "1px solid var(--accent)" : "none"'
+    expect(jobsTab).toMatch(
+      /isToday && !selected\s*\?\s*"1px solid var\(--accent\)"\s*:\s*"none"/
     );
-    expect(jobsTab).toMatch(/background: hasJobs\s*\?/);
+    // Ordem do operador (pixel da Agenda): o ponto só fora da semana
+    // corrente -- a faixa do mockup não tem ponto. Com a catraca, cada
+    // página da faixa sabe se é a semana corrente (a vizinha da semana
+    // visível pode ser).
+    expect(jobsTab).toMatch(/hasJobs && !naSemanaCorrente\s*\?/);
+    expect(jobsTab).toMatch(
+      /naSemanaCorrente: semanasDesdeHoje\(inicio, now\) === 0,/
+    );
+    expect(jobsTab).toMatch(
+      /paginas\.map\(\(\{ offset, inicio, weekStrip, naSemanaCorrente \}\)/
+    );
   });
 });
 
@@ -131,7 +142,8 @@ describe("As 4 ações ligam no que já existe", () => {
   });
 
   it('"Bloquear" não tem ação (não existe no app) e o botão sem ação fica desabilitado', () => {
-    expect(acoes).toMatch(/\{ label: "Bloquear", Icon: Ban \}/);
+    // Ícone com o traço do mockup (components/jobs/agendaIcones.tsx).
+    expect(acoes).toMatch(/\{ label: "Bloquear", Icon: IconeBloquear \}/);
     expect(acoes).toContain("disabled={!onClick}");
   });
 
@@ -165,9 +177,17 @@ describe("As 4 ações ligam no que já existe", () => {
     expect(jobsTab).not.toMatch(/>\s*Bloco de notas\s*<\/button>/);
   });
 
-  it('"Lembrar cliente ›" e "Ver tudo ›" ficam desabilitados: não existe ação para eles no app', () => {
-    expect(proximoCard).toMatch(/disabled[\s\S]{0,300}Lembrar cliente ›/);
+  it('"Ver tudo ›" fica desabilitado (não existe ação para ele no app)', () => {
     expect(listas).toMatch(/disabled[\s\S]{0,300}Ver tudo ›/);
+  });
+
+  it('"Lembrar cliente ›" tem ação (decisão antiga revogada pelo operador): abre o cartão de agenda', () => {
+    expect(proximoCard).toMatch(
+      /onClick=\{\(\) => onLembrar\?\.\(job\)\}[\s\S]{0,800}Lembrar cliente ›/
+    );
+    expect(proximoCard).not.toMatch(
+      /disabled\s+aria-disabled="true"[\s\S]{0,300}Lembrar cliente ›/
+    );
   });
 });
 

@@ -2,12 +2,13 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  Home,
-  CalendarDays,
-  Wallet,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
+  IconeAgenda,
+  IconeCofre,
+  IconeFinanceiro,
+  IconeInicio,
+  IconeRede,
+  type IconeNavProps,
+} from "@/components/navIcones";
 import type { TabId } from "@/lib/types";
 import { useScrollCompact } from "@/lib/useScrollCompact";
 import {
@@ -16,8 +17,12 @@ import {
   BOTTOM_NAV_EASE,
   BOTTOM_NAV_EDGE,
   BOTTOM_NAV_EXPANDED,
-  BOTTOM_NAV_GAP,
+  BOTTOM_NAV_ITEM_WIDTH,
   BOTTOM_NAV_MIN_TOUCH_TARGET,
+  BOTTOM_NAV_OFFSET,
+  BOTTOM_NAV_FAB_SIZE,
+  BOTTOM_NAV_GAP,
+  BOTTOM_NAV_PILL_WIDTH,
   getBottomNavCompactStyle,
 } from "@/lib/bottomNavCompactStyle";
 import { tabTemFab } from "@/components/FAB";
@@ -26,17 +31,19 @@ import { tabTemFab } from "@/components/FAB";
 // destinos — Ajustes saiu da barra e passou a abrir pelo avatar da Início
 // (GreetingHeader) / voltar pelo próprio Ajustes. "ajustes" continua um
 // TabId válido (lib/types.ts) e a TabPanel continua funcionando igual —
-// só parou de ganhar um botão próprio aqui.
-const TABS: { id: TabId; label: string; Icon: typeof Home }[] = [
-  { id: "home", label: "Início", Icon: Home },
-  { id: "jobs", label: "Agenda", Icon: CalendarDays },
-  { id: "financeiro", label: "Financeiro", Icon: Wallet },
-  { id: "cofre", label: "Cofre", Icon: ShieldCheck },
-  { id: "rede", label: "Rede", Icon: UsersRound },
+// só parou de ganhar um botão próprio aqui. Ícones com o traço do mockup
+// aprovado (components/navIcones.tsx).
+const TABS: {
+  id: TabId;
+  label: string;
+  Icon: (p: IconeNavProps) => ReactNode;
+}[] = [
+  { id: "home", label: "Início", Icon: IconeInicio },
+  { id: "jobs", label: "Agenda", Icon: IconeAgenda },
+  { id: "financeiro", label: "Financeiro", Icon: IconeFinanceiro },
+  { id: "cofre", label: "Cofre", Icon: IconeCofre },
+  { id: "rede", label: "Rede", Icon: IconeRede },
 ];
-
-/** Distância da linha (pílula + "+") até a borda de baixo, fora a safe area. */
-const BOTTOM_OFFSET = 18;
 
 interface Props {
   activeTab: TabId;
@@ -48,6 +55,9 @@ interface Props {
    * pra encolher junto. Sem ele (ex.: /dev-preview/rede), a pílula ocupa
    * a linha inteira. */
   renderFab?: (compact: boolean) => ReactNode;
+  /** A Jornada está aberta: a pílula segue a largura do protótipo da
+   * Jornada (a linha menos o "+"), não a fixa do mockup das 5 telas. */
+  pilulaDaJornada?: boolean;
 }
 
 /**
@@ -58,7 +68,13 @@ interface Props {
  * novo. Sem rótulo embaixo: a troca de "sempre visível" por "aprende
  * rápido com uso" foi uma escolha consciente, não descuido.
  */
-export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
+export function BottomNav({
+  activeTab,
+  onChange,
+  holdOpen,
+  renderFab,
+  pilulaDaJornada,
+}: Props) {
   const scrollCompact = useScrollCompact(activeTab);
 
   // Tocar na bolinha abre a pílula sem mexer na rolagem. Ela fica aberta
@@ -83,13 +99,13 @@ export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
   const navStyle = getBottomNavCompactStyle(compact);
   const hasFab = Boolean(renderFab) && tabTemFab(activeTab);
 
-  // Largura da pílula aberta: a linha toda menos as bordas e, se houver,
-  // o "+" ao lado (pelo tamanho ABERTO dele — os ícones não pulam de
-  // lugar enquanto o "+" encolhe).
-  const reserved =
-    BOTTOM_NAV_EDGE * 2 +
-    (hasFab ? BOTTOM_NAV_EXPANDED.fabSize + BOTTOM_NAV_GAP : 0);
-  const openWidth = `calc(100vw - ${reserved}px)`;
+  // Largura da pílula aberta: a do mockup (288px). Sem o "+" (ex.:
+  // /dev-preview/rede), a pílula ocupa a linha inteira.
+  const openWidth = !hasFab
+    ? `calc(100vw - ${BOTTOM_NAV_EDGE * 2}px)`
+    : pilulaDaJornada
+      ? `calc(100vw - ${BOTTOM_NAV_EDGE * 2 + BOTTOM_NAV_FAB_SIZE + BOTTOM_NAV_GAP}px)`
+      : `${BOTTOM_NAV_PILL_WIDTH}px`;
   const ActiveIcon = (TABS.find((t) => t.id === activeTab) ?? TABS[0]).Icon;
   const activeLabel = TABS.find((t) => t.id === activeTab)?.label ?? "Início";
   const motion = `${BOTTOM_NAV_DURATION_MS}ms ${BOTTOM_NAV_EASE}`;
@@ -102,14 +118,14 @@ export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
         data-compact={compact || undefined}
         style={{
           left: `${BOTTOM_NAV_EDGE}px`,
-          bottom: `calc(${BOTTOM_OFFSET - navStyle.translateY}px + env(safe-area-inset-bottom, 0px))`,
+          bottom: `calc(${BOTTOM_NAV_OFFSET - navStyle.translateY}px + env(safe-area-inset-bottom, 0px))`,
           width: navStyle.collapsed ? `${navStyle.pillHeight}px` : openWidth,
           height: `${navStyle.pillHeight}px`,
           borderRadius: "999px",
-          background: `rgb(var(--bg-rgb) / ${navStyle.backgroundOpacity})`,
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgb(var(--accent-rgb) / 0.14)",
+          background: "var(--glass)",
+          backdropFilter: "blur(20px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+          border: "1px solid var(--glass-border)",
           boxShadow: navStyle.shadow,
           transition: `width ${motion}, height ${motion}, bottom ${motion}, background-color 220ms ease, box-shadow 220ms ease`,
         }}
@@ -118,12 +134,14 @@ export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
             por opacidade enquanto a pílula estreita por cima; nada se
             espreme no caminho. */}
         <div
-          className="absolute left-0 top-0 flex items-center justify-between"
+          className="absolute left-0 top-0 grid items-center justify-items-center"
           aria-hidden={compact || undefined}
           style={{
             width: openWidth,
-            height: `${BOTTOM_NAV_EXPANDED.pillHeight - 2}px`,
-            padding: "0 7px",
+            // Como o mockup: a grade tem a altura cheia da pílula (60),
+            // medida de dentro da borda.
+            height: `${BOTTOM_NAV_EXPANDED.pillHeight}px`,
+            gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
             opacity: compact ? 0 : 1,
             pointerEvents: compact ? "none" : "auto",
             transition: `opacity ${compact ? 180 : 260}ms ease ${compact ? 0 : 120}ms`,
@@ -143,19 +161,16 @@ export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
                   height: `${BOTTOM_NAV_MIN_TOUCH_TARGET}px`,
                   width: active
                     ? `${BOTTOM_NAV_ACTIVE_WIDTH}px`
-                    : `${BOTTOM_NAV_MIN_TOUCH_TARGET}px`,
+                    : `${BOTTOM_NAV_ITEM_WIDTH}px`,
                   borderRadius: "999px",
                   background: active ? "var(--accent)" : "transparent",
                   color: active ? "#fff" : "var(--text-muted)",
-                  // Fundação Visual (#142): --glow-sm é um halo duplo (auréola +
-                  // inset) que o `.navActive` do protótipo não tem -- lá é uma
-                  // única sombra de elevação (0 0 18px rgba(accent,0.4)).
-                  boxShadow: active
-                    ? "0 0 18px rgb(var(--accent-rgb) / 0.4)"
-                    : "none",
+                  // Mockup: a aba ativa não tem brilho em volta.
                 }}
               >
-                <Icon size={20} strokeWidth={active ? 2.3 : 1.8} />
+                {/* Traço 2 em todas, a ativa também: o .pill .it svg do
+                    mockup tem stroke-width="2" (a ativa tinha 2,3). */}
+                <Icon size={22} strokeWidth={2} />
               </button>
             );
           })}
@@ -170,9 +185,10 @@ export function BottomNav({ activeTab, onChange, holdOpen, renderFab }: Props) {
           tabIndex={compact ? undefined : -1}
           className="absolute left-0 top-0 flex items-center justify-center rounded-full active:scale-90"
           style={{
-            width: `${navStyle.pillHeight - 2}px`,
-            height: `${navStyle.pillHeight - 2}px`,
-            color: "var(--accent)",
+            // Mockup (`.mini`): 50×50 medido de dentro da borda.
+            width: `${navStyle.pillHeight}px`,
+            height: `${navStyle.pillHeight}px`,
+            color: "var(--accent-deep)",
             opacity: compact ? 1 : 0,
             pointerEvents: compact ? "auto" : "none",
             transition: `opacity ${compact ? 220 : 120}ms ease ${compact ? 180 : 0}ms, transform 150ms ease`,

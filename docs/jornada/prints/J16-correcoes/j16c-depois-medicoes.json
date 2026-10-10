@@ -1,0 +1,667 @@
+{
+ "fase": "depois",
+ "quando": "2026-10-07T00:01:35.368Z",
+ "selo": [
+  {
+   "theme": "pink-neon",
+   "mode": "light",
+   "print": "j16c-depois-selo-390-claro-pink-neon.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(163, 12, 71)",
+     "fundos": [
+      "rgb(255,227,237)",
+      "rgb(255,221,233)",
+      "rgb(255,252,253)"
+     ],
+     "contraste": 6.22,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(163, 12, 71)",
+     "fundos": [
+      "rgb(255,254,255)",
+      "rgb(255,221,233)"
+     ],
+     "contraste": 6.21,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "pink-neon",
+   "mode": "dark",
+   "print": "j16c-depois-selo-390-escuro-pink-neon.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(255, 128, 171)",
+     "fundos": [
+      "rgb(60,21,38)",
+      "rgb(67,22,41)",
+      "rgb(42,19,30)"
+     ],
+     "contraste": 6.44,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(255, 128, 171)",
+     "fundos": [
+      "rgb(37,18,28)",
+      "rgb(72,22,42)"
+     ],
+     "contraste": 6.27,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "purple",
+   "mode": "light",
+   "print": "j16c-depois-selo-390-claro-purple.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(93, 55, 148)",
+     "fundos": [
+      "rgb(242,235,254)",
+      "rgb(234,220,253)",
+      "rgb(238,227,253)",
+      "rgb(253,252,255)"
+     ],
+     "contraste": 6.62,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(93, 55, 148)",
+     "fundos": [
+      "rgb(255,255,255)",
+      "rgb(239,229,253)"
+     ],
+     "contraste": 7.09,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "purple",
+   "mode": "dark",
+   "print": "j16c-depois-selo-390-escuro-purple.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(196, 181, 253)",
+     "fundos": [
+      "rgb(44,30,68)",
+      "rgb(30,22,45)"
+     ],
+     "contraste": 8.29,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(196, 181, 253)",
+     "fundos": [
+      "rgb(28,21,43)",
+      "rgb(48,33,75)"
+     ],
+     "contraste": 7.87,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "ocean",
+   "mode": "light",
+   "print": "j16c-depois-selo-390-claro-ocean.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(0, 92, 94)",
+     "fundos": [
+      "rgb(227,244,244)",
+      "rgb(221,241,241)",
+      "rgb(251,253,253)"
+     ],
+     "contraste": 6.67,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(0, 92, 94)",
+     "fundos": [
+      "rgb(254,255,255)",
+      "rgb(214,239,239)"
+     ],
+     "contraste": 6.48,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "ocean",
+   "mode": "dark",
+   "print": "j16c-depois-selo-390-escuro-ocean.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(103, 232, 249)",
+     "fundos": [
+      "rgb(14,68,69)",
+      "rgb(13,75,76)",
+      "rgb(16,51,51)"
+     ],
+     "contraste": 6.8,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(103, 232, 249)",
+     "fundos": [
+      "rgb(16,49,49)",
+      "rgb(13,74,74)"
+     ],
+     "contraste": 6.91,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "midnight",
+   "mode": "light",
+   "print": "j16c-depois-selo-390-claro-midnight.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(59, 61, 145)",
+     "fundos": [
+      "rgb(235,235,253)",
+      "rgb(228,228,252)",
+      "rgb(252,252,255)"
+     ],
+     "contraste": 7.41,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(59, 61, 145)",
+     "fundos": [
+      "rgb(255,255,255)",
+      "rgb(230,230,253)"
+     ],
+     "contraste": 7.56,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "midnight",
+   "mode": "dark",
+   "print": "j16c-depois-selo-390-escuro-midnight.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(165, 180, 252)",
+     "fundos": [
+      "rgb(32,33,76)",
+      "rgb(35,35,83)",
+      "rgb(25,25,59)",
+      "rgb(23,23,53)"
+     ],
+     "contraste": 7.32,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(165, 180, 252)",
+     "fundos": [
+      "rgb(22,22,51)",
+      "rgb(34,34,82)"
+     ],
+     "contraste": 7.42,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "grafite",
+   "mode": "light",
+   "print": "j16c-depois-selo-390-claro-grafite.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(68, 68, 73)",
+     "fundos": [
+      "rgb(243,243,244)",
+      "rgb(235,235,236)",
+      "rgb(227,227,228)",
+      "rgb(252,252,252)"
+     ],
+     "contraste": 7.53,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(68, 68, 73)",
+     "fundos": [
+      "rgb(255,255,255)",
+      "rgb(232,232,234)"
+     ],
+     "contraste": 7.92,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "grafite",
+   "mode": "dark",
+   "print": "j16c-depois-selo-390-escuro-grafite.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(212, 212, 216)",
+     "fundos": [
+      "rgb(47,47,50)",
+      "rgb(50,50,53)",
+      "rgb(34,34,37)"
+     ],
+     "contraste": 8.69,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(212, 212, 216)",
+     "fundos": [
+      "rgb(32,32,34)",
+      "rgb(53,53,56)"
+     ],
+     "contraste": 8.26,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "gold",
+   "mode": "light",
+   "print": "j16c-depois-selo-390-claro-gold.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(116, 72, 2)",
+     "fundos": [
+      "rgb(246,236,220)",
+      "rgb(254,253,251)"
+     ],
+     "contraste": 6.73,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(116, 72, 2)",
+     "fundos": [
+      "rgb(255,255,254)",
+      "rgb(245,233,214)"
+     ],
+     "contraste": 6.55,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "gold",
+   "mode": "dark",
+   "print": "j16c-depois-selo-390-escuro-gold.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(252, 211, 77)",
+     "fundos": [
+      "rgb(68,49,16)",
+      "rgb(44,34,17)"
+     ],
+     "contraste": 8.57,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(252, 211, 77)",
+     "fundos": [
+      "rgb(41,32,17)",
+      "rgb(73,52,16)"
+     ],
+     "contraste": 8.17,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "emerald",
+   "mode": "light",
+   "print": "j16c-depois-selo-390-claro-emerald.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(3, 90, 63)",
+     "fundos": [
+      "rgb(226,243,237)",
+      "rgb(222,241,235)",
+      "rgb(251,253,253)"
+     ],
+     "contraste": 7.03,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(3, 90, 63)",
+     "fundos": [
+      "rgb(254,255,255)",
+      "rgb(215,238,231)"
+     ],
+     "contraste": 6.8,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "emerald",
+   "mode": "dark",
+   "print": "j16c-depois-selo-390-escuro-emerald.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(110, 231, 183)",
+     "fundos": [
+      "rgb(17,60,42)",
+      "rgb(17,75,53)",
+      "rgb(17,69,49)",
+      "rgb(17,65,46)",
+      "rgb(17,51,36)"
+     ],
+     "contraste": 6.61,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(110, 231, 183)",
+     "fundos": [
+      "rgb(17,48,34)",
+      "rgb(17,70,50)"
+     ],
+     "contraste": 7.08,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "crimson",
+   "mode": "light",
+   "print": "j16c-depois-selo-390-claro-crimson.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(132, 12, 36)",
+     "fundos": [
+      "rgb(250,221,227)",
+      "rgb(254,251,252)"
+     ],
+     "contraste": 8.01,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(132, 12, 36)",
+     "fundos": [
+      "rgb(255,254,255)",
+      "rgb(249,217,224)"
+     ],
+     "contraste": 7.79,
+     "minimo": 4.5
+    }
+   ]
+  },
+  {
+   "theme": "crimson",
+   "mode": "dark",
+   "print": "j16c-depois-selo-390-escuro-crimson.png",
+   "medidas": [
+    {
+     "texto": "Selo novo",
+     "cor": "rgb(255, 107, 138)",
+     "fundos": [
+      "rgb(61,17,25)",
+      "rgb(67,17,26)",
+      "rgb(75,18,28)",
+      "rgb(44,17,21)"
+     ],
+     "contraste": 5.5,
+     "minimo": 4.5
+    },
+    {
+     "texto": "+20 Glow",
+     "cor": "rgb(255, 107, 138)",
+     "fundos": [
+      "rgb(40,17,20)",
+      "rgb(69,17,27)"
+     ],
+     "contraste": 5.73,
+     "minimo": 4.5
+    }
+   ]
+  }
+ ],
+ "toque": [
+  {
+   "width": 390,
+   "mode": "light",
+   "voltar": {
+    "nome": "Voltar",
+    "toque": {
+     "w": 44,
+     "h": 44,
+     "x": 14,
+     "y": 22
+    },
+    "visual": {
+     "w": 40,
+     "h": 40,
+     "x": 16,
+     "y": 24
+    }
+   },
+   "chaves": [
+    {
+     "nome": "Sons",
+     "toque": {
+      "w": 48,
+      "h": 44,
+      "x": 310,
+      "y": 2339
+     },
+     "visual": {
+      "w": 48,
+      "h": 28,
+      "x": 310,
+      "y": 2347
+     }
+    },
+    {
+     "nome": "Modo discreto",
+     "toque": {
+      "w": 48,
+      "h": 44,
+      "x": 310,
+      "y": 2399
+     },
+     "visual": {
+      "w": 48,
+      "h": 28,
+      "x": 310,
+      "y": 2407
+     }
+    }
+   ]
+  },
+  {
+   "width": 390,
+   "mode": "dark",
+   "voltar": {
+    "nome": "Voltar",
+    "toque": {
+     "w": 44,
+     "h": 44,
+     "x": 14,
+     "y": 22
+    },
+    "visual": {
+     "w": 40,
+     "h": 40,
+     "x": 16,
+     "y": 24
+    }
+   },
+   "chaves": [
+    {
+     "nome": "Sons",
+     "toque": {
+      "w": 48,
+      "h": 44,
+      "x": 310,
+      "y": 2339
+     },
+     "visual": {
+      "w": 48,
+      "h": 28,
+      "x": 310,
+      "y": 2347
+     }
+    },
+    {
+     "nome": "Modo discreto",
+     "toque": {
+      "w": 48,
+      "h": 44,
+      "x": 310,
+      "y": 2399
+     },
+     "visual": {
+      "w": 48,
+      "h": 28,
+      "x": 310,
+      "y": 2407
+     }
+    }
+   ]
+  },
+  {
+   "width": 430,
+   "mode": "light",
+   "voltar": {
+    "nome": "Voltar",
+    "toque": {
+     "w": 44,
+     "h": 44,
+     "x": 14,
+     "y": 22
+    },
+    "visual": {
+     "w": 40,
+     "h": 40,
+     "x": 16,
+     "y": 24
+    }
+   },
+   "chaves": [
+    {
+     "nome": "Sons",
+     "toque": {
+      "w": 48,
+      "h": 44,
+      "x": 350,
+      "y": 2339
+     },
+     "visual": {
+      "w": 48,
+      "h": 28,
+      "x": 350,
+      "y": 2347
+     }
+    },
+    {
+     "nome": "Modo discreto",
+     "toque": {
+      "w": 48,
+      "h": 44,
+      "x": 350,
+      "y": 2399
+     },
+     "visual": {
+      "w": 48,
+      "h": 28,
+      "x": 350,
+      "y": 2407
+     }
+    }
+   ]
+  },
+  {
+   "width": 430,
+   "mode": "dark",
+   "voltar": {
+    "nome": "Voltar",
+    "toque": {
+     "w": 44,
+     "h": 44,
+     "x": 14,
+     "y": 22
+    },
+    "visual": {
+     "w": 40,
+     "h": 40,
+     "x": 16,
+     "y": 24
+    }
+   },
+   "chaves": [
+    {
+     "nome": "Sons",
+     "toque": {
+      "w": 48,
+      "h": 44,
+      "x": 350,
+      "y": 2339
+     },
+     "visual": {
+      "w": 48,
+      "h": 28,
+      "x": 350,
+      "y": 2347
+     }
+    },
+    {
+     "nome": "Modo discreto",
+     "toque": {
+      "w": 48,
+      "h": 44,
+      "x": 350,
+      "y": 2399
+     },
+     "visual": {
+      "w": 48,
+      "h": 28,
+      "x": 350,
+      "y": 2407
+     }
+    }
+   ]
+  }
+ ],
+ "resumos": {
+  "semana": "Esta semana 45 Glow nesta semana 2 dias fortes O que você construiu 4 despesas lançadas Na semana passada: 80 Glow Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo.",
+  "mes": "Este mês 120 Glow neste mês 5 dias fortes 1 semana firme O que você construiu 5 despesas lançadas 2 entradas lançadas 3 dias planejados 1 comprovante no Cofre 2 dias de descanso Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo.",
+  "ano": "Este ano 305 Glow neste ano 14 dias fortes 2 semanas firmes 2 semanas guardando dinheiro O que você construiu 22 despesas lançadas 9 entradas lançadas 8 dias planejados 2 vezes guardando dinheiro 4 comprovantes no Cofre 5 dias de descanso 14 vezes que sua dica ajudou 4 vezes que sua dica protegeu Isto é o que você construiu, não uma meta a bater. O que não veio neste período não fica devendo."
+ }
+}

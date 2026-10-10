@@ -1,9 +1,14 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
 import { formatBRL, monthProjection } from "@/lib/finance";
 import type { Job, Meta } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
+import {
+  CARD_PEQUENO,
+  IconeCard,
+  ROTULO_CARD,
+  VALOR_CARD,
+} from "./pecasMockup";
 
 interface Props {
   jobs: Job[];
@@ -23,26 +28,12 @@ export function FaltaMetaCard({ jobs, metas, onGoToFinanceiro }: Props) {
   if (p.meta === null || p.remaining === null) return null;
 
   return (
-    <InicioCard
-      onClick={onGoToFinanceiro}
-      className="flex flex-col gap-2"
-      style={{ padding: "16px" }}
-    >
-      <ArrowUpRight
-        size={20}
-        style={{ color: "var(--accent-deep)" }}
-        aria-hidden
-      />
-      <span
-        className="font-semibold"
-        style={{ fontSize: "11px", color: "var(--text-muted)" }}
-      >
-        Falta pra meta
-      </span>
-      <span
-        className="font-extrabold tabular-nums leading-none truncate"
-        style={{ fontSize: "20px" }}
-      >
+    <InicioCard onClick={onGoToFinanceiro} style={CARD_PEQUENO}>
+      <IconeCard>
+        <path d="M7 17 17 7M7 7h10v10" />
+      </IconeCard>
+      <span style={ROTULO_CARD}>Falta pra meta</span>
+      <span className="truncate" style={VALOR_CARD}>
         {formatBRL(p.remaining)}
       </span>
     </InicioCard>

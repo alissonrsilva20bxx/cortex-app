@@ -17,6 +17,10 @@ import { NextJobCard } from "@/components/home/NextJobCard";
 import { ObjetivosCard } from "@/components/home/ObjetivosCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { CofreCard } from "@/components/home/CofreCard";
+import { JornadaCard } from "@/components/home/JornadaCard";
+import { destinoDoProximoPasso } from "@/components/jornada/progresso";
+import { JornadaScreen } from "@/components/jornada/JornadaScreen";
+import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
 import { SemanaSection } from "@/components/home/SemanaSection";
 import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
 import { JobsTab } from "@/components/jobs/JobsTab";
@@ -39,11 +43,20 @@ import { AppTour } from "@/components/onboarding/AppTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
+import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
+import {
+  guardarPlanoEscolhido,
+  type OnEscolherPlano,
+  type Plano,
+} from "@/lib/planos";
+import { PagamentoTela } from "@/components/pagamento/PagamentoTela";
 import { supabase } from "@/lib/supabase";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import * as cofreCache from "@/lib/cofre/cofreCache";
 import * as pinHashCache from "@/lib/pinHashCache";
+import { zerarTodasAsTentativas } from "@/lib/pinTentativas";
+import { reauthAtual } from "@/lib/reauth";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { isFreshAccount } from "@/lib/onboarding";
 import { tourDoneKey, type RedeAcessoTour } from "@/lib/appTour";
@@ -80,7 +93,7 @@ const DEFAULT_CARD_STYLES: CardStyleConfig = {
   nextJob: "standard",
   financeSummary: "standard",
 };
-const DEFAULT_CHART_PREFS: ChartPrefConfig = { financeiro: "bar", jobs: "bar" };
+const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 /** Falha de rede (offline / servidor inalcançável), não sessão inválida. */
 function isNetworkError(error: { name?: string; status?: number }): boolean {
@@ -129,6 +142,8 @@ export default function Page() {
   // onboarding de conta nova; depois, só por Ajustes → "Ver tour do app".
   const [tourOpen, setTourOpen] = useState(false);
   const [redeAcesso, setRedeAcesso] = useState<RedeAcessoTour>("pendente");
+  // "+" da Rede (Postar): cada toque abre o compositor da Rede.
+  const [redePostar, setRedePostar] = useState(0);
   // Foto do perfil da Rede: o Início mostra a mesma (cai na da conta Google
   // quando a Rede não tem foto ou não está liberada).
   const [fotoRede, setFotoRede] = useState<string | null>(null);
@@ -158,10 +173,12 @@ export default function Page() {
   // evolução" do HeroCard — issue #134) — ver comentário de `focusTab` em
   // FinanceiroTab.tsx (redesign iOS #122/#125).
   const [financeiroFocusTab, setFinanceiroFocusTab] = useState<
-    "metas" | "visao" | null
+    "metas" | "visao" | "saidas" | null
   >(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
+  // "Sua Jornada" (J15): a tela abre pelo card do Início.
+  const [jornadaAberta, setJornadaAberta] = useState(false);
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
 
   // Some com a BottomNav quando o composer do chat da Rede está focado,
@@ -206,6 +223,11 @@ export default function Page() {
         nome: authUser.user_metadata?.full_name ?? authUser.email ?? "Usuário",
         email: authUser.email ?? "",
         avatarUrl: authUser.user_metadata?.avatar_url,
+        telefone:
+          authUser.phone ||
+          authUser.user_metadata?.phone ||
+          authUser.user_metadata?.telefone ||
+          null,
       };
 
       // Só revela o usuário (e libera as buscas de dados sensíveis) depois
@@ -315,6 +337,7 @@ export default function Page() {
               status: j.status,
               observacoes: j.observacoes ?? undefined,
               criadoEm: j.criado_em,
+              pagoEm: j.pago_em ?? null,
             }))
           );
         }
@@ -367,6 +390,16 @@ export default function Page() {
       });
   }, [usuario, locked, objetivosRefreshKey]);
 
+  // Volta do Google pedida nos Ajustes (desligar ou trocar o PIN): depois de
+  // destravar o app, abre os Ajustes; lá a confirmação é conferida e a ação
+  // termina (components/ajustes/AjustesTab.tsx).
+  useEffect(() => {
+    if (locked || !usuario) return;
+    const motivo = reauthAtual().motivoPendente();
+    if (motivo === "desligar-pin" || motivo === "trocar-pin")
+      setActiveTab("ajustes");
+  }, [locked, usuario]);
+
   async function handleSignOut() {
     // Zera o cache da Rede, do Cofre e do PIN ANTES de sair -- em memória
     // (a próxima conta nesta aba não herda nada) e no localStorage (req
@@ -376,13 +409,32 @@ export default function Page() {
       redeCachePersist.limpar();
       cofreCache.limparTudo();
       pinHashCache.limparTudo();
+      // Sair da conta zera o limite de tentativas do PIN: para voltar é
+      // preciso a senha (ou o Google) da conta.
+      zerarTodasAsTentativas();
     } catch (_) {}
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
 
+  // Ponto de entrada do Pagamento (onboarding "Linha do tempo"): a tela de
+  // escolha de plano chama isto com o plano marcado, e abre o Pagamento
+  // "C Transparente" (Stripe embutido). "Voltar" no Pagamento reabre a
+  // escolha de plano.
+  const [planoNoPagamento, setPlanoNoPagamento] = useState<Plano | null>(null);
+  const [reabrirPlanos, setReabrirPlanos] = useState(0);
+  // Depois do Pagamento, a pílula e os planos releem a assinatura.
+  const [releituraAssinatura, setReleituraAssinatura] = useState(0);
+  const escolherPlano: OnEscolherPlano = (plano) => {
+    if (usuario) guardarPlanoEscolhido(usuario.id, plano);
+    setPlanoNoPagamento(plano);
+  };
+
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
+    // A barra fica por cima da Sua Jornada (protótipo): tocar numa aba fecha
+    // a Jornada e vai pra aba.
+    setJornadaAberta(false);
     if (tab === activeTab) {
       // Tocar de novo na aba ativa = gesto nativo do iOS: na Rede, com
       // uma subtela aberta, volta pra raiz (Feed); em qualquer outro caso
@@ -405,6 +457,8 @@ export default function Page() {
       else setDespesaFormOpen(true);
     } else if (activeTab === "cofre") {
       setUploadOpen(true);
+    } else if (activeTab === "rede") {
+      setRedePostar((n) => n + 1);
     }
   }
 
@@ -456,7 +510,18 @@ export default function Page() {
   }
 
   if (locked && pinHash) {
-    return <PinScreen pinHash={pinHash} onUnlock={() => setLocked(false)} />;
+    return (
+      <PinScreen
+        pinHash={pinHash}
+        onUnlock={() => setLocked(false)}
+        usuarioId={usuario?.id ?? ""}
+        onPinRedefinido={(hash) => {
+          setPinHash(hash);
+          if (usuario) pinHashCache.gravar(usuario.id, hash);
+        }}
+        onSair={handleSignOut}
+      />
+    );
   }
 
   // 1º uso: decidido uma única vez (isNewUserSession, ver efeito acima) a
@@ -523,22 +588,47 @@ export default function Page() {
                   pequenos (Próximo, Objetivos, Falta pra meta, Cofre), "Esta semana" e
                   "Próximos atendimentos". Stack explícito com `grid`+`gap` (achado
                   #131: nada de `space-y-*`, que depende de seletor de irmão). */}
-              <div className="grid grid-cols-[minmax(0,1fr)] gap-[var(--space-section)]">
+              <div
+                // Mockup normativo (Início): coluna com gap de 12px e 18px
+                // entre o cabeçalho e a grade (gap 12 + margin-top 6).
+                className="grid grid-cols-[minmax(0,1fr)]"
+                style={{ gap: "12px", marginTop: "18px" }}
+              >
                 {/* Grade de 2 colunas do mockup; o card principal ocupa as duas. Com
     quantidade ímpar de cards pequenos (um deles desligado em Ajustes,
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
     um buraco. */}
                 <div className="grid grid-cols-2 gap-[10px] [&>:last-child:nth-child(even)]:col-span-2">
-                  {/* `data-tour` do tour guiado (lib/appTour.ts); ocupa as 2 colunas. */}
-                  <div data-tour="home-hero" className="col-span-2">
-                    <HeroCard
-                      jobs={jobs}
-                      metas={metas}
-                      onGoToFinanceiro={() => {
-                        handleTabChange("financeiro");
-                        setFinanceiroFocusTab("visao");
-                      }}
-                    />
+                  {/* O card principal e o card "Sua Jornada" (J12) ocupam as 2
+                      colunas, um embaixo do outro com o gap de 10px da grade, como no
+                      protótipo da Jornada (`.grid2 > .span2.jcard` logo depois da
+                      receita). Juntos num bloco só, pra não mudar a contagem que
+                      decide se o último card pequeno ocupa a linha toda. Sem estado
+                      da Jornada o card não aparece (nunca trava o Início). */}
+                  <div className="col-span-2 flex flex-col gap-[10px]">
+                    {/* `data-tour` do tour guiado (lib/appTour.ts). */}
+                    <div data-tour="home-hero">
+                      <HeroCard
+                        jobs={jobs}
+                        metas={metas}
+                        onGoToFinanceiro={() => {
+                          handleTabChange("financeiro");
+                          setFinanceiroFocusTab("visao");
+                        }}
+                      />
+                    </div>
+                    {usuario && (
+                      <JornadaCard
+                        userId={usuario.id}
+                        onAbrir={() => setJornadaAberta(true)}
+                        onProximoPasso={(acao) => {
+                          const destino = destinoDoProximoPasso(acao);
+                          handleTabChange(destino.aba);
+                          if (destino.financeiro)
+                            setFinanceiroFocusTab(destino.financeiro);
+                        }}
+                      />
+                    )}
                   </div>
                   {homeCards.nextJob && <NextJobCard jobs={jobs} />}
                   {(homeCards.objetivos ?? true) && (
@@ -588,6 +678,10 @@ export default function Page() {
                 userId={usuario.id}
                 refreshTrigger={jobsRefreshKey}
                 chartType={chartPrefs.jobs}
+                profissional={{
+                  nome: usuario.nome,
+                  telefone: usuario.telefone,
+                }}
                 onEditJob={(job) => {
                   setEditingJob(job);
                   setJobFormOpen(true);
@@ -599,10 +693,14 @@ export default function Page() {
               <FinanceiroTab
                 userId={usuario.id}
                 refreshTrigger={financeiroRefreshKey}
-                chartType={chartPrefs.financeiro}
                 onInnerTabChange={setFinInnerTab}
                 onAddDespesa={() => setDespesaFormOpen(true)}
                 onAddReceita={() => setReceitaFormOpen(true)}
+                avatar={{
+                  inicial: usuario.nome.trim().charAt(0).toUpperCase(),
+                  foto: fotoRede || usuario.avatarUrl,
+                  onOpenAjustes: () => handleTabChange("ajustes"),
+                }}
                 objetivos={objetivos}
                 onObjetivoAdded={() => setObjetivosRefreshKey((k) => k + 1)}
                 onToggleObjetivo={handleToggleObjetivo}
@@ -618,6 +716,15 @@ export default function Page() {
                 pinHash={pinHash}
                 active={activeTab === "cofre"}
                 onExit={() => handleTabChange(abaAntesDoCofre.current)}
+                onPinHashChange={(h) => {
+                  setPinHash(h);
+                  pinHashCache.gravar(usuario.id, h);
+                }}
+                // Sem este sinal o azulejo "Enviar" nasce desabilitado (meio
+                // transparente), e a referência o desenha ativo. O sheet mora na
+                // página, FORA da trava do Cofre, de propósito: o seletor de
+                // arquivo do sistema tira o foco e o Cofre trava na hora.
+                onEnviar={() => setUploadOpen(true)}
               />
             </TabPanel>
 
@@ -627,6 +734,7 @@ export default function Page() {
                 active={activeTab === "rede"}
                 reselectSignal={redeReselect}
                 onChatFocusChange={setChatComposerFocused}
+                postarSignal={redePostar}
                 onAcessoChange={setRedeAcesso}
                 onFotoPerfilChange={setFotoRede}
               />
@@ -661,16 +769,24 @@ export default function Page() {
             activeTab={activeTab}
             onChange={handleTabChange}
             holdOpen={fabOpen || tourOpen}
-            renderFab={(compact) => (
-              <FAB
-                activeTab={activeTab}
-                financeiroSubTab={finInnerTab}
-                open={fabOpen}
-                onToggle={() => setFabOpen((v) => !v)}
-                onAction={handleFabAction}
-                compact={compact}
-              />
-            )}
+            pilulaDaJornada={jornadaAberta}
+            renderFab={
+              // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
+              // de convite a pílula ocupa a linha toda.
+              activeTab === "rede" && redeAcesso !== "liberado"
+                ? undefined
+                : (compact) => (
+                    <FAB
+                      activeTab={activeTab}
+                      financeiroSubTab={finInnerTab}
+                      open={fabOpen}
+                      onToggle={() => setFabOpen((v) => !v)}
+                      onAction={handleFabAction}
+                      compact={compact}
+                      cobertoPorTela={jornadaAberta}
+                    />
+                  )
+            }
           />
         </>
       )}
@@ -686,6 +802,61 @@ export default function Page() {
       )}
 
       {!isNewUser && usuario && dataLoaded && <RecapSheet jobs={jobs} />}
+
+      {/* Teste grátis (onboarding "Linha do tempo", telas 4 e 5): a pílula
+          do contador no Início e a escolha de plano no fim do teste. */}
+      {!isNewUser && usuario && (
+        <AssinaturaNoApp
+          userId={usuario.id}
+          noInicio={
+            activeTab === "home" && !tourOpen && !jornadaAberta && !fabOpen
+          }
+          podeMostrarPlanos={dataLoaded && !tourOpen}
+          jobs={jobs}
+          onEscolherPlano={escolherPlano}
+          abrirPlanosSinal={reabrirPlanos}
+          recarregarSinal={releituraAssinatura}
+        />
+      )}
+      {usuario && planoNoPagamento && (
+        <PagamentoTela
+          plano={planoNoPagamento}
+          userId={usuario.id}
+          nome={usuario.nome.split(" ")[0]}
+          onVoltar={() => {
+            setPlanoNoPagamento(null);
+            setReabrirPlanos((n) => n + 1);
+          }}
+          onConcluir={() => {
+            setPlanoNoPagamento(null);
+            setReleituraAssinatura((n) => n + 1);
+          }}
+          onAssinaturaAtiva={() => setReleituraAssinatura((n) => n + 1)}
+        />
+      )}
+
+      {/* "Sua Jornada" (J15): a tela (J12) e o host de comemoração (J13),
+          só no app autenticado. Com o PIN travado esta árvore não monta,
+          então nada comemora por cima do PIN. */}
+      {usuario && jornadaAberta && (
+        <JornadaScreen
+          userId={usuario.id}
+          nome={usuario.nome.trim().split(/\s+/)[0] ?? ""}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
+          onVoltar={() => setJornadaAberta(false)}
+          onIrPara={(aba) => {
+            setJornadaAberta(false);
+            handleTabChange(aba);
+          }}
+        />
+      )}
+      {usuario && (
+        <ComemoracaoHost
+          userId={usuario.id}
+          inicial={usuario.nome.trim().charAt(0).toUpperCase()}
+          onVerJornada={() => setJornadaAberta(true)}
+        />
+      )}
 
       {usuario && (
         <>

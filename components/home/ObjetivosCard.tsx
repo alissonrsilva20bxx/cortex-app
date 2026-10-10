@@ -1,8 +1,13 @@
 "use client";
 
-import { Target } from "lucide-react";
 import type { Objetivo } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
+import {
+  CARD_PEQUENO,
+  IconeCard,
+  ROTULO_CARD,
+  VALOR_CARD,
+} from "./pecasMockup";
 
 interface Props {
   objetivos: Objetivo[];
@@ -19,25 +24,26 @@ const MAX_TRACOS = 8;
  * (`concluido`), sem percentual inventado. Tocar leva a Financeiro ›
  * Metas, onde a lista completa é marcada -- a Início só resume.
  */
+function IconeObjetivos() {
+  return (
+    <IconeCard>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </IconeCard>
+  );
+}
+
 export function ObjetivosCard({ objetivos, onGoToMetas }: Props) {
   const total = objetivos.length;
   const feitos = objetivos.filter((o) => o.concluido).length;
 
   if (objetivos.length === 0) {
     return (
-      <InicioCard
-        onClick={onGoToMetas}
-        className="flex flex-col gap-2"
-        style={{ padding: "16px" }}
-      >
-        <Target size={20} style={{ color: "var(--accent-deep)" }} aria-hidden />
-        <span
-          className="font-semibold"
-          style={{ fontSize: "11px", color: "var(--text-muted)" }}
-        >
-          Objetivos
-        </span>
-        <span className="font-bold" style={{ fontSize: "13px" }}>
+      <InicioCard onClick={onGoToMetas} style={CARD_PEQUENO}>
+        <IconeObjetivos />
+        <span style={ROTULO_CARD}>Objetivos</span>
+        <span style={{ fontSize: "13px", fontWeight: 700 }}>
           Adicionar objetivo
         </span>
       </InicioCard>
@@ -48,37 +54,31 @@ export function ObjetivosCard({ objetivos, onGoToMetas }: Props) {
     <InicioCard
       onClick={onGoToMetas}
       ariaLabel={`Objetivos: ${feitos} de ${total}`}
-      className="flex flex-col gap-2"
-      style={{ padding: "16px" }}
+      style={CARD_PEQUENO}
     >
-      <Target size={20} style={{ color: "var(--accent-deep)" }} aria-hidden />
-      <span
-        className="font-semibold"
-        style={{ fontSize: "11px", color: "var(--text-muted)" }}
-      >
-        Objetivos
-      </span>
-      <span
-        className="font-extrabold tabular-nums leading-none"
-        style={{ fontSize: "20px" }}
-      >
+      <IconeObjetivos />
+      <span style={ROTULO_CARD}>Objetivos</span>
+      <span style={VALOR_CARD}>
         {feitos} de {total}
       </span>
       {total <= MAX_TRACOS ? (
+        // Mockup: `grid; gap:4px`, traços de 5px raio 3; os concluídos
+        // acendem primeiro ("1 de 4" = o 1º traço), em `--t-acc`.
         <div
-          className="grid gap-1"
-          style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))`,
+            gap: "4px",
+          }}
           aria-hidden
         >
-          {objetivos.map((obj) => (
+          {objetivos.map((obj, i) => (
             <span
               key={obj.id}
               style={{
                 height: "5px",
-                borderRadius: "var(--radius-pill)",
-                background: obj.concluido
-                  ? "var(--accent)"
-                  : "var(--card-border)",
+                borderRadius: "3px",
+                background: i < feitos ? "var(--t-acc)" : "var(--t-line)",
               }}
             />
           ))}
@@ -88,8 +88,8 @@ export function ObjetivosCard({ objetivos, onGoToMetas }: Props) {
           aria-hidden
           style={{
             height: "5px",
-            borderRadius: "var(--radius-pill)",
-            background: "var(--card-border)",
+            borderRadius: "3px",
+            background: "var(--t-line)",
             overflow: "hidden",
           }}
         >
@@ -97,7 +97,7 @@ export function ObjetivosCard({ objetivos, onGoToMetas }: Props) {
             style={{
               width: `${Math.round((feitos / total) * 100)}%`,
               height: "5px",
-              background: "var(--accent)",
+              background: "var(--t-acc)",
             }}
           />
         </div>

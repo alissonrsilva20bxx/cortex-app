@@ -1,0 +1,5 @@
+antes recap+comemoração @300ms {"recapVisivel":true,"comemorando":true,"porCima":"comemoracao"}
+antes recap+comemoração @1300ms {"recapVisivel":true,"comemorando":true,"porCima":"comemoracao"}
+antes recap+comemoração @2500ms {"recapVisivel":true,"comemorando":true,"porCima":"comemoracao"}
+antes NÃO deu pra tocar "Continuar no meu ritmo": a comemoração intercepta o toque
+antes selo Mês a mês I: SELO NOVO Mês a mês Um mês inteiro na sua Jornada. +20 Glow

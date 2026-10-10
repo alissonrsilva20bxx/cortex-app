@@ -1,0 +1,21 @@
+{
+  "tela": "rede",
+  "largura": 390,
+  "modo": "escuro",
+  "tema": "emerald",
+  "layout": "E",
+  "metrica": "pixelmatch YIQ, limiar 0.1",
+  "difPct": 4.8748,
+  "pixelsDiferentes": 64183,
+  "tamanho": "780x1688",
+  "mesmoTamanho": true,
+  "reflowDoMockup": false,
+  "estilos": null,
+  "erros": [
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML.",
+    "Text content does not match server-rendered HTML."
+  ]
+}

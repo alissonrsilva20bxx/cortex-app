@@ -1,28 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { Target, TrendingDown, TrendingUp } from "lucide-react";
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { MiniBarChart } from "@/components/charts/MiniBarChart";
-import { AreaSparkline } from "@/components/charts/AreaSparkline";
+import type { CSSProperties, ReactNode } from "react";
 import {
   formatBRL,
   calcEarnings,
   monthExpenses,
   monthMeta,
-  buildChartData,
-  last30DaysSpark,
-  type ChartPeriod,
+  monthConcludedCount,
+  monthEarnings,
+  monthPaidJobsCount,
 } from "@/lib/finance";
 import type { Job, Despesa, Meta, ReceitaAvulsa } from "@/lib/types";
-import { FinCard } from "./FinCard";
 import { progressoMeta } from "./progressoMeta";
-
-const PERIOD_OPTS: { id: ChartPeriod; label: string }[] = [
-  { id: "sem", label: "Semana" },
-  { id: "mes", label: "Mês" },
-  { id: "ano", label: "Ano" },
-];
 
 interface Props {
   jobs: Job[];
@@ -32,22 +21,77 @@ interface Props {
   totalDespMes: number;
   saldo: number;
   metas: Meta[];
-  chartType?: "bar" | "area";
 }
 
 /**
- * Topo do Financeiro no visual novo (Jornada J04, mockup
- * `5-telas-8-temas-claro-escuro.html`, tela Financeiro): o card "Saldo do
- * mês" com a pílula de comparação, o saldo, a barra entrou/saiu, e a grade
- * de cards pequenos (Entradas, Saídas, Meta). Fica acima das sub-abas,
- * sempre visível (#136). Nenhuma conta nova: saldo e totais chegam
- * prontos do FinanceiroTab, a variação é a mesma de antes (#136) e o
- * percentual da meta é o mesmo do MetasTab (`progressoMeta`).
+ * Topo do Financeiro A, igual ao mockup normativo
+ * (docs/jornada/referencias/5-telas-8-temas-claro-escuro.html, tela
+ * Financeiro): o card "Saldo do mês" e a grade de 4 cards (Entradas,
+ * Saídas, Meta, Ticket médio). Valores de estilo copiados do mockup, cores
+ * pelas variáveis `--t-*` (as mesmas do mockup, em globals.css).
  *
- * O gráfico (preferência barras/área de Ajustes) não está no mockup, mas
- * é a única tela que obedece essa preferência -- continua, num card
- * próprio, abaixo da grade.
+ * Saldo e totais chegam prontos do FinanceiroTab e a variação é a de antes
+ * (#136). Regras de exibição revistas por ordem do operador para o mockup
+ * fechar inteiro (pixel do Financeiro, #209):
+ *  - Meta: o faturamento do mês (atendimentos concluídos pelo dia do
+ *    atendimento, o mesmo número do card principal do Início) sobre a meta;
+ *  - Ticket médio: o que entrou no mês ÷ atendimentos concluídos no mês;
+ *  - "N lançamentos" de Entradas: atendimentos cujo dinheiro entrou no mês
+ *    (`diaDoDinheiro`) + receitas avulsas do mês.
+ *
+ * Sem gráfico de palitos: o "Saldo do mês" já traz a barra entrou x saiu
+ * (verde e vermelho do tema), como o mockup normativo e o desenho que o
+ * operador aprovou (print de 09/10/2026); os 8 palitos (S1…S8) saíram.
  */
+
+/** Card do mockup: `background:var(--t-card);color:var(--t-ink);
+ * border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:6px` */
+const CARD: CSSProperties = {
+  background: "var(--t-card)",
+  color: "var(--t-ink)",
+  borderRadius: "20px",
+  padding: "16px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "6px",
+};
+
+const ROTULO: CSSProperties = {
+  fontSize: "11px",
+  color: "var(--t-mut)",
+  fontWeight: 600,
+};
+const VALOR: CSSProperties = { fontSize: "20px", fontWeight: 800 };
+const APOIO: CSSProperties = { fontSize: "10px", color: "var(--t-mut)" };
+
+/** Ícone do mockup: 20×20, traço 2, cor do wrapper. */
+function Icone({ cor, children }: { cor: string; children: ReactNode }) {
+  return (
+    <span style={{ color: cor }}>
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        // Inline como no mockup (o preflight do Tailwind deixa svg em
+        // bloco, o que encolhe a linha do ícone).
+        style={{ display: "inline", verticalAlign: "baseline" }}
+      >
+        {children}
+      </svg>
+    </span>
+  );
+}
+
+function plural(n: number): string {
+  return `${n} ${n === 1 ? "lançamento" : "lançamentos"}`;
+}
+
 export function FinanceiroHeroCard({
   jobs,
   receitas,
@@ -56,14 +100,7 @@ export function FinanceiroHeroCard({
   totalDespMes,
   saldo,
   metas,
-  chartType = "bar",
 }: Props) {
-  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("sem");
-  const chartData = buildChartData(jobs, receitas, chartPeriod);
-  const sparkData = last30DaysSpark(jobs, receitas);
-
-  // Regra de honestidade (#136): variação só com período anterior real e
-  // diferente de zero; senão a pílula some, nunca um "0%" inventado.
   const now = new Date();
   const prevRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevSaldo =
@@ -73,207 +110,174 @@ export function FinanceiroHeroCard({
     prevSaldo !== 0 ? ((saldo - prevSaldo) / Math.abs(prevSaldo)) * 100 : null;
   const mesAnterior = prevRef.toLocaleDateString("pt-BR", { month: "long" });
 
-  // Meta do mês: a mesma entrada do mês (calcEarnings "mes") sobre o alvo
-  // mensal, com a mesma conta do MetasTab.
   const metaMes = monthMeta(metas);
+  const faturamento = monthEarnings(jobs, now);
   const metaPct =
     metaMes !== null && metaMes > 0
-      ? progressoMeta(totalEntradaMes, metaMes)
+      ? progressoMeta(faturamento, metaMes)
       : null;
 
+  const noMes = (data: string) => {
+    const d = new Date(`${data}T00:00:00`);
+    return (
+      d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    );
+  };
+  const atendimentosMes = monthConcludedCount(jobs, now);
+  const qtdEntradas =
+    monthPaidJobsCount(jobs, now) +
+    receitas.filter((r) => noMes(r.data)).length;
+  const qtdSaidas = despesas.filter((d) => noMes(d.data)).length;
+  // Ticket médio = o que entrou no mês ÷ atendimentos concluídos no mês.
+  const ticketMedio =
+    atendimentosMes > 0 ? Math.round(totalEntradaMes / atendimentosMes) : null;
+
   const movimento = totalEntradaMes + totalDespMes;
+  const sobe = variacaoPct !== null && variacaoPct >= 0;
 
   return (
-    <div className="mb-5 flex flex-col gap-[10px]">
-      <div className="grid grid-cols-2 gap-[10px] [&>:last-child:nth-child(even)]:col-span-2">
-        <FinCard
-          className="col-span-2 flex flex-col gap-[10px]"
-          style={{ padding: "18px" }}
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: "10px",
+        marginTop: "6px",
+      }}
+    >
+      <section
+        style={{ ...CARD, gridColumn: "span 2", padding: "18px", gap: "10px" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          <div className="flex items-center justify-between gap-2">
-            <span
-              className="font-semibold"
-              style={{ fontSize: "12px", color: "var(--text-muted)" }}
-            >
-              Saldo do mês
-            </span>
-            {variacaoPct !== null && (
-              <span
-                className="flex items-center gap-1 font-bold rounded-full shrink-0"
-                style={{
-                  fontSize: "11px",
-                  padding: "3px 9px",
-                  // #175: verde/vermelho de texto pequeno.
-                  color:
-                    variacaoPct >= 0
-                      ? "var(--success-text)"
-                      : "var(--danger-text)",
-                  background:
-                    variacaoPct >= 0
-                      ? "var(--success-tint)"
-                      : "var(--danger-tint)",
-                }}
-              >
-                {variacaoPct >= 0 ? (
-                  <TrendingUp size={11} aria-hidden />
-                ) : (
-                  <TrendingDown size={11} aria-hidden />
-                )}
-                {variacaoPct >= 0 ? "+" : ""}
-                {Math.round(variacaoPct)}% vs {mesAnterior}
-              </span>
-            )}
-          </div>
-
-          <strong
-            className="font-extrabold tabular-nums leading-none"
+          <span
+            style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-mut)" }}
+          >
+            Saldo do mês
+          </span>
+          {/* Sem variação (mês anterior zerado) o chip fica invisível e sem
+              número (regra de honestidade, #136), mas continua ocupando a
+              linha: sem ele a linha do título encolhe e o valor e a barra
+              sobem 4,5px. */}
+          <span
+            data-saldo-chip={variacaoPct !== null ? "visivel" : "reservado"}
+            aria-hidden={variacaoPct === null || undefined}
             style={{
-              fontSize: "36px",
-              letterSpacing: "-1px",
-              color: saldo >= 0 ? "var(--text)" : "var(--danger)",
+              fontSize: "11px",
+              fontWeight: 700,
+              padding: "3px 9px",
+              borderRadius: "999px",
+              background: sobe ? "var(--t-gsoft)" : "var(--t-rsoft)",
+              color: sobe ? "var(--t-green)" : "var(--t-red)",
+              visibility: variacaoPct !== null ? undefined : "hidden",
             }}
           >
-            {formatBRL(saldo)}
-          </strong>
+            {/* Um nó de texto só, como no mockup: o navegador espaça a
+                junção de dois nós de forma diferente (ordem do operador:
+                pixel idêntico). */}
+            {variacaoPct !== null
+              ? `${sobe ? "+" : ""}${Math.round(variacaoPct)}% vs ${mesAnterior}`
+              : "\u00a0"}
+          </span>
+        </div>
 
-          {/* Barra entrou x saiu: proporção dos dois totais do mês, sem
-              conta nova. Só aparece com movimento no mês. */}
-          {movimento > 0 && (
-            <div
-              className="flex overflow-hidden"
-              style={{
-                height: "8px",
-                gap: "3px",
-                borderRadius: "var(--radius-pill)",
-              }}
-              aria-hidden
-            >
-              {totalEntradaMes > 0 && (
-                <span
-                  style={{
-                    flex: totalEntradaMes,
-                    background: "var(--success)",
-                  }}
-                />
-              )}
-              {totalDespMes > 0 && (
-                <span
-                  style={{ flex: totalDespMes, background: "var(--danger)" }}
-                />
-              )}
-            </div>
+        <span
+          style={{
+            fontSize: "36px",
+            fontWeight: 800,
+            letterSpacing: "-1px",
+            color: saldo >= 0 ? undefined : "var(--t-red)",
+          }}
+        >
+          {formatBRL(saldo)}
+        </span>
+
+        {/* Barra entrou x saiu: proporção dos dois totais do mês. Sempre
+            desenhada, na mesma altura e no mesmo lugar: mês zerado é a
+            trilha cinza vazia; só entrada, verde inteiro; só saída,
+            vermelho inteiro; os dois, verde e vermelho proporcionais. */}
+        <div
+          data-saldo-barra={movimento > 0 ? "movimento" : "vazia"}
+          style={{
+            display: "flex",
+            height: "8px",
+            borderRadius: "4px",
+            overflow: "hidden",
+            gap: "3px",
+            background: movimento > 0 ? undefined : "var(--t-line)",
+          }}
+          aria-hidden
+        >
+          {totalEntradaMes > 0 && (
+            <span
+              style={{ flex: totalEntradaMes, background: "var(--t-green)" }}
+            />
           )}
-
-          <div
-            className="flex justify-between gap-2"
-            style={{ fontSize: "11px", color: "var(--text-muted)" }}
-          >
-            <span>Entrou {formatBRL(totalEntradaMes)}</span>
-            <span>Saiu {formatBRL(totalDespMes)}</span>
-          </div>
-        </FinCard>
-
-        <FinCard className="flex flex-col gap-1.5" style={{ padding: "16px" }}>
-          <TrendingUp
-            size={20}
-            style={{ color: "var(--success)" }}
-            aria-hidden
-          />
-          <span
-            className="font-semibold"
-            style={{ fontSize: "11px", color: "var(--text-muted)" }}
-          >
-            Entradas
-          </span>
-          <span
-            className="font-extrabold tabular-nums leading-none truncate"
-            style={{ fontSize: "20px" }}
-          >
-            {formatBRL(totalEntradaMes)}
-          </span>
-        </FinCard>
-
-        <FinCard className="flex flex-col gap-1.5" style={{ padding: "16px" }}>
-          <TrendingDown
-            size={20}
-            style={{ color: "var(--danger)" }}
-            aria-hidden
-          />
-          <span
-            className="font-semibold"
-            style={{ fontSize: "11px", color: "var(--text-muted)" }}
-          >
-            Saídas
-          </span>
-          <span
-            className="font-extrabold tabular-nums leading-none truncate"
-            style={{ fontSize: "20px" }}
-          >
-            {formatBRL(totalDespMes)}
-          </span>
-        </FinCard>
-
-        {metaPct !== null && metaMes !== null && (
-          <FinCard
-            className="flex flex-col gap-1.5"
-            style={{ padding: "16px" }}
-          >
-            <Target
-              size={20}
-              style={{ color: "var(--accent-deep)" }}
-              aria-hidden
-            />
-            <span
-              className="font-semibold"
-              style={{ fontSize: "11px", color: "var(--text-muted)" }}
-            >
-              Meta
-            </span>
-            <span
-              className="font-extrabold tabular-nums leading-none"
-              style={{ fontSize: "20px" }}
-            >
-              {Math.round(metaPct)}%
-            </span>
-            <span
-              className="truncate"
-              style={{ fontSize: "10px", color: "var(--text-muted)" }}
-            >
-              {formatBRL(totalEntradaMes)} de {formatBRL(metaMes)}
-            </span>
-          </FinCard>
-        )}
-      </div>
-
-      {/* Gráfico (preferência real de Ajustes, barras ou área). O seletor
-          Semana/Mês/Ano só existe no modo barras: no modo área o gráfico é
-          sempre os últimos 30 dias (last30DaysSpark) -- comportamento de
-          antes, preservado. */}
-      <FinCard style={{ padding: "16px" }}>
-        <div className="flex items-center justify-between mb-3">
-          <span
-            className="font-semibold"
-            style={{ fontSize: "11px", color: "var(--text-muted)" }}
-          >
-            Resumo financeiro
-          </span>
-          {chartType !== "area" && (
-            <SegmentedControl
-              size="sm"
-              // #174: Semana/Mês/Ano com alvo de toque de 44px.
-              minTouchTarget
-              options={PERIOD_OPTS}
-              value={chartPeriod}
-              onChange={setChartPeriod}
-            />
+          {totalDespMes > 0 && (
+            <span style={{ flex: totalDespMes, background: "var(--t-red)" }} />
           )}
         </div>
-        {chartType === "area" ? (
-          <AreaSparkline data={sparkData} height={100} id="fin-hero-area" />
-        ) : (
-          <MiniBarChart data={chartData} height={100} id="fin-hero-bar" />
-        )}
-      </FinCard>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: "11px",
+            color: "var(--t-mut)",
+          }}
+        >
+          <span>Entrou {formatBRL(totalEntradaMes)}</span>
+          <span>Saiu {formatBRL(totalDespMes)}</span>
+        </div>
+      </section>
+
+      <section style={CARD}>
+        <Icone cor="var(--t-green)">
+          <path d="M7 17 17 7M7 7h10v10" />
+        </Icone>
+        <span style={ROTULO}>Entradas</span>
+        <span style={VALOR}>{formatBRL(totalEntradaMes)}</span>
+        <span style={APOIO}>{plural(qtdEntradas)}</span>
+      </section>
+
+      <section style={CARD}>
+        <Icone cor="var(--t-red)">
+          <path d="M17 7 7 17M17 17H7V7" />
+        </Icone>
+        <span style={ROTULO}>Saídas</span>
+        <span style={VALOR}>{formatBRL(totalDespMes)}</span>
+        <span style={APOIO}>{plural(qtdSaidas)}</span>
+      </section>
+
+      {metaPct !== null && metaMes !== null && (
+        <section style={CARD}>
+          <Icone cor="var(--t-deep)">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" />
+            <circle cx="12" cy="12" r="2" />
+          </Icone>
+          <span style={ROTULO}>Meta</span>
+          <span style={VALOR}>{`${Math.round(metaPct)}%`}</span>
+          <span style={APOIO}>
+            {formatBRL(faturamento)} de {formatBRL(metaMes)}
+          </span>
+        </section>
+      )}
+
+      {ticketMedio !== null && (
+        <section style={CARD}>
+          <Icone cor="var(--t-deep)">
+            <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+          </Icone>
+          <span style={ROTULO}>Ticket médio</span>
+          <span style={VALOR}>{formatBRL(ticketMedio)}</span>
+          <span style={APOIO}>por atendimento</span>
+        </section>
+      )}
     </div>
   );
 }

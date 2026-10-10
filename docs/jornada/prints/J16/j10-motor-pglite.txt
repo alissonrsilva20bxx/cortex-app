@@ -1,0 +1,87 @@
+migrations: 32/32 aplicadas sem erro
+ok    0034_jornada_contadores.sql reaplicada (idempotente)
+ok    0035_jornada_rpcs.sql reaplicada (idempotente)
+PASSA anon não chama jornada_registrar (permission denied for function jornada_registrar)
+PASSA anon não chama jornada_estado (permission denied for function jornada_estado)
+PASSA authenticated não chama private.jornada_aplicar (permission denied for function jornada_aplicar)
+PASSA authenticated não chama private.jornada_creditar_dica (permission denied for function jornada_creditar_dica)
+PASSA authenticated não chama private.jornada_regra (permission denied for function jornada_regra)
+PASSA authenticated não chama private.jornada_somar_glow (permission denied for function jornada_somar_glow)
+PASSA authenticated não chama private.jornada_estagio_no_perfil (permission denied for function jornada_estagio_no_perfil)
+PASSA RPCs públicas sem id de usuária: jornada_estado(p_fuso text, p_deslocamento_min integer); jornada_registrar(p_acao text, p_chave text, p_fuso text, p_deslocamento_min integer)
+PASSA sem auth.uid() a RPC recusa (jornada: sem sessão)
+PASSA sem fuso nem deslocamento a RPC recusa (jornada: fuso ausente)
+PASSA cliente não registra dica_ajudou (jornada: ação não permitida)
+PASSA sem chave a RPC recusa (jornada: chave da chamada inválida)
+PASSA chave fora do formato é recusada (syntax error at or near ";")
+PASSA deslocamento absurdo é recusado (jornada: deslocamento de fuso inválido)
+PASSA fuso 'UTC' genérico + deslocamento: usa o deslocamento
+PASSA 'UTC' genérico não é guardado como fuso dela
+PASSA chave de reserva da J11 é aceita (ok)
+PASSA registrar devolve { estado, comemoracoes } com a pequena (+5, ganhou, id)
+PASSA o estado vem no formato EstadoJornada da J11 (camelCase)
+PASSA mesma chave pela RPC: duplicada, sem comemoração, estado igual
+PASSA fuso válido do aparelho é guardado (America/Sao_Paulo)
+PASSA estado da própria: glow 35 (2 despesas, 1 receita, Mês a mês I) e selo Mês a mês I (35)
+PASSA estado de outra pessoa vem zerado (só a própria): 0 Glow, sem selos, capítulo com 3 missões
+PASSA despesa 1/3 dentro do limite concede +5
+PASSA despesa 2/3 dentro do limite concede +5
+PASSA despesa 3/3 dentro do limite concede +5
+PASSA 4ª despesa: registra (contagem 4) e NÃO concede (glow_ganho 0)
+PASSA 4ª despesa: pequena com glow 0 e ganhou false (a contagem segue)
+PASSA contador do mês conta as 4 despesas
+PASSA no dia seguinte o limite zerou e concede de novo
+PASSA chamada duplicada (mesma chave) não concede nem conta duas vezes
+PASSA atendimento não concede Glow (marca o dia)
+PASSA 2º atendimento no dia: registra, mas o dia ativo conta 1 vez
+   fila: [["pequena",15],["selo","rumo_a_meta"],["selo","mes_a_mes"],["estagio",1],["meta",100]]
+PASSA fila na ordem pequena -> selo -> estágio -> meta (pequena,selo,selo,estagio,meta)
+PASSA ids únicos e nada adiado (não é atendimento)
+PASSA Glow 250 (+15, Rumo à meta I +20, Mês a mês I +20, meta +100) e estágio Em movimento (250, 1)
+PASSA estágio novo destrava moldura, ícone e tema
+PASSA meta concluída só dá +100 uma vez
+PASSA 2990 + 10 = Icônica (estágio 4)
+PASSA passar de Icônica não zera: vira Icônica II (estágio 5)
+PASSA estado: estágio 5, de 4500 a 6000 (5, 4500, 6000)
+PASSA 2 ações com Glow + atendimento não fazem dia forte
+PASSA 3ª ação com Glow faz o dia forte (2 dias)
+PASSA qua: 3 despesas = dia forte (a 4ª, acima do limite, não muda nada)
+PASSA 3º dia forte da semana = semana firme
+PASSA semana firme dá o selo Semana firme I
+PASSA semana firme conta no mês em que termina
+   fila: [["pequena",""],["capitulo",10]]
+PASSA 3ª missão cumprida fecha o capítulo de outubro (+40)
+PASSA coleção ganha outubro
+PASSA o +40 do capítulo vai só pro total (não pra pilar)
+PASSA capítulo não fecha duas vezes
+PASSA virada de mês: outubro vira o retrato fechado, novembro recomeça
+PASSA meses na Jornada = 2
+PASSA estado mostra o retrato do último mês fechado
+PASSA guardar em 30/9 (semana termina em outubro) não conta pra setembro
+PASSA ...e outubro já começa com essa semana
+PASSA guardar de novo na mesma semana não conta outra semana
+PASSA € 600 guardados: marco de 500 (+50)
+PASSA saldo cai e sobe de novo: o marco não dá Glow outra vez
+PASSA crédito de dica vai pra autora (+5 Conectar e selo Mão amiga I +20 Conectar)
+PASSA 6 dias de uso: ainda sem Em casa
+PASSA 7º dia de uso: Em casa (+20)
+PASSA 12º mês na Jornada: Um ano
+PASSA Mês a mês chegou ao III (6+ meses)
+PASSA Glow 0: estágio de 0 a 100 (0, 100)
+PASSA Glow 99: estágio de 0 a 100 (0, 100)
+PASSA Glow 100: estágio de 100 a 400 (100, 400)
+PASSA Glow 1199: estágio de 400 a 1200 (400, 1200)
+PASSA Glow 2999: estágio de 1200 a 3000 (1200, 3000)
+PASSA Glow 3000: estágio de 3000 a 4500 (3000, 4500)
+PASSA Glow 6001: estágio de 6000 a 7500 (6000, 7500)
+PASSA atendimento: a pequena vem na hora; o selo vem adiada pra próxima abertura
+PASSA meta_concluida não é ação do cliente (jornada: ação não permitida)
+PASSA abrir_jornada pela RPC: o selo Primeiros passos é alcançável
+PASSA guardar com a meta não cheia: sem +100
+PASSA guardar com a meta cheia de verdade: +100 uma vez
+PASSA as únicas datas continuam jornada_acoes.dia,jornada_periodos.inicio
+PASSA uma linha por ação, não por evento (4 linhas depois de ~20 chamadas)
+PASSA toda função jornada_* tem search_path fixo (26 funções)
+PASSA anon não executa nenhuma função jornada_* (nenhuma)
+
+RESULTADO: TUDO PASSOU

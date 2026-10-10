@@ -1,5 +1,6 @@
 import type { MockSupabaseSeed } from "./mockSupabase";
 import type { Usuario } from "./types";
+import { fotoExemploUri, type TemaFoto } from "./mockFotosRede";
 
 export const MOCK_APP_USER_ID = "mock-app-user";
 
@@ -7,10 +8,23 @@ export const MOCK_APP_USUARIO: Usuario = {
   id: MOCK_APP_USER_ID,
   nome: "Miguel",
   email: "miguel@exemplo.com",
+  telefone: "(11) 98765-4321",
 };
 
 const daysFromNow = (d: number) =>
   new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * As 4 amigas da fileira do topo da Rede, como a referência as desenha
+ * (`5-telas-8-temas-claro-escuro.html`, tela Rede): nome, inicial e cor do
+ * avatar. São dados de laboratório -- no app de verdade vêm do servidor.
+ */
+const AMIGAS_DA_REFERENCIA = [
+  { id: "mock-amiga-1", nome: "Amiga 1", cor: "#c7b8f5" },
+  { id: "mock-amiga-2", nome: "Amiga 2", cor: "#f7c6a3" },
+  { id: "mock-amiga-3", nome: "Amiga 3", cor: "#b8e3d0" },
+  { id: "mock-amiga-4", nome: "Amiga 4", cor: "#bcd3f5" },
+];
 
 const hoursAgoIso = (h: number) =>
   new Date(Date.now() - h * 3_600_000).toISOString();
@@ -38,7 +52,8 @@ export function buildMockAppSeed(opts?: {
       hora: "14:00",
       valor: 180,
       modalidade: "presencial",
-      local: "Studio Miguel — Zona Sul",
+      // Pixel (mockup Início/Agenda): "14h00 · Studio Miguel".
+      local: "Studio Miguel",
       status: "agendado",
       observacoes: null,
       criado_em: daysFromNow(-1),
@@ -46,10 +61,12 @@ export function buildMockAppSeed(opts?: {
     {
       id: "job-2",
       user_id: uid,
-      cliente_nome: "Marcos Vinícius",
+      // Pixel (mockup "Próximos atendimentos"): "Juliana Prado · Seg 28 ·
+      // 09h00 · R$ 150" e os 5 seguintes, iguais aos do mockup.
+      cliente_nome: "Juliana Prado",
       data: daysFromNow(5),
-      hora: "10:30",
-      valor: 220,
+      hora: "09:00",
+      valor: 150,
       modalidade: "presencial",
       local: "Studio Miguel — Zona Sul",
       status: "confirmado",
@@ -59,10 +76,10 @@ export function buildMockAppSeed(opts?: {
     {
       id: "job-3",
       user_id: uid,
-      cliente_nome: "Patrícia Nunes",
-      data: daysFromNow(12),
-      hora: "09:30",
-      valor: 300,
+      cliente_nome: "Beatriz Lima",
+      data: daysFromNow(6),
+      hora: "15:30",
+      valor: 200,
       modalidade: "presencial",
       local: "Studio Miguel — Zona Sul",
       status: "agendado",
@@ -72,15 +89,18 @@ export function buildMockAppSeed(opts?: {
     {
       id: "job-4",
       user_id: uid,
-      cliente_nome: "Sônia Aparecida",
+      cliente_nome: "Camila Duarte",
       data: daysFromNow(-3),
-      hora: "16:00",
-      valor: 150,
-      modalidade: "online",
-      local: null,
+      hora: "10:00",
+      valor: 120,
+      modalidade: "presencial",
+      local: "Studio Miguel",
       status: "concluído",
       observacoes: null,
       criado_em: daysFromNow(-4),
+      // Pagou adiantado: no Financeiro entra em 17/09 (mockup), na Agenda
+      // o atendimento continua no domingo 20/09 (mockup da Agenda).
+      pago_em: daysFromNow(-6),
     },
     {
       id: "job-5",
@@ -88,12 +108,28 @@ export function buildMockAppSeed(opts?: {
       cliente_nome: "Helena Brito",
       data: daysFromNow(-10),
       hora: "09:00",
-      valor: 280,
+      valor: 200,
       modalidade: "presencial",
       local: "Casa da cliente",
       status: "concluído",
       observacoes: "Cliente desde o começo, sempre indica gente nova.",
       criado_em: daysFromNow(-11),
+      // Pagou em agosto (sinal): fatura em setembro, entrou no caixa em
+      // agosto.
+      pago_em: daysFromNow(-24),
+    },
+    {
+      id: "job-15",
+      user_id: uid,
+      cliente_nome: "Renata Ferreira",
+      data: daysFromNow(-9),
+      hora: "15:00",
+      valor: 110,
+      modalidade: "presencial",
+      local: "Studio Miguel",
+      status: "concluído",
+      observacoes: null,
+      criado_em: daysFromNow(-12),
     },
     {
       id: "job-6",
@@ -111,15 +147,32 @@ export function buildMockAppSeed(opts?: {
     {
       id: "job-7",
       user_id: uid,
-      cliente_nome: "Camila Duarte",
+      cliente_nome: "Sônia Aparecida",
       data: daysFromNow(-30),
       hora: "15:30",
-      valor: 320,
+      valor: 150,
       modalidade: "presencial",
       local: "Studio Miguel — Zona Sul",
       status: "concluído",
       observacoes: null,
       criado_em: daysFromNow(-31),
+      // Os dois atendimentos de agosto da Sônia foram pagos juntos em 20/09
+      // (as duas linhas "Sônia Aparecida +R$ 150" do mockup do Financeiro).
+      pago_em: daysFromNow(-3),
+    },
+    {
+      id: "job-16",
+      user_id: uid,
+      cliente_nome: "Sônia Aparecida",
+      data: daysFromNow(-37),
+      hora: "15:30",
+      valor: 150,
+      modalidade: "presencial",
+      local: "Studio Miguel — Zona Sul",
+      status: "concluído",
+      observacoes: null,
+      criado_em: daysFromNow(-38),
+      pago_em: daysFromNow(-3),
     },
     {
       id: "job-8",
@@ -160,6 +213,58 @@ export function buildMockAppSeed(opts?: {
       observacoes: null,
       criado_em: daysFromNow(-76),
     },
+    {
+      id: "job-11",
+      user_id: uid,
+      cliente_nome: "Larissa Costa",
+      data: daysFromNow(7),
+      hora: "11:00",
+      valor: 120,
+      modalidade: "presencial",
+      local: "Studio Miguel",
+      status: "agendado",
+      observacoes: null,
+      criado_em: daysFromNow(-1),
+    },
+    {
+      id: "job-12",
+      user_id: uid,
+      cliente_nome: "Fernanda Rocha",
+      data: daysFromNow(8),
+      hora: "16:00",
+      valor: 180,
+      modalidade: "presencial",
+      local: "Studio Miguel",
+      status: "agendado",
+      observacoes: null,
+      criado_em: daysFromNow(-1),
+    },
+    {
+      id: "job-13",
+      user_id: uid,
+      cliente_nome: "Paula Mendes",
+      data: daysFromNow(9),
+      hora: "10:00",
+      valor: 220,
+      modalidade: "presencial",
+      local: "Studio Miguel",
+      status: "agendado",
+      observacoes: null,
+      criado_em: daysFromNow(-1),
+    },
+    {
+      id: "job-14",
+      user_id: uid,
+      cliente_nome: "Carla Nunes",
+      data: daysFromNow(10),
+      hora: "13:00",
+      valor: 160,
+      modalidade: "presencial",
+      local: "Studio Miguel",
+      status: "agendado",
+      observacoes: null,
+      criado_em: daysFromNow(-1),
+    },
   ];
 
   const metas = [
@@ -172,8 +277,9 @@ export function buildMockAppSeed(opts?: {
     {
       id: "desp-1",
       user_id: uid,
-      descricao: "Esmaltes e produtos",
-      valor: 120,
+      // Pixel (mockup Financeiro A): "Material de trabalho -R$ 64, 18 set."
+      descricao: "Material de trabalho",
+      valor: 64,
       categoria: "equipamentos",
       data: daysFromNow(-5),
       criado_em: daysFromNow(-5),
@@ -190,17 +296,20 @@ export function buildMockAppSeed(opts?: {
     {
       id: "desp-3",
       user_id: uid,
-      descricao: "Impulsionar post no Instagram",
-      valor: 50,
-      categoria: "marketing",
-      data: daysFromNow(-8),
-      criado_em: daysFromNow(-8),
+      // Pixel (mockup): "Estacionamento -R$ 18, 16 set."
+      descricao: "Estacionamento",
+      valor: 18,
+      categoria: "transporte",
+      data: daysFromNow(-7),
+      criado_em: daysFromNow(-7),
     },
     {
       id: "desp-4",
       user_id: uid,
+      // Pixel: o mockup conta 6 saídas somando R$ 313 e mostra 5; esta é
+      // a 6ª (valor que fecha a soma, fora da tela).
       descricao: "Alicate de cutícula novo",
-      valor: 80,
+      valor: 69,
       categoria: "ferramentas",
       data: daysFromNow(-15),
       criado_em: daysFromNow(-15),
@@ -216,15 +325,28 @@ export function buildMockAppSeed(opts?: {
     },
   ];
 
+  // Pixel (mockup): "Internet -R$ 99, 10 set."
+  despesas.push({
+    id: "desp-6",
+    user_id: uid,
+    descricao: "Internet",
+    valor: 99,
+    categoria: "internet",
+    data: daysFromNow(-13),
+    criado_em: daysFromNow(-13),
+  });
+
   const receitas_avulsas = [
     {
       id: "rec-1",
       user_id: uid,
       descricao: "Venda de kit de esmaltes",
-      valor: 60,
+      valor: 80,
       categoria: "outros",
-      data: daysFromNow(-4),
-      criado_em: daysFromNow(-4),
+      // Agosto: setembro só tem os 4 lançamentos de entrada do mockup do
+      // Financeiro, e agosto fecha o "-56% vs agosto".
+      data: daysFromNow(-26),
+      criado_em: daysFromNow(-26),
     },
     {
       id: "rec-2",
@@ -232,8 +354,8 @@ export function buildMockAppSeed(opts?: {
       descricao: "Comissão de indicação",
       valor: 40,
       categoria: "outros",
-      data: daysFromNow(-9),
-      criado_em: daysFromNow(-9),
+      data: daysFromNow(-35),
+      criado_em: daysFromNow(-35),
     },
   ];
 
@@ -318,6 +440,28 @@ export function buildMockAppSeed(opts?: {
       criado_em: daysFromNow(-18),
       atualizado_em: daysFromNow(-2),
     },
+    // As 4 da fileira da referência (tela Rede): mesmo nome, mesma inicial
+    // e a mesma cor de avatar que ela desenha.
+    {
+      user_id: "mock-amiga-juliana",
+      nome_exibicao: "Juliana",
+      cor_avatar: "#f59e0b",
+      bio: "",
+      avatar_url: null,
+      area_atuacao: "",
+      criado_em: daysFromNow(-26),
+      atualizado_em: daysFromNow(-3),
+    },
+    ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
+      user_id: a.id,
+      nome_exibicao: a.nome,
+      cor_avatar: a.cor,
+      bio: "",
+      avatar_url: null,
+      area_atuacao: "",
+      criado_em: daysFromNow(-29 + i),
+      atualizado_em: daysFromNow(-4),
+    })),
     {
       user_id: FRIEND_ID,
       nome_exibicao: "Marina Alves",
@@ -327,6 +471,28 @@ export function buildMockAppSeed(opts?: {
       area_atuacao: "Cílios",
       criado_em: daysFromNow(-30),
       atualizado_em: daysFromNow(-5),
+    },
+    // Sem relação nenhuma com você: aparecem em "Descobrir" (Pessoas para
+    // conhecer), como na proposta "Três abas".
+    {
+      user_id: "mock-descobrir-rita",
+      nome_exibicao: "Rita Melo",
+      cor_avatar: "#f0c4a8",
+      bio: "Cílios · Setúbal",
+      avatar_url: null,
+      area_atuacao: "Cílios",
+      criado_em: daysFromNow(-12),
+      atualizado_em: daysFromNow(-1),
+    },
+    {
+      user_id: "mock-descobrir-nina",
+      nome_exibicao: "Nina Paz",
+      cor_avatar: "#c3eab4",
+      bio: "Estética · Lisboa",
+      avatar_url: null,
+      area_atuacao: "Estética",
+      criado_em: daysFromNow(-9),
+      atualizado_em: daysFromNow(-1),
     },
   ];
   // 15 posts -- o suficiente pra exercitar a paginação do feed
@@ -347,12 +513,13 @@ export function buildMockAppSeed(opts?: {
       texto: "Fechei a agenda da semana inteira! 🎉",
       h: 3,
     },
+    // 2º artigo da referência: Juliana, há 5h.
     {
       id: "rede-post-4",
-      autor: uid,
+      autor: "mock-amiga-juliana",
       categoria: "conquista",
       texto: "Antes e depois da cliente de hoje 💅 deslizem pro lado",
-      h: 6,
+      h: 5,
     },
     {
       id: "rede-post-5",
@@ -457,21 +624,33 @@ export function buildMockAppSeed(opts?: {
     atualizado_em: hoursAgoIso(p.h),
   }));
 
-  // Fotos (blobs caem no placeholder SVG do mock -- o que importa é o path
-  // existir pra assinar). Dimensões vão no nome da miniatura
-  // (`-thumb-{L}x{A}.jpg`), como a rota real grava.
-  //  - post-1: 1 foto 3:4 -- exercita a re-assinatura sob demanda no cold
-  //    start (o cache persistido não guarda URL assinada).
-  //  - post-4: 2 fotos com proporções diferentes (3:4 e 4:3) -- exercita o
-  //    carrossel e a memória de slide (`redeCache.lembrarSlide`) entre
-  //    remounts.
+  // Fotos de exemplo (lib/mockFotosRede.ts): desenho SVG local no tamanho
+  // NATIVO da foto, servido como a "URL assinada" do Storage mockado. As
+  // dimensões vão no nome da miniatura (`-thumb-{L}x{A}.jpg`), como a rota
+  // real grava, e é por elas que o feed escolhe o formato (proposta "Três
+  // abas": 4:5, 1:1, 16:9 ou 1,91:1). No máximo 2 fotos por post, o teto do
+  // banco (`ordem in (1,2)`, migration 0028).
+  //  - post-1: retrato 4:5 (1080×1350);
+  //  - post-4: carrossel antes/depois, as duas 4:5 -- e a memória de slide
+  //    (`redeCache.lembrarSlide`) entre remounts;
+  //  - post-8: carrossel 1:1 + uma 16:9, que aparece inteira com o fundo
+  //    desfocado (outra proporção que a do quadro);
+  //  - post-6: paisagem 16:9; post-3: paisagem 1,91:1; post-13: dica 1:1;
+  //  - post-9: 3:4, recortada para 4:5 (só as bordas saem);
+  //  - post-11: 9:16, fora dos formatos -- vai para 4:5 e aparece inteira
+  //    (o recorte tiraria a área segura).
   const foto = (
     postId: string,
     autor: string,
     ordem: number,
-    dims: string,
+    tema: TemaFoto,
+    largura: number,
+    altura: number,
     h: number
   ) => {
+    const tw = 480;
+    const th = Math.round((tw * altura) / largura);
+    const dims = `${tw}x${th}`;
     const path = `${autor}/posts/${postId}/${ordem}.jpg`;
     const thumb_path = `${autor}/posts/${postId}/${ordem}-thumb-${dims}.jpg`;
     return {
@@ -492,6 +671,7 @@ export function buildMockAppSeed(opts?: {
           size: 320_000,
           mimeType: "image/jpeg",
           createdAt: hoursAgoIso(h),
+          blobUrl: fotoExemploUri(tema, largura, altura),
         },
         {
           path: thumb_path,
@@ -500,19 +680,45 @@ export function buildMockAppSeed(opts?: {
           size: 24_000,
           mimeType: "image/jpeg",
           createdAt: hoursAgoIso(h),
+          blobUrl: fotoExemploUri(tema, tw, th),
         },
       ],
     };
   };
   const fotosDef = [
-    foto("rede-post-1", uid, 1, "1080x1350", 3),
-    foto("rede-post-4", uid, 1, "1080x1350", 6),
-    foto("rede-post-4", uid, 2, "1080x810", 6),
+    foto("rede-post-1", uid, 1, "unhas", 1080, 1350, 3),
+    foto("rede-post-4", "mock-amiga-juliana", 1, "antes", 1080, 1350, 5),
+    foto("rede-post-4", "mock-amiga-juliana", 2, "depois", 1080, 1350, 5),
+    foto("rede-post-6", uid, 1, "studio", 1920, 1080, 18),
+    foto("rede-post-8", uid, 1, "cabelo", 1080, 1080, 42),
+    foto("rede-post-8", uid, 2, "studio", 1920, 1080, 42),
+    foto("rede-post-3", uid, 1, "studio", 1910, 1000, 52),
+    foto("rede-post-9", FRIEND_ID, 1, "cores", 1080, 1440, 60),
+    foto("rede-post-11", FRIEND_ID, 1, "depois", 1080, 1920, 90),
+    foto("rede-post-13", FRIEND_ID, 1, "unhas", 1080, 1080, 130),
   ];
   const rede_post_fotos = fotosDef.map((f) => f.row);
+  // 12 curtidas no 1º post e 8 no 2º: é o que a referência imprime.
+  const curtidoras = [
+    FRIEND_ID,
+    "mock-amiga-juliana",
+    ...AMIGAS_DA_REFERENCIA.map((a) => a.id),
+  ];
+  const curtidasDe = (postId: string, quantas: number) =>
+    Array.from({ length: quantas }, (_, i) => ({
+      post_id: postId,
+      user_id:
+        i < curtidoras.length ? curtidoras[i] : `mock-curtidora-${postId}-${i}`,
+      criado_em: hoursAgoIso(2 + i),
+    }));
   const rede_curtidas = [
     { post_id: "rede-post-2", user_id: uid, criado_em: hoursAgoIso(20) },
-    { post_id: "rede-post-1", user_id: FRIEND_ID, criado_em: hoursAgoIso(2) },
+    ...curtidasDe("rede-post-1", 12),
+    ...curtidasDe("rede-post-4", 8),
+    // Descobrir lista as dicas da semana das mais curtidas para as menos.
+    ...curtidasDe("rede-post-13", 6),
+    ...curtidasDe("rede-post-9", 4),
+    ...curtidasDe("rede-post-5", 2),
   ];
   const rede_comentarios = [
     {
@@ -535,46 +741,53 @@ export function buildMockAppSeed(opts?: {
     },
   ];
 
+  // Os 5 arquivos são os da referência (tela Cofre, layout C): mesmo nome,
+  // mesma categoria, mesmo tamanho impresso e mesma data. Com o relógio em
+  // 23/09/2026, "Recentes" (os 4 mais novos) sai exatamente como a tela
+  // desenhada. O 5º existe para o contador do card bater com os "5
+  // arquivos" da referência -- e o tamanho dele é o que falta para o total
+  // fechar em "1,3 MB", porque a soma dos tamanhos que a própria referência
+  // imprime não dá esse total (contradição dela, listada no PR).
   const cofreFiles = [
     {
       path: `${uid}/comprovantes/recibo-renata-ferreira.jpg`,
       name: "recibo-renata-ferreira.jpg",
       categoria: "comprovantes",
-      size: 245_000,
+      size: 244_736, // 239 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-3),
-    },
-    {
-      path: `${uid}/comprovantes/recibo-camila-duarte.jpg`,
-      name: "recibo-camila-duarte.jpg",
-      categoria: "comprovantes",
-      size: 198_000,
-      mimeType: "image/jpeg",
-      createdAt: daysFromNow(-30),
+      createdAt: daysFromNow(-4), // 19 de set.
     },
     {
       path: `${uid}/conversas/print-combinado-marcos.png`,
       name: "print-combinado-marcos.png",
       categoria: "conversas",
-      size: 312_000,
+      size: 312_320, // 305 KB
       mimeType: "image/png",
-      createdAt: daysFromNow(-5),
-    },
-    {
-      path: `${uid}/documentos/contrato-parceria-studio.pdf`,
-      name: "contrato-parceria-studio.pdf",
-      categoria: "documentos",
-      size: 540_000,
-      mimeType: "application/pdf",
-      createdAt: daysFromNow(-40),
+      createdAt: daysFromNow(-6), // 17 de set.
     },
     {
       path: `${uid}/pessoal/lembrete-consulta.jpg`,
       name: "lembrete-consulta.jpg",
       categoria: "pessoal",
-      size: 88_000,
+      size: 88_064, // 86 KB
       mimeType: "image/jpeg",
-      createdAt: daysFromNow(-12),
+      createdAt: daysFromNow(-13), // 10 de set.
+    },
+    {
+      path: `${uid}/comprovantes/recibo-camila-duarte.jpg`,
+      name: "recibo-camila-duarte.jpg",
+      categoria: "comprovantes",
+      size: 197_632, // 193 KB
+      mimeType: "image/jpeg",
+      createdAt: daysFromNow(-31), // 23 de ago.
+    },
+    {
+      path: `${uid}/pessoal/rg-frente.jpg`,
+      name: "rg-frente.jpg",
+      categoria: "pessoal",
+      size: 520_000, // fecha o total do card em 1,3 MB
+      mimeType: "image/jpeg",
+      createdAt: daysFromNow(-43), // 11 de ago.
     },
     // Fotos dos posts da Rede (principal + miniatura) -- sem blobUrl, o
     // mock serve o placeholder SVG; o que importa é o path existir p/ assinar.
@@ -603,13 +816,35 @@ export function buildMockAppSeed(opts?: {
       // Um pedido de amizade pendente (Marina → você) pra exercitar o
       // fluxo de responder: card no perfil, aba Solicitações, banner do feed.
       rede_amizades: [
+        // Marina aceita (era "pendente": a solicitação em aberto fazia
+        // nascer um bloco que a referência não tem, acima da dobra).
+        // Marina é a amizade MAIS ANTIGA de propósito: a fileira do topo
+        // mostra as mais recentes primeiro, e a referência desenha as 4
+        // "Amiga N" nas quatro primeiras posições. Marina fica depois
+        // delas, alcançável deslizando.
+        ...AMIGAS_DA_REFERENCIA.map((a, i) => ({
+          id: `mock-amizade-${a.id}`,
+          solicitante_id: a.id,
+          destinatario_id: uid,
+          status: "aceita",
+          criado_em: daysFromNow(-28 + i),
+          respondido_em: daysFromNow(-27 + i),
+        })),
+        {
+          id: "mock-amizade-juliana",
+          solicitante_id: "mock-amiga-juliana",
+          destinatario_id: uid,
+          status: "aceita",
+          criado_em: daysFromNow(-26),
+          respondido_em: daysFromNow(-25),
+        },
         {
           id: "mock-amizade-marina",
           solicitante_id: FRIEND_ID,
           destinatario_id: uid,
-          status: "pendente",
-          criado_em: daysFromNow(-1),
-          respondido_em: null,
+          status: "aceita",
+          criado_em: daysFromNow(-60),
+          respondido_em: daysFromNow(-59),
         },
       ],
       rede_conversas: [],
@@ -617,5 +852,39 @@ export function buildMockAppSeed(opts?: {
       rede_mensagens: [],
     },
     cofreFiles,
+  };
+}
+
+/**
+ * `?financeiro=vazio|so-entradas|so-saidas` do laboratório (só diagnóstico,
+ * mesmo padrão do `?objetivos=`): monta o mês do Financeiro sem nada, só
+ * com entradas ou só com saídas, para ver a barra entrou x saiu do "Saldo
+ * do mês" nos 3 estados. Entradas = atendimentos concluídos + receitas
+ * avulsas; saídas = despesas. Sem o parâmetro, a semente de sempre.
+ */
+export type CasoFinanceiro = "vazio" | "so-entradas" | "so-saidas";
+
+export function ehCasoFinanceiro(x: unknown): x is CasoFinanceiro {
+  return x === "vazio" || x === "so-entradas" || x === "so-saidas";
+}
+
+export function aplicarCasoFinanceiro(
+  seed: MockSupabaseSeed,
+  caso: CasoFinanceiro | null
+): MockSupabaseSeed {
+  if (!caso) return seed;
+  const t = seed.tables;
+  const semEntradas = caso === "vazio" || caso === "so-saidas";
+  const semSaidas = caso === "vazio" || caso === "so-entradas";
+  return {
+    ...seed,
+    tables: {
+      ...t,
+      jobs: semEntradas
+        ? (t.jobs ?? []).filter((j) => j.status !== "concluído")
+        : t.jobs,
+      receitas_avulsas: semEntradas ? [] : t.receitas_avulsas,
+      despesas: semSaidas ? [] : t.despesas,
+    },
   };
 }

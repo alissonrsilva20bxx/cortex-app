@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, Briefcase, TrendingUp, Upload } from "lucide-react";
+import { Briefcase, PenSquare, TrendingUp, Upload } from "lucide-react";
 import { collidesWithAny, type Rect } from "@/lib/rectCollision";
 import type { TabId } from "@/lib/types";
 import {
   BOTTOM_NAV_DURATION_MS,
   BOTTOM_NAV_EASE,
   BOTTOM_NAV_EDGE,
+  BOTTOM_NAV_OFFSET,
   getBottomNavCompactStyle,
 } from "@/lib/bottomNavCompactStyle";
 
@@ -100,6 +101,13 @@ const SHEET_ACTIONS: Partial<Record<TabId, SheetAction>> = {
     description: "Adicionar arquivo ao cofre",
     Icon: Upload,
   },
+  // Pixel do mockup: a Rede tem o "+" ("Postar"). Abre o mesmo compositor
+  // do "Postar" do feed (RedeTab); só aparece com a Rede liberada.
+  rede: {
+    label: "Postar",
+    description: "Publicar no feed da Rede",
+    Icon: PenSquare,
+  },
 };
 
 // Achado P1 (rodada de preflight 2026-09-04): a aba Financeiro tem 4
@@ -133,18 +141,18 @@ const FINANCEIRO_SHEET_ACTIONS: Record<string, SheetAction> = {
  * `aria-label` do `.plus` de cada tela). É o nome do botão em si; o sheet
  * que ele abre continua com o rótulo da ação real (SHEET_ACTIONS /
  * FINANCEIRO_SHEET_ACTIONS acima), que no Financeiro muda por sub-aba.
- * O mockup também tem "Postar" na Rede, mas a Rede não tem "+" no app (a
- * pílula 2 ocupa a linha toda) -- fica de fora até alguém decidir mexer
- * na pílula.
+ * Na Rede é "Postar", como o mockup (pixel do mockup).
  */
 const FAB_ARIA_LABELS: Partial<Record<TabId, string>> = {
   home: "Novo",
   jobs: "Novo atendimento",
   financeiro: "Novo lançamento",
   cofre: "Enviar arquivo",
+  rede: "Postar",
 };
 
-/** A aba tem "+"? (Rede e Ajustes não têm -- aí a pílula ocupa a linha toda.) */
+/** A aba tem "+"? (Ajustes não tem -- aí a pílula ocupa a linha toda. A
+ * Rede tem, mas a página só desenha o "+" com a Rede liberada.) */
 export function tabTemFab(tab: TabId): boolean {
   return tab === "financeiro" || Boolean(SHEET_ACTIONS[tab]);
 }
@@ -161,6 +169,9 @@ interface Props {
   /** Estado compacto da BottomNav -- o "+" mora ao lado da pílula e
    * encolhe junto com ela (pílula 2, "Recolhe pra aba atual"). */
   compact?: boolean;
+  /** Uma tela cobre a aba por inteiro (a Jornada): nada da aba de trás está
+   * ao alcance, então o "+" não recua por causa do que está escondido. */
+  cobertoPorTela?: boolean;
 }
 
 export function FAB({
@@ -170,6 +181,7 @@ export function FAB({
   onToggle,
   onAction,
   compact = false,
+  cobertoPorTela = false,
 }: Props) {
   const action =
     activeTab === "financeiro"
@@ -182,8 +194,10 @@ export function FAB({
   // fechado -- com ele aberto o botão vira o "X" de fechar sobre o
   // próprio backdrop, sem risco de cobrir outra ação (a tela toda já
   // está bloqueada pelo backdrop).
+  // Com uma tela por cima (Jornada), os `data-fab-avoid` da aba ficam
+  // escondidos atrás dela: não contam.
   const { ref: fabRef, obstructed } = useFabCollisionAvoidance(
-    Boolean(action) && !open
+    Boolean(action) && !open && !cobertoPorTela
   );
 
   if (!action) return null;
@@ -298,13 +312,12 @@ export function FAB({
           // e acomoda os mesmos px que ela, na mesma curva.
           width: `${navStyle.fabSize}px`,
           height: `${navStyle.fabSize}px`,
-          bottom: `calc(${18 - navStyle.translateY}px + env(safe-area-inset-bottom, 0px))`,
+          bottom: `calc(${BOTTOM_NAV_OFFSET - navStyle.translateY}px + env(safe-area-inset-bottom, 0px))`,
           right: `${BOTTOM_NAV_EDGE}px`,
           transition: `width ${motion}, height ${motion}, bottom ${motion}, opacity 300ms ease, transform 150ms ease`,
           background: "var(--accent)",
-          // Fundação Visual (#142): elevação direcional como `.addButton` do
-          // protótipo, não o halo difuso de --glow.
-          boxShadow: "0 10px 26px rgb(var(--accent-rgb) / 0.25)",
+          // Sombra do "+" do mockup aprovado (`.bar .plus`, --t-plus-sh).
+          boxShadow: "0 8px 20px var(--fab-shadow)",
           opacity: obstructed ? 0.28 : 1,
           pointerEvents: obstructed ? "none" : "auto",
         }}
@@ -312,15 +325,26 @@ export function FAB({
         {/* A rotação mora no ícone, não no botão: um `transform` inline no
             botão anulava o `active:scale-90` (estilo inline vence classe) e
             o toque no FAB não dava feedback nenhum. */}
-        <Plus
-          size={22}
-          color="white"
-          strokeWidth={2.5}
+        {/* O "+" do mockup (`.plus svg`): um path só, "M12 5v14M5 12h14",
+            24px, traço 2,6. O Plus do lucide são dois paths e as pontas
+            saíam diferentes (ordem do operador: pixel idêntico). */}
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
           style={{
             transform: open ? "rotate(45deg)" : "rotate(0deg)",
             transition: "transform 300ms cubic-bezier(0.32, 0.72, 0, 1)",
           }}
-        />
+        >
+          <path d="M12 5v14M5 12h14" />
+        </svg>
       </button>
     </>
   );

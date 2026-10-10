@@ -1,0 +1,71 @@
+
+## 1. conta nova
+PASSA vazia: Glow 0, estágio 0, sem selo, coleção e marcos vazios
+PASSA capítulo do mês com 3 missões, todas em 0
+PASSA períodos correntes sem contador e nenhum fechado
+PASSA preferências padrão: som ligado, discreto desligado, perfil desligado
+
+## 2. cada ação da §3, uma vez: Glow e pilar
+PASSA despesa: +5 em organizar (veio 5 em organizar)
+PASSA receita: +5 em organizar (veio 5 em organizar)
+PASSA planejar: +5 em organizar (veio 5 em organizar)
+PASSA guardar_meta: +15 em prosperar (veio 15 em prosperar)
+PASSA comprovante_cofre: +10 em proteger (veio 10 em proteger)
+PASSA descanso: +10 em proteger (veio 10 em proteger)
+PASSA dica_ajudou: +5 em conectar (veio 5 em conectar)
+PASSA dica_protegeu: +5 em conectar (veio 5 em conectar)
+PASSA atendimento: +0 (veio 0 em null)
+
+## 3. acima do limite diário: registra e não dá Glow
+PASSA despesa 4ª vez no dia: conta (3 → 4), Glow 0
+PASSA receita 4ª vez no dia: conta (3 → 4), Glow 0
+PASSA planejar 2ª vez no dia: conta (1 → 2), Glow 0
+PASSA guardar_meta 2ª vez no dia: conta (1 → 2), Glow 0
+PASSA comprovante_cofre 4ª vez no dia: conta (3 → 4), Glow 0
+PASSA descanso 2ª vez no dia: conta (1 → 2), Glow 0
+PASSA dica_ajudou 6ª vez no dia: conta (5 → 6), Glow 0
+PASSA dica_protegeu 6ª vez no dia: conta (5 → 6), Glow 0
+PASSA no dia seguinte o limite volta (+5)
+
+## 4. atendimento: dia ativo, sem Glow, comemoração grande adiada
+PASSA a pequena do atendimento não tem Glow (0)
+PASSA a pequena do atendimento toca na hora
+PASSA o que vem junto (selo:mes_a_mes) chega com adiada = true
+PASSA o dia conta como ativo (atendimento: 1) e o único Glow é o do prêmio que veio junto (20)
+PASSA 2º atendimento no mesmo dia não conta outro dia (atendimento: 1)
+
+## 5. cascata numa chamada só, na ordem pequena → selo → estágio → meta
+PASSA uma ação dispara selo, estágio, marco e meta (pequena → selo → selo → estagio → marco → meta)
+PASSA a fila vem na ordem do contrato
+PASSA cada comemoração tem id único
+PASSA o Glow somado na fila = o saldo (205)
+
+## 6. marco de dinheiro 1x na vida
+PASSA tirar e voltar a guardar € 500 não dá o marco de novo (1 linha, fila pequena)
+PASSA a mesma meta concluída de novo não dá o prêmio de novo
+
+## 7. Icônica não zera: vira Icônica II
+PASSA 4490 + 10 = Icônica II (estágio 5, de 4 pra 5, Glow 4500)
+PASSA a barra da Icônica II vai de 4500 a 6000 (4500 → 6000)
+
+## 8. a mesma chamada reenviada não conta duas vezes
+PASSA reenvio com a mesma chave: duplicada, Glow igual (25), sem comemoração nova
+
+## 9. o que as tabelas da J09 guardam (só leitura)
+   jornada_acoes: user_id uuid, acao text, contagem_total integer, dia date, ganhos_no_dia integer, chaves_recentes ARRAY
+   jornada_colecao: user_id uuid, ano smallint, mes smallint
+   jornada_contadores: user_id uuid, chave text, total integer
+   jornada_destravados: user_id uuid, item text
+   jornada_marcos: user_id uuid, marco integer
+   jornada_metas_premiadas: user_id uuid, item_id uuid
+   jornada_periodos: user_id uuid, tipo text, fechado boolean, inicio date, contadores jsonb
+   jornada_preferencias: user_id uuid, som_ligado boolean, modo_discreto boolean, estagio_no_perfil boolean, selos_no_perfil boolean, jornada_comeco boolean, fuso text
+   jornada_saldo: user_id uuid, glow_total integer, glow_organizar integer, glow_prosperar integer, glow_proteger integer, glow_conectar integer
+   jornada_selos: user_id uuid, selo text, nivel smallint, conquistado_ano smallint, conquistado_mes smallint
+   colunas de data: jornada_acoes.dia, jornada_periodos.inicio
+   colunas de lista: jornada_acoes.chaves_recentes
+PASSA uma linha por ação, não por evento: 10 linhas depois de 40 chamadas no total
+PASSA períodos: no máximo 1 aberto + 1 fechado por tipo (3), só números
+
+RESULTADO: TUDO PASSOU
+exit=0

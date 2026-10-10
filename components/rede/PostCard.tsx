@@ -1,7 +1,6 @@
 "use client";
 
-import { Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Heart, MessageCircle, Send, MoreHorizontal } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { FeedFotos } from "./FeedFotos";
 import { formatRelativeTime } from "@/lib/mockRede";
@@ -18,44 +17,57 @@ interface Props {
    * chamado ao detectar falha de carregamento; devolve uma URL nova pro
    * mesmo path, ou `null` se a renovação falhar (ex.: bloqueio mudou). */
   onRenovarFoto: (path: string) => Promise<string | null>;
+  /** A autora é amiga de quem lê: a linha do tempo ganha "· amiga". */
+  amiga?: boolean;
 }
 
-function ActionButton({
+/** Ação do post (proposta "Três abas"): ícone de 23 e o número ao lado,
+ * alvo de toque de 44. */
+function Acao({
   icon,
   count,
   active,
-  activeColor,
   onClick,
   label,
 }: {
   icon: React.ReactNode;
   count?: number;
   active?: boolean;
-  activeColor?: string;
   onClick: () => void;
   label: string;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex items-center gap-1.5 pr-2 transition-opacity active:opacity-60"
+      aria-pressed={active}
+      className="inline-flex items-center active:opacity-60"
       style={{
-        paddingTop: 13,
-        paddingBottom: 13,
-        marginTop: -13,
-        marginBottom: -13,
-        color: active ? activeColor : "var(--text-muted)",
+        gap: 5,
+        minHeight: 44,
+        padding: "0 8px",
+        borderRadius: 999,
+        fontSize: "13.5px",
+        fontWeight: 700,
+        color: active ? "var(--t-acc)" : "var(--t-ink)",
       }}
     >
       {icon}
-      {count !== undefined && (
-        <span className="text-xs font-semibold tabular-nums">{count}</span>
-      )}
+      {count != null && count > 0 && <span>{count}</span>}
     </button>
   );
 }
 
+const primeiroNome = (nome: string) => nome.trim().split(/\s+/)[0] ?? nome;
+
+/**
+ * Post da Rede no estilo do Instagram (proposta "Três abas, fotos no
+ * formato do Instagram", feed-rede.html): sem cartão em volta, a foto de
+ * ponta a ponta (FeedFotos, nos 4 formatos), o cabeçalho de 44px com o
+ * avatar de 36, as ações com a contagem ao lado e a legenda embaixo.
+ * Post só de texto mostra o texto maior antes das ações.
+ */
 export function PostCard({
   post,
   onToggleLike,
@@ -64,108 +76,147 @@ export function PostCard({
   onOpenMenu,
   onOpenAutor,
   onRenovarFoto,
+  amiga = false,
 }: Props) {
   const cat = CATEGORIA_META[post.categoria];
+  const temFoto = post.fotos.length > 0;
+  const nome = primeiroNome(post.autorNome);
 
   return (
-    <GlassCard radius="lg" className="p-4">
-      {/* Header */}
-      <div className="flex items-start gap-3">
+    <article data-post={post.id} style={{ padding: "18px 0 22px" }}>
+      {/* Cabeçalho: 16px à esquerda, 12 à direita, altura mínima 44. */}
+      <div
+        className="flex items-center"
+        style={{ gap: 10, padding: "0 12px 0 16px", minHeight: 44 }}
+      >
         <Avatar
           nome={post.autorNome}
           cor={post.autorCor}
           fotoUrl={post.autorFotoUrl}
-          size="md"
+          tamanho={36}
+          desenhoFixo
           onClick={() => onOpenAutor(post.autorId)}
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p
-              className="font-semibold text-sm truncate"
-              style={{ color: "var(--text)" }}
-            >
-              {post.autorNome}
-            </p>
-            <span
-              className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+          <div className="flex items-center" style={{ gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => onOpenAutor(post.autorId)}
+              className="truncate text-left"
               style={{
+                fontSize: "14.5px",
+                fontWeight: 800,
+                color: "var(--t-ink)",
+              }}
+            >
+              {nome}
+            </button>
+            <span
+              className="shrink-0 rounded-full"
+              style={{
+                fontSize: "10.5px",
+                fontWeight: 800,
+                padding: "3px 8px",
                 background: `rgb(${cat.rgb} / 0.12)`,
                 // #175: a cor da categoria sobre ela mesma a 12% ficava
                 // abaixo de 4,5:1; misturada com --text, mantém o matiz e
                 // passa nos 8 temas, claro e escuro.
                 color: `color-mix(in srgb, rgb(${cat.rgb}) 62%, var(--text))`,
-                border: `1px solid rgb(${cat.rgb} / 0.25)`,
               }}
             >
               {cat.label}
             </span>
           </div>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+          <p style={{ fontSize: 12, color: "var(--t-mut)", marginTop: 1 }}>
             {formatRelativeTime(post.criadoEm)}
+            {amiga ? " · amiga" : ""}
           </p>
         </div>
         <button
+          type="button"
           onClick={() => onOpenMenu(post)}
           aria-label="Mais opções"
-          className="flex items-center justify-center shrink-0 active:opacity-60"
-          style={{ width: 44, height: 44, margin: -13 }}
+          className="grid place-items-center shrink-0 active:opacity-60"
+          style={{
+            width: 44,
+            height: 44,
+            margin: -2,
+            color: "var(--t-mut)",
+          }}
         >
-          <MoreHorizontal size={18} style={{ color: "var(--text-muted)" }} />
+          <MoreHorizontal size={21} />
         </button>
       </div>
 
-      {/* Texto */}
-      <p
-        className="text-sm leading-relaxed mt-3"
-        style={{ color: "var(--text-2)" }}
-      >
-        {post.texto}
-      </p>
-
-      {/* Fotos (0-2) -- foto grande no próprio card (sangra a padding), estilo
-          Instagram. 2 fotos = carrossel com swipe. Miniatura como placeholder,
-          principal sob demanda. A foto NÃO é interativa: fica no feed. */}
-      {post.fotos.length > 0 && (
-        <FeedFotos
-          postId={post.id}
-          fotos={post.fotos}
-          autorNome={post.autorNome}
-          onRenovarFoto={onRenovarFoto}
-        />
-      )}
-
-      {/* Ações */}
-      <div
-        className="flex items-center justify-between mt-3 pt-3"
-        style={{ borderTop: "1px solid var(--divider)" }}
-      >
-        <div className="flex items-center gap-1">
-          <ActionButton
-            icon={
-              <Heart
-                size={18}
-                fill={post.curtidoPorMim ? "var(--danger)" : "none"}
-              />
-            }
-            count={post.curtidas}
-            active={post.curtidoPorMim}
-            activeColor="var(--danger)"
-            onClick={() => onToggleLike(post.id)}
-            label="Curtir"
-          />
-          <ActionButton
-            icon={<MessageCircle size={18} />}
-            count={post.comentariosCount}
-            onClick={() => onComment(post)}
-            label="Comentar"
-          />
-          <ActionButton
-            icon={<Share2 size={18} />}
-            onClick={() => onShare(post)}
-            label="Compartilhar"
+      {temFoto ? (
+        <div style={{ marginTop: 10 }}>
+          <FeedFotos
+            postId={post.id}
+            fotos={post.fotos}
+            autorNome={post.autorNome}
+            onRenovarFoto={onRenovarFoto}
+            tom="var(--t-sub)"
           />
         </div>
+      ) : (
+        <p
+          data-post-texto=""
+          style={{
+            fontSize: 16,
+            lineHeight: 1.5,
+            margin: "10px 16px 0",
+            color: "var(--t-ink)",
+            whiteSpace: "pre-line",
+          }}
+        >
+          {post.texto}
+        </p>
+      )}
+
+      <div
+        className="flex items-center"
+        style={{ gap: 2, margin: "6px 8px 0" }}
+      >
+        <Acao
+          icon={
+            <Heart
+              size={23}
+              strokeWidth={2}
+              fill={post.curtidoPorMim ? "currentColor" : "none"}
+            />
+          }
+          count={post.curtidas}
+          active={post.curtidoPorMim}
+          onClick={() => onToggleLike(post.id)}
+          label="Curtir"
+        />
+        <Acao
+          icon={<MessageCircle size={23} strokeWidth={2} />}
+          count={post.comentariosCount}
+          onClick={() => onComment(post)}
+          label="Comentar"
+        />
+        <Acao
+          icon={<Send size={23} strokeWidth={2} />}
+          onClick={() => onShare(post)}
+          label="Compartilhar"
+        />
       </div>
-    </GlassCard>
+
+      {temFoto && (
+        <p
+          data-post-legenda=""
+          style={{
+            fontSize: "14.5px",
+            lineHeight: 1.5,
+            margin: "2px 16px 0",
+            color: "var(--t-ink)",
+            whiteSpace: "pre-line",
+          }}
+        >
+          <b style={{ fontWeight: 800 }}>{nome}</b> {post.texto}
+        </p>
+      )}
+    </article>
   );
 }

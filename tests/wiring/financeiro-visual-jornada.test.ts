@@ -59,19 +59,25 @@ describe("J04 — os componentes reais estão montados", () => {
     const hero = src.match(/<FinanceiroHeroCard\b[^>]*?\/>/);
     expect(hero).not.toBeNull();
     expect(hero![0]).toContain("metas={metas}");
+    // Pixel (mockup Financeiro A): a Visão está sempre na tela, logo
+    // abaixo dos cards, e o "Extrato ›" leva às listas completas.
     expect(src).toMatch(
-      /tab === "visao" && \(\s*<VisaoTab jobs=\{jobs\} despesas=\{despesas\} receitas=\{receitas\} \/>/
+      /<VisaoTab\s+jobs=\{jobs\}\s+despesas=\{despesas\}\s+receitas=\{receitas\}\s+onExtrato=\{\(\) =>\s+detalhesRef\.current\?\.scrollIntoView\(/
     );
+    expect(src).not.toMatch(/tab === "visao" && \(/);
+    expect(src).toMatch(/ref=\{detalhesRef\}/);
   });
 
   for (const arquivo of [
     "components/financeiro/FinanceiroHeroCard.tsx",
     "components/financeiro/VisaoTab.tsx",
   ]) {
-    it(`${arquivo} usa a superfície única FinCard`, () => {
+    it(`${arquivo} usa a superfície de card do mockup (--t-card, raio 20)`, () => {
+      // Pixel (mockup vence): o card é o do mockup normativo, com os
+      // tokens --t-* em globals.css; o FinCard (--card-solid) saiu daqui.
       const src = read(arquivo);
-      expect(src).toMatch(/^import \{ FinCard \} from "\.\/FinCard";$/m);
-      expect(src).toContain("<FinCard");
+      expect(src).toMatch(/background:\s*"var\(--t-card\)"/);
+      expect(src).toMatch(/borderRadius:\s*"20px"/);
       expect(src).not.toMatch(/background:\s*"var\(--card-solid\)"/);
     });
   }
@@ -114,7 +120,7 @@ describe("J04 — entrada x saída nunca só pela cor", () => {
   it("o valor de cada movimentação leva o sinal no texto", () => {
     const src = semComentarios(read("components/financeiro/VisaoTab.tsx"));
     expect(src).toMatch(
-      /\{m\.positive \? "\+" : "-"\}\s*\{formatBRL\(m\.valor\)\}/
+      /\{`\$\{m\.positive \? "\+" : "-"\}\$\{formatBRL\(m\.valor\)\}`\}/
     );
     // As duas listas usam esse mesmo componente de valor.
     expect(src.match(/<Valor m=\{m\}/g)).toHaveLength(2);
@@ -125,7 +131,12 @@ describe("J04 — entrada x saída nunca só pela cor", () => {
       read("components/financeiro/FinanceiroHeroCard.tsx")
     );
     expect(src).toMatch(
-      /\{variacaoPct >= 0 \? "\+" : ""\}\s*\{Math\.round\(variacaoPct\)\}% vs \{mesAnterior\}/
+      // O chip agora fica sempre na linha (invisível sem variação, para a
+      // barra não subir); o texto com sinal é o ramo com variação.
+      /\{variacaoPct !== null\s*\? `\$\{sobe \? "\+" : ""\}\$\{Math\.round\(variacaoPct\)\}% vs \$\{mesAnterior\}`/
+    );
+    expect(src).toContain(
+      "const sobe = variacaoPct !== null && variacaoPct >= 0;"
     );
   });
 });
@@ -142,9 +153,21 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     expect(args.length).toBeGreaterThan(0);
     for (const a of args) {
       expect(a, `formatBRL(${a})`).toMatch(
-        /^(saldo|totalEntradaMes|totalDespMes|metaMes)$/
+        /^(saldo|totalEntradaMes|totalDespMes|metaMes|ticketMedio|faturamento)$/
       );
     }
+  });
+
+  // Regras revistas por ordem do operador (pixel do Financeiro, #209): o
+  // ticket médio é o que entrou no mês ÷ atendimentos concluídos no mês.
+  it("FinanceiroHeroCard: o ticket médio é o que entrou ÷ atendimentos do mês", () => {
+    expect(hero).toContain(
+      "const atendimentosMes = monthConcludedCount(jobs, now);"
+    );
+    expect(hero).toMatch(
+      /atendimentosMes > 0\s*\?\s*Math\.round\(totalEntradaMes \/ atendimentosMes\)\s*:\s*null/
+    );
+    expect(hero).toContain("{formatBRL(ticketMedio)}");
   });
 
   it("FinanceiroHeroCard: cada valor exibido recebe o seu total, não outro total real", () => {
@@ -167,9 +190,13 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     expect(hero).not.toMatch(/\.reduce\(/);
   });
 
-  it("FinanceiroHeroCard: a meta usa monthMeta e a mesma conta do MetasTab (progressoMeta)", () => {
+  // Ordem do operador (#209): o card Meta mostra o faturamento do mês (o
+  // mesmo número do card principal do Início), com a conta do MetasTab.
+  it("FinanceiroHeroCard: a meta usa monthMeta, o faturamento do mês e progressoMeta", () => {
     expect(hero).toContain("const metaMes = monthMeta(metas);");
-    expect(hero).toContain("progressoMeta(totalEntradaMes, metaMes)");
+    expect(hero).toContain("const faturamento = monthEarnings(jobs, now);");
+    expect(hero).toContain("progressoMeta(faturamento, metaMes)");
+    expect(hero).toContain("{formatBRL(faturamento)} de {formatBRL(metaMes)}");
     expect(hero).toContain("{Math.round(metaPct)}%");
     const metas = semComentarios(read("components/financeiro/MetasTab.tsx"));
     expect(metas).toContain(

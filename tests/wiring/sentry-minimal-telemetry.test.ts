@@ -52,9 +52,7 @@ describe("next.config.mjs — upload de sourcemap não exige SENTRY_AUTH_TOKEN l
   );
 
   it("desliga sourcemaps quando SENTRY_AUTH_TOKEN não está definido", () => {
-    expect(src).toMatch(
-      /disable:\s*!process\.env\.SENTRY_AUTH_TOKEN/
-    );
+    expect(src).toMatch(/disable:\s*!process\.env\.SENTRY_AUTH_TOKEN/);
   });
 
   it("nunca hardcoda um authToken", () => {

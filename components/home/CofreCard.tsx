@@ -1,7 +1,7 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
 import { InicioCard } from "./InicioCard";
+import { CARD_PEQUENO, IconeCard, ROTULO_CARD } from "./pecasMockup";
 
 interface Props {
   /** O Cofre tem PIN configurado. */
@@ -18,23 +18,15 @@ interface Props {
 export function CofreCard({ protegido, onOpenCofre }: Props) {
   if (!protegido) return null;
 
+  // Mockup: card `--t-hero`, texto branco, rótulo `--t-hero-mut`.
   return (
-    <InicioCard
-      tom="cofre"
-      onClick={onOpenCofre}
-      className="flex flex-col gap-2"
-      style={{ padding: "16px" }}
-    >
-      <ShieldCheck size={20} aria-hidden />
-      <span
-        className="font-semibold"
-        style={{ fontSize: "11px", color: "var(--hero-text-muted)" }}
-      >
-        Cofre
-      </span>
-      <span className="font-extrabold" style={{ fontSize: "16px" }}>
-        Protegido
-      </span>
+    <InicioCard tom="cofre" onClick={onOpenCofre} style={CARD_PEQUENO}>
+      <IconeCard cor="currentColor">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="m9 12 2 2 4-4" />
+      </IconeCard>
+      <span style={{ ...ROTULO_CARD, color: "var(--t-hero-mut)" }}>Cofre</span>
+      <span style={{ fontSize: "16px", fontWeight: 800 }}>Protegido</span>
     </InicioCard>
   );
 }
