@@ -6,6 +6,7 @@ import type { Comemoracao } from "../../lib/jornada/estado";
 import {
   _usarAudioParaTeste,
   tocarSom,
+  ESPERA_RESUME_MS,
   type NomeSom,
 } from "../../lib/jornada/som";
 import * as textos from "../../lib/jornada/textos";
@@ -107,6 +108,8 @@ function audioFalso(
   opcoes: {
     estado?: AudioContextState;
     resume?: () => Promise<void>;
+    /** O `resume()` libera de verdade (o estado vira "running"). */
+    liberaAoRetomar?: boolean;
     quebraAo?: "criar" | "oscilador";
   } = {}
 ) {
@@ -132,7 +135,17 @@ function audioFalso(
       if (opcoes.quebraAo === "criar") throw new Error("sem áudio");
     }
     resume() {
-      return opcoes.resume ? opcoes.resume() : Promise.resolve();
+      if (opcoes.resume) return opcoes.resume();
+      // Como no navegador: o áudio só fica "running" quando o resume()
+      // termina, um pouco depois da chamada.
+      if (opcoes.liberaAoRetomar)
+        return new Promise<void>((ok) =>
+          setTimeout(() => {
+            this.state = "running";
+            ok();
+          }, 5)
+        );
+      return Promise.resolve();
     }
     createGain() {
       return { ...no(), gain: param() };
@@ -265,11 +278,11 @@ describe("Modo discreto: sem som, mínimo, nada chamativo", () => {
     expect(tudo).not.toMatch(/€/);
   });
 
-  it("com o Modo discreto ligado, o som nunca é agendado", () => {
+  it("com o Modo discreto ligado, o som nunca é agendado", async () => {
     const g = audioFalso();
     for (const t of TIPOS) {
       const p = planoDaComemoracao(c(t), DISCRETO);
-      expect(tocarSom(p.som ?? "check", { ligado: p.som !== null })).toBe(
+      expect(await tocarSom(p.som ?? "check", { ligado: p.som !== null })).toBe(
         false
       );
     }
@@ -333,20 +346,20 @@ describe("som bloqueado ou ausente não derruba nada", () => {
       estado: "suspended",
       resume: () => Promise.reject(new Error("bloqueado")),
     });
-    for (const n of NOMES) expect(tocarSom(n, { ligado: true })).toBe(false);
+    for (const n of NOMES) expect(await tocarSom(n, { ligado: true })).toBe(false);
     await Promise.resolve();
   });
 
-  it("navegador sem Web Audio: não toca, não lança", () => {
+  it("navegador sem Web Audio: não toca, não lança", async () => {
     _usarAudioParaTeste(null);
-    for (const n of NOMES) expect(tocarSom(n, { ligado: true })).toBe(false);
+    for (const n of NOMES) expect(await tocarSom(n, { ligado: true })).toBe(false);
   });
 
-  it("AudioContext que quebra ao criar ou ao tocar: não lança", () => {
+  it("AudioContext que quebra ao criar ou ao tocar: não lança", async () => {
     audioFalso({ quebraAo: "criar" });
-    expect(() => tocarSom("stage", { ligado: true })).not.toThrow();
+    await expect(tocarSom("stage", { ligado: true })).resolves.toBe(false);
     audioFalso({ quebraAo: "oscilador" });
-    expect(tocarSom("plim", { ligado: true })).toBe(false);
+    expect(await tocarSom("plim", { ligado: true })).toBe(false);
   });
 
   it("a comemoração não depende do som: o plano é o mesmo com ou sem áudio", () => {
@@ -357,12 +370,12 @@ describe("som bloqueado ou ausente não derruba nada", () => {
     expect(soCodigo(PALCO)).not.toMatch(/if \(\s*!?tocarSom/);
   });
 
-  it("o som nunca fura o silencioso: sessão de áudio 'ambient' ANTES do contexto nascer", () => {
+  it("o som nunca fura o silencioso: sessão de áudio 'ambient' ANTES do contexto nascer", async () => {
     const sessao = { type: "auto" };
     vi.stubGlobal("navigator", { audioSession: sessao });
     try {
       const g = audioFalso();
-      expect(tocarSom("plim", { ligado: true })).toBe(true);
+      expect(await tocarSom("plim", { ligado: true })).toBe(true);
       expect(g.sessaoAoCriar).toBe("ambient");
       expect(sessao.type).toBe("ambient");
     } finally {
@@ -370,20 +383,50 @@ describe("som bloqueado ou ausente não derruba nada", () => {
     }
   });
 
-  it("sem navigator.audioSession (fora do Safari) o som segue sem lançar", () => {
+  it("sem navigator.audioSession (fora do Safari) o som segue sem lançar", async () => {
     vi.stubGlobal("navigator", {});
     try {
       audioFalso();
-      expect(tocarSom("plim", { ligado: true })).toBe(true);
+      expect(await tocarSom("plim", { ligado: true })).toBe(true);
     } finally {
       vi.unstubAllGlobals();
     }
   });
 
-  it("áudio liberado: o plim toca as notas do protótipo", () => {
+  it("áudio liberado: o plim toca as notas do protótipo", async () => {
     const g = audioFalso();
-    expect(tocarSom("plim", { ligado: true })).toBe(true);
+    expect(await tocarSom("plim", { ligado: true })).toBe(true);
     expect(g.freqs).toEqual([1318.5, 1975.5, 2637]);
+  });
+
+  it("o 1º som não se perde: com o áudio suspenso, espera o resume() e toca", async () => {
+    const g = audioFalso({ estado: "suspended", liberaAoRetomar: true });
+    expect(await tocarSom("plim", { ligado: true })).toBe(true);
+    expect(g.freqs).toEqual([1318.5, 1975.5, 2637]);
+  });
+
+  it("resume() que nunca termina: desiste depois da espera, sem tocar fora de hora", async () => {
+    vi.useFakeTimers();
+    try {
+      const g = audioFalso({
+        estado: "suspended",
+        resume: () => new Promise<void>(() => undefined),
+      });
+      const tocou = tocarSom("plim", { ligado: true });
+      await vi.advanceTimersByTimeAsync(ESPERA_RESUME_MS + 10);
+      expect(await tocou).toBe(false);
+      expect(g.freqs).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("o palco libera o áudio no pointerdown, no touchend e no click (o Safari do iPhone não conta o pointerdown de um dedo)", () => {
+    const codigo = soCodigo(PALCO);
+    for (const ev of ["pointerdown", "touchend", "click"]) {
+      expect(codigo).toContain(`addEventListener("${ev}", toque`);
+      expect(codigo).toContain(`removeEventListener("${ev}", toque`);
+    }
   });
 });
 
@@ -435,7 +478,9 @@ describe("montar duas vezes (StrictMode) não repete comemoração", () => {
 
   it("o palco só toca som e só consome passando pelas travas da sessão", () => {
     const codigo = soCodigo(PALCO);
-    expect(codigo).toMatch(/if \(primeiraVezDoSom\(c\.id\)\) \{\s*tocarSom\(/);
+    expect(codigo).toMatch(
+      /if \(primeiraVezDoSom\(c\.id\)\) \{\s*void tocarSom\(/
+    );
     expect(codigo).toMatch(/if \(primeiraVezDoConsumo\(id\)\) consumir\(id\)/);
     // Nenhuma outra chamada de som ou de consumo fora das travas.
     expect(codigo.match(/tocarSom\(/g)).toHaveLength(1);

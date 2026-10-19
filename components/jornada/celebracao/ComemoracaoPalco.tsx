@@ -158,7 +158,10 @@ export function ComemoracaoPalco({
   const proximaRef = useRef(proxima);
   proximaRef.current = proxima;
 
-  // Áudio liberado no primeiro toque; voltar ao primeiro plano = nova abertura.
+  // Áudio liberado no toque; voltar ao primeiro plano = nova abertura. No
+  // Safari do iPhone, o `pointerdown` de um dedo não conta como gesto que
+  // libera o áudio: o `touchend` e o `click` contam. Os três chamam o mesmo
+  // `liberarAudio`, que não faz nada depois que o áudio já está liberado.
   useEffect(() => {
     const toque = () => liberarAudio();
     const visivel = () => {
@@ -168,9 +171,13 @@ export function ComemoracaoPalco({
       }
     };
     document.addEventListener("pointerdown", toque, { passive: true });
+    document.addEventListener("touchend", toque, { passive: true });
+    document.addEventListener("click", toque, { passive: true });
     document.addEventListener("visibilitychange", visivel);
     return () => {
       document.removeEventListener("pointerdown", toque);
+      document.removeEventListener("touchend", toque);
+      document.removeEventListener("click", toque);
       document.removeEventListener("visibilitychange", visivel);
     };
   }, []);
@@ -234,7 +241,7 @@ export function ComemoracaoPalco({
 
     // Som e vibração: uma vez por comemoração, mesmo montando duas vezes.
     if (primeiraVezDoSom(c.id)) {
-      tocarSom(plano.som ?? "check", {
+      void tocarSom(plano.som ?? "check", {
         ligado: plano.som !== null,
         atrasoSeg: plano.atrasoSom,
       });

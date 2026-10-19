@@ -7,7 +7,10 @@
  * Garantias:
  *  - **Nunca lança.** Sem Web Audio, com o áudio bloqueado pelo navegador
  *    antes do primeiro toque, ou com qualquer erro do contexto, `tocarSom`
- *    devolve `false` e a comemoração segue sem som.
+ *    resolve `false` e a comemoração segue sem som.
+ *  - **O primeiro som não se perde.** Com o áudio ainda suspenso, `tocarSom`
+ *    espera o `resume()` terminar (até {@link ESPERA_RESUME_MS}) e só então
+ *    toca; se não liberar nesse tempo, desiste em vez de tocar fora de hora.
  *  - **Respeita o silencioso do aparelho.** Web Audio já segue o volume do
  *    sistema. No iPhone, a sessão de áudio é marcada como "ambient" (quando
  *    o Safari oferece `navigator.audioSession`), que é a categoria que
@@ -35,6 +38,8 @@ interface Motor {
 }
 
 let motor: Motor | null = null;
+/** O `resume()` em andamento (um só por vez). */
+let retomando: Promise<void> | null = null;
 let ctorDeTeste: CtorAudio | null | undefined;
 let ultimoTick = 0;
 
@@ -76,20 +81,41 @@ function obterMotor(): Motor | null {
       comp.connect(ac.destination);
       motor = { ac, master, ruido: null };
     }
-    if (motor.ac.state === "suspended") {
-      // Bloqueado até o primeiro toque: tenta, sem esperar nem falhar.
-      void motor.ac.resume().catch(() => undefined);
-    }
+    if (motor.ac.state === "suspended") retomar(motor);
     return motor;
   } catch {
     return null;
   }
 }
 
+/** Pede para o áudio voltar (bloqueado até o primeiro toque). Nunca falha. */
+function retomar(m: Motor): Promise<void> {
+  if (!retomando) {
+    let p: Promise<void>;
+    try {
+      p = Promise.resolve(m.ac.resume()).then(
+        () => undefined,
+        () => undefined
+      );
+    } catch {
+      p = Promise.resolve();
+    }
+    retomando = p.finally(() => {
+      retomando = null;
+    });
+  }
+  return retomando;
+}
+
+/** Quanto o som espera o áudio ser liberado antes de desistir. */
+export const ESPERA_RESUME_MS = 1000;
+
 /**
  * Chame num gesto da usuária (toque) pra liberar o áudio: os navegadores
  * só deixam tocar depois de uma interação. O host da comemoração faz isso
- * sozinho no primeiro `pointerdown`.
+ * sozinho no `pointerdown`, no `touchend` e no `click` (no Safari do
+ * iPhone, o `pointerdown` de um dedo não conta como gesto; o `touchend` e
+ * o `click`, sim).
  */
 export function liberarAudio(): void {
   obterMotor();
@@ -215,13 +241,17 @@ const EFEITOS: Record<NomeSom, (m: Motor, t: number) => void> = {
 };
 
 /**
- * Toca um efeito. Devolve `true` se agendou o som, `false` se não tocou
- * (desligado, sem Web Audio, bloqueado ou erro) -- nunca lança.
+ * Toca um efeito. Resolve `true` se agendou o som, `false` se não tocou
+ * (desligado, sem Web Audio, bloqueado ou erro) -- nunca rejeita.
+ *
+ * Com o áudio suspenso (o caso do primeiro som, logo depois do toque que o
+ * libera), espera o `resume()` terminar e toca em seguida; o atraso pedido
+ * conta a partir daí.
  */
-export function tocarSom(
+export async function tocarSom(
   nome: NomeSom,
   opcoes: { ligado: boolean; atrasoSeg?: number }
-): boolean {
+): Promise<boolean> {
   if (!opcoes.ligado) return false;
   try {
     if (nome === "tick") {
@@ -230,7 +260,17 @@ export function tocarSom(
       ultimoTick = agora;
     }
     const m = obterMotor();
-    if (!m || m.ac.state !== "running") return false;
+    if (!m) return false;
+    if (m.ac.state !== "running") {
+      let relogio: ReturnType<typeof setTimeout> | undefined;
+      const prazo = new Promise<void>((ok) => {
+        relogio = setTimeout(ok, ESPERA_RESUME_MS);
+      });
+      await Promise.race([retomar(m), prazo]);
+      clearTimeout(relogio);
+      // o estado muda durante a espera (o TypeScript não sabe disso)
+      if ((m.ac.state as AudioContextState) !== "running") return false;
+    }
     EFEITOS[nome](m, m.ac.currentTime + 0.01 + (opcoes.atrasoSeg ?? 0));
     return true;
   } catch {
@@ -253,5 +293,6 @@ export function vibrar(padrao: number | number[], ligado: boolean): void {
 export function _usarAudioParaTeste(ctor: CtorAudio | null | undefined): void {
   ctorDeTeste = ctor;
   motor = null;
+  retomando = null;
   ultimoTick = 0;
 }
