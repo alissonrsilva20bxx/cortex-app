@@ -235,6 +235,12 @@ interface Props {
   chartType?: "bar" | "donut";
   /** Nome e telefone dela, para o cartão do "Lembrar cliente". */
   profissional?: Profissional;
+  /**
+   * Um atendimento mudou fora do JobForm (o "Marcar como concluído" do
+   * detalhe): a página recarrega a Agenda, o Financeiro e a Início, o
+   * mesmo que faz depois de salvar o formulário.
+   */
+  onJobSaved?: () => void;
 }
 
 export function JobsTab({
@@ -243,6 +249,7 @@ export function JobsTab({
   onEditJob,
   chartType = "bar",
   profissional,
+  onJobSaved,
 }: Props) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filter, setFilter] = useState<Filter>("todos");
@@ -1116,6 +1123,11 @@ export function JobsTab({
         onEdit={(job) => {
           setDetailJob(null);
           onEditJob(job);
+        }}
+        onConcluido={() => {
+          // Sem a página (testes), recarrega só a lista da Agenda.
+          if (onJobSaved) onJobSaved();
+          else retryLoadJobs();
         }}
       />
 

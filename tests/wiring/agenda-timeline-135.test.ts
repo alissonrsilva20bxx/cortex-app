@@ -90,7 +90,7 @@ describe('"Abrir atendimento" (JobDetailSheet) é um passo distinto de "editar" 
 
   it('o rodapé do JobDetailSheet tem "Editar atendimento", que chama onEdit(job) — não edita nada localmente', () => {
     expect(jobDetailSrc).toMatch(
-      /onClick=\{\(\) => onEdit\(job\)\}[\s\S]{0,400}Editar atendimento/
+      /onClick=\{\(\) => onEdit\(job\)\}[\s\S]{0,900}Editar atendimento/
     );
   });
 

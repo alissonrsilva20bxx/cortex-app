@@ -212,6 +212,14 @@ export default function DevPreviewApp() {
   const [despesaFormOpen, setDespesaFormOpen] = useState(false);
   const [receitaFormOpen, setReceitaFormOpen] = useState(false);
   const [financeiroRefreshKey, setFinanceiroRefreshKey] = useState(0);
+  // Um atendimento salvo (formulário) ou concluído (detalhe da Agenda)
+  // muda a Agenda, a Início E o Financeiro: o Financeiro tem a própria
+  // busca e só recarregava com despesa, entrada ou meta, então ficava com
+  // o atendimento antigo (não concluído) até reabrir o app.
+  function recarregarAposAtendimento() {
+    setJobsRefreshKey((k) => k + 1);
+    setFinanceiroRefreshKey((k) => k + 1);
+  }
   const [objetivosRefreshKey, setObjetivosRefreshKey] = useState(0);
 
   const [finInnerTab, setFinInnerTab] = useState("visao");
@@ -677,6 +685,7 @@ export default function DevPreviewApp() {
             refreshTrigger={jobsRefreshKey}
             chartType={chartPrefs.jobs}
             profissional={{ nome: usuario.nome, telefone: usuario.telefone }}
+            onJobSaved={recarregarAposAtendimento}
             onEditJob={(job) => {
               setEditingJob(job);
               setJobFormOpen(true);
@@ -865,7 +874,7 @@ export default function DevPreviewApp() {
         userId={usuario.id}
         onClose={() => setJobFormOpen(false)}
         onSaved={() => {
-          setJobsRefreshKey((k) => k + 1);
+          recarregarAposAtendimento();
           toast.success(
             editingJob ? "Atendimento atualizado!" : "Atendimento registrado!"
           );

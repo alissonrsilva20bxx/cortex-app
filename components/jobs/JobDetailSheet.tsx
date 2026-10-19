@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { MapPin, Video } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { StatusBadge } from "./StatusBadge";
 import { formatDayBadge } from "@/components/home/NextJobCard";
 import { formatBRL } from "@/lib/finance";
+import { supabase } from "@/lib/supabase";
 import type { Job } from "@/lib/types";
 
 /** "15h30" — mesma convenção já usada em NextJobCard/lib/notificacoes.ts. */
@@ -17,6 +19,15 @@ interface Props {
   job: Job | null;
   onClose: () => void;
   onEdit: (job: Job) => void;
+  /** O atendimento foi marcado como concluído: quem chama recarrega a
+   * Agenda, o Financeiro e a Início (o sheet já fechou). */
+  onConcluido?: () => void;
+}
+
+/** Agendado ou confirmado pode ser concluído; concluído e cancelado só
+ * editam. */
+export function podeConcluir(job: Job): boolean {
+  return job.status === "agendado" || job.status === "confirmado";
 }
 
 /**
@@ -34,8 +45,38 @@ interface Props {
  * mesmo casco de `ClienteDetailSheet` (Rede) — em vez de reinventar
  * overlay/pega/foco: já tem focus trap, Esc e `role="dialog"`.
  */
-export function JobDetailSheet({ job, onClose, onEdit }: Props) {
+export function JobDetailSheet({ job, onClose, onEdit, onConcluido }: Props) {
   const dayBadge = job ? formatDayBadge(job.data) : null;
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  // Outro atendimento aberto: começa sem erro e sem "Salvando…".
+  useEffect(() => {
+    setSalvando(false);
+    setErro(null);
+  }, [job?.id]);
+
+  // O mesmo `update` de status do JobForm, só com o status: o atendimento
+  // passa a contar no Financeiro, na Início e no Resumo.
+  async function marcarConcluido(alvo: Job) {
+    if (salvando) return;
+    setSalvando(true);
+    setErro(null);
+    const { error } = await supabase
+      .from("jobs")
+      .update({ status: "concluído", atualizado_em: new Date().toISOString() })
+      .eq("id", alvo.id);
+    setSalvando(false);
+    if (error) {
+      console.error("[JobDetailSheet] falha ao concluir:", error.message);
+      setErro("Não foi possível marcar como concluído. Tente de novo.");
+      return;
+    }
+    onClose();
+    onConcluido?.();
+  }
+
+  const concluir = job ? podeConcluir(job) : false;
 
   return (
     <BottomSheet
@@ -44,13 +85,47 @@ export function JobDetailSheet({ job, onClose, onEdit }: Props) {
       title="Atendimento"
       footer={
         job ? (
-          <button
-            onClick={() => onEdit(job)}
-            className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80"
-            style={{ background: "var(--accent)", color: "white" }}
-          >
-            Editar atendimento
-          </button>
+          <div className="flex flex-col" style={{ gap: "8px" }}>
+            {erro && (
+              <p
+                role="alert"
+                className="text-sm font-semibold text-center"
+                style={{ color: "var(--danger)" }}
+              >
+                {erro}
+              </p>
+            )}
+            {concluir && (
+              <button
+                type="button"
+                onClick={() => void marcarConcluido(job)}
+                disabled={salvando}
+                data-job-concluir
+                className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
+                style={{ background: "var(--accent)", color: "white" }}
+              >
+                {salvando ? "Salvando…" : "Marcar como concluído"}
+              </button>
+            )}
+            {/* Com o "Concluir" acima, o Editar vira o botão secundário. */}
+            <button
+              type="button"
+              onClick={() => onEdit(job)}
+              disabled={salvando}
+              className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80"
+              style={
+                concluir
+                  ? {
+                      background: "var(--surface-sub)",
+                      color: "var(--text)",
+                      border: "1px solid var(--border-color)",
+                    }
+                  : { background: "var(--accent)", color: "white" }
+              }
+            >
+              Editar atendimento
+            </button>
+          </div>
         ) : undefined
       }
     >
