@@ -357,6 +357,11 @@ interface Props {
 /** Quantas pessoas a aba Descobrir mostra (2 por linha). */
 const PESSOAS_NO_DESCOBRIR = 4;
 
+/** O espaço que fica embaixo do feed, fora dele: os 160px que a casca do
+ * app deixa em toda tela (`pb-40` em app/page.tsx) e os 16px do `pb-4` do
+ * RedeTab. A Rede pinta o próprio fundo também nele. */
+const SOBRA_DA_CASCA = 160 + 16;
+
 export function FeedScreen({
   usuario,
   usuarioFotoUrl,
@@ -607,13 +612,21 @@ export function FeedScreen({
       {/* A Rede vai de ponta a ponta: a casca do app dá `px-4` e
           `--space-shell-top` a TODAS as telas, então aqui a margem negativa
           devolve a borda e o topo só para esta tela. Cada bloco tem os seus
-          16px; a foto do post sangra. */}
+          16px; a foto do post sangra.
+          Embaixo sobram 176px fora deste fundo (`pb-40` da casca, espaço
+          da barra de abas, e `pb-4` do RedeTab), que mostravam o degradê
+          do tema (a faixa rosa nos temas pink e crimson). A margem
+          negativa puxa esse espaço para dentro da Rede e o padding devolve a mesma
+          altura (mais os 16px de antes e a área do indicador de início do
+          iPhone), então nada muda de lugar e o fundo vai até o fim. 100dvh
+          pelo mesmo motivo do `body` em styles/globals.css: no app
+          instalado, 100vh não cobre a área segura de baixo. */}
       <div
-        className="pb-4"
         style={{
-          margin: "-20px -16px 0",
+          margin: `-20px -16px -${SOBRA_DA_CASCA}px`,
+          paddingBottom: `calc(${SOBRA_DA_CASCA + 16}px + env(safe-area-inset-bottom, 0px))`,
           background: "var(--rede-bg)",
-          minHeight: "100vh",
+          minHeight: "100dvh",
         }}
       >
         <div style={{ padding: "0 16px" }}>
