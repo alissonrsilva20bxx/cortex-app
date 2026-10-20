@@ -1598,7 +1598,8 @@ export function RedeTab({
       fetch("/api/rede/mensagens/notificar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversaId: conversationId, texto }),
+        // Só o id: o push é neutro e nunca leva o texto (privacidade).
+        body: JSON.stringify({ conversaId: conversationId }),
       }).catch((e) => console.error("[RedeTab notificar mensagem]", e));
     } catch (e) {
       console.error("[RedeTab enviar mensagem]", e);

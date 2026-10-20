@@ -111,7 +111,7 @@ describe("POST /api/rede/mensagens/notificar", () => {
     expect(response.status).toBe(401);
   });
 
-  it("rejeita payload inválido (conversaId/texto ausentes)", async () => {
+  it("rejeita payload inválido (conversaId ausente)", async () => {
     mocks.createClient.mockReturnValue(supabaseClient("u1", []));
     const response = await POST(request({}) as never);
     expect(response.status).toBe(400);
@@ -216,8 +216,53 @@ describe("POST /api/rede/mensagens/notificar", () => {
     expect(body).toEqual({ sent: 1 });
     expect(mocks.sendNotification).toHaveBeenCalledWith(
       { endpoint: "https://x", keys: { p256dh: "p", auth: "a" } },
-      expect.stringContaining("Ana")
+      expect.any(String)
     );
+  });
+
+  it("o push é neutro: título 'Nova mensagem', sem nome de quem mandou e sem o texto", async () => {
+    mocks.createClient.mockReturnValue(
+      supabaseClient("u1", [{ user_id: "u1" }, { user_id: "u2" }])
+    );
+    const admin = adminClient({
+      perfil: { nome_exibicao: "Ana" },
+      subs: [{ id: "s1", endpoint: "https://x", p256dh: "p", auth: "a" }],
+    });
+    mocks.getSupabaseAdmin.mockReturnValue(admin);
+    mocks.sendNotification.mockResolvedValue(undefined);
+
+    // Versão antiga do app ainda manda o texto: ele é ignorado.
+    await POST(
+      request({ conversaId: "c1", texto: "segredo da conversa" }) as never
+    );
+
+    const payload = JSON.parse(mocks.sendNotification.mock.calls[0][1]);
+    expect(payload).toEqual({
+      title: "Nova mensagem",
+      body: "Toque para abrir.",
+      tag: "rede-mensagem-c1",
+      url: "/",
+    });
+    const cru = mocks.sendNotification.mock.calls[0][1] as string;
+    expect(cru).not.toContain("Ana");
+    expect(cru).not.toContain("segredo");
+    // Nem consulta o nome: rede_perfis não é lida.
+    expect(admin.from).not.toHaveBeenCalledWith("rede_perfis");
+  });
+
+  it("aceita a chamada só com o id da conversa (o cliente não manda mais o texto)", async () => {
+    mocks.createClient.mockReturnValue(
+      supabaseClient("u1", [{ user_id: "u1" }, { user_id: "u2" }])
+    );
+    mocks.getSupabaseAdmin.mockReturnValue(
+      adminClient({
+        subs: [{ id: "s1", endpoint: "https://x", p256dh: "p", auth: "a" }],
+      })
+    );
+    mocks.sendNotification.mockResolvedValue(undefined);
+    const response = await POST(request({ conversaId: "c1" }) as never);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ sent: 1 });
   });
 
   it("remove inscrição expirada (404/410) e continua sem falhar a requisição inteira", async () => {

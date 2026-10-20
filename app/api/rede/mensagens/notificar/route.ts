@@ -5,6 +5,10 @@ import webpush from "web-push";
 
 import { createClient } from "../../../../../lib/supabase-server";
 import { getSupabaseAdmin } from "../../../../../lib/supabaseAdmin";
+import {
+  PUSH_MENSAGEM_CORPO,
+  PUSH_MENSAGEM_TITULO,
+} from "../../../../../lib/rede/pushMensagem";
 
 export const runtime = "nodejs";
 
@@ -14,6 +18,12 @@ export const runtime = "nodejs";
  * lib/rede/mensagens.ts, já testado, continua inserindo direto via RLS).
  * O cliente chama esta rota logo depois de enviar com sucesso; falha aqui
  * nunca deveria derrubar o envio da mensagem, só o push fica sem sair.
+ *
+ * Privacidade (ordem do capitão, 2026-10-20): a notificação aparece na tela
+ * bloqueada do celular, à vista de quem estiver perto. Por isso ela NÃO
+ * leva o texto da mensagem nem o nome de quem mandou: o título é sempre
+ * "Nova mensagem" e o corpo é genérico. O cliente nem manda mais o texto
+ * pra cá; se mandar (versão antiga em cache), ele é ignorado.
  */
 export async function POST(request: NextRequest) {
   let recebido: unknown;
@@ -31,11 +41,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const { conversaId, texto } = recebido as {
-    conversaId?: unknown;
-    texto?: unknown;
-  };
-  if (typeof conversaId !== "string" || typeof texto !== "string") {
+  const { conversaId } = recebido as { conversaId?: unknown };
+  if (typeof conversaId !== "string" || !conversaId) {
     return NextResponse.json(
       { error: "Parâmetros inválidos" },
       { status: 400 }
@@ -87,18 +94,10 @@ export async function POST(request: NextRequest) {
 
   const supabaseAdmin = getSupabaseAdmin();
 
-  const [{ data: perfil }, { data: subs, error: subsError }] =
-    await Promise.all([
-      supabaseAdmin
-        .from("rede_perfis")
-        .select("nome_exibicao")
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("push_subscriptions")
-        .select("id, endpoint, p256dh, auth")
-        .in("user_id", destinatarios),
-    ]);
+  const { data: subs, error: subsError } = await supabaseAdmin
+    .from("push_subscriptions")
+    .select("id, endpoint, p256dh, auth")
+    .in("user_id", destinatarios);
 
   // Erro real de banco não é "ninguém inscrito" -- tratar os dois igual
   // escondia falhas de infraestrutura atrás de um `sent: 0` silencioso.
@@ -130,9 +129,10 @@ export async function POST(request: NextRequest) {
     vapidPrivateKey
   );
 
+  // Sem nome e sem trecho: só o aviso neutro (ver o comentário do topo).
   const payload = JSON.stringify({
-    title: perfil?.nome_exibicao ?? "Nova mensagem",
-    body: texto.length > 80 ? `${texto.slice(0, 80)}…` : texto,
+    title: PUSH_MENSAGEM_TITULO,
+    body: PUSH_MENSAGEM_CORPO,
     tag: `rede-mensagem-${conversaId}`,
     url: "/",
   });
