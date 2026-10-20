@@ -1,0 +1,50 @@
+[
+  {
+    "arquivo": "components/rede/ChatListScreen.tsx",
+    "modulo": "mockRede",
+    "nomes": [
+      "formatRelativeTime"
+    ],
+    "motivo": "so uma funcao de data (nao e dado de exemplo); falta mover para fora do mock"
+  },
+  {
+    "arquivo": "components/rede/ChatThreadScreen.tsx",
+    "modulo": "mockRede",
+    "nomes": [
+      "formatRelativeTime"
+    ],
+    "motivo": "so uma funcao de data (nao e dado de exemplo); falta mover para fora do mock"
+  },
+  {
+    "arquivo": "components/rede/CommentsSheet.tsx",
+    "modulo": "mockRede",
+    "nomes": [
+      "formatRelativeTime"
+    ],
+    "motivo": "so uma funcao de data (nao e dado de exemplo); falta mover para fora do mock"
+  },
+  {
+    "arquivo": "components/rede/PostCard.tsx",
+    "modulo": "mockRede",
+    "nomes": [
+      "formatRelativeTime"
+    ],
+    "motivo": "so uma funcao de data (nao e dado de exemplo); falta mover para fora do mock"
+  },
+  {
+    "arquivo": "components/rede/RedeNotificationsSheet.tsx",
+    "modulo": "mockRede",
+    "nomes": [
+      "formatRelativeTime"
+    ],
+    "motivo": "so uma funcao de data (nao e dado de exemplo); falta mover para fora do mock"
+  },
+  {
+    "arquivo": "components/rede/RedeTab.tsx",
+    "modulo": "mockRede",
+    "nomes": [
+      "findUser"
+    ],
+    "motivo": "DADO DE EXEMPLO REAL: busca em REDE_USERS como plano B para Busca/Descobrir; mostra pessoa inventada"
+  }
+]
