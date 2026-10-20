@@ -30,7 +30,7 @@ const redeTab = read("components/rede/RedeTab.tsx");
 
 describe("as abas presas no topo ao rolar", () => {
   it("a casa guarda a altura da faixa (sem salto) e a faixa vira fixed quando passa do topo", () => {
-    expect(feed).toContain("const ALTURA_ABAS = 47;");
+    expect(feed).toContain("const ALTURA_ABAS = 64;");
     expect(feed).toMatch(
       /<div ref=\{casaRef\} style=\{\{ height: ALTURA_ABAS \}\}>/
     );
@@ -56,24 +56,30 @@ describe("as abas presas no topo ao rolar", () => {
     );
   });
 
-  it("presa, a faixa cobre a área do relógio (notch)", () => {
+  it("presa, a faixa cobre a área do relógio (notch); a pílula para logo abaixo dela", () => {
     expect(feed).toMatch(
       /paddingTop: presa \? "env\(safe-area-inset-top, 0px\)" : undefined,/
     );
-    expect(feed).toMatch(/const topo = areaSeguraTopo\(\);/);
+    expect(feed).toMatch(/const topo = areaSeguraTopo\(\) \+ deslocamento;/);
+    expect(feed).toMatch(/useAbasPresas\(ALTURA_ABAS \+ 6\)/);
+  });
+
+  it("modelo Doca: trilho com o fundo da aba ativa deslizando até ela", () => {
+    expect(feed).toMatch(/data-indicador-aba=""/);
+    expect(feed).toMatch(/transform: `translateX\(\$\{indice \* 100\}%\)`/);
+    expect(feed).toMatch(
+      /const indice = Math\.max\(\s*0,\s*ABAS_FEED\.findIndex\(\(a\) => a\.id === aba\)\s*\);/
+    );
   });
 });
 
 describe("Amigas: novas desde a última visita", () => {
   it("ao abrir a aba, a visita de antes vira o corte e a de agora é gravada", () => {
     expect(feed).toMatch(
-      /if \(!\(segmento === "amigas" && ativa\)\) return;\s*const anterior = lerUltimaVisitaAmigas\(usuario\.id\);\s*setCorte\(anterior\);\s*const agora = new Date\(\);\s*gravarVisitaAmigas\(usuario\.id, agora\);/
+      /if \(!\(segmento === "amigas" && ativa\)\) return;\s*const anterior = lerUltimaVisitaAmigas\(usuario\.id\);\s*setCorte\(anterior\);\s*setPilulaFechada\(false\);\s*const agora = new Date\(\);\s*gravarVisitaAmigas\(usuario\.id, agora\);/
     );
   });
 
-  // Revisão da #218: com a Rede escondida (outra aba aberta, ou o remonte
-  // que a trava de PIN do app causa), a visita era gravada sem ninguém ter
-  // visto a aba -- as novas caíam em "Já visto" e o número zerava.
   it("só grava a visita com a Rede na tela: o efeito depende de `ativa`", () => {
     expect(feed).toMatch(/\bativa: boolean;/);
     expect(feed).toMatch(/\}, \[segmento, ativa, usuario\.id\]\);/);
@@ -110,36 +116,47 @@ describe("Amigas: novas desde a última visita", () => {
       /const \{ novas, vistas, dividir \} = separarNovas\(daAmigas, corte\);/
     );
     expect(feed).toContain(
-      "<Divisor>Novas desde a sua última visita</Divisor>"
+      "<Divisor marca>Novas desde a sua última visita</Divisor>"
     );
     expect(feed).toContain("<Divisor>Já visto</Divisor>");
   });
+
+  it('pílula "N novas": só na aba Amigas, conta as das amigas desde o corte e leva até o divisor', () => {
+    expect(feed).toMatch(
+      /const nPilula = dividir \? contarNovasDasAmigas\(daAmigas, friends, corte\) : 0;/
+    );
+    expect(feed).toMatch(
+      /\{nPilula > 0 && !pilulaFechada && \(\s*<PilulaNovas n=\{nPilula\} onIr=\{irParaNovas\} \/>/
+    );
+    // só um lugar monta a pílula, e é dentro do ramo da aba Amigas
+    expect(feed.match(/<PilulaNovas /g) ?? []).toHaveLength(1);
+    const ramoAmigas = feed.slice(
+      feed.indexOf('} else if (segmento === "amigas") {'),
+      feed.indexOf('} else if (segmento === "descobrir") {')
+    );
+    expect(ramoAmigas).toContain("<PilulaNovas ");
+    expect(feed).toMatch(/data-novas=\{marca \? "" : undefined\}/);
+    expect(feed).toMatch(
+      /function irParaNovas\(\) \{\s*setPilulaFechada\(true\);\s*const alvo = document\.querySelector<HTMLElement>\("\[data-novas\]"\);/
+    );
+  });
 });
 
-describe("Descobrir: pessoas e dicas da semana", () => {
-  it("mostra as sugestões reais, até 4, com o mesmo Adicionar da tela Amigas", () => {
-    expect(feed).toContain("const PESSOAS_NO_DESCOBRIR = 4;");
-    expect(feed).toMatch(
-      /const pessoas = sugestoes\.slice\(0, PESSOAS_NO_DESCOBRIR\);/
-    );
-    expect(feed).toMatch(/enviado=\{sentRequests\.includes\(p\.id\)\}/);
-    expect(feed).toMatch(/onAdicionar=\{\(\) => onSendRequest\(p\.id\)\}/);
-    expect(feed).toMatch(/onAbrir=\{\(\) => onOpenAutor\(p\.id\)\}/);
-    expect(feed).toMatch(/\{enviado \? "Pedido enviado" : "Adicionar"\}/);
-    expect(feed).toMatch(/disabled=\{enviado\}/);
-  });
-
-  it("as dicas da semana vêm de dicasDaSemana(posts)", () => {
+describe('Descobrir: "O melhor da semana" (só dicas)', () => {
+  it("as dicas vêm de dicasDaSemana(posts), numeradas, sem tabela nova", () => {
     expect(feed).toMatch(/const dicas = dicasDaSemana\(posts\);/);
-    expect(feed).toContain(
-      "<TituloSecao>Dicas mais curtidas da semana</TituloSecao>"
-    );
+    expect(feed).toContain("O melhor da semana");
+    expect(feed).toContain("As dicas mais curtidas dos últimos 7 dias");
+    expect(feed).toMatch(/lista\(soPosts\(dicas\), true\)/);
   });
 
-  it("o RedeTab entrega sugestões, pedidos enviados e o sendRequest de antes", () => {
-    expect(redeTab).toMatch(/async function sendRequest\(userId: string\)/);
-    const tag = redeTab.match(/<FeedScreen\b[\s\S]*?\/>/)?.[0] ?? "";
-    expect(tag).toContain("onSendRequest={(id) => void sendRequest(id)}");
+  it("as pessoas para conhecer saíram do Descobrir (repetiam a tela Amigas)", () => {
+    expect(feed).not.toMatch(/Pessoas para conhecer|CartaoPessoa|sugestoes/);
+    expect(feed).not.toMatch(/onSendRequest|sentRequests/);
+    // ...e continuam na tela Amigas, com o mesmo "Adicionar".
+    const tagAmigas = redeTab.match(/<AmigasScreen\b[\s\S]*?\/>/)?.[0] ?? "";
+    expect(tagAmigas).toContain("sugestoes={sugestoes}");
+    expect(tagAmigas).toContain("onSendRequest={sendRequest}");
   });
 
   it("a aba lembrada aceita as 3 (redeCache)", () => {
@@ -149,21 +166,68 @@ describe("Descobrir: pessoas e dicas da semana", () => {
   });
 });
 
-describe("cabeçalho: o ícone de pessoas leva a Amigas", () => {
-  it("RedeHeader monta o ícone com o número de pedidos e abre Amigas", () => {
-    expect(header).toMatch(
-      /\{onOpenAmigas && \(\s*<IconButton\s+onClick=\{onOpenAmigas\}\s+label="Amigas, solicitações e descobrir pessoas"\s+badge=\{pendingRequestsCount\}/
+describe("modelo Doca: o topo de toda tela e a barra da Rede", () => {
+  const topo = semComentarios(read("components/rede/RedeTopo.tsx"));
+  const doca = semComentarios(read("components/rede/DocaBar.tsx"));
+
+  it("o cabeçalho do Feed é casinha, título e os atalhos (lupa, sino, foto)", () => {
+    expect(header).toMatch(/<BotaoSairDaRede \/>/);
+    expect(header).toMatch(/<AtalhosTopo \/>/);
+    expect(feed).toMatch(/<RedeHeader \/>/);
+    expect(topo).toMatch(/label="Buscar" onClick=\{topo\.onBuscar\}/);
+    expect(topo).toMatch(/label="Notificações"\s+onClick=\{topo\.onNotificacoes\}/);
+    expect(topo).toMatch(/data-tour="rede-perfil"/);
+    expect(topo).toMatch(/onClick=\{topo\.onMeuEspaco\}/);
+  });
+
+  it("a foto da usuária está no cabeçalho de toda subtela e na conversa aberta", () => {
+    const sh = read("components/rede/ScreenHeader.tsx");
+    expect(sh).toMatch(/\{raiz \? <AtalhosTopo semBusca=\{!!action\} \/> : <BotaoFotoPerfil \/>\}/);
+    expect(read("components/rede/ChatThreadScreen.tsx")).toMatch(/<BotaoFotoPerfil \/>/);
+  });
+
+  it("o RedeTab monta o contexto com os handlers reais (busca, notificações, Meu espaço)", () => {
+    expect(redeTab).toMatch(/<RedeTopoContext\.Provider value=\{topo\}>/);
+    expect(redeTab).toMatch(/onBuscar: \(\) => push\(\{ type: "busca" \}\),/);
+    expect(redeTab).toMatch(
+      /onNotificacoes: \(\) => \{\s*revalidarSocial\(\);\s*setNotifSheetOpen\(true\);\s*\},/
     );
-    expect(feed).toMatch(
-      /<RedeHeader[\s\S]*?onOpenAmigas=\{onOpenAmigas\}\s+pendingRequestsCount=\{pendingRequestsCount\}/
+    expect(redeTab).toMatch(/: irPelaDoca\("meuEspaco"\),/);
+  });
+
+  it("a barra tem Feed, Conversas, Publicar, Amigas e Eu, com os números reais", () => {
+    expect(doca).toMatch(/item\("feed", "Feed"/);
+    expect(doca).toMatch(/item\("chatList", "Conversas", <IconeConversas \/>, naoLidas\)/);
+    expect(doca).toMatch(/item\("amigas", "Amigas", <IconeAmigas \/>, pedidos\)/);
+    expect(doca).toMatch(/item\(\s*"meuEspaco",\s*"Eu",/);
+    expect(doca).toMatch(/aria-label="Publicar"/);
+    const tag = redeTab.match(/<DocaBar\b[\s\S]*?\/>/)?.[0] ?? "";
+    expect(tag).toContain("naoLidas={unreadChats}");
+    expect(tag).toContain("pedidos={requests.length}");
+    expect(tag).toContain("onIr={irPelaDoca}");
+    expect(tag).toContain("onPublicar={() => setComposerOpen(true)}");
+    // some na conversa aberta (ela tem o próprio campo embaixo)
+    expect(redeTab).toMatch(
+      /\{barraDoca && screen\.type !== "chatThread" && \(\s*<DocaBar/
     );
+  });
+
+  it("a página troca a barra do app pela da Rede só com a Rede liberada na tela", () => {
+    for (const pagina of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
+      const src = read(pagina);
+      expect(src).toMatch(
+        /const redeDocaNaTela =\s*activeTab === "rede" && redeAcesso === "liberado" && !tourOpen;/
+      );
+      expect(src).toMatch(/onSairDaRede=\{\(\) => handleTabChange\("home"\)\}/);
+      expect(src).toMatch(/barraDoca=\{!tourOpen\}/);
+    }
   });
 });
 
-describe("o post no desenho da proposta", () => {
-  it("cabeçalho de 44, avatar de 36, nome que abre o perfil", () => {
-    expect(post).toMatch(/padding: "0 12px 0 16px", minHeight: 44/);
-    expect(post).toMatch(/tamanho=\{36\}/);
+describe("o post no desenho do modelo Doca", () => {
+  it("cartão com a autora (avatar de 44 e nome que abrem o perfil)", () => {
+    expect(post).toMatch(/borderRadius: 22,/);
+    expect(post).toMatch(/tamanho=\{44\}\s+onClick=\{\(\) => onOpenAutor\(post\.autorId\)\}/);
     expect(post).toMatch(
       /<button\s+type="button"\s+onClick=\{\(\) => onOpenAutor\(post\.autorId\)\}/
     );
@@ -175,29 +239,34 @@ describe("o post no desenho da proposta", () => {
   });
 
   it("as ações mostram a contagem real ao lado e chamam os handlers de antes", () => {
-    expect(post).toMatch(
-      /count=\{post\.curtidas\}\s+active=\{post\.curtidoPorMim\}\s+onClick=\{\(\) => onToggleLike\(post\.id\)\}/
-    );
-    expect(post).toMatch(
-      /count=\{post\.comentariosCount\}\s+onClick=\{\(\) => onComment\(post\)\}/
-    );
+    expect(post).toMatch(/onClick=\{curtir\}/);
+    expect(post).toMatch(/onToggleLike\(post\.id\);/);
+    expect(post).toMatch(/\{post\.curtidas\}/);
+    expect(post).toMatch(/onClick=\{\(\) => onComment\(post\)\}/);
+    expect(post).toMatch(/\{post\.comentariosCount\}/);
     expect(post).toMatch(/onClick=\{\(\) => onShare\(post\)\}/);
     expect(post).toMatch(/onClick=\{\(\) => onOpenMenu\(post\)\}/);
     expect(post).toMatch(/minHeight: 44,/);
   });
 
-  it("com foto: legenda depois das ações; sem foto: o texto maior antes delas", () => {
-    expect(post).toMatch(
-      /\{temFoto \? \([\s\S]*?<FeedFotos[\s\S]*?\) : \(\s*<p\s+data-post-texto=""/
-    );
-    expect(post).toMatch(/\{temFoto && \(\s*<p\s+data-post-legenda=""/);
+  it("o par de fotos vai para o leque; uma foto, para o FeedFotos", () => {
+    expect(post).toMatch(/\{nFotos >= 2 \? \(\s*<LequeFotos/);
+    expect(post).toMatch(/\) : nFotos === 1 \? \(/);
+    const leque = semComentarios(read("components/rede/LequeFotos.tsx"));
+    expect(leque).toMatch(/aria-expanded=\{aberto\}/);
+    expect(leque).toMatch(/<PhotoStage/);
+    expect(leque).not.toMatch(/Antes|Depois/);
   });
 
-  it("40px entre os posts: 18 em cima, 22 embaixo e a faixa de 8 no meio", () => {
-    expect(post).toMatch(/style=\{\{ padding: "18px 0 22px" \}\}/);
-    expect(feed).toMatch(
-      /style=\{i > 0 \? \{ borderTop: "8px solid var\(--t-sub\)" \} : undefined\}/
-    );
+  it("curtir solta partículas (só ao curtir, nunca ao descurtir)", () => {
+    expect(post).toMatch(/\{festa > 0 && post\.curtidoPorMim && <Particulas key=\{festa\} \/>\}/);
+    expect(post).toMatch(/if \(!post\.curtidoPorMim\) \{\s*setFesta/);
+    const css = read("components/rede/doca.module.css");
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.particulas,/);
+  });
+
+  it("12px entre os cartões", () => {
+    expect(feed).toMatch(/style=\{\{ gap: 12, padding: "0 14px" \}\}/);
   });
 });
 

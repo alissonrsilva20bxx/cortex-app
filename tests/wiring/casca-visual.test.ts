@@ -130,14 +130,20 @@ describe("§1-P0-7 — OnboardingFlow dispara para conta nova antes de BottomNav
   });
 
   it("BottomNav e FAB só renderizam quando NÃO é conta nova (!isNewUser)", () => {
-    expect(page).toMatch(/\{!isNewUser && !chatComposerFocused && \(/);
+    // Modelo Doca: também somem com a Rede liberada na tela, que tem a
+    // própria barra (DocaBar).
+    expect(page).toMatch(
+      /\{!isNewUser && !chatComposerFocused && !redeDocaNaTela && \(/
+    );
     expect(page).toMatch(/<BottomNav/);
   });
 });
 
 describe("§1-P0-8 — chatComposerFocused esconde BottomNav+FAB quando o composer do chat tem foco", () => {
   it("BottomNav/FAB são condicionados também a !chatComposerFocused", () => {
-    expect(page).toMatch(/\{!isNewUser && !chatComposerFocused && \(/);
+    expect(page).toMatch(
+      /\{!isNewUser && !chatComposerFocused && !redeDocaNaTela && \(/
+    );
   });
 
   it("RedeGatedTab recebe onChatFocusChange ligado a setChatComposerFocused", () => {

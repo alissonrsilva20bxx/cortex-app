@@ -158,7 +158,9 @@ describe("wiring: todo alvo do tour existe no código", () => {
     "components/BottomNav.tsx",
     "components/FAB.tsx",
     "components/home/GreetingHeader.tsx",
-    "components/rede/RedeHeader.tsx",
+    // Modelo Doca: a foto da usuária (alvo "rede-perfil") mora no topo de
+    // toda tela da Rede, em RedeTopo.tsx.
+    "components/rede/RedeTopo.tsx",
     "components/rede/RedeTeaserGate.tsx",
   ]
     .map(read)

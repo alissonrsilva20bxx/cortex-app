@@ -340,7 +340,7 @@ export function buildMockAppSeed(opts?: {
     {
       id: "rec-1",
       user_id: uid,
-      descricao: "Venda de kit de esmaltes",
+      descricao: "Indicação paga por uma colega",
       valor: 80,
       categoria: "outros",
       // Agosto: setembro só tem os 4 lançamentos de entrada do mockup do
@@ -363,7 +363,7 @@ export function buildMockAppSeed(opts?: {
     {
       id: "obj-1",
       user_id: uid,
-      titulo: "Fazer curso de extensão de cílios",
+      titulo: "Fazer curso de finanças pessoais",
       descricao: null,
       categoria: "financeiro",
       concluido: false,
@@ -434,9 +434,9 @@ export function buildMockAppSeed(opts?: {
       user_id: uid,
       nome_exibicao: "Miguel",
       cor_avatar: "#8b5cf6",
-      bio: "Nail designer • Studio Zona Sul",
+      bio: "Independente • São Paulo",
       avatar_url: null,
-      area_atuacao: "Unhas",
+      area_atuacao: "Independente",
       criado_em: daysFromNow(-18),
       atualizado_em: daysFromNow(-2),
     },
@@ -466,9 +466,9 @@ export function buildMockAppSeed(opts?: {
       user_id: FRIEND_ID,
       nome_exibicao: "Marina Alves",
       cor_avatar: "#ec4899",
-      bio: "Extensão de cílios",
+      bio: "Viagens e agenda organizada",
       avatar_url: null,
-      area_atuacao: "Cílios",
+      area_atuacao: "Independente",
       criado_em: daysFromNow(-30),
       atualizado_em: daysFromNow(-5),
     },
@@ -478,9 +478,9 @@ export function buildMockAppSeed(opts?: {
       user_id: "mock-descobrir-rita",
       nome_exibicao: "Rita Melo",
       cor_avatar: "#f0c4a8",
-      bio: "Cílios · Setúbal",
+      bio: "Independente · Setúbal",
       avatar_url: null,
-      area_atuacao: "Cílios",
+      area_atuacao: "Independente",
       criado_em: daysFromNow(-12),
       atualizado_em: daysFromNow(-1),
     },
@@ -488,9 +488,9 @@ export function buildMockAppSeed(opts?: {
       user_id: "mock-descobrir-nina",
       nome_exibicao: "Nina Paz",
       cor_avatar: "#c3eab4",
-      bio: "Estética · Lisboa",
+      bio: "Viaja a trabalho · Lisboa",
       avatar_url: null,
-      area_atuacao: "Estética",
+      area_atuacao: "Independente",
       criado_em: daysFromNow(-9),
       atualizado_em: daysFromNow(-1),
     },
@@ -518,7 +518,7 @@ export function buildMockAppSeed(opts?: {
       id: "rede-post-4",
       autor: "mock-amiga-juliana",
       categoria: "conquista",
-      texto: "Antes e depois da cliente de hoje 💅 deslizem pro lado",
+      texto: "Fim de semana de folga no litoral. Volto segunda com a agenda aberta.",
       h: 5,
     },
     {
@@ -533,7 +533,7 @@ export function buildMockAppSeed(opts?: {
       id: "rede-post-6",
       autor: uid,
       categoria: "duvida",
-      texto: "Vale a pena migrar pra cabine própria ou continuo alugando?",
+      texto: "Vale a pena alugar um flat só pra atender ou continuo no hotel?",
       h: 18,
     },
     {
@@ -561,21 +561,21 @@ export function buildMockAppSeed(opts?: {
       id: "rede-post-3",
       autor: uid,
       categoria: "geral",
-      texto: "Alguém indica fornecedor de insumo bom na região?",
+      texto: "Alguém indica um hotel tranquilo e discreto na região?",
       h: 52,
     },
     {
       id: "rede-post-9",
       autor: FRIEND_ID,
       categoria: "dica",
-      texto: "Planilha de custo por serviço mudou meu preço. Recomendo fazer.",
+      texto: "Planilha de custo por atendimento mudou meu preço. Recomendo fazer.",
       h: 60,
     },
     {
       id: "rede-post-10",
       autor: uid,
       categoria: "geral",
-      texto: "Playlist boa pro studio? Tô cansada da minha.",
+      texto: "Playlist boa pra viagem longa? Tô cansada da minha.",
       h: 72,
     },
     {
@@ -596,7 +596,7 @@ export function buildMockAppSeed(opts?: {
       id: "rede-post-13",
       autor: FRIEND_ID,
       categoria: "dica",
-      texto: "Foto de portfólio: luz da janela > ringlight, sempre.",
+      texto: "Segurança: sempre mando a localização pra uma amiga quando chego.",
       h: 130,
     },
     {
@@ -631,10 +631,9 @@ export function buildMockAppSeed(opts?: {
   // abas": 4:5, 1:1, 16:9 ou 1,91:1). No máximo 2 fotos por post, o teto do
   // banco (`ordem in (1,2)`, migration 0028).
   //  - post-1: retrato 4:5 (1080×1350);
-  //  - post-4: carrossel antes/depois, as duas 4:5 -- e a memória de slide
-  //    (`redeCache.lembrarSlide`) entre remounts;
-  //  - post-8: carrossel 1:1 + uma 16:9, que aparece inteira com o fundo
-  //    desfocado (outra proporção que a do quadro);
+  //  - post-4: o par em leque (modelo Doca), as duas 4:5;
+  //  - post-8: o par em leque, uma 1:1 e uma 16:9 (o leque recorta as duas
+  //    em 4:5, centradas);
   //  - post-6: paisagem 16:9; post-3: paisagem 1,91:1; post-13: dica 1:1;
   //  - post-9: 3:4, recortada para 4:5 (só as bordas saem);
   //  - post-11: 9:16, fora dos formatos -- vai para 4:5 e aparece inteira
@@ -686,16 +685,16 @@ export function buildMockAppSeed(opts?: {
     };
   };
   const fotosDef = [
-    foto("rede-post-1", uid, 1, "unhas", 1080, 1350, 3),
-    foto("rede-post-4", "mock-amiga-juliana", 1, "antes", 1080, 1350, 5),
-    foto("rede-post-4", "mock-amiga-juliana", 2, "depois", 1080, 1350, 5),
-    foto("rede-post-6", uid, 1, "studio", 1920, 1080, 18),
-    foto("rede-post-8", uid, 1, "cabelo", 1080, 1080, 42),
-    foto("rede-post-8", uid, 2, "studio", 1920, 1080, 42),
-    foto("rede-post-3", uid, 1, "studio", 1910, 1000, 52),
-    foto("rede-post-9", FRIEND_ID, 1, "cores", 1080, 1440, 60),
-    foto("rede-post-11", FRIEND_ID, 1, "depois", 1080, 1920, 90),
-    foto("rede-post-13", FRIEND_ID, 1, "unhas", 1080, 1080, 130),
+    foto("rede-post-1", uid, 1, "hotel", 1080, 1350, 3),
+    foto("rede-post-4", "mock-amiga-juliana", 1, "praia", 1080, 1350, 5),
+    foto("rede-post-4", "mock-amiga-juliana", 2, "viagem", 1080, 1350, 5),
+    foto("rede-post-6", uid, 1, "cidade", 1920, 1080, 18),
+    foto("rede-post-8", uid, 1, "jantar", 1080, 1080, 42),
+    foto("rede-post-8", uid, 2, "cidade", 1920, 1080, 42),
+    foto("rede-post-3", uid, 1, "hotel", 1910, 1000, 52),
+    foto("rede-post-9", FRIEND_ID, 1, "cafe", 1080, 1440, 60),
+    foto("rede-post-11", FRIEND_ID, 1, "viagem", 1080, 1920, 90),
+    foto("rede-post-13", FRIEND_ID, 1, "cidade", 1080, 1080, 130),
   ];
   const rede_post_fotos = fotosDef.map((f) => f.row);
   // 12 curtidas no 1º post e 8 no 2º: é o que a referência imprime.

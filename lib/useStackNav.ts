@@ -158,6 +158,23 @@ export function useStackNav<T>(initial: T, active: boolean) {
   );
 
   const pop = useCallback(() => popTo(stackRef.current.length - 1), [popTo]);
+
+  /**
+   * Troca de "aba" dentro da pilha, sem empilhar e sem animação de push:
+   * a pilha vira `[raiz]` (tela null) ou `[raiz, tela]`, e a página volta
+   * ao topo. É o que os botões da barra da Rede (Feed, Conversas, Amigas,
+   * Eu) fazem -- como uma barra de abas do iOS, não um "ir para".
+   */
+  const trocarRaiz = useCallback(
+    (screen: T | null) => {
+      finishRunning.current?.();
+      dropUndersFrom(0);
+      pending.current = { kind: "swipe", y: 0, cleanup: () => {} };
+      const raiz = stackRef.current[0];
+      setStack(screen === null ? [raiz] : [raiz, screen]);
+    },
+    [dropUndersFrom]
+  );
   const popToRoot = useCallback(
     (opts?: { toTop?: boolean }) => popTo(1, opts?.toTop ?? false),
     [popTo]
@@ -466,5 +483,6 @@ export function useStackNav<T>(initial: T, active: boolean) {
     push,
     pop,
     popToRoot,
+    trocarRaiz,
   };
 }

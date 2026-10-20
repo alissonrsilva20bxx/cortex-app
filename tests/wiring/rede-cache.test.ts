@@ -298,14 +298,10 @@ describe("FeedScreen: skeleton só em cache miss", () => {
   const src = read("components/rede/FeedScreen.tsx");
 
   it("skeleton exige loading && posts vazio; erro não cobre conteúdo cacheado", () => {
-    // As abas de publicações (Para você, Amigas); o Descobrir mostra
-    // pessoas e não espera o feed.
-    expect(src).toMatch(
-      /segmento !== "descobrir" && loading && posts\.length === 0\) \{/
-    );
-    expect(src).toMatch(
-      /segmento !== "descobrir" && error && posts\.length === 0\) \{/
-    );
+    // Modelo Doca: as 3 abas dependem do feed (o Descobrir virou "O
+    // melhor da semana", só dicas), então todas esperam o feed carregar.
+    expect(src).toMatch(/\} else if \(loading && posts\.length === 0\) \{|if \(loading && posts\.length === 0\) \{/);
+    expect(src).toMatch(/\} else if \(error && posts\.length === 0\) \{/);
   });
 
   it("segmento (Para você / Amigas) vem por prop do RedeTab, não é estado local", () => {

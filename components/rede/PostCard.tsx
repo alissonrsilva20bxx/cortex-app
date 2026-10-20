@@ -1,10 +1,18 @@
 "use client";
 
-import { Heart, MessageCircle, Send, MoreHorizontal } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
 import { FeedFotos } from "./FeedFotos";
+import { LequeFotos } from "./LequeFotos";
+import {
+  IconeComentario,
+  IconeCoracao,
+  IconeEnviar,
+  IconeReticencias,
+} from "./redeIcones";
 import { formatRelativeTime } from "@/lib/mockRede";
 import { CATEGORIA_META, type FeedPost } from "@/lib/rede/feed";
+import s from "./doca.module.css";
 
 interface Props {
   post: FeedPost;
@@ -21,52 +29,58 @@ interface Props {
   amiga?: boolean;
 }
 
-/** Ação do post (proposta "Três abas"): ícone de 23 e o número ao lado,
- * alvo de toque de 44. */
-function Acao({
-  icon,
-  count,
-  active,
-  onClick,
-  label,
-}: {
-  icon: React.ReactNode;
-  count?: number;
-  active?: boolean;
-  onClick: () => void;
-  label: string;
-}) {
+/** Texto acima disso nasce cortado em 4 linhas, com "ver mais". */
+const TEXTO_LONGO = 200;
+/** Tempo entre dois toques na foto para contar como duplo, em ms. */
+const DUPLO_MS = 280;
+
+function prefereMenosMovimento() {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      aria-pressed={active}
-      className="inline-flex items-center active:opacity-60"
-      style={{
-        gap: 5,
-        minHeight: 44,
-        padding: "0 8px",
-        borderRadius: 999,
-        fontSize: "13.5px",
-        fontWeight: 700,
-        color: active ? "var(--t-acc)" : "var(--t-ink)",
-      }}
-    >
-      {icon}
-      {count != null && count > 0 && <span>{count}</span>}
-    </button>
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
   );
 }
 
-const primeiroNome = (nome: string) => nome.trim().split(/\s+/)[0] ?? nome;
+/** As partículas que saem do coração ao curtir (só visual, 600 ms). */
+function Particulas() {
+  const [pontos] = useState(() =>
+    Array.from({ length: 18 }, (_, i) => {
+      const a = (i / 18) * Math.PI * 2 + Math.random() * 0.35;
+      const d = 30 + Math.random() * 40;
+      return {
+        dx: Math.cos(a) * d,
+        dy: Math.sin(a) * d,
+        atraso: Math.round(Math.random() * 60),
+      };
+    })
+  );
+  return (
+    <span className={s.particulas} aria-hidden data-particulas="">
+      {pontos.map((p, i) => (
+        <i
+          key={i}
+          className={s.particula}
+          style={
+            {
+              "--dx": `${p.dx}px`,
+              "--dy": `${p.dy}px`,
+              "--atraso": `${p.atraso}ms`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </span>
+  );
+}
 
 /**
- * Post da Rede no estilo do Instagram (proposta "Três abas, fotos no
- * formato do Instagram", feed-rede.html): sem cartão em volta, a foto de
- * ponta a ponta (FeedFotos, nos 4 formatos), o cabeçalho de 44px com o
- * avatar de 36, as ações com a contagem ao lado e a legenda embaixo.
- * Post só de texto mostra o texto maior antes das ações.
+ * Post da Rede no modelo Doca (protótipo aprovado
+ * .lavish/rede-doca-final.html): um cartão por post, com a autora, o
+ * tempo e a categoria discreta (um ponto e o nome, na cor dela), o texto,
+ * as fotos e as ações embaixo. O par de fotos chega em leque (LequeFotos);
+ * uma foto só ocupa a largura do cartão (FeedFotos, nos 4 formatos). Dois
+ * toques numa foto curtem. Curtir solta partículas na cor do tema, o
+ * cartão brilha e o número sobe (tudo parado com movimento reduzido).
  */
 export function PostCard({
   post,
@@ -79,77 +93,207 @@ export function PostCard({
   amiga = false,
 }: Props) {
   const cat = CATEGORIA_META[post.categoria];
-  const temFoto = post.fotos.length > 0;
-  const nome = primeiroNome(post.autorNome);
+  const nFotos = post.fotos.length;
+  const longo = post.texto.length > TEXTO_LONGO;
+  const [textoAberto, setTextoAberto] = useState(false);
+  const [lequeAberto, setLequeAberto] = useState(false);
+  // Cada curtida nova troca a chave: o coração pula, as partículas saem e
+  // o cartão brilha de novo do zero.
+  const [festa, setFesta] = useState(0);
+  const [brilho, setBrilho] = useState<{ x: number; y: number } | null>(null);
+  const cartaoRef = useRef<HTMLElement>(null);
+  const curtirRef = useRef<HTMLButtonElement>(null);
+  const toqueFoto = useRef(0);
+
+  useEffect(() => {
+    if (!brilho) return;
+    const t = window.setTimeout(() => setBrilho(null), 650);
+    return () => window.clearTimeout(t);
+  }, [brilho]);
+
+  function curtir() {
+    if (!post.curtidoPorMim) {
+      setFesta((f) => f + 1);
+      const c = cartaoRef.current?.getBoundingClientRect();
+      const b = curtirRef.current?.getBoundingClientRect();
+      if (c && b && !prefereMenosMovimento()) {
+        setBrilho({ x: b.left - c.left + 22, y: b.top - c.top + 22 });
+      }
+    }
+    onToggleLike(post.id);
+  }
+  /** Duplo toque na foto: só curte (nunca descurte). */
+  function curtirDuplo() {
+    if (!post.curtidoPorMim) curtir();
+  }
+  function tocarFotoUnica() {
+    const agora = Date.now();
+    if (agora - toqueFoto.current < DUPLO_MS) {
+      toqueFoto.current = 0;
+      curtirDuplo();
+    } else {
+      toqueFoto.current = agora;
+    }
+  }
 
   return (
-    <article data-post={post.id} style={{ padding: "18px 0 22px" }}>
-      {/* Cabeçalho: 16px à esquerda, 12 à direita, altura mínima 44. */}
-      <div
-        className="flex items-center"
-        style={{ gap: 10, padding: "0 12px 0 16px", minHeight: 44 }}
-      >
+    <article
+      ref={cartaoRef}
+      data-post={post.id}
+      className="relative"
+      style={{
+        background: "var(--card-solid)",
+        borderRadius: 22,
+        padding: 14,
+        boxShadow: "inset 0 0 0 1px var(--border-color)",
+      }}
+    >
+      {brilho && (
+        <span
+          key={`b${festa}`}
+          className={s.brilho}
+          aria-hidden
+          style={
+            {
+              "--bx": `${brilho.x}px`,
+              "--by": `${brilho.y}px`,
+            } as React.CSSProperties
+          }
+        />
+      )}
+
+      <header className="flex items-center" style={{ gap: 10 }}>
         <Avatar
           nome={post.autorNome}
           cor={post.autorCor}
           fotoUrl={post.autorFotoUrl}
-          tamanho={36}
-          desenhoFixo
+          tamanho={44}
           onClick={() => onOpenAutor(post.autorId)}
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center" style={{ gap: 6 }}>
-            <button
-              type="button"
-              onClick={() => onOpenAutor(post.autorId)}
-              className="truncate text-left"
-              style={{
-                fontSize: "14.5px",
-                fontWeight: 800,
-                color: "var(--t-ink)",
-              }}
-            >
-              {nome}
-            </button>
+          <button
+            type="button"
+            onClick={() => onOpenAutor(post.autorId)}
+            className="block max-w-full truncate text-left"
+            style={{
+              fontSize: 15,
+              fontWeight: 800,
+              lineHeight: 1.25,
+              color: "var(--text)",
+            }}
+          >
+            {post.autorNome}
+          </button>
+          <p
+            className="flex items-center"
+            style={{
+              gap: 6,
+              fontSize: "12.5px",
+              color: "var(--text-muted)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span className="truncate">
+              {formatRelativeTime(post.criadoEm)}
+              {amiga ? " · amiga" : ""} ·
+            </span>
             <span
-              className="shrink-0 rounded-full"
+              data-categoria={post.categoria}
+              className="inline-flex items-center shrink-0"
               style={{
-                fontSize: "10.5px",
-                fontWeight: 800,
-                padding: "3px 8px",
-                background: `rgb(${cat.rgb} / 0.12)`,
-                // #175: a cor da categoria sobre ela mesma a 12% ficava
-                // abaixo de 4,5:1; misturada com --text, mantém o matiz e
-                // passa nos 8 temas, claro e escuro.
+                gap: 5,
+                fontSize: "11.5px",
+                fontWeight: 700,
+                // #175: a cor da categoria misturada com --text mantém o
+                // matiz e passa no contraste nos 8 temas, claro e escuro.
                 color: `color-mix(in srgb, rgb(${cat.rgb}) 62%, var(--text))`,
               }}
             >
+              <span
+                aria-hidden
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 9,
+                  background: `rgb(${cat.rgb})`,
+                }}
+              />
               {cat.label}
             </span>
-          </div>
-          <p style={{ fontSize: 12, color: "var(--t-mut)", marginTop: 1 }}>
-            {formatRelativeTime(post.criadoEm)}
-            {amiga ? " · amiga" : ""}
           </p>
         </div>
         <button
           type="button"
           onClick={() => onOpenMenu(post)}
           aria-label="Mais opções"
-          className="grid place-items-center shrink-0 active:opacity-60"
+          className="grid place-items-center shrink-0 rounded-full active:opacity-60"
+          style={{ width: 44, height: 44, margin: -4, color: "var(--text)" }}
+        >
+          <IconeReticencias />
+        </button>
+      </header>
+
+      {post.texto.trim() && (
+        <>
+          <p
+            data-post-texto=""
+            style={{
+              marginTop: 10,
+              fontSize: 15,
+              lineHeight: 1.5,
+              color: "var(--text)",
+              whiteSpace: "pre-line",
+              overflowWrap: "anywhere",
+              ...(longo && !textoAberto
+                ? {
+                    display: "-webkit-box",
+                    WebkitLineClamp: 4,
+                    WebkitBoxOrient: "vertical" as const,
+                    overflow: "hidden",
+                  }
+                : null),
+            }}
+          >
+            {post.texto}
+          </p>
+          {longo && (
+            <button
+              type="button"
+              onClick={() => setTextoAberto((v) => !v)}
+              style={{
+                minHeight: 44,
+                padding: "0 2px",
+                fontSize: 14,
+                fontWeight: 800,
+                color: "var(--accent-deep-2)",
+              }}
+            >
+              {textoAberto ? "ver menos" : "ver mais"}
+            </button>
+          )}
+        </>
+      )}
+
+      {nFotos >= 2 ? (
+        <LequeFotos
+          fotos={post.fotos}
+          autorNome={post.autorNome}
+          aberto={lequeAberto}
+          onAlternar={() => setLequeAberto((v) => !v)}
+          onCurtirDuplo={curtirDuplo}
+          onRenovarFoto={onRenovarFoto}
+        />
+      ) : nFotos === 1 ? (
+        <div
+          data-foto-unica=""
+          onClick={tocarFotoUnica}
           style={{
-            width: 44,
-            height: 44,
-            margin: -2,
-            color: "var(--t-mut)",
+            marginTop: 12,
+            borderRadius: 16,
+            overflow: "hidden",
+            touchAction: "manipulation",
           }}
         >
-          <MoreHorizontal size={21} />
-        </button>
-      </div>
-
-      {temFoto ? (
-        <div style={{ marginTop: 10 }}>
           <FeedFotos
             postId={post.id}
             fotos={post.fotos}
@@ -158,65 +302,71 @@ export function PostCard({
             tom="var(--t-sub)"
           />
         </div>
-      ) : (
-        <p
-          data-post-texto=""
-          style={{
-            fontSize: 16,
-            lineHeight: 1.5,
-            margin: "10px 16px 0",
-            color: "var(--t-ink)",
-            whiteSpace: "pre-line",
-          }}
-        >
-          {post.texto}
-        </p>
-      )}
+      ) : null}
 
-      <div
+      <footer
         className="flex items-center"
-        style={{ gap: 2, margin: "6px 8px 0" }}
+        style={{ gap: 2, margin: "8px -6px -6px" }}
       >
-        <Acao
-          icon={
-            <Heart
-              size={23}
-              strokeWidth={2}
-              fill={post.curtidoPorMim ? "currentColor" : "none"}
-            />
-          }
-          count={post.curtidas}
-          active={post.curtidoPorMim}
-          onClick={() => onToggleLike(post.id)}
-          label="Curtir"
-        />
-        <Acao
-          icon={<MessageCircle size={23} strokeWidth={2} />}
-          count={post.comentariosCount}
-          onClick={() => onComment(post)}
-          label="Comentar"
-        />
-        <Acao
-          icon={<Send size={23} strokeWidth={2} />}
-          onClick={() => onShare(post)}
-          label="Compartilhar"
-        />
-      </div>
-
-      {temFoto && (
-        <p
-          data-post-legenda=""
+        <button
+          ref={curtirRef}
+          type="button"
+          onClick={curtir}
+          aria-label="Curtir"
+          aria-pressed={post.curtidoPorMim}
+          className="relative inline-flex items-center rounded-full active:scale-95"
           style={{
-            fontSize: "14.5px",
-            lineHeight: 1.5,
-            margin: "2px 16px 0",
-            color: "var(--t-ink)",
-            whiteSpace: "pre-line",
+            gap: 6,
+            minHeight: 44,
+            minWidth: 44,
+            padding: "0 8px",
+            fontSize: 14,
+            fontWeight: 700,
+            color: post.curtidoPorMim ? "var(--accent)" : "var(--text-2)",
           }}
         >
-          <b style={{ fontWeight: 800 }}>{nome}</b> {post.texto}
-        </p>
-      )}
+          <span
+            key={`c${festa}`}
+            className={`relative grid place-items-center ${festa > 0 ? s.pulo : ""}`}
+          >
+            <IconeCoracao filled={post.curtidoPorMim} />
+            {festa > 0 && post.curtidoPorMim && <Particulas key={festa} />}
+          </span>
+          {post.curtidas > 0 && (
+            <span key={`n${post.curtidas}`} className={festa > 0 ? s.sobe : ""}>
+              {post.curtidas}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => onComment(post)}
+          aria-label="Comentar"
+          className="inline-flex items-center rounded-full active:scale-95"
+          style={{
+            gap: 6,
+            minHeight: 44,
+            minWidth: 44,
+            padding: "0 8px",
+            fontSize: 14,
+            fontWeight: 700,
+            color: "var(--text-2)",
+          }}
+        >
+          <IconeComentario />
+          {post.comentariosCount > 0 && <span>{post.comentariosCount}</span>}
+        </button>
+        <span className="flex-1" />
+        <button
+          type="button"
+          onClick={() => onShare(post)}
+          aria-label="Compartilhar"
+          className="grid place-items-center rounded-full active:scale-95"
+          style={{ width: 44, height: 44, color: "var(--text-2)" }}
+        >
+          <IconeEnviar />
+        </button>
+      </footer>
     </article>
   );
 }

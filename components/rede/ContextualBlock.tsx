@@ -1,12 +1,15 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
 
 /**
  * Bloco contextual que se mistura ao Feed ("duas solicitações de amizade",
  * "desejo perto da meta"...). Deliberadamente discreto — mesma altura de um
  * post curto, nunca um banner que domina a rolagem.
+ *
+ * Modelo Doca (protótipo aprovado .lavish/rede-doca-final.html): fundo no
+ * tom do acento, o ícone num quadrado da cor do cartão, título forte e a
+ * seta à direita. O cartão inteiro é o alvo de toque.
  */
 
 interface Props {
@@ -18,40 +21,50 @@ interface Props {
 
 export function ContextualBlock({ icon, title, subtitle, onClick }: Props) {
   return (
-    <GlassCard
-      radius="lg"
+    <button
+      type="button"
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-3.5"
+      data-aviso-feed=""
+      className="flex items-center w-full text-left transition-transform active:scale-[0.98]"
+      style={{
+        gap: 12,
+        minHeight: 64,
+        padding: "12px 10px 12px 12px",
+        borderRadius: 22,
+        background: "var(--accent-tint)",
+      }}
     >
-      <div
-        className="flex items-center justify-center rounded-xl shrink-0"
+      <span
+        className="grid place-items-center shrink-0"
         style={{
-          width: 38,
-          height: 38,
-          background: "rgb(var(--accent-rgb) / 0.12)",
+          width: 40,
+          height: 40,
+          borderRadius: 14,
+          background: "var(--card-solid)",
+          color: "var(--accent-deep-2)",
         }}
       >
         {icon}
-      </div>
-      <div className="flex-1 min-w-0 text-left">
-        <p
-          className="font-semibold text-sm truncate"
-          style={{ color: "var(--text)" }}
+      </span>
+      <span className="flex-1 min-w-0">
+        <span
+          className="block truncate"
+          style={{ fontSize: "14.5px", fontWeight: 800, color: "var(--text)" }}
         >
           {title}
-        </p>
-        <p
-          className="text-xs mt-0.5 truncate"
-          style={{ color: "var(--text-muted)" }}
+        </span>
+        <span
+          className="block truncate"
+          style={{ fontSize: 13, color: "var(--text-2)", marginTop: 2 }}
         >
           {subtitle}
-        </p>
-      </div>
+        </span>
+      </span>
       <ChevronRight
-        size={16}
+        size={18}
         className="shrink-0"
         style={{ color: "var(--text-muted)" }}
       />
-    </GlassCard>
+    </button>
   );
 }

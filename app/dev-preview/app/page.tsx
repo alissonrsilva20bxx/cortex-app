@@ -465,6 +465,11 @@ export default function DevPreviewApp() {
     setPlanoNoPagamento(plano);
   };
 
+  // A barra da Rede (modelo Doca) substitui a do app enquanto a Rede
+  // liberada está na tela.
+  const redeDocaNaTela =
+    activeTab === "rede" && redeAcesso === "liberado" && !tourOpen;
+
   function handleTabChange(tab: TabId) {
     setFabOpen(false);
     // A barra fica por cima da Sua Jornada (protótipo): tocar numa aba fecha
@@ -758,6 +763,8 @@ export default function DevPreviewApp() {
             postarSignal={redePostar}
             onAcessoChange={setRedeAcesso}
             onFotoPerfilChange={setFotoRede}
+            onSairDaRede={() => handleTabChange("home")}
+            barraDoca={!tourOpen}
           />
         </TabPanel>
 
@@ -779,7 +786,9 @@ export default function DevPreviewApp() {
         </TabPanel>
       </main>
 
-      {!chatComposerFocused && (
+      {/* Espelha app/page.tsx: com a Rede liberada na tela, a barra do app
+          dá lugar à barra da Rede (modelo Doca). */}
+      {!chatComposerFocused && !redeDocaNaTela && (
         <>
           <BottomNav
             activeTab={activeTab}

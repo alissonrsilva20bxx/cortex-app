@@ -454,6 +454,11 @@ export default function Page() {
     setActiveTab(tab);
   }
 
+  // A barra da Rede (modelo Doca) substitui a do app enquanto a Rede
+  // liberada está na tela.
+  const redeDocaNaTela =
+    activeTab === "rede" && redeAcesso === "liberado" && !tourOpen;
+
   function handleFabAction() {
     if (activeTab === "jobs" || activeTab === "home") {
       setEditingJob(null);
@@ -746,6 +751,8 @@ export default function Page() {
                 postarSignal={redePostar}
                 onAcessoChange={setRedeAcesso}
                 onFotoPerfilChange={setFotoRede}
+                onSairDaRede={() => handleTabChange("home")}
+                barraDoca={!tourOpen}
               />
             </TabPanel>
 
@@ -772,7 +779,10 @@ export default function Page() {
         )}
       </main>
 
-      {!isNewUser && !chatComposerFocused && (
+      {/* Modelo Doca: com a Rede liberada na tela, a barra do app dá lugar à
+          barra da própria Rede (DocaBar, dentro do RedeTab). No tour do
+          app ela volta, porque o tour aponta para os botões dela. */}
+      {!isNewUser && !chatComposerFocused && !redeDocaNaTela && (
         <>
           <BottomNav
             activeTab={activeTab}

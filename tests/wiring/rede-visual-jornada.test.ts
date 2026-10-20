@@ -46,18 +46,17 @@ describe("J06 — os componentes reais da Rede estão montados", () => {
     expect(src).toMatch(/<RedeTab\s/);
   });
 
-  it("RedeTab monta o FeedScreen real e passa as amigas e as sugestões que já carrega", () => {
+  it("RedeTab monta o FeedScreen real e passa as amigas que já carrega", () => {
     expect(redeTab).toMatch(
       /^import \{ FeedScreen \} from "\.\/FeedScreen";$/m
     );
     const tag = redeTab.match(/<FeedScreen\b[\s\S]*?\/>/);
     expect(tag).not.toBeNull();
     expect(tag![0]).toContain("friends={friends.map((f) => f.id)}");
-    // Descobrir (proposta "Três abas"): as mesmas sugestões e o mesmo
-    // "Adicionar" da tela Amigas.
-    expect(tag![0]).toContain("sugestoes={sugestoes}");
-    expect(tag![0]).toContain("sentRequests={sentRequests}");
-    expect(tag![0]).toContain("onSendRequest={(id) => void sendRequest(id)}");
+    // Modelo Doca: o Descobrir virou "O melhor da semana" (só dicas); as
+    // sugestões de pessoas ficam só na tela Amigas, que já as tinha.
+    expect(tag![0]).not.toContain("sugestoes={sugestoes}");
+    expect(tag![0]).toContain("onCriarPost={() => setComposerOpen(true)}");
     // A fileira estilo stories saiu: nem as amigas para ela, nem o Postar.
     expect(tag![0]).not.toContain("amigas={friends}");
     expect(tag![0]).not.toContain("onOpenComposer");

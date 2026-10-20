@@ -1,12 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { BottomNav } from "@/components/BottomNav";
+import { useRef } from "react";
 import { RedeTab } from "@/components/rede/RedeTab";
 import { mockUsuario } from "@/lib/mock";
 import { __setMockSupabaseClient } from "@/lib/supabase";
 import { createMockSupabaseClient } from "@/lib/mockSupabase";
-import type { TabId } from "@/lib/types";
 
 /**
  * Preview isolado da Rede, sem depender de login/Supabase — rota temporária
@@ -108,7 +106,7 @@ export default function DevPreviewRede() {
                 user_id: outraAutoraId,
                 nome_exibicao: "Camila Duarte",
                 cor_avatar: "#FF7AB6",
-                bio: "Nail designer há 6 anos.",
+                bio: "Independente há 6 anos.",
                 area_atuacao: null,
                 criado_em: new Date().toISOString(),
                 atualizado_em: new Date().toISOString(),
@@ -128,7 +126,7 @@ export default function DevPreviewRede() {
                 user_id: solicitanteId,
                 nome_exibicao: "Larissa Prado",
                 cor_avatar: "#7AA7FF",
-                bio: "Cabeleireira mobile.",
+                bio: "Viaja a trabalho pelo Sul.",
                 area_atuacao: null,
                 criado_em: new Date().toISOString(),
                 atualizado_em: new Date().toISOString(),
@@ -138,7 +136,7 @@ export default function DevPreviewRede() {
                 user_id: amigaId,
                 nome_exibicao: "Juliana Alves",
                 cor_avatar: "#6EE7B7",
-                bio: "Esteticista.",
+                bio: "Segurança em primeiro lugar.",
                 area_atuacao: null,
                 criado_em: new Date().toISOString(),
                 atualizado_em: new Date().toISOString(),
@@ -148,7 +146,7 @@ export default function DevPreviewRede() {
                 user_id: sugestaoId,
                 nome_exibicao: "Fernanda Costa",
                 cor_avatar: "#FFC24B",
-                bio: "Maquiagem para noivas e eventos.",
+                bio: "Eventos e jantares.",
                 area_atuacao: null,
                 criado_em: new Date().toISOString(),
                 atualizado_em: new Date().toISOString(),
@@ -309,11 +307,8 @@ export default function DevPreviewRede() {
     );
   }
 
-  const [activeTab] = useState<TabId>("rede");
-  // Simula o teclado: enquanto o compositor do chat está focado, a
-  // BottomNav some (um teclado real cobriria/empurraria ela).
-  const [chatComposerFocused, setChatComposerFocused] = useState(false);
-
+  // Modelo Doca: a Rede tem a própria barra (DocaBar, dentro do RedeTab),
+  // então este laboratório não desenha mais a barra do app.
   return (
     <div
       className="relative flex flex-col min-h-screen"
@@ -323,15 +318,8 @@ export default function DevPreviewRede() {
         className="flex-1 overflow-y-auto pb-40 px-4"
         style={{ paddingTop: "calc(24px + env(safe-area-inset-top, 0px))" }}
       >
-        <RedeTab
-          usuario={mockUsuario}
-          onChatFocusChange={setChatComposerFocused}
-        />
+        <RedeTab usuario={mockUsuario} />
       </main>
-
-      {!chatComposerFocused && (
-        <BottomNav activeTab={activeTab} onChange={() => {}} />
-      )}
     </div>
   );
 }

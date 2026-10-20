@@ -3,73 +3,84 @@
  * desenhos em SVG local, nunca Storage, no tamanho nativo de cada foto (o
  * que o feed usa para escolher o formato). O assunto fica sempre num
  * quadrado central -- a área segura -- então nada importante sai quando o
- * feed recorta as bordas. Mesmos temas da proposta (feed-rede.html):
- * unhas, cabelo, estúdio, antes/depois e cores.
+ * feed recorta as bordas. Cenas neutras e sem pessoas (o público da Rede
+ * pede discrição): viagem, praia, cidade à noite, jantar, hotel e café.
  */
 
 export type TemaFoto =
-  | "unhas"
-  | "antes"
-  | "depois"
-  | "cabelo"
-  | "studio"
-  | "cores";
+  | "viagem"
+  | "praia"
+  | "cidade"
+  | "jantar"
+  | "hotel"
+  | "cafe";
 
 const FUNDOS: Record<TemaFoto, [string, string, string]> = {
-  unhas: ["#ffd1e2", "#ff80ab", "#a30c47"],
-  antes: ["#e7e2ea", "#b8aec0", "#5d5168"],
-  depois: ["#ffd9e8", "#ff4f93", "#7a0f3c"],
-  cabelo: ["#ffe3c4", "#e98d5a", "#6b2b16"],
-  studio: ["#d9e7ff", "#9fb6f2", "#3b3f8f"],
-  cores: ["#fff0c2", "#ffb3cf", "#b38cff"],
+  viagem: ["#9fd3ff", "#cfe3ff", "#ffd9b0"],
+  praia: ["#7cc8f2", "#2f8fc9", "#f3d9a4"],
+  cidade: ["#120f2e", "#2a2160", "#3b2a6b"],
+  jantar: ["#5a2a3c", "#3a1a28", "#24101a"],
+  hotel: ["#bfe3ff", "#d8eeff", "#e8f4ff"],
+  cafe: ["#f6e3cf", "#e6c6a3", "#d8b48f"],
 };
 
 function sujeito(tema: TemaFoto, cx: number, cy: number, k: number): string {
-  if (tema === "unhas" || tema === "antes" || tema === "depois") {
-    const cor =
-      tema === "antes" ? "#d8ccd6" : tema === "depois" ? "#ff2d78" : "#ffffff";
-    const unhas = [
-      [-52, -118],
-      [8, -150],
-      [66, -130],
-      [112, -82],
-    ]
+  const g = (conteudo: string) =>
+    `<g transform="translate(${cx},${cy}) scale(${k})">${conteudo}</g>`;
+  if (tema === "viagem") {
+    return g(
+      '<circle cx="110" cy="-110" r="46" fill="#ffe9a8"/><path d="M-200 160 L-70 -40 L20 90 L90 0 L200 160 Z" fill="#5b7fb8"/><path d="M-200 200 V140 Q-60 90 60 150 T200 130 V200 Z" fill="#3d5f8f"/>'
+    );
+  }
+  if (tema === "praia") {
+    const ondas = [0, 1, 2, 3]
       .map(
-        ([x, y]) =>
-          `<rect x="${x - 13}" y="${y - 6}" width="26" height="40" rx="13" fill="${cor}"${tema !== "antes" ? ' stroke="rgba(255,255,255,.6)" stroke-width="3"' : ""}/>`
+        (i) =>
+          `<path d="M-200 ${20 + i * 34} Q-100 ${2 + i * 34} 0 ${20 + i * 34} T200 ${20 + i * 34}" stroke="#fff" stroke-width="9" fill="none" opacity="${0.7 - i * 0.12}" stroke-linecap="round"/>`
       )
       .join("");
-    const brilhos =
-      tema === "antes"
-        ? ""
-        : `<g fill="#fff" opacity=".9">${[
-            [cx - 150 * k, cy - 120 * k],
-            [cx + 150 * k, cy - 100 * k],
-            [cx + 120 * k, cy + 120 * k],
-          ]
-            .map(
-              ([x, y]) =>
-                `<path transform="translate(${x},${y}) scale(${k})" d="M0 -14 L4 -4 L14 0 L4 4 L0 14 L-4 4 L-14 0 L-4 -4Z"/>`
-            )
-            .join("")}</g>`;
-    return `<g transform="translate(${cx},${cy + 30 * k}) scale(${k})"><path d="M-120 140 Q-130 20 -95 -40 L-70 -120 Q-55 -150 -35 -120 L-20 -40 L-5 -150 Q10 -180 28 -150 L35 -40 L50 -135 Q65 -160 80 -130 L80 -30 L100 -90 Q115 -110 125 -85 L118 40 Q110 120 60 150 Z" fill="#f6d2c0" opacity=".96"/>${unhas}</g>${brilhos}`;
+    return g(
+      `<circle cx="0" cy="-90" r="60" fill="#fff3c4"/>${ondas}<path d="M-200 200 V150 Q0 110 200 155 V200 Z" fill="#f3d9a4"/>`
+    );
   }
-  if (tema === "cabelo") {
-    return `<g transform="translate(${cx},${cy + 10 * k}) scale(${k})"><path d="M-120 160 Q-150 -40 -60 -120 Q0 -165 60 -120 Q150 -40 120 160 Z" fill="#6b2b16"/><ellipse cx="0" cy="-20" rx="70" ry="88" fill="#f3c9a8"/><path d="M-78 -40 Q-60 -140 10 -120 Q80 -110 80 -20 Q40 -90 -78 -40Z" fill="#7a3518"/><path d="M-110 160 Q-40 120 0 120 Q40 120 110 160 Z" fill="#ff2d78"/></g>`;
+  if (tema === "cidade") {
+    const predios = [
+      [-190, -40, 70],
+      [-110, -120, 80],
+      [-20, -10, 64],
+      [50, -150, 80],
+      [140, -60, 60],
+    ]
+      .map(([x, y, w]) => {
+        let janelas = "";
+        for (let yy = y + 18; yy < 180; yy += 34)
+          for (let xx = x + 14; xx < x + w - 12; xx += 22)
+            if ((xx * yy) % 5 !== 0)
+              janelas += `<rect x="${xx}" y="${yy}" width="10" height="14" rx="2" fill="#ffd57a" opacity=".85"/>`;
+        return `<rect x="${x}" y="${y}" width="${w}" height="${200 - y}" rx="6" fill="#1d1b3a"/>${janelas}`;
+      })
+      .join("");
+    return g(`<circle cx="130" cy="-170" r="22" fill="#fff6d6"/>${predios}`);
   }
-  if (tema === "studio") {
-    return `<g transform="translate(${cx},${cy}) scale(${k})"><rect x="-150" y="-110" width="120" height="150" rx="60" fill="#ffffff" opacity=".85"/><rect x="-140" y="-100" width="100" height="130" rx="50" fill="#bcd0ff"/><rect x="10" y="-20" width="130" height="70" rx="20" fill="#ff2d78"/><rect x="20" y="40" width="20" height="70" fill="#3b3f8f"/><rect x="110" y="40" width="20" height="70" fill="#3b3f8f"/><circle cx="-170" cy="70" r="26" fill="#2f8a52"/><rect x="-180" y="85" width="20" height="40" fill="#8a5a3a"/><rect x="-200" y="125" width="400" height="8" rx="4" fill="#3b3f8f" opacity=".5"/></g>`;
+  if (tema === "jantar") {
+    const taca = (x: number) =>
+      `<path d="M${x - 26} -80h52l-8 64a18 18 0 0 1-36 0z" fill="#f7d6e0" opacity=".9"/><path d="M${x} 2v70M${x - 22} 74h44" stroke="#f7d6e0" stroke-width="8" stroke-linecap="round"/>`;
+    return g(
+      `<rect x="-200" y="80" width="400" height="120" fill="#3b1f2b"/>${taca(-70)}${taca(70)}<rect x="-10" y="20" width="20" height="60" rx="6" fill="#fff4dc"/><path d="M0 -10q-12 16 0 26q12-10 0-26z" fill="#ffc35a"/><circle cx="0" cy="6" r="40" fill="#ffc35a" opacity=".16"/>`
+    );
   }
-  return `<g transform="translate(${cx},${cy}) scale(${k})">${[
-    ["#ff2d78", -90],
-    ["#b38cff", 0],
-    ["#ffb000", 90],
-  ]
-    .map(
-      ([cl, x]) =>
-        `<rect x="${Number(x) - 30}" y="-110" width="60" height="150" rx="14" fill="${cl}"/><rect x="${Number(x) - 18}" y="40" width="36" height="70" rx="8" fill="#ffffff" opacity=".9"/>`
-    )
-    .join("")}</g>`;
+  if (tema === "hotel") {
+    let janelas = "";
+    for (let y = -110; y < 100; y += 44)
+      for (let x = -70; x < 70; x += 44)
+        janelas += `<rect x="${x}" y="${y}" width="26" height="26" rx="5" fill="#7fb2d9"/>`;
+    return g(
+      `<rect x="-95" y="-160" width="190" height="360" rx="10" fill="#f4efe6"/><rect x="-95" y="-160" width="190" height="28" fill="#d9cdb8"/>${janelas}<rect x="-26" y="120" width="52" height="80" rx="6" fill="#8a6a4a"/><path d="M150 200V60M150 60q-36-8-50 22M150 60q36-14 50 14M150 60q-14-36-44-36M150 60q22-32 48-28" stroke="#2f6b4a" stroke-width="12" fill="none" stroke-linecap="round"/>`
+    );
+  }
+  return g(
+    '<ellipse cx="0" cy="140" rx="150" ry="30" fill="#e9d8c4"/><path d="M-90 0h170v70a75 75 0 0 1-75 75h-20a75 75 0 0 1-75-75z" fill="#fff"/><path d="M80 24h20a32 32 0 0 1 0 64h-24" stroke="#fff" stroke-width="16" fill="none"/><ellipse cx="-5" cy="0" rx="85" ry="16" fill="#7a4a2a"/><path d="M-40 -40q-20-30 0-56M0 -34q-20-30 0-62M40 -40q-20-30 0-56" stroke="#fff" stroke-width="9" fill="none" opacity=".6" stroke-linecap="round"/>'
+  );
 }
 
 /** A foto de exemplo `tema` em `largura`×`altura` (o tamanho nativo), como

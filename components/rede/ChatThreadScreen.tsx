@@ -12,6 +12,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { Avatar } from "./Avatar";
+import { BotaoFotoPerfil } from "./RedeTopo";
 import { formatRelativeTime } from "@/lib/mockRede";
 import {
   computeKeyboardInset,
@@ -284,6 +285,8 @@ export function ChatThreadScreen({
         >
           <MoreHorizontal size={16} style={{ color: "var(--text-muted)" }} />
         </button>
+        {/* Modelo Doca: a foto da usuária (Meu espaço) em toda tela. */}
+        <BotaoFotoPerfil />
       </div>
 
       {offline && (

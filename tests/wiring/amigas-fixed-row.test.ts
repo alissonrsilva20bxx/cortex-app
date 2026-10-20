@@ -81,9 +81,18 @@ describe("FeedScreen — linha fixa de Amigas é incondicional (fora do items.ma
 });
 
 describe("Rede — onOpenAmigas navega pra AmigasScreen de verdade (não placeholder)", () => {
-  it('RedeTab liga onOpenAmigas a um push real de tela ({ type: "amigas" })', () => {
+  it('RedeTab liga onOpenAmigas à tela real de Amigas ({ type: "amigas" })', () => {
+    // Modelo Doca: Amigas é um botão da barra da Rede, então o atalho do
+    // Feed troca a "aba" (trocarRaiz) em vez de empilhar -- a tela é a
+    // mesma, real, e a lista social é revalidada no caminho.
     expect(redeTabSrc).toMatch(
-      /onOpenAmigas=\{\(\) => \{\s*revalidarSocial\(\);\s*push\(\{ type: "amigas" \}\);\s*\}\}/
+      /onOpenAmigas=\{\(\) => irPelaDoca\("amigas"\)\}/
+    );
+    expect(redeTabSrc).toMatch(
+      /if \(aba === "amigas" \|\| aba === "chatList"\) revalidarSocial\(\);/
+    );
+    expect(redeTabSrc).toMatch(
+      /trocarRaiz\(aba === "feed" \? null : \{ type: aba \}\);/
     );
   });
 

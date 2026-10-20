@@ -28,6 +28,10 @@ interface Props {
   onAcessoChange?: (acesso: RedeAcessoTour) => void;
   /** Foto do perfil da Rede (null = sem foto ou sem acesso). */
   onFotoPerfilChange?: (url: string | null) => void;
+  /** Modelo Doca: a casinha do cabeçalho da Rede volta ao Início. */
+  onSairDaRede?: () => void;
+  /** Modelo Doca: mostra a barra própria da Rede (só com acesso). */
+  barraDoca?: boolean;
 }
 
 /** Enquanto `estado === "semRede"`, tenta de novo nesse intervalo mesmo sem
@@ -62,6 +66,8 @@ export function RedeGatedTab({
   onChatFocusChange,
   onAcessoChange,
   onFotoPerfilChange,
+  onSairDaRede,
+  barraDoca,
 }: Props) {
   // ── Política do acesso lembrado (teto de confiança, não "validade curta") ──
   // `verificarAcessoConvite` classifica cada resposta em `unlocked` +
@@ -326,6 +332,8 @@ export function RedeGatedTab({
         postarSignal={postarSignal}
         onChatFocusChange={onChatFocusChange}
         onFotoPerfilChange={onFotoPerfilChange}
+        onSairDaRede={onSairDaRede}
+        barraDoca={barraDoca}
       />
     );
   }

@@ -39,6 +39,8 @@ import { RedeNotificationsSheet } from "./RedeNotificationsSheet";
 import { OptionsSheet } from "./OptionsSheet";
 import { ShareToChatSheet } from "./ShareToChatSheet";
 import { LiveLinkForm } from "./LiveLinkForm";
+import { DocaBar, type DocaAba } from "./DocaBar";
+import { RedeTopoContext, type RedeTopoValor } from "./RedeTopo";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { type LiveLink } from "./LiveLinksSection";
 import { findUser, type Privacidade } from "@/lib/mockRede";
@@ -221,6 +223,12 @@ interface Props {
   /** Foto de perfil salva na Rede (null = perfil sem foto), pra o Início
    * mostrar a mesma. */
   onFotoPerfilChange?: (url: string | null) => void;
+  /** Modelo Doca: a casinha do cabeçalho sai da Rede e volta ao Início. */
+  onSairDaRede?: () => void;
+  /** Modelo Doca: mostra a barra própria da Rede (a página esconde a
+   * barra do app enquanto ela está na tela). Falso no tour do app, que
+   * aponta para a barra do app. */
+  barraDoca?: boolean;
 }
 
 export function RedeTab({
@@ -230,6 +238,8 @@ export function RedeTab({
   postarSignal,
   onChatFocusChange,
   onFotoPerfilChange,
+  onSairDaRede,
+  barraDoca = true,
 }: Props) {
   const toast = useToast();
   const { registrar } = useJornada(usuario.id);
@@ -436,7 +446,7 @@ export function RedeTab({
   // ── Navegação: pilha local, sem 2ª barra de navegação (o Feed é a base) ──
   // Transições estilo iOS (push/pop deslizando, arrastar da borda pra
   // voltar) e rolagem lembrada por nível -- ver lib/useStackNav.ts.
-  const { stack, screen, pageRef, push, pop, popToRoot } =
+  const { stack, screen, pageRef, push, pop, popToRoot, trocarRaiz } =
     useStackNav<RedeScreen>({ type: "feed" }, active);
 
   // Tocar de novo na aba Rede já ativa (gesto nativo do iOS): numa subtela,
@@ -2019,8 +2029,52 @@ export function RedeTab({
     onRenovarFoto: renovarFotoUrl,
   };
 
+  // ── Modelo Doca: a barra da Rede e o topo de toda tela ──
+  // A "aba" da barra é a 2ª tela da pilha quando ela é uma das quatro
+  // (Feed, Conversas, Amigas, Eu); fora isso, o Feed. Uma tela é "raiz"
+  // (cabeçalho com casinha e atalhos, sem Voltar) quando é a própria aba.
+  const ABAS_DOCA: DocaAba[] = ["chatList", "amigas", "meuEspaco"];
+  const segundaTela = stack[1]?.type;
+  const abaDoca: DocaAba =
+    segundaTela && (ABAS_DOCA as string[]).includes(segundaTela)
+      ? (segundaTela as DocaAba)
+      : "feed";
+  const telaRaiz =
+    stack.length === 1 ||
+    (stack.length === 2 && (ABAS_DOCA as string[]).includes(screen.type));
+
+  /** Botão da barra: troca a "aba" sem empilhar; na aba atual, volta ao
+   * topo (ou, numa subtela dela, à própria aba). */
+  function irPelaDoca(aba: DocaAba) {
+    if (aba === "amigas" || aba === "chatList") revalidarSocial();
+    const naAba = aba === abaDoca;
+    if (naAba && telaRaiz) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    trocarRaiz(aba === "feed" ? null : { type: aba });
+  }
+
+  const topo: RedeTopoValor = {
+    usuarioNome: perfil?.nome_exibicao ?? usuario.nome,
+    usuarioFotoUrl: fotoPropria,
+    unreadNotifs,
+    onBuscar: () => push({ type: "busca" }),
+    onNotificacoes: () => {
+      revalidarSocial();
+      setNotifSheetOpen(true);
+    },
+    onMeuEspaco: () =>
+      screen.type === "meuEspaco"
+        ? window.scrollTo({ top: 0, behavior: "smooth" })
+        : irPelaDoca("meuEspaco"),
+    onSairDaRede,
+    raiz: telaRaiz,
+  };
+
   return (
-    <div className="pb-4">
+    <RedeTopoContext.Provider value={topo}>
+    <div className="pb-4" data-rede-doca="">
       {/* Só as telas da pilha: durante uma transição este bloco é clonado e
           escondido (sheets ficam fora, sempre vivos). */}
       {/* Numa subtela (perfil, chat, amigas...) arrastar pro lado é
@@ -2035,7 +2089,6 @@ export function RedeTab({
             wishlistItems={wishlistItems}
             pendingRequestsCount={requests.length}
             unreadChats={unreadChats}
-            unreadNotifs={unreadNotifs}
             loading={feedLoading}
             error={feedError}
             hasMore={feedHasMore}
@@ -2043,22 +2096,11 @@ export function RedeTab({
             segmento={segmento}
             onSegmentoChange={trocarSegmento}
             ativa={active}
-            sugestoes={sugestoes}
-            sentRequests={sentRequests}
-            onSendRequest={(id) => void sendRequest(id)}
             onLoadMore={loadMorePosts}
             onRefresh={atualizarFeedPuxando}
-            onOpenSearch={() => push({ type: "busca" })}
-            onOpenNotifs={() => {
-              revalidarSocial();
-              setNotifSheetOpen(true);
-            }}
-            onOpenChat={() => push({ type: "chatList" })}
-            onOpenMeuEspaco={() => push({ type: "meuEspaco" })}
-            onOpenAmigas={() => {
-              revalidarSocial();
-              push({ type: "amigas" });
-            }}
+            onCriarPost={() => setComposerOpen(true)}
+            onOpenChat={() => irPelaDoca("chatList")}
+            onOpenAmigas={() => irPelaDoca("amigas")}
             onOpenWishlist={() => push({ type: "wishlist" })}
             onOpenAutor={openAutor}
             {...postActions}
@@ -2711,6 +2753,21 @@ export function RedeTab({
           },
         ]}
       />
+
+      {/* Barra da Rede (modelo Doca). Some na conversa aberta, que tem o
+          próprio campo de mensagem embaixo. */}
+      {barraDoca && screen.type !== "chatThread" && (
+        <DocaBar
+          ativa={abaDoca}
+          naoLidas={unreadChats}
+          pedidos={requests.length}
+          usuarioNome={perfil?.nome_exibicao ?? usuario.nome}
+          usuarioFotoUrl={fotoPropria}
+          onIr={irPelaDoca}
+          onPublicar={() => setComposerOpen(true)}
+        />
+      )}
     </div>
+    </RedeTopoContext.Provider>
   );
 }
