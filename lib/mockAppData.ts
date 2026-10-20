@@ -518,7 +518,8 @@ export function buildMockAppSeed(opts?: {
       id: "rede-post-4",
       autor: "mock-amiga-juliana",
       categoria: "conquista",
-      texto: "Fim de semana de folga no litoral. Volto segunda com a agenda aberta.",
+      texto:
+        "Fim de semana de folga no litoral. Volto segunda com a agenda aberta.",
       h: 5,
     },
     {
@@ -568,7 +569,8 @@ export function buildMockAppSeed(opts?: {
       id: "rede-post-9",
       autor: FRIEND_ID,
       categoria: "dica",
-      texto: "Planilha de custo por atendimento mudou meu preço. Recomendo fazer.",
+      texto:
+        "Planilha de custo por atendimento mudou meu preço. Recomendo fazer.",
       h: 60,
     },
     {
@@ -596,7 +598,8 @@ export function buildMockAppSeed(opts?: {
       id: "rede-post-13",
       autor: FRIEND_ID,
       categoria: "dica",
-      texto: "Segurança: sempre mando a localização pra uma amiga quando chego.",
+      texto:
+        "Segurança: sempre mando a localização pra uma amiga quando chego.",
       h: 130,
     },
     {

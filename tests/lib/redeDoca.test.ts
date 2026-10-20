@@ -80,7 +80,11 @@ describe('pílula "N novas" (aba Amigas)', () => {
   it('a pílula leva ao divisor: "novas" são as do corte para frente', () => {
     const daAmigas = postsDasAmigas(posts, amigas, eu);
     const { novas, vistas } = separarNovas(daAmigas, corte);
-    expect(novas.map((p) => p.id)).toEqual(["meu-novo", "ana-nova", "bia-nova"]);
+    expect(novas.map((p) => p.id)).toEqual([
+      "meu-novo",
+      "ana-nova",
+      "bia-nova",
+    ]);
     expect(vistas.map((p) => p.id)).toEqual(["ana-velha"]);
   });
 });
@@ -121,7 +125,9 @@ describe("leque do par de fotos", () => {
   });
 
   it("cresce com a largura do cartão (390 e 430 de tela)", () => {
-    expect(alturaDoLeque(378, false)).toBeGreaterThan(alturaDoLeque(338, false));
+    expect(alturaDoLeque(378, false)).toBeGreaterThan(
+      alturaDoLeque(338, false)
+    );
     expect(alturaDoLeque(338, false)).toBe(Math.round(338 * 0.58 * 1.25 + 46));
     expect(alturaDoLeque(338, true)).toBe(Math.round(338 * 0.49 * 1.25 + 46));
   });

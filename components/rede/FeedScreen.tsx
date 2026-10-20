@@ -210,13 +210,7 @@ function Abas3({
 }
 
 /** "Novas desde a sua última visita" / "Já visto" na aba Amigas. */
-function Divisor({
-  children,
-  marca,
-}: {
-  children: string;
-  marca?: boolean;
-}) {
+function Divisor({ children, marca }: { children: string; marca?: boolean }) {
   return (
     <div
       role="separator"
@@ -603,7 +597,9 @@ export function FeedScreen({
   } else if (segmento === "amigas") {
     const { novas, vistas, dividir } = separarNovas(daAmigas, corte);
     // Só as das amigas contam para a pílula (as suas não são "novas").
-    const nPilula = dividir ? contarNovasDasAmigas(daAmigas, friends, corte) : 0;
+    const nPilula = dividir
+      ? contarNovasDasAmigas(daAmigas, friends, corte)
+      : 0;
     conteudo =
       daAmigas.length === 0 ? (
         vazio("Nenhuma publicação das suas amigas ainda.")

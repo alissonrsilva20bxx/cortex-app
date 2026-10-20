@@ -133,7 +133,12 @@ export function LequeFotos({
           aria-hidden
           onAnimationEnd={() => setCoracao(0)}
         >
-          <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+          <svg
+            viewBox="0 0 24 24"
+            width="100%"
+            height="100%"
+            fill="currentColor"
+          >
             <path d="M12 20.2s-7.6-4.5-7.6-10.2A4.3 4.3 0 0 1 12 7.5a4.3 4.3 0 0 1 7.6 2.5c0 5.7-7.6 10.2-7.6 10.2z" />
           </svg>
         </span>

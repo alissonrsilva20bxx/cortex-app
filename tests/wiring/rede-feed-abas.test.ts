@@ -123,7 +123,7 @@ describe("Amigas: novas desde a última visita", () => {
 
   it('pílula "N novas": só na aba Amigas, conta as das amigas desde o corte e leva até o divisor', () => {
     expect(feed).toMatch(
-      /const nPilula = dividir \? contarNovasDasAmigas\(daAmigas, friends, corte\) : 0;/
+      /const nPilula = dividir\s*\?\s*contarNovasDasAmigas\(daAmigas, friends, corte\)\s*:\s*0;/
     );
     expect(feed).toMatch(
       /\{nPilula > 0 && !pilulaFechada && \(\s*<PilulaNovas n=\{nPilula\} onIr=\{irParaNovas\} \/>/
@@ -175,15 +175,21 @@ describe("modelo Doca: o topo de toda tela e a barra da Rede", () => {
     expect(header).toMatch(/<AtalhosTopo \/>/);
     expect(feed).toMatch(/<RedeHeader \/>/);
     expect(topo).toMatch(/label="Buscar" onClick=\{topo\.onBuscar\}/);
-    expect(topo).toMatch(/label="Notificações"\s+onClick=\{topo\.onNotificacoes\}/);
+    expect(topo).toMatch(
+      /label="Notificações"\s+onClick=\{topo\.onNotificacoes\}/
+    );
     expect(topo).toMatch(/data-tour="rede-perfil"/);
     expect(topo).toMatch(/onClick=\{topo\.onMeuEspaco\}/);
   });
 
   it("a foto da usuária está no cabeçalho de toda subtela e na conversa aberta", () => {
     const sh = read("components/rede/ScreenHeader.tsx");
-    expect(sh).toMatch(/\{raiz \? <AtalhosTopo semBusca=\{!!action\} \/> : <BotaoFotoPerfil \/>\}/);
-    expect(read("components/rede/ChatThreadScreen.tsx")).toMatch(/<BotaoFotoPerfil \/>/);
+    expect(sh).toMatch(
+      /\{raiz \? <AtalhosTopo semBusca=\{!!action\} \/> : <BotaoFotoPerfil \/>\}/
+    );
+    expect(read("components/rede/ChatThreadScreen.tsx")).toMatch(
+      /<BotaoFotoPerfil \/>/
+    );
   });
 
   it("o RedeTab monta o contexto com os handlers reais (busca, notificações, Meu espaço)", () => {
@@ -197,8 +203,12 @@ describe("modelo Doca: o topo de toda tela e a barra da Rede", () => {
 
   it("a barra tem Feed, Conversas, Publicar, Amigas e Eu, com os números reais", () => {
     expect(doca).toMatch(/item\("feed", "Feed"/);
-    expect(doca).toMatch(/item\("chatList", "Conversas", <IconeConversas \/>, naoLidas\)/);
-    expect(doca).toMatch(/item\("amigas", "Amigas", <IconeAmigas \/>, pedidos\)/);
+    expect(doca).toMatch(
+      /item\("chatList", "Conversas", <IconeConversas \/>, naoLidas\)/
+    );
+    expect(doca).toMatch(
+      /item\("amigas", "Amigas", <IconeAmigas \/>, pedidos\)/
+    );
     expect(doca).toMatch(/item\(\s*"meuEspaco",\s*"Eu",/);
     expect(doca).toMatch(/aria-label="Publicar"/);
     const tag = redeTab.match(/<DocaBar\b[\s\S]*?\/>/)?.[0] ?? "";
@@ -227,7 +237,9 @@ describe("modelo Doca: o topo de toda tela e a barra da Rede", () => {
 describe("o post no desenho do modelo Doca", () => {
   it("cartão com a autora (avatar de 44 e nome que abrem o perfil)", () => {
     expect(post).toMatch(/borderRadius: 22,/);
-    expect(post).toMatch(/tamanho=\{44\}\s+onClick=\{\(\) => onOpenAutor\(post\.autorId\)\}/);
+    expect(post).toMatch(
+      /tamanho=\{44\}\s+onClick=\{\(\) => onOpenAutor\(post\.autorId\)\}/
+    );
     expect(post).toMatch(
       /<button\s+type="button"\s+onClick=\{\(\) => onOpenAutor\(post\.autorId\)\}/
     );
@@ -259,10 +271,14 @@ describe("o post no desenho do modelo Doca", () => {
   });
 
   it("curtir solta partículas (só ao curtir, nunca ao descurtir)", () => {
-    expect(post).toMatch(/\{festa > 0 && post\.curtidoPorMim && <Particulas key=\{festa\} \/>\}/);
+    expect(post).toMatch(
+      /\{festa > 0 && post\.curtidoPorMim && <Particulas key=\{festa\} \/>\}/
+    );
     expect(post).toMatch(/if \(!post\.curtidoPorMim\) \{\s*setFesta/);
     const css = read("components/rede/doca.module.css");
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.particulas,/);
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\s*\.particulas,/
+    );
   });
 
   it("12px entre os cartões", () => {

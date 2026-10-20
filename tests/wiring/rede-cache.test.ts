@@ -300,7 +300,9 @@ describe("FeedScreen: skeleton só em cache miss", () => {
   it("skeleton exige loading && posts vazio; erro não cobre conteúdo cacheado", () => {
     // Modelo Doca: as 3 abas dependem do feed (o Descobrir virou "O
     // melhor da semana", só dicas), então todas esperam o feed carregar.
-    expect(src).toMatch(/\} else if \(loading && posts\.length === 0\) \{|if \(loading && posts\.length === 0\) \{/);
+    expect(src).toMatch(
+      /\} else if \(loading && posts\.length === 0\) \{|if \(loading && posts\.length === 0\) \{/
+    );
     expect(src).toMatch(/\} else if \(error && posts\.length === 0\) \{/);
   });
 

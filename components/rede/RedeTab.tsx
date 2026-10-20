@@ -2074,700 +2074,706 @@ export function RedeTab({
 
   return (
     <RedeTopoContext.Provider value={topo}>
-    <div className="pb-4" data-rede-doca="">
-      {/* Só as telas da pilha: durante uma transição este bloco é clonado e
+      <div className="pb-4" data-rede-doca="">
+        {/* Só as telas da pilha: durante uma transição este bloco é clonado e
           escondido (sheets ficam fora, sempre vivos). */}
-      {/* Numa subtela (perfil, chat, amigas...) arrastar pro lado é
+        {/* Numa subtela (perfil, chat, amigas...) arrastar pro lado é
           "voltar" (useStackNav), não trocar de aba. */}
-      <div ref={pageRef} data-no-tab-swipe={stack.length > 1 ? "" : undefined}>
-        {screen.type === "feed" && (
-          <FeedScreen
-            usuario={usuario}
+        <div
+          ref={pageRef}
+          data-no-tab-swipe={stack.length > 1 ? "" : undefined}
+        >
+          {screen.type === "feed" && (
+            <FeedScreen
+              usuario={usuario}
+              usuarioFotoUrl={fotoPropria}
+              posts={posts}
+              friends={friends.map((f) => f.id)}
+              wishlistItems={wishlistItems}
+              pendingRequestsCount={requests.length}
+              unreadChats={unreadChats}
+              loading={feedLoading}
+              error={feedError}
+              hasMore={feedHasMore}
+              loadingMore={feedLoadingMore}
+              segmento={segmento}
+              onSegmentoChange={trocarSegmento}
+              ativa={active}
+              onLoadMore={loadMorePosts}
+              onRefresh={atualizarFeedPuxando}
+              onCriarPost={() => setComposerOpen(true)}
+              onOpenChat={() => irPelaDoca("chatList")}
+              onOpenAmigas={() => irPelaDoca("amigas")}
+              onOpenWishlist={() => push({ type: "wishlist" })}
+              onOpenAutor={openAutor}
+              {...postActions}
+            />
+          )}
+
+          {screen.type === "busca" && (
+            <SearchScreen
+              posts={posts}
+              onBack={pop}
+              onOpenAutor={openAutor}
+              onOpenPost={(p) => setCommentsPostId(p.id)}
+              onSearchPessoas={(q) => buscarPessoas(supabase, q)}
+            />
+          )}
+
+          {screen.type === "amigas" && (
+            <AmigasScreen
+              loading={amigasLoading}
+              friends={friends}
+              requests={requests}
+              sugestoes={sugestoes}
+              sentRequests={sentRequests}
+              onBack={pop}
+              onAccept={acceptRequest}
+              onDecline={declineRequest}
+              onSendRequest={sendRequest}
+              onRemoveFriend={removeFriend}
+              onBlock={blockUser}
+              onOpenChat={openChatWithUser}
+              onOpenProfile={openAutor}
+            />
+          )}
+
+          {screen.type === "chatList" && (
+            <ChatListScreen
+              loading={conversationsLoading}
+              error={conversationsError}
+              offline={!online}
+              conversations={conversations}
+              onBack={pop}
+              onOpenThread={openChatThread}
+              onRetryLoad={retryLoadConversations}
+            />
+          )}
+
+          {screen.type === "chatThread" &&
+            (() => {
+              const convo = conversations.find(
+                (c) => c.id === screen.conversationId
+              );
+              if (!convo) return null;
+              return (
+                <ChatThreadScreen
+                  conversation={convo}
+                  messages={messages[convo.id] ?? []}
+                  loading={threadLoading}
+                  error={threadError}
+                  offline={!online}
+                  onBack={pop}
+                  onOpenAutor={openAutor}
+                  onOpenMenu={() => setChatMenuOpen(true)}
+                  onSend={(texto) => sendMessage(convo.id, texto)}
+                  onRetry={(messageId) => retrySend(convo.id, messageId)}
+                  onRetryLoad={retryLoadThread}
+                  onComposerFocusChange={onChatFocusChange}
+                  hasMoreMessages={hasMoreMessages[convo.id] ?? false}
+                  loadingMoreMessages={loadingMoreMessages}
+                  onLoadMoreMessages={loadMoreMessages}
+                />
+              );
+            })()}
+
+          {screen.type === "meuEspaco" && (
+            <MeuEspacoScreen
+              nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
+              bio={perfil?.bio ?? ""}
+              cor={perfil?.cor_avatar ?? "var(--accent)"}
+              fotoUrl={fotoPropria}
+              meusPosts={posts.filter((p) => p.autorId === usuario.id)}
+              liveLinks={liveLinks}
+              clientesCount={clientes.length}
+              friendsCount={friends.length}
+              defaultPrivacidade={defaultPrivacidade}
+              loading={perfil === null && !perfilError}
+              error={perfilError}
+              onBack={pop}
+              onMoveLiveLink={moveLiveLink}
+              onEditLiveLink={(link) => {
+                setEditingLiveLink(link);
+                setLiveLinkFormOpen(true);
+              }}
+              onDeleteLiveLink={deleteLiveLink}
+              onAddLiveLink={() => {
+                setEditingLiveLink(null);
+                setLiveLinkFormOpen(true);
+              }}
+              onEditProfile={() => setProfileEditOpen(true)}
+              onEditAvatar={() => {
+                if (perfil?.avatar_url) setAvatarOptionsOpen(true);
+                else avatarFileInputRef.current?.click();
+              }}
+              onShareProfile={shareProfile}
+              onPublish={() => setComposerOpen(true)}
+              onOpenWishlist={() => push({ type: "wishlist" })}
+              onOpenClientes={() => push({ type: "clientes" })}
+              onOpenBloqueados={openBloqueados}
+              onOpenPerfilPublico={() =>
+                push({ type: "perfilPublico", userId: usuario.id })
+              }
+              onChangeDefaultPrivacidade={setDefaultPrivacidade}
+              onDeletePost={deletePost}
+              {...postActions}
+            />
+          )}
+
+          {screen.type === "perfilPublico" &&
+            (() => {
+              const profile = buildProfile(screen.userId);
+              const isFriend = profile.isMe
+                ? false
+                : friends.some((f) => f.id === screen.userId);
+              const pedidoRecebido = profile.isMe
+                ? undefined
+                : requests.find((r) => r.pessoa.id === screen.userId);
+              const wishlistPublico = profile.isMe
+                ? wishlistItems.filter((w) => w.privacidade === "comunidade")
+                : [];
+              // LiveLinks de outras pessoas ainda não têm de onde vir --
+              // nenhuma ticket do mapa expõe LiveLinks de terceiros, só o
+              // próprio perfil (ticket 09). Fora do escopo por enquanto.
+              const livelinksExibidos = profile.isMe ? liveLinks : [];
+              return (
+                <PerfilPublicoScreen
+                  nome={profile.nome}
+                  handle={profile.handle}
+                  cor={profile.cor}
+                  fotoUrl={profile.fotoUrl}
+                  bio={profile.bio}
+                  isMe={profile.isMe}
+                  isFriend={isFriend}
+                  requestSent={sentRequests.includes(screen.userId)}
+                  liveLinks={livelinksExibidos}
+                  wishlistPublico={wishlistPublico}
+                  posts={posts.filter((p) => p.autorId === screen.userId)}
+                  loading={!profile.isMe && otherProfileLoading}
+                  error={!profile.isMe && otherProfileError}
+                  onBack={pop}
+                  onOpenChat={() => openChatWithUser(screen.userId)}
+                  chatOpening={openingChatUserIds.has(screen.userId)}
+                  onSendRequest={() => sendRequest(screen.userId)}
+                  incomingRequest={!!pedidoRecebido}
+                  onAcceptRequest={
+                    pedidoRecebido
+                      ? () => acceptRequest(pedidoRecebido)
+                      : undefined
+                  }
+                  onDeclineRequest={
+                    pedidoRecebido
+                      ? () => declineRequest(pedidoRecebido.id)
+                      : undefined
+                  }
+                  onBlock={() => {
+                    blockUser(screen.userId);
+                    pop();
+                  }}
+                  // Mesmo gatilho que o "..." do PostCard já usa pra abrir a
+                  // confirmação real de denúncia (ticket #140) -- não duplica
+                  // serviço/feedback, só abre um passo antes (o "..." da
+                  // grade/visualizador do perfil já sabe que não é o dono,
+                  // pula direto pro "Motivo da denúncia" sem passar pelo menu
+                  // "Publicação" completo, que teria Editar/Excluir).
+                  onReportPost={(postId) =>
+                    setReportTarget({ tipo: "post", id: postId })
+                  }
+                  {...postActions}
+                />
+              );
+            })()}
+
+          {screen.type === "wishlist" && (
+            <WishlistScreen
+              items={wishlistItems}
+              onBack={pop}
+              onAddNew={() => {
+                setEditingWishlist(null);
+                setWishlistFormOpen(true);
+              }}
+              onOpenItem={(item) => {
+                setEditingWishlist(item);
+                setWishlistFormOpen(true);
+              }}
+            />
+          )}
+
+          {screen.type === "clientes" && (
+            <ClientesScreen
+              clientes={clientes}
+              onBack={pop}
+              onAddNew={() => {
+                setEditingCliente(null);
+                setClienteFormOpen(true);
+              }}
+              onOpenCliente={setClienteDetail}
+            />
+          )}
+
+          {screen.type === "bloqueados" && (
+            <BlockedUsersScreen
+              items={bloqueados}
+              loading={bloqueadosLoading}
+              error={bloqueadosError}
+              onBack={pop}
+              onUnblock={unblockUser}
+            />
+          )}
+        </div>
+
+        {/* ── Sheets globais ── */}
+        <PostComposer
+          open={composerOpen}
+          usuarioNome={usuario.nome}
+          usuarioFotoUrl={fotoPropria}
+          editingPost={editingPost}
+          onClose={() => {
+            setComposerOpen(false);
+            setEditingPost(null);
+          }}
+          onPublish={handlePublish}
+          onSaveEdit={saveEditedPost}
+        />
+
+        <CommentsSheet
+          postId={commentsPostId}
+          usuarioNome={usuario.nome}
+          usuarioFotoUrl={fotoPropria}
+          comments={comments}
+          loading={commentsLoading}
+          onClose={() => setCommentsPostId(null)}
+          onAddComment={addComment}
+          onOpenAutor={openAutor}
+          onReportComment={(c) =>
+            setReportTarget({ tipo: "comentario", id: c.id })
+          }
+        />
+
+        <RedeNotificationsSheet
+          open={notifSheetOpen}
+          onClose={() => setNotifSheetOpen(false)}
+          loading={notificacoesLoading}
+          error={notificacoesError}
+          offline={!online}
+          notificacoes={notificacoes}
+          onOpenNotificacao={openNotificacao}
+          onMarkAllRead={markAllNotifsRead}
+          onRetryLoad={retryLoadNotificacoes}
+        />
+
+        <OptionsSheet
+          open={!!menuPost}
+          title="Publicação"
+          onClose={() => setMenuPost(null)}
+          options={
+            !menuPost
+              ? []
+              : menuPost.autorId === usuario.id
+                ? [
+                    {
+                      key: "editar",
+                      label: "Editar",
+                      Icon: Pencil,
+                      onSelect: () => {
+                        setEditingPost(menuPost);
+                        setComposerOpen(true);
+                      },
+                    },
+                    {
+                      key: "excluir",
+                      label: "Excluir",
+                      Icon: Trash2,
+                      danger: true,
+                      onSelect: () => setDeleteConfirmPost(menuPost),
+                    },
+                    {
+                      key: "cancelar",
+                      label: "Cancelar",
+                      Icon: X,
+                      onSelect: () => {},
+                    },
+                  ]
+                : [
+                    {
+                      key: "denunciar",
+                      label: "Denunciar",
+                      Icon: Flag,
+                      danger: true,
+                      onSelect: () =>
+                        setReportTarget({ tipo: "post", id: menuPost.id }),
+                    },
+                    {
+                      key: "cancelar",
+                      label: "Cancelar",
+                      Icon: X,
+                      onSelect: () => {},
+                    },
+                  ]
+          }
+        />
+
+        <OptionsSheet
+          open={chatMenuOpen}
+          title="Opções da conversa"
+          onClose={() => setChatMenuOpen(false)}
+          options={
+            screen.type !== "chatThread"
+              ? []
+              : (() => {
+                  const convo = conversations.find(
+                    (c) => c.id === screen.conversationId
+                  );
+                  if (!convo) return [];
+                  return [
+                    {
+                      key: "denunciar",
+                      label: "Denunciar",
+                      Icon: Flag,
+                      danger: true,
+                      onSelect: () =>
+                        setReportTarget({
+                          tipo: "usuario",
+                          id: convo.outroUserId,
+                        }),
+                    },
+                    {
+                      key: "bloquear",
+                      label: "Bloquear",
+                      Icon: Ban,
+                      danger: true,
+                      onSelect: () =>
+                        setChatBlockConfirm({
+                          userId: convo.outroUserId,
+                          nome: convo.outroNome,
+                        }),
+                    },
+                    {
+                      key: "excluir",
+                      label: "Excluir conversa",
+                      Icon: Trash2,
+                      danger: true,
+                      onSelect: () =>
+                        setChatDeleteConfirm({
+                          conversaId: convo.id,
+                          nome: convo.outroNome,
+                        }),
+                    },
+                    {
+                      key: "cancelar",
+                      label: "Cancelar",
+                      Icon: X,
+                      onSelect: () => {},
+                    },
+                  ];
+                })()
+          }
+        />
+
+        <OptionsSheet
+          open={!!chatDeleteConfirm}
+          title={
+            chatDeleteConfirm
+              ? `Excluir conversa com ${chatDeleteConfirm.nome}?`
+              : "Excluir conversa?"
+          }
+          onClose={() => setChatDeleteConfirm(null)}
+          options={[
+            {
+              key: "confirmar",
+              label: "Sim, excluir",
+              Icon: Trash2,
+              danger: true,
+              onSelect: () => {
+                if (!chatDeleteConfirm) return;
+                hideConversation(chatDeleteConfirm.conversaId);
+              },
+            },
+            {
+              key: "cancelar",
+              label: "Cancelar",
+              Icon: X,
+              onSelect: () => {},
+            },
+          ]}
+        />
+
+        <OptionsSheet
+          open={!!chatBlockConfirm}
+          title={
+            chatBlockConfirm
+              ? `Bloquear ${chatBlockConfirm.nome}?`
+              : "Bloquear?"
+          }
+          onClose={() => setChatBlockConfirm(null)}
+          options={[
+            {
+              key: "confirmar",
+              label: "Sim, bloquear",
+              Icon: Ban,
+              danger: true,
+              onSelect: () => {
+                if (!chatBlockConfirm) return;
+                blockUser(chatBlockConfirm.userId);
+                pop();
+              },
+            },
+            {
+              key: "cancelar",
+              label: "Cancelar",
+              Icon: X,
+              onSelect: () => {},
+            },
+          ]}
+        />
+
+        <OptionsSheet
+          open={!!reportTarget}
+          title="Motivo da denúncia"
+          onClose={() => setReportTarget(null)}
+          options={[
+            {
+              key: "spam",
+              label: "Spam",
+              Icon: Flag,
+              danger: true,
+              onSelect: () => submitReport("spam"),
+            },
+            {
+              key: "assedio",
+              label: "Assédio",
+              Icon: Flag,
+              danger: true,
+              onSelect: () => submitReport("assedio"),
+            },
+            {
+              key: "conteudo_impropio",
+              label: "Conteúdo impróprio",
+              Icon: Flag,
+              danger: true,
+              onSelect: () => submitReport("conteudo_impropio"),
+            },
+            {
+              key: "outro",
+              label: "Outro motivo",
+              Icon: Flag,
+              danger: true,
+              onSelect: () => submitReport("outro"),
+            },
+            {
+              key: "cancelar",
+              label: "Cancelar",
+              Icon: X,
+              onSelect: () => {},
+            },
+          ]}
+        />
+
+        <OptionsSheet
+          open={!!deleteConfirmPost}
+          title="Excluir publicação?"
+          onClose={() => setDeleteConfirmPost(null)}
+          options={[
+            {
+              key: "confirmar",
+              label: "Sim, excluir",
+              Icon: Trash2,
+              danger: true,
+              onSelect: () => {
+                if (deleteConfirmPost) deletePost(deleteConfirmPost.id);
+              },
+            },
+            {
+              key: "cancelar",
+              label: "Cancelar",
+              Icon: X,
+              onSelect: () => {},
+            },
+          ]}
+        />
+
+        <OptionsSheet
+          open={!!sharePost}
+          title="Compartilhar"
+          onClose={() => setSharePost(null)}
+          options={[
+            {
+              key: "conversa",
+              label: "Enviar para uma conversa",
+              Icon: Send,
+              onSelect: () => setShareToConvoPost(sharePost),
+            },
+            {
+              key: "copiar",
+              label: "Copiar link da publicação",
+              Icon: Link2,
+              onSelect: () => toast.success("Link copiado!"),
+            },
+          ]}
+        />
+
+        <ShareToChatSheet
+          open={!!shareToConvoPost}
+          conversations={conversations}
+          onClose={() => setShareToConvoPost(null)}
+          onSelectConversation={sharePostToChat}
+        />
+
+        <LiveLinkForm
+          open={liveLinkFormOpen}
+          link={editingLiveLink}
+          onClose={() => {
+            setLiveLinkFormOpen(false);
+            setEditingLiveLink(null);
+          }}
+          onSave={saveLiveLink}
+        />
+
+        <ProfileEditForm
+          open={profileEditOpen}
+          initial={{
+            nomeExibicao: perfil?.nome_exibicao ?? usuario.nome,
+            bio: perfil?.bio ?? "",
+          }}
+          onClose={() => setProfileEditOpen(false)}
+          onSave={saveProfile}
+        />
+
+        <input
+          ref={avatarFileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarFileSelected}
+        />
+
+        <OptionsSheet
+          open={avatarOptionsOpen}
+          title="Foto de perfil"
+          onClose={() => setAvatarOptionsOpen(false)}
+          options={[
+            {
+              key: "trocar",
+              label: avatarUploading ? "Enviando…" : "Trocar foto",
+              Icon: Camera,
+              onSelect: () => avatarFileInputRef.current?.click(),
+            },
+            {
+              key: "remover",
+              label: "Remover foto",
+              Icon: Trash2,
+              danger: true,
+              onSelect: removeAvatar,
+            },
+            {
+              key: "cancelar",
+              label: "Cancelar",
+              Icon: X,
+              onSelect: () => {},
+            },
+          ]}
+        />
+
+        <WishlistForm
+          open={wishlistFormOpen}
+          item={editingWishlist}
+          onClose={() => {
+            setWishlistFormOpen(false);
+            setEditingWishlist(null);
+          }}
+          onSave={saveWishlist}
+          onShareToFeed={shareWishlistToFeed}
+          onDeleteRequest={(item) => {
+            setWishlistFormOpen(false);
+            setDeleteConfirmWishlist(item);
+          }}
+        />
+
+        <ClienteDetailSheet
+          cliente={clienteDetail}
+          onClose={() => setClienteDetail(null)}
+          onEdit={(c) => {
+            setEditingCliente(c);
+            setClienteFormOpen(true);
+          }}
+          onDeleteRequest={(c) => {
+            setClienteDetail(null);
+            setDeleteConfirmCliente(c);
+          }}
+        />
+
+        <ClienteForm
+          open={clienteFormOpen}
+          cliente={editingCliente}
+          onClose={() => {
+            setClienteFormOpen(false);
+            setEditingCliente(null);
+          }}
+          onSave={saveCliente}
+        />
+
+        <OptionsSheet
+          open={!!deleteConfirmWishlist}
+          title="Excluir desejo?"
+          onClose={() => setDeleteConfirmWishlist(null)}
+          options={[
+            {
+              key: "confirmar",
+              label: "Sim, excluir",
+              Icon: Trash2,
+              danger: true,
+              onSelect: () => {
+                if (deleteConfirmWishlist)
+                  deleteWishlist(deleteConfirmWishlist.id);
+              },
+            },
+            {
+              key: "cancelar",
+              label: "Cancelar",
+              Icon: X,
+              onSelect: () => {},
+            },
+          ]}
+        />
+
+        <OptionsSheet
+          open={!!deleteConfirmCliente}
+          title="Excluir cliente?"
+          onClose={() => setDeleteConfirmCliente(null)}
+          options={[
+            {
+              key: "confirmar",
+              label: "Sim, excluir",
+              Icon: Trash2,
+              danger: true,
+              onSelect: () => {
+                if (deleteConfirmCliente)
+                  deleteCliente(deleteConfirmCliente.id);
+              },
+            },
+            {
+              key: "cancelar",
+              label: "Cancelar",
+              Icon: X,
+              onSelect: () => {},
+            },
+          ]}
+        />
+
+        {/* Barra da Rede (modelo Doca). Some na conversa aberta, que tem o
+          próprio campo de mensagem embaixo. */}
+        {barraDoca && screen.type !== "chatThread" && (
+          <DocaBar
+            ativa={abaDoca}
+            naoLidas={unreadChats}
+            pedidos={requests.length}
+            usuarioNome={perfil?.nome_exibicao ?? usuario.nome}
             usuarioFotoUrl={fotoPropria}
-            posts={posts}
-            friends={friends.map((f) => f.id)}
-            wishlistItems={wishlistItems}
-            pendingRequestsCount={requests.length}
-            unreadChats={unreadChats}
-            loading={feedLoading}
-            error={feedError}
-            hasMore={feedHasMore}
-            loadingMore={feedLoadingMore}
-            segmento={segmento}
-            onSegmentoChange={trocarSegmento}
-            ativa={active}
-            onLoadMore={loadMorePosts}
-            onRefresh={atualizarFeedPuxando}
-            onCriarPost={() => setComposerOpen(true)}
-            onOpenChat={() => irPelaDoca("chatList")}
-            onOpenAmigas={() => irPelaDoca("amigas")}
-            onOpenWishlist={() => push({ type: "wishlist" })}
-            onOpenAutor={openAutor}
-            {...postActions}
-          />
-        )}
-
-        {screen.type === "busca" && (
-          <SearchScreen
-            posts={posts}
-            onBack={pop}
-            onOpenAutor={openAutor}
-            onOpenPost={(p) => setCommentsPostId(p.id)}
-            onSearchPessoas={(q) => buscarPessoas(supabase, q)}
-          />
-        )}
-
-        {screen.type === "amigas" && (
-          <AmigasScreen
-            loading={amigasLoading}
-            friends={friends}
-            requests={requests}
-            sugestoes={sugestoes}
-            sentRequests={sentRequests}
-            onBack={pop}
-            onAccept={acceptRequest}
-            onDecline={declineRequest}
-            onSendRequest={sendRequest}
-            onRemoveFriend={removeFriend}
-            onBlock={blockUser}
-            onOpenChat={openChatWithUser}
-            onOpenProfile={openAutor}
-          />
-        )}
-
-        {screen.type === "chatList" && (
-          <ChatListScreen
-            loading={conversationsLoading}
-            error={conversationsError}
-            offline={!online}
-            conversations={conversations}
-            onBack={pop}
-            onOpenThread={openChatThread}
-            onRetryLoad={retryLoadConversations}
-          />
-        )}
-
-        {screen.type === "chatThread" &&
-          (() => {
-            const convo = conversations.find(
-              (c) => c.id === screen.conversationId
-            );
-            if (!convo) return null;
-            return (
-              <ChatThreadScreen
-                conversation={convo}
-                messages={messages[convo.id] ?? []}
-                loading={threadLoading}
-                error={threadError}
-                offline={!online}
-                onBack={pop}
-                onOpenAutor={openAutor}
-                onOpenMenu={() => setChatMenuOpen(true)}
-                onSend={(texto) => sendMessage(convo.id, texto)}
-                onRetry={(messageId) => retrySend(convo.id, messageId)}
-                onRetryLoad={retryLoadThread}
-                onComposerFocusChange={onChatFocusChange}
-                hasMoreMessages={hasMoreMessages[convo.id] ?? false}
-                loadingMoreMessages={loadingMoreMessages}
-                onLoadMoreMessages={loadMoreMessages}
-              />
-            );
-          })()}
-
-        {screen.type === "meuEspaco" && (
-          <MeuEspacoScreen
-            nomeExibicao={perfil?.nome_exibicao ?? usuario.nome}
-            bio={perfil?.bio ?? ""}
-            cor={perfil?.cor_avatar ?? "var(--accent)"}
-            fotoUrl={fotoPropria}
-            meusPosts={posts.filter((p) => p.autorId === usuario.id)}
-            liveLinks={liveLinks}
-            clientesCount={clientes.length}
-            friendsCount={friends.length}
-            defaultPrivacidade={defaultPrivacidade}
-            loading={perfil === null && !perfilError}
-            error={perfilError}
-            onBack={pop}
-            onMoveLiveLink={moveLiveLink}
-            onEditLiveLink={(link) => {
-              setEditingLiveLink(link);
-              setLiveLinkFormOpen(true);
-            }}
-            onDeleteLiveLink={deleteLiveLink}
-            onAddLiveLink={() => {
-              setEditingLiveLink(null);
-              setLiveLinkFormOpen(true);
-            }}
-            onEditProfile={() => setProfileEditOpen(true)}
-            onEditAvatar={() => {
-              if (perfil?.avatar_url) setAvatarOptionsOpen(true);
-              else avatarFileInputRef.current?.click();
-            }}
-            onShareProfile={shareProfile}
-            onPublish={() => setComposerOpen(true)}
-            onOpenWishlist={() => push({ type: "wishlist" })}
-            onOpenClientes={() => push({ type: "clientes" })}
-            onOpenBloqueados={openBloqueados}
-            onOpenPerfilPublico={() =>
-              push({ type: "perfilPublico", userId: usuario.id })
-            }
-            onChangeDefaultPrivacidade={setDefaultPrivacidade}
-            onDeletePost={deletePost}
-            {...postActions}
-          />
-        )}
-
-        {screen.type === "perfilPublico" &&
-          (() => {
-            const profile = buildProfile(screen.userId);
-            const isFriend = profile.isMe
-              ? false
-              : friends.some((f) => f.id === screen.userId);
-            const pedidoRecebido = profile.isMe
-              ? undefined
-              : requests.find((r) => r.pessoa.id === screen.userId);
-            const wishlistPublico = profile.isMe
-              ? wishlistItems.filter((w) => w.privacidade === "comunidade")
-              : [];
-            // LiveLinks de outras pessoas ainda não têm de onde vir --
-            // nenhuma ticket do mapa expõe LiveLinks de terceiros, só o
-            // próprio perfil (ticket 09). Fora do escopo por enquanto.
-            const livelinksExibidos = profile.isMe ? liveLinks : [];
-            return (
-              <PerfilPublicoScreen
-                nome={profile.nome}
-                handle={profile.handle}
-                cor={profile.cor}
-                fotoUrl={profile.fotoUrl}
-                bio={profile.bio}
-                isMe={profile.isMe}
-                isFriend={isFriend}
-                requestSent={sentRequests.includes(screen.userId)}
-                liveLinks={livelinksExibidos}
-                wishlistPublico={wishlistPublico}
-                posts={posts.filter((p) => p.autorId === screen.userId)}
-                loading={!profile.isMe && otherProfileLoading}
-                error={!profile.isMe && otherProfileError}
-                onBack={pop}
-                onOpenChat={() => openChatWithUser(screen.userId)}
-                chatOpening={openingChatUserIds.has(screen.userId)}
-                onSendRequest={() => sendRequest(screen.userId)}
-                incomingRequest={!!pedidoRecebido}
-                onAcceptRequest={
-                  pedidoRecebido
-                    ? () => acceptRequest(pedidoRecebido)
-                    : undefined
-                }
-                onDeclineRequest={
-                  pedidoRecebido
-                    ? () => declineRequest(pedidoRecebido.id)
-                    : undefined
-                }
-                onBlock={() => {
-                  blockUser(screen.userId);
-                  pop();
-                }}
-                // Mesmo gatilho que o "..." do PostCard já usa pra abrir a
-                // confirmação real de denúncia (ticket #140) -- não duplica
-                // serviço/feedback, só abre um passo antes (o "..." da
-                // grade/visualizador do perfil já sabe que não é o dono,
-                // pula direto pro "Motivo da denúncia" sem passar pelo menu
-                // "Publicação" completo, que teria Editar/Excluir).
-                onReportPost={(postId) =>
-                  setReportTarget({ tipo: "post", id: postId })
-                }
-                {...postActions}
-              />
-            );
-          })()}
-
-        {screen.type === "wishlist" && (
-          <WishlistScreen
-            items={wishlistItems}
-            onBack={pop}
-            onAddNew={() => {
-              setEditingWishlist(null);
-              setWishlistFormOpen(true);
-            }}
-            onOpenItem={(item) => {
-              setEditingWishlist(item);
-              setWishlistFormOpen(true);
-            }}
-          />
-        )}
-
-        {screen.type === "clientes" && (
-          <ClientesScreen
-            clientes={clientes}
-            onBack={pop}
-            onAddNew={() => {
-              setEditingCliente(null);
-              setClienteFormOpen(true);
-            }}
-            onOpenCliente={setClienteDetail}
-          />
-        )}
-
-        {screen.type === "bloqueados" && (
-          <BlockedUsersScreen
-            items={bloqueados}
-            loading={bloqueadosLoading}
-            error={bloqueadosError}
-            onBack={pop}
-            onUnblock={unblockUser}
+            onIr={irPelaDoca}
+            onPublicar={() => setComposerOpen(true)}
           />
         )}
       </div>
-
-      {/* ── Sheets globais ── */}
-      <PostComposer
-        open={composerOpen}
-        usuarioNome={usuario.nome}
-        usuarioFotoUrl={fotoPropria}
-        editingPost={editingPost}
-        onClose={() => {
-          setComposerOpen(false);
-          setEditingPost(null);
-        }}
-        onPublish={handlePublish}
-        onSaveEdit={saveEditedPost}
-      />
-
-      <CommentsSheet
-        postId={commentsPostId}
-        usuarioNome={usuario.nome}
-        usuarioFotoUrl={fotoPropria}
-        comments={comments}
-        loading={commentsLoading}
-        onClose={() => setCommentsPostId(null)}
-        onAddComment={addComment}
-        onOpenAutor={openAutor}
-        onReportComment={(c) =>
-          setReportTarget({ tipo: "comentario", id: c.id })
-        }
-      />
-
-      <RedeNotificationsSheet
-        open={notifSheetOpen}
-        onClose={() => setNotifSheetOpen(false)}
-        loading={notificacoesLoading}
-        error={notificacoesError}
-        offline={!online}
-        notificacoes={notificacoes}
-        onOpenNotificacao={openNotificacao}
-        onMarkAllRead={markAllNotifsRead}
-        onRetryLoad={retryLoadNotificacoes}
-      />
-
-      <OptionsSheet
-        open={!!menuPost}
-        title="Publicação"
-        onClose={() => setMenuPost(null)}
-        options={
-          !menuPost
-            ? []
-            : menuPost.autorId === usuario.id
-              ? [
-                  {
-                    key: "editar",
-                    label: "Editar",
-                    Icon: Pencil,
-                    onSelect: () => {
-                      setEditingPost(menuPost);
-                      setComposerOpen(true);
-                    },
-                  },
-                  {
-                    key: "excluir",
-                    label: "Excluir",
-                    Icon: Trash2,
-                    danger: true,
-                    onSelect: () => setDeleteConfirmPost(menuPost),
-                  },
-                  {
-                    key: "cancelar",
-                    label: "Cancelar",
-                    Icon: X,
-                    onSelect: () => {},
-                  },
-                ]
-              : [
-                  {
-                    key: "denunciar",
-                    label: "Denunciar",
-                    Icon: Flag,
-                    danger: true,
-                    onSelect: () =>
-                      setReportTarget({ tipo: "post", id: menuPost.id }),
-                  },
-                  {
-                    key: "cancelar",
-                    label: "Cancelar",
-                    Icon: X,
-                    onSelect: () => {},
-                  },
-                ]
-        }
-      />
-
-      <OptionsSheet
-        open={chatMenuOpen}
-        title="Opções da conversa"
-        onClose={() => setChatMenuOpen(false)}
-        options={
-          screen.type !== "chatThread"
-            ? []
-            : (() => {
-                const convo = conversations.find(
-                  (c) => c.id === screen.conversationId
-                );
-                if (!convo) return [];
-                return [
-                  {
-                    key: "denunciar",
-                    label: "Denunciar",
-                    Icon: Flag,
-                    danger: true,
-                    onSelect: () =>
-                      setReportTarget({
-                        tipo: "usuario",
-                        id: convo.outroUserId,
-                      }),
-                  },
-                  {
-                    key: "bloquear",
-                    label: "Bloquear",
-                    Icon: Ban,
-                    danger: true,
-                    onSelect: () =>
-                      setChatBlockConfirm({
-                        userId: convo.outroUserId,
-                        nome: convo.outroNome,
-                      }),
-                  },
-                  {
-                    key: "excluir",
-                    label: "Excluir conversa",
-                    Icon: Trash2,
-                    danger: true,
-                    onSelect: () =>
-                      setChatDeleteConfirm({
-                        conversaId: convo.id,
-                        nome: convo.outroNome,
-                      }),
-                  },
-                  {
-                    key: "cancelar",
-                    label: "Cancelar",
-                    Icon: X,
-                    onSelect: () => {},
-                  },
-                ];
-              })()
-        }
-      />
-
-      <OptionsSheet
-        open={!!chatDeleteConfirm}
-        title={
-          chatDeleteConfirm
-            ? `Excluir conversa com ${chatDeleteConfirm.nome}?`
-            : "Excluir conversa?"
-        }
-        onClose={() => setChatDeleteConfirm(null)}
-        options={[
-          {
-            key: "confirmar",
-            label: "Sim, excluir",
-            Icon: Trash2,
-            danger: true,
-            onSelect: () => {
-              if (!chatDeleteConfirm) return;
-              hideConversation(chatDeleteConfirm.conversaId);
-            },
-          },
-          {
-            key: "cancelar",
-            label: "Cancelar",
-            Icon: X,
-            onSelect: () => {},
-          },
-        ]}
-      />
-
-      <OptionsSheet
-        open={!!chatBlockConfirm}
-        title={
-          chatBlockConfirm ? `Bloquear ${chatBlockConfirm.nome}?` : "Bloquear?"
-        }
-        onClose={() => setChatBlockConfirm(null)}
-        options={[
-          {
-            key: "confirmar",
-            label: "Sim, bloquear",
-            Icon: Ban,
-            danger: true,
-            onSelect: () => {
-              if (!chatBlockConfirm) return;
-              blockUser(chatBlockConfirm.userId);
-              pop();
-            },
-          },
-          {
-            key: "cancelar",
-            label: "Cancelar",
-            Icon: X,
-            onSelect: () => {},
-          },
-        ]}
-      />
-
-      <OptionsSheet
-        open={!!reportTarget}
-        title="Motivo da denúncia"
-        onClose={() => setReportTarget(null)}
-        options={[
-          {
-            key: "spam",
-            label: "Spam",
-            Icon: Flag,
-            danger: true,
-            onSelect: () => submitReport("spam"),
-          },
-          {
-            key: "assedio",
-            label: "Assédio",
-            Icon: Flag,
-            danger: true,
-            onSelect: () => submitReport("assedio"),
-          },
-          {
-            key: "conteudo_impropio",
-            label: "Conteúdo impróprio",
-            Icon: Flag,
-            danger: true,
-            onSelect: () => submitReport("conteudo_impropio"),
-          },
-          {
-            key: "outro",
-            label: "Outro motivo",
-            Icon: Flag,
-            danger: true,
-            onSelect: () => submitReport("outro"),
-          },
-          {
-            key: "cancelar",
-            label: "Cancelar",
-            Icon: X,
-            onSelect: () => {},
-          },
-        ]}
-      />
-
-      <OptionsSheet
-        open={!!deleteConfirmPost}
-        title="Excluir publicação?"
-        onClose={() => setDeleteConfirmPost(null)}
-        options={[
-          {
-            key: "confirmar",
-            label: "Sim, excluir",
-            Icon: Trash2,
-            danger: true,
-            onSelect: () => {
-              if (deleteConfirmPost) deletePost(deleteConfirmPost.id);
-            },
-          },
-          {
-            key: "cancelar",
-            label: "Cancelar",
-            Icon: X,
-            onSelect: () => {},
-          },
-        ]}
-      />
-
-      <OptionsSheet
-        open={!!sharePost}
-        title="Compartilhar"
-        onClose={() => setSharePost(null)}
-        options={[
-          {
-            key: "conversa",
-            label: "Enviar para uma conversa",
-            Icon: Send,
-            onSelect: () => setShareToConvoPost(sharePost),
-          },
-          {
-            key: "copiar",
-            label: "Copiar link da publicação",
-            Icon: Link2,
-            onSelect: () => toast.success("Link copiado!"),
-          },
-        ]}
-      />
-
-      <ShareToChatSheet
-        open={!!shareToConvoPost}
-        conversations={conversations}
-        onClose={() => setShareToConvoPost(null)}
-        onSelectConversation={sharePostToChat}
-      />
-
-      <LiveLinkForm
-        open={liveLinkFormOpen}
-        link={editingLiveLink}
-        onClose={() => {
-          setLiveLinkFormOpen(false);
-          setEditingLiveLink(null);
-        }}
-        onSave={saveLiveLink}
-      />
-
-      <ProfileEditForm
-        open={profileEditOpen}
-        initial={{
-          nomeExibicao: perfil?.nome_exibicao ?? usuario.nome,
-          bio: perfil?.bio ?? "",
-        }}
-        onClose={() => setProfileEditOpen(false)}
-        onSave={saveProfile}
-      />
-
-      <input
-        ref={avatarFileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleAvatarFileSelected}
-      />
-
-      <OptionsSheet
-        open={avatarOptionsOpen}
-        title="Foto de perfil"
-        onClose={() => setAvatarOptionsOpen(false)}
-        options={[
-          {
-            key: "trocar",
-            label: avatarUploading ? "Enviando…" : "Trocar foto",
-            Icon: Camera,
-            onSelect: () => avatarFileInputRef.current?.click(),
-          },
-          {
-            key: "remover",
-            label: "Remover foto",
-            Icon: Trash2,
-            danger: true,
-            onSelect: removeAvatar,
-          },
-          {
-            key: "cancelar",
-            label: "Cancelar",
-            Icon: X,
-            onSelect: () => {},
-          },
-        ]}
-      />
-
-      <WishlistForm
-        open={wishlistFormOpen}
-        item={editingWishlist}
-        onClose={() => {
-          setWishlistFormOpen(false);
-          setEditingWishlist(null);
-        }}
-        onSave={saveWishlist}
-        onShareToFeed={shareWishlistToFeed}
-        onDeleteRequest={(item) => {
-          setWishlistFormOpen(false);
-          setDeleteConfirmWishlist(item);
-        }}
-      />
-
-      <ClienteDetailSheet
-        cliente={clienteDetail}
-        onClose={() => setClienteDetail(null)}
-        onEdit={(c) => {
-          setEditingCliente(c);
-          setClienteFormOpen(true);
-        }}
-        onDeleteRequest={(c) => {
-          setClienteDetail(null);
-          setDeleteConfirmCliente(c);
-        }}
-      />
-
-      <ClienteForm
-        open={clienteFormOpen}
-        cliente={editingCliente}
-        onClose={() => {
-          setClienteFormOpen(false);
-          setEditingCliente(null);
-        }}
-        onSave={saveCliente}
-      />
-
-      <OptionsSheet
-        open={!!deleteConfirmWishlist}
-        title="Excluir desejo?"
-        onClose={() => setDeleteConfirmWishlist(null)}
-        options={[
-          {
-            key: "confirmar",
-            label: "Sim, excluir",
-            Icon: Trash2,
-            danger: true,
-            onSelect: () => {
-              if (deleteConfirmWishlist)
-                deleteWishlist(deleteConfirmWishlist.id);
-            },
-          },
-          {
-            key: "cancelar",
-            label: "Cancelar",
-            Icon: X,
-            onSelect: () => {},
-          },
-        ]}
-      />
-
-      <OptionsSheet
-        open={!!deleteConfirmCliente}
-        title="Excluir cliente?"
-        onClose={() => setDeleteConfirmCliente(null)}
-        options={[
-          {
-            key: "confirmar",
-            label: "Sim, excluir",
-            Icon: Trash2,
-            danger: true,
-            onSelect: () => {
-              if (deleteConfirmCliente) deleteCliente(deleteConfirmCliente.id);
-            },
-          },
-          {
-            key: "cancelar",
-            label: "Cancelar",
-            Icon: X,
-            onSelect: () => {},
-          },
-        ]}
-      />
-
-      {/* Barra da Rede (modelo Doca). Some na conversa aberta, que tem o
-          próprio campo de mensagem embaixo. */}
-      {barraDoca && screen.type !== "chatThread" && (
-        <DocaBar
-          ativa={abaDoca}
-          naoLidas={unreadChats}
-          pedidos={requests.length}
-          usuarioNome={perfil?.nome_exibicao ?? usuario.nome}
-          usuarioFotoUrl={fotoPropria}
-          onIr={irPelaDoca}
-          onPublicar={() => setComposerOpen(true)}
-        />
-      )}
-    </div>
     </RedeTopoContext.Provider>
   );
 }
