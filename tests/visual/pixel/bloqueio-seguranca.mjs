@@ -245,7 +245,7 @@ for (const w of [390, 430])
     {
       const { ctx, p } = await abrir(w, md);
       await p.getByRole("button", { name: "Abrir Ajustes" }).first().click();
-      await p.getByText("Segurança e PIN").first().click();
+      // Ajustes estilo iPhone: o grupo Segurança está na própria lista.
       await p.getByText("Ativar PIN").first().click();
       // PinSetup (folha de baixo): 4 dígitos, duas vezes.
       for (let vez = 0; vez < 2; vez++)
@@ -257,7 +257,7 @@ for (const w of [390, 430])
           await p.waitForTimeout(60);
         }
       const ligou = await p
-        .getByText("Toque para desativar")
+        .getByText("Desligar PIN")
         .waitFor({ timeout: 10000 })
         .then(() => true)
         .catch(() => false);
@@ -266,7 +266,7 @@ for (const w of [390, 430])
         await ctx.close();
         continue;
       }
-      await p.getByText("Toque para desativar").click();
+      await p.getByText("Desligar PIN").click();
       const sheet = p.locator('[data-reauth="desligar-pin"]');
       await sheet.waitFor();
       await print(p, `ajustes-1-desligar-pede-conta-${suf}`);
@@ -275,7 +275,7 @@ for (const w of [390, 430])
       await p.locator("[data-reauth-erro]").waitFor();
       passo(
         `${suf} senha errada não desliga`,
-        await p.getByText("Toque para desativar").isVisible()
+        await p.getByText("Desligar PIN").isVisible()
       );
       await sheet.locator("[data-reauth-senha]").fill("senha123");
       await sheet.locator("[data-reauth-confirmar]").click();

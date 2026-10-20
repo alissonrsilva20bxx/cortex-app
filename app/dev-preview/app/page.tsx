@@ -778,6 +778,7 @@ export default function DevPreviewApp() {
             onCardStylesChange={() => {}}
             onChartPrefsChange={setChartPrefs}
             onClose={() => handleTabChange("home")}
+            onVerPlanos={() => setAbrirPlanos((n) => n + 1)}
             onOpenTour={() => {
               handleTabChange("home");
               setTourOpen(true);

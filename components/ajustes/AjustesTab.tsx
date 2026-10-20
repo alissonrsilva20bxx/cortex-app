@@ -6,22 +6,9 @@ import {
   Sun,
   Moon,
   BarChart2,
-  LayoutGrid,
-  Lock,
-  LockOpen,
-  LogOut,
-  ShieldCheck,
-  Cloud,
-  Timer,
-  Download,
-  Bell,
-  Smartphone,
+  PieChart,
   ChevronRight,
   ChevronLeft,
-  Palette,
-  Home,
-  Database,
-  Compass,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
@@ -30,7 +17,7 @@ import { PinSetup } from "@/components/pin/PinSetup";
 import { ReauthModal } from "@/components/pin/ReauthModal";
 import { limparReauthDaUrl, reauthAtual } from "@/lib/reauth";
 import type { MotivoReauth } from "@/lib/reauthRegras";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Switch } from "@/components/ui/Switch";
 import { NotificacoesSheet } from "@/components/notificacoes/NotificacoesSheet";
@@ -60,10 +47,6 @@ const DEFAULT_HOME_CARDS: HomeCardConfig = {
   objetivos: true,
   agenda: true,
 };
-const DEFAULT_CARD_STYLES: CardStyleConfig = {
-  nextJob: "standard",
-  financeSummary: "standard",
-};
 const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 interface Props {
@@ -74,116 +57,201 @@ interface Props {
   onHomeCardsChange: (c: HomeCardConfig) => void;
   onCardStylesChange: (c: CardStyleConfig) => void;
   onChartPrefsChange: (c: ChartPrefConfig) => void;
-  /** Redesign iOS quase nativo (wayfinder #122, ticket #124): Ajustes
-   * deixou de ser uma aba da BottomNav (agora só 5 destinos) e passou a
-   * abrir pelo avatar da Início — por isso precisa de uma saída própria
-   * de volta, que a barra (sempre visível, com "Início" alcançável) já
-   * cobria implicitamente antes. Só aparece na raiz de Ajustes: dentro de
-   * uma sub-página, o botão de voltar existente (closeSettingsPage) já
-   * volta pra raiz primeiro. */
+  /** Ajustes abre pelo avatar da Início (não é aba da barra): a seta do
+   * topo volta para a Início. */
   onClose: () => void;
   /** Reabre o tour guiado do app (lib/appTour.ts). */
   onOpenTour?: () => void;
+  /** Abre a tela de planos (a mesma da Início, AssinaturaNoApp). */
+  onVerPlanos?: () => void;
 }
 
-/** Um grupo de ajustes (rótulo + card único) -- a aparência do laboratório
- * (`SettingsScreen`/`SettingGroup`, `LaunchScreens.tsx:604-943`) é uma lista
- * única de grupos empilhados, sem abas internas, diferente da estrutura
- * anterior (3 abas via `SegmentedControl`). Helper só deste arquivo -- não é
- * um componente novo fora do whitelist da issue #37, que permite só
- * `AjustesTab.tsx`. */
-function SettingsGroup({
-  title,
+/**
+ * Ajustes no estilo do iPhone (gabarito: opção "iPhone clássico" de
+ * .lavish/config-estilos.html, mapa em AJUSTES-MAPA.md): uma lista só, em
+ * grupos, com o rótulo do grupo em cima, texto puro, o valor ou a chave à
+ * direita e "Sair da conta" por último. O que é uma chave só fica direto
+ * na lista (sem sub-página de um item); só a Aparência, com as 8 cores,
+ * abre uma página própria.
+ */
+function Grupo({
+  titulo,
+  rodape,
   children,
-  hidden = false,
 }: {
-  title: string;
+  titulo?: string;
+  /** Texto miúdo embaixo do grupo (como as notas do Ajustes do iPhone). */
+  rodape?: ReactNode;
   children: ReactNode;
-  hidden?: boolean;
 }) {
   return (
-    <section hidden={hidden}>
-      {title ? <p className="section-label mb-3">{title}</p> : null}
-      {children}
+    <section data-grupo-ajustes={titulo ?? ""}>
+      {titulo ? (
+        <h3
+          className="px-4"
+          style={{
+            marginBottom: 8,
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--accent-deep-2)",
+          }}
+        >
+          {titulo}
+        </h3>
+      ) : null}
+      <div
+        className="overflow-hidden"
+        style={{
+          borderRadius: "var(--radius-md)",
+          background: "var(--card-solid)",
+          border: "1px solid var(--border-color)",
+        }}
+      >
+        {children}
+      </div>
+      {rodape ? (
+        <div
+          className="px-4"
+          style={{
+            marginTop: 8,
+            fontSize: "12.5px",
+            lineHeight: 1.5,
+            color: "var(--text-muted)",
+          }}
+        >
+          {rodape}
+        </div>
+      ) : null}
     </section>
   );
 }
 
-/** Impede que o clique no `Switch` (que já dispara seu próprio `onChange`)
- * borbulhe até o `onClick` da linha inteira -- ver nota em cada uso abaixo. */
-function StopClickPropagation({ children }: { children: ReactNode }) {
-  return <span onClick={(e) => e.stopPropagation()}>{children}</span>;
-}
-
-type SettingsPage =
-  | "appearance"
-  | "security"
-  | "home"
-  | "notifications"
-  | "install"
-  | "data";
-
-function SettingsMenuRow({
-  icon,
+/** Uma linha da lista: o rótulo à esquerda e, à direita, o valor e a seta
+ * (quando abre algo) ou uma chave. A linha inteira é o alvo de toque. */
+function Linha({
   title,
   detail,
+  valor,
   onClick,
+  chave,
+  perigo = false,
+  destaque = false,
   last = false,
-  detailSuppressHydrationWarning = false,
+  valorSemHidratacao = false,
 }: {
-  icon: ReactNode;
   title: string;
+  /** Explicação curta embaixo do rótulo. */
   detail?: string;
-  onClick: () => void;
+  /** Valor atual, à direita (ex.: "Midnight", "Ativo"). */
+  valor?: ReactNode;
+  onClick?: () => void;
+  /** Linha com chave (Switch) à direita: tocar na linha também alterna. */
+  chave?: {
+    checked: boolean;
+    onChange: (v: boolean) => void;
+    disabled?: boolean;
+  };
+  perigo?: boolean;
+  destaque?: boolean;
   last?: boolean;
-  /** Só a linha de Aparência precisa disso -- ver comentário no call site. */
-  detailSuppressHydrationWarning?: boolean;
+  /** O valor depende do localStorage (tema/modo): o HTML do servidor não
+   * sabe, então o texto diverge por design no 1º paint. */
+  valorSemHidratacao?: boolean;
 }) {
+  const cor = perigo
+    ? "var(--danger)"
+    : destaque
+      ? "var(--accent-deep-2)"
+      : "var(--text)";
+  const conteudo = (
+    <>
+      <span className="min-w-0 flex-1 py-3 text-left">
+        <span
+          className="block"
+          style={{ fontSize: 15, fontWeight: 600, color: cor }}
+        >
+          {title}
+        </span>
+        {detail ? (
+          <span
+            className="mt-0.5 block"
+            style={{ fontSize: 12.5, color: "var(--text-muted)" }}
+          >
+            {detail}
+          </span>
+        ) : null}
+      </span>
+      {valor !== undefined ? (
+        <span
+          className="shrink-0 truncate"
+          style={{ fontSize: 14, color: "var(--text-muted)", maxWidth: "45%" }}
+          suppressHydrationWarning={valorSemHidratacao}
+        >
+          {valor}
+        </span>
+      ) : null}
+      {chave ? (
+        // O Switch já é um <button>: o toque nele não sobe até a linha,
+        // senão alternaria duas vezes.
+        <span onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={chave.checked}
+            onChange={chave.onChange}
+            disabled={chave.disabled}
+            ariaLabel={title}
+          />
+        </span>
+      ) : onClick && !perigo ? (
+        <ChevronRight
+          size={18}
+          className="shrink-0"
+          style={{ color: "var(--text-muted)" }}
+        />
+      ) : null}
+    </>
+  );
+  const estilo: React.CSSProperties = {
+    minHeight: 52,
+    gap: 10,
+    paddingLeft: 16,
+    paddingRight: 12,
+    boxShadow: last ? undefined : "inset 0 -1px 0 var(--border-color)",
+  };
+  if (chave) {
+    return (
+      <div
+        role="group"
+        aria-label={title}
+        className="flex w-full cursor-pointer items-center"
+        style={estilo}
+        onClick={() => !chave.disabled && chave.onChange(!chave.checked)}
+      >
+        {conteudo}
+      </div>
+    );
+  }
+  if (!onClick) {
+    return (
+      <div className="flex w-full items-center" style={estilo}>
+        {conteudo}
+      </div>
+    );
+  }
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3.5 px-4 text-left transition-colors"
-      style={{ minHeight: 64, color: "var(--text)" }}
+      className="flex w-full items-center transition-colors active:opacity-70"
+      style={estilo}
     >
-      <span
-        className="grid shrink-0 place-items-center rounded-xl"
-        style={{
-          width: 36,
-          height: 36,
-          color: "var(--accent)",
-          background: "rgb(var(--accent-rgb) / 0.11)",
-        }}
-      >
-        {icon}
-      </span>
-      <span
-        className="flex min-w-0 flex-1 items-center self-stretch"
-        style={{
-          borderBottom: last ? "none" : "1px solid var(--border-color)",
-        }}
-      >
-        <span className="min-w-0 flex-1 py-3">
-          <span className="block text-sm font-semibold">{title}</span>
-          {detail ? (
-            <span
-              className="mt-0.5 block truncate text-xs"
-              style={{ color: "var(--text-muted)" }}
-              suppressHydrationWarning={detailSuppressHydrationWarning}
-            >
-              {detail}
-            </span>
-          ) : null}
-        </span>
-        <ChevronRight
-          size={17}
-          className="shrink-0"
-          style={{ color: "var(--text-muted)" }}
-        />
-      </span>
+      {conteudo}
     </button>
   );
 }
+
+type SettingsPage = "appearance";
 
 export function AjustesTab({
   userId,
@@ -191,12 +259,16 @@ export function AjustesTab({
   onSignOut,
   onPinHashChange,
   onHomeCardsChange,
-  onCardStylesChange,
   onChartPrefsChange,
   onClose,
   onOpenTour,
+  onVerPlanos,
 }: Props) {
   const { theme, setTheme, mode, setMode } = useTheme();
+  // Tema e modo vêm do localStorage: o servidor não os conhece. Até montar,
+  // nada que dependa deles é desenhado (sem erro de hidratação).
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
   const [pinEnabled, setPinEnabled] = useState(false);
   const [pinSetupOpen, setPinSetupOpen] = useState(false);
   const [homeCards, setHomeCardsState] =
@@ -204,6 +276,10 @@ export function AjustesTab({
   const [chartPrefs, setChartPrefsState] =
     useState<ChartPrefConfig>(DEFAULT_CHART_PREFS);
   const [exporting, setExporting] = useState(false);
+  const [exportAviso, setExportAviso] = useState<{
+    ok: boolean;
+    texto: string;
+  } | null>(null);
   const [assinatura, setAssinatura] = useState<{
     trialStartedAt: string;
     status: AssinaturaStatus;
@@ -218,6 +294,7 @@ export function AjustesTab({
   const [pushError, setPushError] = useState<string | null>(null);
   const [notifSheetOpen, setNotifSheetOpen] = useState(false);
   const [installSheetOpen, setInstallSheetOpen] = useState(false);
+  const [sairAberto, setSairAberto] = useState(false);
   const [standalone, setStandalone] = useState(false);
   const [activePage, setActivePage] = useState<SettingsPage | null>(null);
   const pageHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -258,9 +335,6 @@ export function AjustesTab({
     // que não tinha nada a ver com Ajustes (ex.: fechando o visualizador
     // de foto do perfil da Rede, TabPanel mantém as duas abas montadas)
     // também zerava `activePage` por reagir a QUALQUER popstate global.
-    // Achado na revisão de padrões da ticket #139 (redesign iOS/#122):
-    // risco pré-existente aqui, exposto por um 2º consumidor do mesmo
-    // padrão de histórico (ProfilePostsGrid.tsx) coexistir montado.
     const handleHistoryBack = () => {
       if (!window.history.state?.jobappSettingsPage) setActivePage(null);
     };
@@ -275,12 +349,6 @@ export function AjustesTab({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [activePage]);
-
-  useEffect(() => {
-    if (!standalone || activePage !== "install") return;
-    if (window.history.state?.jobappSettingsPage) window.history.back();
-    else setActivePage(null);
-  }, [activePage, standalone]);
 
   const estadoAssinatura = assinatura
     ? computeAssinatura(assinatura.trialStartedAt, assinatura.status)
@@ -312,8 +380,9 @@ export function AjustesTab({
     else if (motivo === "trocar-pin") setPinSetupOpen(true);
   }
 
-  // Volta do Google pedida aqui: abre Segurança e PIN e, se a confirmação
-  // valer, termina a ação. O ref segura a resposta no remonte do StrictMode.
+  // Volta do Google pedida aqui: o grupo Segurança já está na lista e, se
+  // a confirmação valer, a ação termina. O ref segura a resposta no
+  // remonte do StrictMode.
   const retornoGoogle = useRef<{
     motivo: MotivoReauth;
     ok: Promise<boolean>;
@@ -324,7 +393,7 @@ export function AjustesTab({
       const motivo = reauth.motivoPendente();
       if (motivo !== "desligar-pin" && motivo !== "trocar-pin") return;
       retornoGoogle.current = { motivo, ok: reauth.retornoDoGoogle(motivo) };
-      setActivePage("security");
+      setActivePage(null);
     }
     const { motivo, ok } = retornoGoogle.current;
     let vivo = true;
@@ -392,8 +461,16 @@ export function AjustesTab({
   async function handleExport() {
     if (exporting) return;
     setExporting(true);
+    setExportAviso(null);
     try {
       await exportarDadosCSV(userId);
+      setExportAviso({ ok: true, texto: "Pronto: o arquivo foi baixado." });
+    } catch (err) {
+      console.error("[Ajustes exportar]", err);
+      setExportAviso({
+        ok: false,
+        texto: "Não foi possível exportar agora. Tente de novo.",
+      });
     } finally {
       setExporting(false);
     }
@@ -411,6 +488,9 @@ export function AjustesTab({
     onChartPrefsChange(next);
   }
 
+  // Os cards da Início que têm chave aqui. "Independência Financeira" saiu:
+  // ela gravava `financeSummary`, mas nenhuma tela lia essa preferência (era
+  // uma chave que não mudava nada).
   const homeCardItems: {
     key: keyof HomeCardConfig;
     label: string;
@@ -420,11 +500,6 @@ export function AjustesTab({
       key: "nextJob",
       label: "Próximo atendimento",
       desc: "Card com próximo agendamento",
-    },
-    {
-      key: "financeSummary",
-      label: "Independência Financeira",
-      desc: "Visão de receitas e despesas",
     },
     {
       key: "objetivos",
@@ -440,11 +515,6 @@ export function AjustesTab({
 
   const pageTitles: Record<SettingsPage, string> = {
     appearance: "Aparência",
-    security: "Segurança e PIN",
-    home: "Tela inicial",
-    notifications: "Notificações",
-    install: "Instalar JobApp",
-    data: "Assinatura e dados",
   };
 
   function openSettingsPage(page: SettingsPage) {
@@ -461,8 +531,27 @@ export function AjustesTab({
     else setActivePage(null);
   }
 
+  // "Você já construiu R$ X em N atendimentos" só quando há o que mostrar
+  // (como a tela de planos da Início): nunca "R$ 0 em 0".
+  const concluidos = jobs.filter((j) => j.status === "concluído").length;
+  const construido = totalEarnings(jobs);
+
+  const assinaturaValor =
+    estadoAssinatura?.status === "trial"
+      ? `Teste grátis · ${estadoAssinatura.diasRestantes} ${estadoAssinatura.diasRestantes === 1 ? "dia" : "dias"}`
+      : estadoAssinatura?.status === "vencida"
+        ? "Teste terminou"
+        : estadoAssinatura?.status === "ativa"
+          ? "Ativa"
+          : undefined;
+
+  const linhasApp = [
+    onOpenTour ? "tour" : null,
+    !standalone ? "instalar" : null,
+  ].filter(Boolean);
+
   return (
-    <div className="pb-6">
+    <div className="pb-6" data-ajustes="">
       <div className="mb-6 flex min-h-11 items-center gap-2">
         {activePage ? (
           <button
@@ -490,7 +579,7 @@ export function AjustesTab({
           tabIndex={activePage ? -1 : undefined}
           className="font-extrabold"
           style={{
-            fontSize: activePage ? "22px" : "26px",
+            fontSize: activePage ? "22px" : "28px",
             letterSpacing: "-0.03em",
             color: "var(--text)",
           }}
@@ -500,618 +589,373 @@ export function AjustesTab({
       </div>
 
       {!activePage ? (
-        <div className="space-y-6">
-          <SettingsGroup title="Conta">
-            <GlassCard radius="md" className="overflow-hidden p-0">
-              <SettingsMenuRow
-                icon={<Lock size={17} />}
-                title="Segurança e PIN"
-                detail={pinEnabled ? "PIN ativo" : "PIN desativado"}
-                onClick={() => openSettingsPage("security")}
-              />
-              <SettingsMenuRow
-                icon={<Database size={17} />}
-                title="Assinatura e dados"
-                detail={
-                  estadoAssinatura?.status === "ativa"
-                    ? "Assinatura ativa"
-                    : "Nuvem, privacidade e exportação"
-                }
-                onClick={() => openSettingsPage("data")}
-                last
-              />
-            </GlassCard>
-          </SettingsGroup>
-
-          <SettingsGroup title="Preferências">
-            <GlassCard radius="md" className="overflow-hidden p-0">
-              <SettingsMenuRow
-                icon={<Palette size={17} />}
-                title="Aparência"
-                detail={`${THEME_LABELS[theme]} · ${mode === "dark" ? "Escuro" : "Claro"}`}
-                onClick={() => openSettingsPage("appearance")}
-                // O SSR não tem acesso a localStorage e usa o default do app
-                // (app/layout.tsx), então em qualquer conta que já trocou de
-                // tema o texto real do 1º paint do cliente diverge do HTML
-                // do servidor por design -- mesmo padrão já aceito no
-                // `<html suppressHydrationWarning>` de app/layout.tsx, só
-                // que aplicado aqui no texto específico que expõe o nome do
-                // tema, não a linha inteira. Achado 2026-09-04.
-                detailSuppressHydrationWarning
-              />
-              <SettingsMenuRow
-                icon={<Home size={17} />}
-                title="Tela inicial"
-                detail="Cards e gráficos"
-                onClick={() => openSettingsPage("home")}
-                last={!pushSupported && !pushNeedsInstall}
-              />
-              {pushSupported ? (
-                <SettingsMenuRow
-                  icon={<Bell size={17} />}
-                  title="Notificações"
-                  detail={pushEnabled ? "Ativadas" : "Desativadas"}
-                  onClick={() => openSettingsPage("notifications")}
-                  last
-                />
-              ) : pushNeedsInstall ? (
-                <SettingsMenuRow
-                  icon={<Bell size={17} />}
-                  title="Notificações"
-                  detail="Instale o app para ativar"
-                  onClick={() => setInstallSheetOpen(true)}
-                  last
+        <div className="space-y-7">
+          {assinaturaValor || onVerPlanos ? (
+            <Grupo
+              titulo="Conta"
+              rodape={
+                estadoAssinatura?.status === "vencida" && concluidos > 0
+                  ? `Você já construiu ${formatBRL(construido)} em ${concluidos} ${concluidos === 1 ? "atendimento" : "atendimentos"}. Nada disso se perde: exporte seus dados quando quiser.`
+                  : estadoAssinatura?.status === "trial"
+                    ? "Sem cartão, sem compromisso. Continue no seu ritmo."
+                    : undefined
+              }
+            >
+              {assinaturaValor ? (
+                <Linha
+                  title="Assinatura"
+                  valor={assinaturaValor}
+                  last={!onVerPlanos || estadoAssinatura?.status === "ativa"}
                 />
               ) : null}
-            </GlassCard>
-          </SettingsGroup>
-
-          {onOpenTour || !standalone ? (
-            <SettingsGroup title="Aplicativo">
-              <GlassCard radius="md" className="overflow-hidden p-0">
-                {onOpenTour ? (
-                  <SettingsMenuRow
-                    icon={<Compass size={17} />}
-                    title="Ver tour do app"
-                    detail="Onde fica cada coisa, passo a passo"
-                    onClick={onOpenTour}
-                    last={standalone}
-                  />
-                ) : null}
-                {!standalone ? (
-                  <SettingsMenuRow
-                    icon={<Smartphone size={17} />}
-                    title="Instalar JobApp"
-                    detail="Acesso rápido e funcionamento offline"
-                    onClick={() => openSettingsPage("install")}
-                    last
-                  />
-                ) : null}
-              </GlassCard>
-            </SettingsGroup>
+              {onVerPlanos && estadoAssinatura?.status !== "ativa" ? (
+                <Linha title="Ver planos" destaque onClick={onVerPlanos} last />
+              ) : null}
+            </Grupo>
           ) : null}
-        </div>
-      ) : null}
 
-      <div
-        className="space-y-6"
-        style={{ display: activePage ? undefined : "none" }}
-      >
-        <SettingsGroup title="" hidden={activePage !== "appearance"}>
-          <GlassCard radius="md" className="p-4 space-y-4">
-            <div>
-              <p
-                className="text-xs font-semibold mb-3"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Tema
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {THEMES.map((t) => {
-                  const active = theme === t;
-                  const accent = THEME_ACCENTS[t];
-                  return (
-                    <button
-                      key={t}
-                      onClick={() => handleThemeChange(t)}
-                      className="flex flex-col items-center gap-1.5 py-3 transition-all duration-200"
-                      style={{
-                        borderRadius: "var(--radius-md)",
-                        background: active ? `${accent}18` : "var(--surface)",
-                        border: `1px solid ${active ? `${accent}55` : "var(--border-color)"}`,
-                        boxShadow: active ? `0 0 16px ${accent}22` : "none",
-                      }}
-                    >
-                      <div
-                        className="rounded-full"
-                        style={{
-                          width: 28,
-                          height: 28,
-                          background: accent,
-                          boxShadow: active
-                            ? `0 0 14px ${accent}90`
-                            : `0 0 6px ${accent}40`,
-                        }}
-                      />
-                      <span
-                        className="font-semibold text-[10px]"
-                        style={{ color: active ? accent : "var(--text-muted)" }}
-                      >
-                        {THEME_LABELS[t]}
-                      </span>
-                      {active && (
-                        <div
-                          className="flex items-center justify-center rounded-full"
-                          style={{
-                            width: 16,
-                            height: 16,
-                            background: accent,
-                            boxShadow: `0 0 8px ${accent}70`,
-                            marginTop: -2,
-                          }}
-                        >
-                          <Check size={9} color="white" strokeWidth={3} />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          <Grupo
+            titulo="Segurança"
+            rodape="O PIN tranca a tela neste aparelho: quem pega o telefone não abre seu espaço sem o código. Ele protege o acesso, não substitui a senha da sua conta."
+          >
+            {pinEnabled ? (
+              <>
+                <Linha title="PIN" valor="Ativo" />
+                {/* Trocar e desligar pedem a conta antes (ReauthModal). */}
+                <Linha title="Trocar PIN" onClick={abrirPinSetup} />
+                <Linha
+                  title="Desligar PIN"
+                  perigo
+                  onClick={pedirDesligarPin}
+                  last
+                />
+              </>
+            ) : (
+              <Linha
+                title="Ativar PIN"
+                detail="Código de 4 dígitos para abrir o app"
+                onClick={abrirPinSetup}
+                last
+              />
+            )}
+          </Grupo>
 
+          <Grupo titulo="Aparência">
+            <Linha
+              title="Tema"
+              valor={montado ? THEME_LABELS[theme] : ""}
+              valorSemHidratacao
+              onClick={() => openSettingsPage("appearance")}
+            />
+            <Linha
+              title="Modo"
+              valor={montado ? (mode === "dark" ? "Escuro" : "Claro") : ""}
+              valorSemHidratacao
+              onClick={() => openSettingsPage("appearance")}
+              last
+            />
+          </Grupo>
+
+          <Grupo titulo="Tela inicial">
+            {homeCardItems.map(({ key, label, desc }) => {
+              const on = homeCards[key] ?? true;
+              return (
+                <Linha
+                  key={key}
+                  title={label}
+                  detail={desc}
+                  chave={{
+                    checked: on,
+                    onChange: (next) =>
+                      updateHomeCards({ ...homeCards, [key]: next }),
+                  }}
+                />
+              );
+            })}
             <div
-              style={{
-                borderTop: "1px solid var(--border-color)",
-                paddingTop: 16,
-              }}
+              className="flex items-center"
+              style={{ minHeight: 56, gap: 10, padding: "8px 12px 8px 16px" }}
             >
-              <p
-                className="text-xs font-semibold mb-2"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Modo
-              </p>
-              <SegmentedControl<"dark" | "light">
-                value={mode}
-                onChange={setMode}
+              <span className="min-w-0 flex-1">
+                <span
+                  className="block"
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: "var(--text)",
+                  }}
+                >
+                  Gráfico do resumo
+                </span>
+                <span
+                  className="mt-0.5 block"
+                  style={{ fontSize: 12.5, color: "var(--text-muted)" }}
+                >
+                  No resumo da Agenda
+                </span>
+              </span>
+              <SegmentedControl<"bar" | "donut">
+                size="sm"
+                value={chartPrefs.jobs}
+                onChange={(id) => updateChartPrefs({ ...chartPrefs, jobs: id })}
                 options={[
                   {
-                    id: "dark",
+                    id: "bar",
                     label: (
                       <span className="flex items-center justify-center gap-1.5">
-                        <Moon size={14} /> Escuro
+                        <BarChart2 size={14} /> Barras
                       </span>
                     ),
                   },
                   {
-                    id: "light",
+                    id: "donut",
                     label: (
                       <span className="flex items-center justify-center gap-1.5">
-                        <Sun size={14} /> Claro
+                        <PieChart size={14} /> Pizza
                       </span>
                     ),
                   },
                 ]}
               />
             </div>
-          </GlassCard>
-        </SettingsGroup>
+          </Grupo>
 
-        <SettingsGroup title="" hidden={activePage !== "security"}>
-          <div className="space-y-3">
-            <GlassCard
-              radius="md"
-              onClick={pinEnabled ? pedirDesligarPin : abrirPinSetup}
-              className="flex items-center gap-3.5 px-4 py-4"
+          {/* Notificações — opt-in, nunca spam (§7.3). Só com o navegador
+              que suporta; no iPhone fora do app, aponta a instalação. */}
+          {pushSupported ? (
+            <Grupo
+              titulo="Notificações"
+              rodape={
+                pushError ? (
+                  <span style={{ color: "var(--danger)" }}>{pushError}</span>
+                ) : undefined
+              }
             >
-              <div
-                className="flex items-center justify-center rounded-xl shrink-0"
-                style={{
-                  width: 36,
-                  height: 36,
-                  background: "rgb(var(--accent-rgb) / 0.12)",
+              <Linha
+                title="Lembretes de atendimento"
+                detail="Atendimento chegando perto, cliente que costuma voltar"
+                chave={{
+                  checked: pushEnabled,
+                  onChange: (v) => {
+                    if (!pushBusy) void handleTogglePush(v);
+                  },
+                  disabled: pushBusy,
                 }}
-              >
-                {pinEnabled ? (
-                  <Lock size={16} style={{ color: "var(--accent)" }} />
-                ) : (
-                  <LockOpen size={16} style={{ color: "var(--text-muted)" }} />
-                )}
-              </div>
-              <div className="text-left">
-                <p
-                  className="font-semibold"
-                  style={{ fontSize: "14px", color: "var(--text)" }}
-                >
-                  {pinEnabled ? "PIN ativo" : "Ativar PIN"}
-                </p>
-                <p
-                  className="mt-0.5 font-medium"
-                  style={{ fontSize: "12px", color: "var(--text-muted)" }}
-                >
-                  {pinEnabled
-                    ? "Toque para desativar"
-                    : "Proteger o acesso com código de 4 dígitos"}
-                </p>
-              </div>
-            </GlassCard>
-
-            {/* O que o PIN faz — honesto, sem prometer o que não faz (§5.3) */}
-            <GlassCard radius="md" className="flex items-start gap-3 p-4">
-              <ShieldCheck
-                size={18}
-                className="shrink-0 mt-0.5"
-                style={{ color: "var(--accent)" }}
+                last
               />
-              <p
-                className="text-xs leading-relaxed"
-                style={{ color: "var(--text-muted)" }}
-              >
-                O PIN tranca a tela neste aparelho — quem pega o telefone não
-                abre seu espaço sem o código. Ele protege o acesso, não
-                substitui a senha da sua conta.
-              </p>
-            </GlassCard>
-          </div>
-        </SettingsGroup>
+            </Grupo>
+          ) : pushNeedsInstall ? (
+            <Grupo titulo="Notificações">
+              <Linha
+                title="Lembretes de atendimento"
+                detail="Instale o app para ativar"
+                onClick={() => setInstallSheetOpen(true)}
+                last
+              />
+            </Grupo>
+          ) : null}
 
-        <SettingsGroup title="" hidden={activePage !== "home"}>
-          <div className="space-y-2">
-            {homeCardItems.map(({ key, label, desc }) => {
-              const on = homeCards[key] ?? true;
-              return (
-                <GlassCard
-                  key={key}
-                  radius="md"
-                  as="div"
-                  // Achado P1 #8 da auditoria de T10: o Switch (42×24px) era
-                  // o único alvo de toque da linha -- tocar no card inteiro
-                  // (ícone/rótulo/descrição) agora também alterna, não só o
-                  // retângulo pequeno do switch. `as="div"` evita HTML
-                  // inválido (botão dentro de botão, já que o Switch em si
-                  // já é um `<button>`); StopClickPropagation impede que um
-                  // toque direto no switch dispare o toggle duas vezes
-                  // (uma pelo próprio switch, outra pelo card).
-                  onClick={() => updateHomeCards({ ...homeCards, [key]: !on })}
-                  className="flex items-center gap-3 pl-4 pr-2 py-2 cursor-pointer"
-                >
-                  <LayoutGrid
-                    size={16}
+          {/* Exportar — sempre disponível, mesmo com assinatura vencida
+              (§7.4: confiança > lock-in). */}
+          <Grupo
+            titulo="Dados e privacidade"
+            rodape={
+              <>
+                {exportAviso ? (
+                  <span
+                    role="status"
+                    className="block"
                     style={{
-                      color: on ? "var(--accent)" : "var(--text-muted)",
-                      flexShrink: 0,
+                      marginBottom: 6,
+                      fontWeight: 700,
+                      color: exportAviso.ok
+                        ? "var(--success)"
+                        : "var(--danger)",
                     }}
-                  />
-                  <div className="flex-1 text-left">
-                    <p
-                      className="font-semibold text-sm"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {label}
-                    </p>
-                    <p
-                      className="text-xs mt-0.5"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {desc}
-                    </p>
-                  </div>
-                  <StopClickPropagation>
-                    <Switch
-                      checked={on}
-                      onChange={(next) =>
-                        updateHomeCards({ ...homeCards, [key]: next })
-                      }
-                      ariaLabel={label}
-                    />
-                  </StopClickPropagation>
-                </GlassCard>
+                  >
+                    {exportAviso.texto}
+                  </span>
+                ) : null}
+                Seus dados ficam guardados na nuvem, na sua conta, e sincronizam
+                entre seus aparelhos. Cada conta enxerga só os próprios dados,
+                criptografados em repouso no servidor. Ainda não há criptografia
+                ponta a ponta: preferimos ser honestos a prometer mais do que
+                entregamos.
+              </>
+            }
+          >
+            <Linha
+              title={exporting ? "Exportando…" : "Exportar meus dados"}
+              detail="CSV com atendimentos, despesas e receitas"
+              onClick={handleExport}
+              last
+            />
+          </Grupo>
+
+          {linhasApp.length > 0 ? (
+            <Grupo titulo="Aplicativo">
+              {onOpenTour ? (
+                <Linha
+                  title="Ver tour do app"
+                  detail="Onde fica cada coisa, passo a passo"
+                  onClick={onOpenTour}
+                  last={standalone}
+                />
+              ) : null}
+              {/* Instalar: abre a folha direto, num toque só. */}
+              {!standalone ? (
+                <Linha
+                  title="Instalar JobApp"
+                  detail={
+                    pushNeedsInstall
+                      ? "Abre mais rápido, funciona offline e libera as notificações"
+                      : "Acesso rápido e funcionamento offline"
+                  }
+                  onClick={() => setInstallSheetOpen(true)}
+                  last
+                />
+              ) : null}
+            </Grupo>
+          ) : null}
+
+          <Grupo>
+            <Linha
+              title="Sair da conta"
+              perigo
+              onClick={() => setSairAberto(true)}
+              last
+            />
+          </Grupo>
+        </div>
+      ) : null}
+
+      <div
+        className="space-y-6"
+        style={{ display: activePage === "appearance" ? undefined : "none" }}
+      >
+        <Grupo titulo="Tema">
+          <div className="grid grid-cols-4 gap-2 p-3">
+            {THEMES.map((t) => {
+              const active = montado && theme === t;
+              const accent = THEME_ACCENTS[t];
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => handleThemeChange(t)}
+                  aria-pressed={active}
+                  aria-label={`Tema ${THEME_LABELS[t]}`}
+                  className="flex flex-col items-center gap-1.5 transition-all duration-200"
+                  style={{
+                    minHeight: 76,
+                    padding: "10px 4px",
+                    borderRadius: 14,
+                    background: active ? "var(--accent-tint)" : "transparent",
+                    border: `1px solid ${active ? "var(--accent)" : "var(--border-color)"}`,
+                  }}
+                >
+                  <span
+                    className="relative grid place-items-center rounded-full"
+                    style={{ width: 30, height: 30, background: accent }}
+                  >
+                    {active ? (
+                      <Check size={16} color="#fff" strokeWidth={3} />
+                    ) : null}
+                  </span>
+                  <span
+                    className="font-semibold"
+                    style={{
+                      fontSize: 12,
+                      color: active ? "var(--text)" : "var(--text-muted)",
+                    }}
+                  >
+                    {THEME_LABELS[t]}
+                  </span>
+                </button>
               );
             })}
-
-            <GlassCard radius="md" className="p-4 space-y-4">
-              <div>
-                <p
-                  className="text-xs font-semibold mb-2"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Gráfico — Jobs
-                </p>
-                <SegmentedControl<"bar" | "donut">
-                  size="sm"
-                  fullWidth
-                  value={chartPrefs.jobs}
-                  onChange={(id) =>
-                    updateChartPrefs({ ...chartPrefs, jobs: id })
-                  }
-                  options={[
-                    {
-                      id: "bar",
-                      label: (
-                        <span className="flex items-center justify-center gap-1.5">
-                          <BarChart2 size={14} /> Barras
-                        </span>
-                      ),
-                    },
-                    {
-                      id: "donut",
-                      label: (
-                        <span className="flex items-center justify-center gap-1.5">
-                          <BarChart2 size={14} /> Pizza
-                        </span>
-                      ),
-                    },
-                  ]}
-                />
-              </div>
-            </GlassCard>
           </div>
-        </SettingsGroup>
+        </Grupo>
 
-        {/* Notificações — opt-in, nunca spam (§7.3). Só aparece quando o
-            navegador suporta; sem culpa se ela recusar a permissão. */}
-        {pushSupported && (
-          <SettingsGroup title="" hidden={activePage !== "notifications"}>
-            <GlassCard
-              radius="md"
-              as="div"
-              onClick={() => !pushBusy && handleTogglePush(!pushEnabled)}
-              className="flex items-center gap-3.5 pl-4 pr-2 py-2 cursor-pointer"
-            >
-              <div
-                className="flex items-center justify-center rounded-xl shrink-0"
-                style={{
-                  width: 36,
-                  height: 36,
-                  background: "rgb(var(--accent-rgb) / 0.12)",
-                }}
-              >
-                <Bell size={16} style={{ color: "var(--accent)" }} />
-              </div>
-              <div className="flex-1 text-left">
-                <p
-                  className="font-semibold"
-                  style={{ fontSize: "14px", color: "var(--text)" }}
-                >
-                  Lembretes
-                </p>
-                <p
-                  className="mt-0.5 font-medium"
-                  style={{ fontSize: "12px", color: "var(--text-muted)" }}
-                >
-                  Atendimento chegando perto, cliente que costuma voltar
-                </p>
-                {pushError && (
-                  <p
-                    className="mt-1 font-medium"
-                    style={{ fontSize: "11px", color: "var(--danger)" }}
-                  >
-                    {pushError}
-                  </p>
-                )}
-              </div>
-              <StopClickPropagation>
-                <Switch
-                  checked={pushEnabled}
-                  onChange={handleTogglePush}
-                  disabled={pushBusy}
-                  ariaLabel="Notificações"
-                />
-              </StopClickPropagation>
-            </GlassCard>
-          </SettingsGroup>
-        )}
-
-        {/* Instalar app — abre mais rápido e, no iPhone, é pré-requisito
-            real pra notificação funcionar (limite da Apple, não nosso). */}
-        {!standalone && (
-          <SettingsGroup title="" hidden={activePage !== "install"}>
-            <GlassCard
-              radius="md"
-              onClick={() => setInstallSheetOpen(true)}
-              className="flex items-center gap-3.5 px-4 py-4"
-            >
-              <div
-                className="flex items-center justify-center rounded-xl shrink-0"
-                style={{
-                  width: 36,
-                  height: 36,
-                  background: "rgb(var(--accent-rgb) / 0.12)",
-                }}
-              >
-                <Smartphone size={16} style={{ color: "var(--accent)" }} />
-              </div>
-              <div className="text-left">
-                <p
-                  className="font-semibold"
-                  style={{ fontSize: "14px", color: "var(--text)" }}
-                >
-                  Instalar app
-                </p>
-                <p
-                  className="mt-0.5 font-medium"
-                  style={{ fontSize: "12px", color: "var(--text-muted)" }}
-                >
-                  {pushNeedsInstall
-                    ? "Abre mais rápido, funciona offline e libera as notificações"
-                    : "Abre mais rápido e funciona offline"}
-                </p>
-              </div>
-            </GlassCard>
-          </SettingsGroup>
-        )}
-
-        <SettingsGroup title="" hidden={activePage !== "data"}>
-          <div className="space-y-3">
-            {/* Assinatura — estado do teste, tom sereno, sem culpa nem
-                urgência falsa (§7.1). Nada aqui bloqueia o app. */}
-            {estadoAssinatura && (
-              <GlassCard radius="md" className="flex items-start gap-3 p-4">
-                <Timer
-                  size={18}
-                  className="shrink-0 mt-0.5"
-                  style={{ color: "var(--accent)" }}
-                />
-                <div>
-                  {estadoAssinatura.status === "trial" && (
-                    <>
-                      <p
-                        className="font-semibold text-sm"
-                        style={{ color: "var(--text)" }}
-                      >
-                        Teste grátis — {estadoAssinatura.diasRestantes}{" "}
-                        {estadoAssinatura.diasRestantes === 1
-                          ? "dia restante"
-                          : "dias restantes"}
-                      </p>
-                      <p
-                        className="text-xs mt-1 leading-relaxed"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        Sem cartão, sem compromisso. Continue no seu ritmo.
-                      </p>
-                    </>
-                  )}
-                  {estadoAssinatura.status === "vencida" && (
-                    <>
-                      <p
-                        className="font-semibold text-sm"
-                        style={{ color: "var(--text)" }}
-                      >
-                        Seu teste terminou
-                      </p>
-                      <p
-                        className="text-xs mt-1 leading-relaxed"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        Você já construiu {formatBRL(totalEarnings(jobs))} em{" "}
-                        {jobs.filter((j) => j.status === "concluído").length}{" "}
-                        atendimentos. Nada disso se perde — exporte seus dados
-                        sempre que quiser aqui embaixo.
-                      </p>
-                    </>
-                  )}
-                  {estadoAssinatura.status === "ativa" && (
-                    <p
-                      className="font-semibold text-sm"
-                      style={{ color: "var(--text)" }}
-                    >
-                      Assinatura ativa
-                    </p>
-                  )}
-                </div>
-              </GlassCard>
-            )}
-
-            {/* Onde os dados ficam — honesto */}
-            <GlassCard radius="md" className="flex items-start gap-3 p-4">
-              <Cloud
-                size={18}
-                className="shrink-0 mt-0.5"
-                style={{ color: "var(--accent)" }}
-              />
-              <div>
-                <p
-                  className="font-semibold text-sm"
-                  style={{ color: "var(--text)" }}
-                >
-                  Salvo na sua conta
-                </p>
-                <p
-                  className="text-xs mt-1 leading-relaxed"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Seus dados e arquivos são guardados na nuvem, na sua conta, e
-                  sincronizam sozinhos entre seus aparelhos.
-                </p>
-              </div>
-            </GlassCard>
-
-            {/* Proteção real — e o limite dela, com honestidade (§5.3) */}
-            <GlassCard radius="md" className="p-4">
-              <p
-                className="text-xs leading-relaxed"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Cada conta enxerga só os próprios dados, e tudo fica
-                criptografado em repouso no servidor. Ainda não há criptografia
-                ponta a ponta — preferimos ser honestos sobre isso a prometer
-                mais do que entregamos.
-              </p>
-            </GlassCard>
-
-            {/* Exportar — sempre disponível, mesmo com assinatura vencida
-                (§7.4: confiança > lock-in). Não depende do estado acima. */}
-            <GlassCard
-              radius="md"
-              onClick={handleExport}
-              className="flex items-center gap-3.5 px-4 py-4"
-            >
-              <div
-                className="flex items-center justify-center rounded-xl shrink-0"
-                style={{
-                  width: 36,
-                  height: 36,
-                  background: "rgb(var(--accent-rgb) / 0.12)",
-                }}
-              >
-                <Download size={16} style={{ color: "var(--accent)" }} />
-              </div>
-              <div className="text-left">
-                <p
-                  className="font-semibold"
-                  style={{ fontSize: "14px", color: "var(--text)" }}
-                >
-                  {exporting ? "Exportando…" : "Exportar meus dados"}
-                </p>
-                <p
-                  className="mt-0.5 font-medium"
-                  style={{ fontSize: "12px", color: "var(--text-muted)" }}
-                >
-                  Baixa um CSV com atendimentos, despesas e receitas
-                </p>
-              </div>
-            </GlassCard>
+        <Grupo titulo="Modo">
+          <div className="p-3">
+            <SegmentedControl<"dark" | "light">
+              value={mode}
+              onChange={setMode}
+              options={[
+                {
+                  id: "dark",
+                  label: (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Moon size={14} /> Escuro
+                    </span>
+                  ),
+                },
+                {
+                  id: "light",
+                  label: (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Sun size={14} /> Claro
+                    </span>
+                  ),
+                },
+              ]}
+            />
           </div>
-        </SettingsGroup>
+        </Grupo>
       </div>
 
-      {/* FOOTER: LOGOUT - Sempre visível */}
-      <div
-        hidden={activePage !== null}
-        style={{
-          borderTop: "1px solid rgb(var(--accent-rgb) / 0.1)",
-          marginTop: "32px",
-          paddingTop: "20px",
-        }}
+      {/* Sair pede confirmação: a linha fica no fim da lista, ao alcance do
+          polegar, e antes saía na hora. */}
+      <BottomSheet
+        open={sairAberto}
+        onClose={() => setSairAberto(false)}
+        title="Sair da conta?"
       >
-        <button
-          onClick={onSignOut}
-          className="flex items-center gap-3.5 w-full px-4 py-4 transition-opacity active:opacity-70"
-          style={{
-            borderRadius: "var(--radius-md)",
-            background: "rgb(var(--danger-rgb) / 0.07)",
-            border: "1px solid rgb(var(--danger-rgb) / 0.18)",
-          }}
-        >
-          <div
-            className="flex items-center justify-center rounded-xl shrink-0"
+        <div className="px-5 py-5">
+          <p
             style={{
-              width: 36,
-              height: 36,
-              background: "rgb(var(--danger-rgb) / 0.1)",
+              fontSize: 14.5,
+              lineHeight: 1.5,
+              color: "var(--text-2)",
+              marginBottom: 16,
             }}
           >
-            <LogOut size={16} style={{ color: "var(--danger)" }} />
+            Para voltar, você vai entrar de novo com seu e-mail e senha. Seus
+            dados continuam guardados na sua conta.
+          </p>
+          <div className="flex flex-col" style={{ gap: 10 }}>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="w-full font-bold active:opacity-80"
+              style={{
+                minHeight: 50,
+                borderRadius: 16,
+                background: "var(--danger)",
+                color: "#fff",
+                fontSize: 15,
+              }}
+            >
+              Sair
+            </button>
+            <button
+              type="button"
+              onClick={() => setSairAberto(false)}
+              className="w-full font-bold active:opacity-80"
+              style={{
+                minHeight: 50,
+                borderRadius: 16,
+                background: "var(--surface-2)",
+                color: "var(--text)",
+                fontSize: 15,
+              }}
+            >
+              Cancelar
+            </button>
           </div>
-          <span
-            className="font-semibold"
-            style={{ fontSize: "14px", color: "var(--danger)" }}
-          >
-            Sair da conta
-          </span>
-        </button>
-      </div>
+        </div>
+      </BottomSheet>
 
       <ReauthModal
         open={reauthMotivo !== null}

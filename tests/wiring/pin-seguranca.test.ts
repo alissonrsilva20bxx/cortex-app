@@ -123,7 +123,13 @@ describe("Regra 1: 'Esqueci o PIN' pede a conta e cria um PIN novo", () => {
 
 describe("Regra 2: desligar ou trocar o PIN nos Ajustes pede a conta", () => {
   it("tocar no PIN ativo pede a confirmação; não desliga direto", () => {
-    expect(ajustes).toMatch(/pinEnabled \? pedirDesligarPin : abrirPinSetup/);
+    // Ajustes estilo iPhone: com o PIN ativo, "Trocar PIN" e "Desligar
+    // PIN" são duas linhas (antes, o único toque desligava). As duas
+    // passam pela conta: trocar por abrirPinSetup, desligar por
+    // pedirDesligarPin.
+    expect(ajustes).toMatch(
+      /\{pinEnabled \? \([\s\S]*?<Linha title="Trocar PIN" onClick=\{abrirPinSetup\} \/>[\s\S]*?title="Desligar PIN"[\s\S]*?onClick=\{pedirDesligarPin\}[\s\S]*?\) : \([\s\S]*?title="Ativar PIN"[\s\S]*?onClick=\{abrirPinSetup\}/
+    );
     expect(ajustes).toMatch(
       /function pedirDesligarPin\(\) \{\s*setReauthMotivo\("desligar-pin"\);/
     );

@@ -43,8 +43,14 @@ describe("§7-P0-2 — PIN (ativar/desativar/PinSetup) é real", () => {
   // Regra de segurança da tela de bloqueio (#217): desligar ou trocar o PIN
   // pede a senha da conta ou o Google antes (ReauthModal); o detalhe está
   // em tests/wiring/pin-seguranca.test.ts.
-  it("o item de PIN alterna entre pedir confirmação para desligar e abrir o PinSetup real conforme o estado atual", () => {
-    expect(src).toMatch(/pinEnabled \? pedirDesligarPin : abrirPinSetup/);
+  it("o grupo Segurança troca as linhas conforme o estado: Ativar PIN, ou Trocar PIN e Desligar PIN", () => {
+    expect(src).toMatch(/title="Trocar PIN" onClick=\{abrirPinSetup\}/);
+    expect(src).toMatch(
+      /title="Desligar PIN"[\s\S]{0,120}onClick=\{pedirDesligarPin\}/
+    );
+    expect(src).toMatch(
+      /title="Ativar PIN"[\s\S]{0,120}onClick=\{abrirPinSetup\}/
+    );
   });
 });
 

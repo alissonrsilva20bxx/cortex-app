@@ -769,6 +769,7 @@ export default function Page() {
                 onCardStylesChange={setCardStyles}
                 onChartPrefsChange={setChartPrefs}
                 onClose={() => handleTabChange("home")}
+                onVerPlanos={() => setReabrirPlanos((n) => n + 1)}
                 onOpenTour={() => {
                   handleTabChange("home");
                   setTourOpen(true);
