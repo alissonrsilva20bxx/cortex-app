@@ -9,6 +9,7 @@ import {
   VALOR_CARD,
 } from "./pecasMockup";
 import { aguardandoResposta } from "@/lib/atendimentos/status";
+import { useAgora } from "@/lib/useAgora";
 import { AconteceuCard } from "./AconteceuCard";
 import { formatHora, proximoAtendimento, rotuloDiaCurto } from "./inicioAgenda";
 
@@ -35,10 +36,19 @@ interface Props {
  * se fosse o próximo.
  */
 export function NextJobCard({ userId, jobs, aoMudar }: Props) {
-  if (aguardandoResposta(jobs).length > 0) {
-    return <AconteceuCard userId={userId} jobs={jobs} aoMudar={aoMudar} />;
+  // Relógio de 1 minuto: passou o horário, o card vira "Aconteceu?" sozinho.
+  const agora = useAgora();
+  if (aguardandoResposta(jobs, agora).length > 0) {
+    return (
+      <AconteceuCard
+        userId={userId}
+        jobs={jobs}
+        agora={agora}
+        aoMudar={aoMudar}
+      />
+    );
   }
-  const job = proximoAtendimento(jobs);
+  const job = proximoAtendimento(jobs, agora);
 
   return (
     <InicioCard style={{ ...CARD_PEQUENO, minHeight: "118px" }}>

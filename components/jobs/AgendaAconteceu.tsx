@@ -1,6 +1,7 @@
 "use client";
 
 import { aguardandoResposta } from "@/lib/atendimentos/status";
+import { useAgora } from "@/lib/useAgora";
 import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 import { formatDiaCurto, formatHora } from "./agendaSemana";
@@ -29,7 +30,8 @@ export function AgendaAconteceu({
   onStatusMudou,
 }: Props) {
   const { mudar, salvando, erro } = useMudarStatus(userId, onStatusMudou);
-  const pendentes = aguardandoResposta(jobs);
+  const agora = useAgora();
+  const pendentes = aguardandoResposta(jobs, agora);
   if (pendentes.length === 0) return null;
 
   return (

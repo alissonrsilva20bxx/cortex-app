@@ -7,6 +7,7 @@ import { StatusBadge } from "./StatusBadge";
 import { formatDayBadge } from "@/components/home/NextJobCard";
 import { formatMoeda } from "@/lib/finance";
 import { podeConcluir, podeConfirmar } from "@/lib/atendimentos/status";
+import { useAgora } from "@/lib/useAgora";
 import type { Job } from "@/lib/types";
 import { BOTOES_STATUS } from "./textosAgenda";
 import { useMudarStatus } from "./useMudarStatus";
@@ -71,8 +72,10 @@ export function JobDetailSheet({
     if (await mudar(alvo, novo)) onClose();
   }
 
-  const confirmar = job ? podeConfirmar(job) : false;
-  const concluir = job ? podeConcluir(job) : false;
+  // Relógio só com o detalhe aberto: o horário chega e os botões trocam.
+  const agora = useAgora(!!job);
+  const confirmar = job ? podeConfirmar(job, agora) : false;
+  const concluir = job ? podeConcluir(job, agora) : false;
   const temAcaoDeStatus = confirmar || concluir;
 
   return (

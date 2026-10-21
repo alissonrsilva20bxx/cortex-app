@@ -20,10 +20,10 @@ const agenda = read("components/jobs/JobsTab.tsx");
 describe("JobDetailSheet: botões do fluxo de status", () => {
   it("usa as regras do fluxo (Confirmar antes do horário; Concluir e Não aconteceu a partir dele)", () => {
     expect(detalhe).toContain(
-      "const confirmar = job ? podeConfirmar(job) : false;"
+      "const confirmar = job ? podeConfirmar(job, agora) : false;"
     );
     expect(detalhe).toContain(
-      "const concluir = job ? podeConcluir(job) : false;"
+      "const concluir = job ? podeConcluir(job, agora) : false;"
     );
   });
 

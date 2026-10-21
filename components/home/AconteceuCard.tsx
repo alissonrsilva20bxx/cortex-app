@@ -12,6 +12,8 @@ interface Props {
   userId: string;
   jobs: Job[];
   /** O status mudou: a página recarrega Agenda, Financeiro e Início. */
+  /** A hora de agora (o relógio do NextJobCard). */
+  agora: Date;
   aoMudar: () => void;
 }
 
@@ -21,9 +23,9 @@ interface Props {
  * aconteceu". Atendimento que já passou não pode aparecer como se fosse o
  * próximo. Sem nenhum pendente, não renderiza nada.
  */
-export function AconteceuCard({ userId, jobs, aoMudar }: Props) {
+export function AconteceuCard({ userId, jobs, agora, aoMudar }: Props) {
   const { mudar, salvando, erro } = useMudarStatus(userId, aoMudar);
-  const pendentes = aguardandoResposta(jobs);
+  const pendentes = aguardandoResposta(jobs, agora);
   const job = pendentes[0];
   if (!job) return null;
 
