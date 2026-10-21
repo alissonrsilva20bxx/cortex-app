@@ -74,9 +74,9 @@ export function AgendaAcoes({
             type="button"
             onClick={onClick}
             disabled={!onClick}
-            // Sem esmaecer o desabilitado: o mockup mostra os 4 iguais (pixel
-            // do mockup, ver o PR). O motivo vem na linha de baixo.
-            className="flex flex-col items-center active:opacity-70"
+            // Desabilitado esmaece (opacity-50, como os outros botões do app);
+            // o motivo vem na linha de baixo.
+            className="flex flex-col items-center active:opacity-70 disabled:opacity-50"
             style={{
               gap: "8px",
               fontSize: "11px",

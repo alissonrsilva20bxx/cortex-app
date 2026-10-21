@@ -60,9 +60,12 @@ describe("AgendaAcoes: o botão Descanso", () => {
       new RegExp(`<button[^>]*>(?:(?!</button>).)*${rotulo}</button>`)
     )![0];
 
+  // O atributo `disabled`, não a classe `disabled:opacity-50`.
+  const desabilitado = (botao: string) => /\sdisabled(=|\s|>)/.test(botao);
+
   it("normal: rótulo Descanso, habilitado, sem motivo, e não existe Bloquear", () => {
     const h = html("normal");
-    expect(botaoDescanso(h, "Descanso")).not.toContain("disabled");
+    expect(desabilitado(botaoDescanso(h, "Descanso"))).toBe(false);
     expect(h).not.toContain("data-descanso-motivo");
     expect(h).not.toContain("Bloquear");
     expect(h).not.toContain("Hoje é descanso");
@@ -70,13 +73,24 @@ describe("AgendaAcoes: o botão Descanso", () => {
 
   it("já registrado: rótulo Descansou, desabilitado, com o motivo", () => {
     const h = html("feito");
-    expect(botaoDescanso(h, "Descansou")).toContain("disabled");
+    expect(desabilitado(botaoDescanso(h, "Descansou"))).toBe(true);
     expect(h).toContain("Um descanso por dia");
+  });
+
+  it("o círculo desabilitado esmaece (opacity-50) e o habilitado não", () => {
+    expect(botaoDescanso(html("comAtendimento"), "Descanso")).toContain(
+      "disabled:opacity-50"
+    );
+    expect(botaoDescanso(html("feito"), "Descansou")).toContain(
+      "disabled:opacity-50"
+    );
+    // A classe só age com o atributo disabled: o habilitado não leva o atributo.
+    expect(desabilitado(botaoDescanso(html("normal"), "Descanso"))).toBe(false);
   });
 
   it("dia com atendimento: continua Descanso, desabilitado e com o motivo visível", () => {
     const h = html("comAtendimento");
-    expect(botaoDescanso(h, "Descanso")).toContain("disabled");
+    expect(desabilitado(botaoDescanso(h, "Descanso"))).toBe(true);
     expect(h).toContain("Hoje você tem atendimento");
   });
 });
