@@ -6,7 +6,12 @@ import { join } from "node:path";
 import { HeroCard } from "@/components/home/HeroCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { FinanceiroHeroCard } from "@/components/financeiro/FinanceiroHeroCard";
-import { calcEarnings, formatMoeda, monthProjection } from "@/lib/finance";
+import {
+  calcEarnings,
+  formatMoeda,
+  monthProjection,
+  monthTicketMedio,
+} from "@/lib/finance";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 
 /**
@@ -135,5 +140,47 @@ describe("meta do mês: um número só", () => {
     expect(page.match(/receitas=\{receitas\}/g)?.length).toBeGreaterThanOrEqual(
       2
     );
+  });
+});
+
+describe("ticket médio: só atendimentos", () => {
+  const dois: Job[] = [
+    { ...job, id: "t1", valor: 100 },
+    { ...job, id: "t2", valor: 300 },
+  ];
+  const grande: ReceitaAvulsa = { ...avulsa, id: "r2", valor: 5000 };
+
+  it("soma dos concluídos ÷ quantidade de concluídos", () => {
+    expect(monthTicketMedio(dois)).toBe(200);
+  });
+
+  it("agendado, confirmado e cancelado não entram", () => {
+    const outros: Job[] = [
+      ...dois,
+      { ...job, id: "t3", valor: 900, status: "agendado" },
+      { ...job, id: "t4", valor: 900, status: "cancelado" },
+    ];
+    expect(monthTicketMedio(outros)).toBe(200);
+  });
+
+  it("sem concluído, não há ticket", () => {
+    expect(monthTicketMedio([])).toBeNull();
+  });
+
+  it("uma entrada avulsa grande NÃO muda o card Ticket médio do Financeiro", () => {
+    const entrou = calcEarnings(dois, [grande], "mes");
+    const t = texto(
+      createElement(FinanceiroHeroCard, {
+        jobs: dois,
+        receitas: [grande],
+        despesas: [],
+        totalEntradaMes: entrou,
+        totalDespMes: 0,
+        saldo: entrou,
+        metas,
+      })
+    );
+    expect(t).toContain(`Ticket médio ${brl(200)} por atendimento`);
+    expect(t).not.toContain(brl(Math.round(entrou / 2)));
   });
 });

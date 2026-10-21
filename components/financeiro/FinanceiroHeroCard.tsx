@@ -6,7 +6,7 @@ import {
   calcEarnings,
   monthExpenses,
   monthMeta,
-  monthConcludedCount,
+  monthTicketMedio,
   monthPaidJobsCount,
 } from "@/lib/finance";
 import type { Job, Despesa, Meta, ReceitaAvulsa } from "@/lib/types";
@@ -35,7 +35,8 @@ interface Props {
  *  - Meta: o faturamento do mês (atendimentos concluídos + entradas
  *    avulsas, `calcEarnings`, o mesmo número do Início e da aba Metas)
  *    sobre a meta;
- *  - Ticket médio: o que entrou no mês ÷ atendimentos concluídos no mês;
+ *  - Ticket médio: soma dos atendimentos concluídos no mês ÷ quantidade
+ *    deles (`monthTicketMedio`), sem as entradas avulsas;
  *  - "N lançamentos" de Entradas: atendimentos cujo dinheiro entrou no mês
  *    (`diaDoDinheiro`) + receitas avulsas do mês.
  *
@@ -123,14 +124,13 @@ export function FinanceiroHeroCard({
       d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
     );
   };
-  const atendimentosMes = monthConcludedCount(jobs, now);
   const qtdEntradas =
     monthPaidJobsCount(jobs, now) +
     receitas.filter((r) => noMes(r.data)).length;
   const qtdSaidas = despesas.filter((d) => noMes(d.data)).length;
-  // Ticket médio = o que entrou no mês ÷ atendimentos concluídos no mês.
-  const ticketMedio =
-    atendimentosMes > 0 ? Math.round(totalEntradaMes / atendimentosMes) : null;
+  // Ticket médio = soma dos atendimentos concluídos ÷ quantidade de
+  // concluídos. A entrada avulsa não é atendimento e não infla a média.
+  const ticketMedio = monthTicketMedio(jobs, now);
 
   const movimento = totalEntradaMes + totalDespMes;
   const sobe = variacaoPct !== null && variacaoPct >= 0;

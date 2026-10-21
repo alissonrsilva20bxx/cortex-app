@@ -6,6 +6,7 @@ import {
   monthEarnings,
   monthExpenses,
   monthPaidJobsCount,
+  monthTicketMedio,
 } from "../../lib/finance";
 import { progressoMeta } from "../../components/financeiro/progressoMeta";
 import { buildMovements } from "../../components/financeiro/movimentos";
@@ -455,9 +456,30 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
       `${Math.round(progressoMeta(faturamento, metaMes))}%`,
       `${brl(faturamento)} de ${brl(metaMes)}`,
     ]).toEqual(mockMeta);
+    // O mockup calcula o ticket com tudo que entrou (R$ 177). O app agora
+    // divide só os atendimentos pela quantidade deles (sem a entrada
+    // avulsa); a diferença decidida está no teste logo abaixo.
     expect(brl(Math.round(entrou / monthConcludedCount(jobs)))).toBe(
       doMockup(/>Ticket médio<\/span><span[^>]*>([^<]+)</)
     );
+  });
+
+  it("o ticket do app é só atendimentos: não sobe com a entrada avulsa da semente", () => {
+    const { jobs, receitas } = seed();
+    const ticket = monthTicketMedio(jobs)!;
+    const doMes = jobs.filter((j) => {
+      const d = new Date(`${j.data}T00:00:00`);
+      const hoje = new Date();
+      return (
+        j.status === "concluído" &&
+        d.getMonth() === hoje.getMonth() &&
+        d.getFullYear() === hoje.getFullYear()
+      );
+    });
+    expect(ticket).toBe(
+      Math.round(doMes.reduce((s, j) => s + j.valor, 0) / doMes.length)
+    );
+    expect(receitas.length).toBeGreaterThan(0);
   });
 
   it("com o dinheiro adiantado da semente, o card Meta soma R$ 100 a mais que o mockup", () => {

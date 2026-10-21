@@ -158,15 +158,12 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     }
   });
 
-  // Regras revistas por ordem do operador (pixel do Financeiro, #209): o
-  // ticket médio é o que entrou no mês ÷ atendimentos concluídos no mês.
-  it("FinanceiroHeroCard: o ticket médio é o que entrou ÷ atendimentos do mês", () => {
-    expect(hero).toContain(
-      "const atendimentosMes = monthConcludedCount(jobs, now);"
-    );
-    expect(hero).toMatch(
-      /atendimentosMes > 0\s*\?\s*Math\.round\(totalEntradaMes \/ atendimentosMes\)\s*:\s*null/
-    );
+  // Ticket médio (auditoria de 21/10/2026): a soma dos atendimentos
+  // concluídos ÷ quantidade deles. A entrada avulsa não é atendimento e não
+  // infla a média (antes era o que entrou, com avulsas, ÷ atendimentos).
+  it("FinanceiroHeroCard: o ticket médio é a soma dos atendimentos concluídos ÷ quantidade, sem avulsas", () => {
+    expect(hero).toContain("const ticketMedio = monthTicketMedio(jobs, now);");
+    expect(hero).not.toMatch(/totalEntradaMes \/ /);
     expect(hero).toContain("{formatMoeda(ticketMedio)}");
   });
 
@@ -200,7 +197,9 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
       'const faturamento = calcEarnings(jobs, receitas, "mes", now);'
     );
     expect(hero).toContain("progressoMeta(faturamento, metaMes)");
-    expect(hero).toContain("{formatMoeda(faturamento)} de {formatMoeda(metaMes)}");
+    expect(hero).toContain(
+      "{formatMoeda(faturamento)} de {formatMoeda(metaMes)}"
+    );
     expect(hero).toContain("{Math.round(metaPct)}%");
     const metas = semComentarios(read("components/financeiro/MetasTab.tsx"));
     expect(metas).toContain(

@@ -90,6 +90,17 @@ export function monthConcludedCount(jobs: Job[], ref = new Date()): number {
   return concludedInMonth(jobs, ref.getFullYear(), ref.getMonth()).length;
 }
 
+/** Ticket médio do mês: a soma dos atendimentos concluídos ÷ quantos foram.
+ * Só atendimento: entrada avulsa não é atendimento e não entra na conta.
+ * `null` sem nenhum concluído (não há média de zero atendimentos). */
+export function monthTicketMedio(jobs: Job[], ref = new Date()): number | null {
+  const concluidos = concludedInMonth(jobs, ref.getFullYear(), ref.getMonth());
+  if (concluidos.length === 0) return null;
+  return Math.round(
+    concluidos.reduce((s, j) => s + j.valor, 0) / concluidos.length
+  );
+}
+
 /** Quanto ela já construiu este mês (jobs concluídos). */
 export function monthEarnings(jobs: Job[], ref = new Date()): number {
   return earningsInMonth(jobs, ref.getFullYear(), ref.getMonth());
