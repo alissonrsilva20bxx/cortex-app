@@ -13,6 +13,7 @@ import { CofreCard } from "@/components/home/CofreCard";
 import { SemanaSection } from "@/components/home/SemanaSection";
 import { ProximosAtendimentos } from "@/components/home/ProximosAtendimentos";
 import { JornadaCard } from "@/components/home/JornadaCard";
+import { useTemDesejoAtivo } from "@/lib/desejo/useTemDesejoAtivo";
 import { destinoDoProximoPasso } from "@/components/jornada/progresso";
 import { JornadaScreen } from "@/components/jornada/JornadaScreen";
 import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
@@ -171,6 +172,7 @@ export default function DevPreviewApp() {
       ? { ...MOCK_APP_USUARIO, nome: NOME_DO_PROTOTIPO }
       : MOCK_APP_USUARIO;
   });
+  const temDesejo = useTemDesejoAtivo(usuario.id);
 
   // Só afeta as duas chamadas reais do Gate da Rede (solicitar-beta,
   // convites) — anexa um bearer token de uma conta de teste local
@@ -650,6 +652,7 @@ export default function DevPreviewApp() {
                 </div>
                 <JornadaCard
                   userId={usuario.id}
+                  temDesejo={temDesejo}
                   onAbrir={() => setJornadaAberta(true)}
                   onProximoPasso={(acao) => {
                     const destino = destinoDoProximoPasso(acao);

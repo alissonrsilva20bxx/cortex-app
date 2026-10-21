@@ -144,7 +144,7 @@ describe("app/page.tsx monta a Jornada no app autenticado", () => {
     expect(card).toBeGreaterThan(principal);
     expect(pequenos).toBeGreaterThan(card);
     expect(page).toMatch(
-      /\{usuario && \(\s*<JornadaCard\s+userId=\{usuario\.id\}\s+onAbrir=\{\(\) => setJornadaAberta\(true\)\}/
+      /\{usuario && \(\s*<JornadaCard\s+userId=\{usuario\.id\}\s+temDesejo=\{temDesejo\}\s+onAbrir=\{\(\) => setJornadaAberta\(true\)\}/
     );
   });
 

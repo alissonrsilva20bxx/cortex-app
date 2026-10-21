@@ -508,7 +508,15 @@ describe("Pixel card da Jornada — semana e próximo passo (ordem do operador)"
 
   it("o card olha se há Desejo ativo antes de escolher o passo", () => {
     expect(CARD).toContain("proximoPasso(estado, { temDesejo })");
-    expect(CARD).toContain("desejoPrincipal(itens) !== null");
+    expect(CARD).toContain("temDesejo: boolean;");
+    for (const pagina of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
+      const src = read(pagina);
+      expect(src).toContain("useTemDesejoAtivo(");
+      expect(src).toContain("temDesejo={temDesejo}");
+    }
+    expect(read("lib/desejo/useTemDesejoAtivo.ts")).toContain(
+      "desejoPrincipal(itens) !== null"
+    );
   });
 
   it("o próximo passo é o primeiro que ela não fez hoje (nextKey do protótipo)", () => {

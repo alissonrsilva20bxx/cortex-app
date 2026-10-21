@@ -18,6 +18,7 @@ import { DesejoCard } from "@/components/home/DesejoCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { CofreCard } from "@/components/home/CofreCard";
 import { JornadaCard } from "@/components/home/JornadaCard";
+import { useTemDesejoAtivo } from "@/lib/desejo/useTemDesejoAtivo";
 import { destinoDoProximoPasso } from "@/components/jornada/progresso";
 import { JornadaScreen } from "@/components/jornada/JornadaScreen";
 import { ComemoracaoHost } from "@/components/jornada/celebracao/ComemoracaoHost";
@@ -111,6 +112,7 @@ export default function Page() {
   const [redeReselect, setRedeReselect] = useState(0);
   const [fabOpen, setFabOpen] = useState(false);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const temDesejo = useTemDesejoAtivo(usuario?.id);
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
@@ -651,6 +653,7 @@ export default function Page() {
                     {usuario && (
                       <JornadaCard
                         userId={usuario.id}
+                        temDesejo={temDesejo}
                         onAbrir={() => setJornadaAberta(true)}
                         onProximoPasso={(acao) => {
                           const destino = destinoDoProximoPasso(acao);
