@@ -112,7 +112,8 @@ describe("JobForm: fiação", () => {
   });
 
   it("o select só oferece os status permitidos e data/hora passam por setHorario", () => {
-    expect(form).toContain("statusOferecidos.includes(o.valor)");
+    for (const s of ["confirmado", "concluído", "cancelado"])
+      expect(form).toContain(`statusOferecidos.includes("${s}")`);
     expect(form).toContain('setHorario("data", e.target.value)');
     expect(form).toContain('setHorario("hora", e.target.value)');
   });

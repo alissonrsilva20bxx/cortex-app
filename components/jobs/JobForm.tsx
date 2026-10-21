@@ -59,13 +59,6 @@ interface Props {
   onSaved: () => void;
 }
 
-const OPCOES_STATUS: { valor: JobStatus; rotulo: string }[] = [
-  { valor: "agendado", rotulo: "Agendado" },
-  { valor: "confirmado", rotulo: "Confirmado" },
-  { valor: "concluído", rotulo: "Concluído" },
-  { valor: "cancelado", rotulo: "Cancelado" },
-];
-
 const inputStyle: React.CSSProperties = {
   background: "var(--surface)",
   border: "1px solid var(--border-color)",
@@ -333,12 +326,15 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
               value={form.status}
               onChange={(e) => set("status", e.target.value as JobStatus)}
             >
-              {OPCOES_STATUS.filter((o) => statusOferecidos.includes(o.valor)).map(
-                (o) => (
-                  <option key={o.valor} value={o.valor}>
-                    {o.rotulo}
-                  </option>
-                )
+              <option value="agendado">Agendado</option>
+              {statusOferecidos.includes("confirmado") && (
+                <option value="confirmado">Confirmado</option>
+              )}
+              {statusOferecidos.includes("concluído") && (
+                <option value="concluído">Concluído</option>
+              )}
+              {statusOferecidos.includes("cancelado") && (
+                <option value="cancelado">Cancelado</option>
               )}
             </select>
           </div>
