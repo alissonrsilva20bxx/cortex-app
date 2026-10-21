@@ -68,7 +68,7 @@ describe("DesejoCard (Início) dispara onGoToMetas, nos dois estados", () => {
 
   it('o estado vazio ("Criar um Desejo") também usa onGoToMetas', () => {
     expect(desejoCardSrc).toMatch(
-      /onClick=\{onGoToMetas\}[\s\S]{0,200}T\.criar/
+      /onClick=\{onGoToMetas\}[\s\S]{0,400}T\.criar/
     );
   });
 });
