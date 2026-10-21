@@ -1,4 +1,4 @@
-// npm run teste-banco: roda só tests/rede e exige o Supabase local de teste.
+// npm run teste-banco: roda só os testes de banco (tests/rede e o fluxo do Desejo) e exige o Supabase local de teste.
 import { config } from "dotenv";
 import { spawnSync } from "node:child_process";
 
@@ -12,7 +12,7 @@ if (!process.env.SUPABASE_TEST_URL) {
   process.exit(1);
 }
 
-const r = spawnSync("npx", ["vitest", "run", "tests/rede", ...process.argv.slice(2)], {
+const r = spawnSync("npx", ["vitest", "run", "tests/rede", "tests/desejo/desejo.fluxo.test.ts", ...process.argv.slice(2)], {
   stdio: "inherit",
   shell: true,
 });
