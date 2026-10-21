@@ -20,6 +20,6 @@ Só o que o ambiente não mostra. Regras de código estão em `CODING_STANDARDS.
 
 ## Ponteiros
 
-- Termos do domínio: `GLOSSARY.md` (nesta branch ainda se chama `CONTEXT.md`).
+- Termos do domínio: `GLOSSARY.md`.
 - Roteiro de pré-teste e o que os testes não provam: `docs/pre-teste.md`.
 - Julgamento de código e tela: `CODING_STANDARDS.md`.
