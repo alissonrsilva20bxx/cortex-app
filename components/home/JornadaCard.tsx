@@ -1,6 +1,10 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { supabase } from "@/lib/supabase";
+import { listarWishlistItems } from "@/lib/rede/wishlist";
+import { desejoPrincipal } from "@/lib/desejo/desejo";
+import { useAoMudarDesejos } from "@/lib/desejo/eventos";
 import { useJornada } from "@/components/jornada/useJornada";
 import {
   FaiscaCheia,
@@ -181,6 +185,26 @@ const LINHA: CSSProperties = {
 };
 const FORTE: CSSProperties = { color: "var(--t-ink)" };
 
+/** Ela tem um Desejo ativo (o mesmo "principal" do card Desejo)? Enquanto
+ * carrega, ou se a leitura falha, vale `true`: o passo só é pulado quando
+ * se sabe que não há Desejo. */
+function useTemDesejoAtivo(userId: string): boolean {
+  const [tem, setTem] = useState(true);
+  const carregar = useCallback(async () => {
+    try {
+      const itens = await listarWishlistItems(supabase, userId);
+      setTem(desejoPrincipal(itens) !== null);
+    } catch (e) {
+      console.error("[JornadaCard] desejo:", e);
+    }
+  }, [userId]);
+  useEffect(() => {
+    void carregar();
+  }, [carregar]);
+  useAoMudarDesejos(carregar);
+  return tem;
+}
+
 /**
  * Card "Sua Jornada" no Início (J12, #162), no desenho do protótipo
  * aprovado: estágio, Glow e quanto falta, os dias fortes da semana e o
@@ -196,6 +220,7 @@ const FORTE: CSSProperties = { color: "var(--t-ink)" };
  */
 export function JornadaCard({ userId, onAbrir, onProximoPasso }: Props) {
   const { estado } = useJornada(userId);
+  const temDesejo = useTemDesejoAtivo(userId);
   if (!estado) return null;
 
   const capitulo = estado.capitulo;
@@ -203,7 +228,7 @@ export function JornadaCard({ userId, onAbrir, onProximoPasso }: Props) {
   const dias = diasFortesDeTres(contadorDaSemana(estado, "dias_fortes"));
   const bolinhas = bolinhasDaSemana(estado);
   const hoje = indiceDeHojeNaSemana(estado);
-  const passo = proximoPasso(estado);
+  const passo = proximoPasso(estado, { temDesejo });
 
   return (
     <div

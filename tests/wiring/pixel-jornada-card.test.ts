@@ -490,6 +490,27 @@ describe("Pixel card da Jornada — semana e próximo passo (ordem do operador)"
     });
   });
 
+  it("sem Desejo ativo, o próximo passo pula guardar_meta (nada para guardar)", () => {
+    const sem = { temDesejo: false };
+    const base = { feitasHoje: {} } as unknown as EstadoJornada;
+    expect(proximoPasso(base, sem)).toBe("comprovante_cofre");
+    expect(
+      proximoPasso(
+        {
+          ...base,
+          feitasHoje: { comprovante_cofre: 1 },
+        } as unknown as EstadoJornada,
+        sem
+      )
+    ).toBe("planejar");
+    expect(proximoPasso(base, { temDesejo: true })).toBe("guardar_meta");
+  });
+
+  it("o card olha se há Desejo ativo antes de escolher o passo", () => {
+    expect(CARD).toContain("proximoPasso(estado, { temDesejo })");
+    expect(CARD).toContain("desejoPrincipal(itens) !== null");
+  });
+
   it("o próximo passo é o primeiro que ela não fez hoje (nextKey do protótipo)", () => {
     const base = { feitasHoje: {} } as unknown as EstadoJornada;
     expect(proximoPasso(base)).toBe("guardar_meta");

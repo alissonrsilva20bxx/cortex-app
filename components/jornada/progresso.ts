@@ -129,11 +129,17 @@ export function indiceDeHoje(hoje: Date): number {
  * O "Próximo passo" do card do Início (protótipo: `nextKey()`): a primeira
  * ação de ORDEM_DO_PROXIMO_PASSO que ela ainda não fez hoje (`S.done`; quem
  * bateu o limite do dia também já fez). `null` = hoje ela já cuidou de
- * tudo. Lê `feitasHoje` do servidor (0038).
+ * tudo. Lê `feitasHoje` do servidor (0038). Sem Desejo ativo
+ * (`temDesejo: false`), "guardar_meta" é pulado: ela não tem onde guardar.
  */
-export function proximoPasso(estado: EstadoJornada): AcaoDoProximoPasso | null {
-  for (const acao of ORDEM_DO_PROXIMO_PASSO)
+export function proximoPasso(
+  estado: EstadoJornada,
+  { temDesejo = true }: { temDesejo?: boolean } = {}
+): AcaoDoProximoPasso | null {
+  for (const acao of ORDEM_DO_PROXIMO_PASSO) {
+    if (acao === "guardar_meta" && !temDesejo) continue;
     if (!estado.feitasHoje?.[acao]) return acao;
+  }
   return null;
 }
 
