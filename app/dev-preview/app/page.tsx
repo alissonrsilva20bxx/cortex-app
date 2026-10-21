@@ -401,46 +401,48 @@ export default function DevPreviewApp() {
       supabase.from("jobs").select("*").order("data").order("hora"),
       supabase.from("metas").select("*").eq("user_id", usuario.id),
       supabase.from("receitas_avulsas").select("*").eq("user_id", usuario.id),
-    ]).then(([{ data: jobsData }, { data: metasData }, { data: receitasData }]) => {
-      if (receitasData) {
-        setReceitas(
-          (receitasData as Record<string, unknown>[]).map((r) => ({
-            id: r.id as string,
-            descricao: r.descricao as string,
-            valor: r.valor as number,
-            categoria: r.categoria as string,
-            data: r.data as string,
-            criadoEm: r.criado_em as string,
-          }))
-        );
+    ]).then(
+      ([{ data: jobsData }, { data: metasData }, { data: receitasData }]) => {
+        if (receitasData) {
+          setReceitas(
+            (receitasData as Record<string, unknown>[]).map((r) => ({
+              id: r.id as string,
+              descricao: r.descricao as string,
+              valor: r.valor as number,
+              categoria: r.categoria as string,
+              data: r.data as string,
+              criadoEm: r.criado_em as string,
+            }))
+          );
+        }
+        if (jobsData) {
+          setJobs(
+            (jobsData as Record<string, unknown>[]).map((j) => ({
+              id: j.id as string,
+              clienteNome: j.cliente_nome as string,
+              data: j.data as string,
+              hora: j.hora as string,
+              valor: j.valor as number,
+              modalidade: j.modalidade as Job["modalidade"],
+              local: (j.local as string | null) ?? undefined,
+              status: j.status as Job["status"],
+              observacoes: (j.observacoes as string | null) ?? undefined,
+              criadoEm: j.criado_em as string,
+              pagoEm: (j.pago_em as string | null | undefined) ?? null,
+            }))
+          );
+        }
+        if (metasData) {
+          setMetas(
+            (metasData as Record<string, unknown>[]).map((m) => ({
+              periodo: m.periodo as Meta["periodo"],
+              valorAlvo: m.valor_alvo as number,
+            }))
+          );
+        }
+        setDataLoaded(true);
       }
-      if (jobsData) {
-        setJobs(
-          (jobsData as Record<string, unknown>[]).map((j) => ({
-            id: j.id as string,
-            clienteNome: j.cliente_nome as string,
-            data: j.data as string,
-            hora: j.hora as string,
-            valor: j.valor as number,
-            modalidade: j.modalidade as Job["modalidade"],
-            local: (j.local as string | null) ?? undefined,
-            status: j.status as Job["status"],
-            observacoes: (j.observacoes as string | null) ?? undefined,
-            criadoEm: j.criado_em as string,
-            pagoEm: (j.pago_em as string | null | undefined) ?? null,
-          }))
-        );
-      }
-      if (metasData) {
-        setMetas(
-          (metasData as Record<string, unknown>[]).map((m) => ({
-            periodo: m.periodo as Meta["periodo"],
-            valorAlvo: m.valor_alvo as number,
-          }))
-        );
-      }
-      setDataLoaded(true);
-    });
+    );
   }, [locked, jobsRefreshKey, financeiroRefreshKey, usuario.id]);
 
   useEffect(() => {
@@ -633,11 +635,11 @@ export default function DevPreviewApp() {
                 resposta: largura total logo abaixo do cumprimento, para os
                 botões ficarem acima da pílula na primeira vista. */}
             <AconteceuCard
-                userId={usuario.id}
-                jobs={jobs}
-                aoMudar={recarregarAposAtendimento}
-                aoVerAgenda={() => handleTabChange("jobs")}
-              />
+              userId={usuario.id}
+              jobs={jobs}
+              aoMudar={recarregarAposAtendimento}
+              aoVerAgenda={() => handleTabChange("jobs")}
+            />
             {/* Grade de 2 colunas do mockup; o card principal ocupa as duas. Com
     quantidade ímpar de cards pequenos (um deles desligado em Ajustes,
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
@@ -676,9 +678,7 @@ export default function DevPreviewApp() {
                   }}
                 />
               </div>
-              {homeCards.nextJob && (
-                    <NextJobCard jobs={jobs} />
-                  )}
+              {homeCards.nextJob && <NextJobCard jobs={jobs} />}
               {(homeCards.objetivos ?? true) && (
                 <DesejoCard
                   userId={usuario.id}
@@ -720,7 +720,7 @@ export default function DevPreviewApp() {
             {/* Convite de instalação — dispensável, nunca compete com o
                 card principal pela atenção (por isso vem por último). */}
             <InstallBanner />
-                <EspacoDaPilula />
+            <EspacoDaPilula />
           </div>
         </TabPanel>
 

@@ -56,7 +56,10 @@ describe("assinarRelogio", () => {
 
   it("avisa a cada minuto", () => {
     const aoTocar = vi.fn();
-    const parar = assinarRelogio(aoTocar, { documento: alvo(), janela: alvo() });
+    const parar = assinarRelogio(aoTocar, {
+      documento: alvo(),
+      janela: alvo(),
+    });
     vi.advanceTimersByTime(INTERVALO_DO_RELOGIO_MS - 1);
     expect(aoTocar).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
@@ -244,7 +247,9 @@ describe("virar a meia-noite com o app aberto", () => {
     expect(jornada).toContain("diaDoRelogio(useAgora())");
     expect(jornada).toMatch(/void loja\.carregar\(\);\s+\}, \[dia, loja\]\)/);
     const agenda = ler("components/jobs/JobsTab.tsx");
-    expect(agenda).toContain("selecaoAposVirarODia(selectedDate, antes, today)");
+    expect(agenda).toContain(
+      "selecaoAposVirarODia(selectedDate, antes, today)"
+    );
     expect(agenda).toContain("setWeekStart(startOfWeek(now))");
   });
 });

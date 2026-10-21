@@ -633,11 +633,11 @@ export default function Page() {
                     resposta: largura total logo abaixo do cumprimento, para os
                     botões ficarem acima da pílula na primeira vista. */}
                 <AconteceuCard
-                    userId={usuario.id}
-                    jobs={jobs}
-                    aoMudar={recarregarAposAtendimento}
-                    aoVerAgenda={() => handleTabChange("jobs")}
-                  />
+                  userId={usuario.id}
+                  jobs={jobs}
+                  aoMudar={recarregarAposAtendimento}
+                  aoVerAgenda={() => handleTabChange("jobs")}
+                />
                 {/* Grade de 2 colunas do mockup; o card principal ocupa as duas. Com
     quantidade ímpar de cards pequenos (um deles desligado em Ajustes,
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
@@ -749,7 +749,9 @@ export default function Page() {
                 onInnerTabChange={setFinInnerTab}
                 onAddDespesa={() => setDespesaFormOpen(true)}
                 onAddReceita={() => setReceitaFormOpen(true)}
-                onLancamentoApagado={() => setFinanceiroRefreshKey((k) => k + 1)}
+                onLancamentoApagado={() =>
+                  setFinanceiroRefreshKey((k) => k + 1)
+                }
                 avatar={{
                   inicial: usuario.nome.trim().charAt(0).toUpperCase(),
                   foto: fotoRede || usuario.avatarUrl,

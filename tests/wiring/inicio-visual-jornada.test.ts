@@ -170,7 +170,8 @@ describe("J02 — 'não mude cálculo': todo número vem da conta que já existi
         (m) => m[1]
       );
       expect(args.length).toBeGreaterThan(0);
-      for (const a of args) expect(a, `formatMoeda(${a})`).toMatch(ARG_PERMITIDO);
+      for (const a of args)
+        expect(a, `formatMoeda(${a})`).toMatch(ARG_PERMITIDO);
     });
   }
 

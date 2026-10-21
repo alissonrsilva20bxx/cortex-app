@@ -516,9 +516,7 @@ describe("Pixel card da Jornada — semana e próximo passo (ordem do operador)"
     const estado = { feitasHoje: feitas } as unknown as EstadoJornada;
     expect(proximoPasso(estado, sem)).toBe("despesa");
     expect(proximoPasso(estado, { temDesejo: true })).toBe("descanso");
-    expect(proximoPasso(estado, { descansoDisponivel: true })).toBe(
-      "descanso"
-    );
+    expect(proximoPasso(estado, { descansoDisponivel: true })).toBe("descanso");
   });
 
   it("o card calcula se o descanso está disponível pelo estadoDoDescanso", () => {
