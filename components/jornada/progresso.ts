@@ -131,13 +131,19 @@ export function indiceDeHoje(hoje: Date): number {
  * bateu o limite do dia também já fez). `null` = hoje ela já cuidou de
  * tudo. Lê `feitasHoje` do servidor (0038). Sem Desejo ativo
  * (`temDesejo: false`), "guardar_meta" é pulado: ela não tem onde guardar.
+ * Com o descanso indisponível hoje (`descansoDisponivel: false`: dia com
+ * atendimento ou já descansou), "descanso" é pulado: a Agenda o desabilita.
  */
 export function proximoPasso(
   estado: EstadoJornada,
-  { temDesejo = true }: { temDesejo?: boolean } = {}
+  {
+    temDesejo = true,
+    descansoDisponivel = true,
+  }: { temDesejo?: boolean; descansoDisponivel?: boolean } = {}
 ): AcaoDoProximoPasso | null {
   for (const acao of ORDEM_DO_PROXIMO_PASSO) {
     if (acao === "guardar_meta" && !temDesejo) continue;
+    if (acao === "descanso" && !descansoDisponivel) continue;
     if (!estado.feitasHoje?.[acao]) return acao;
   }
   return null;

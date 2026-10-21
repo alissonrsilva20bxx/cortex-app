@@ -665,6 +665,7 @@ export default function DevPreviewApp() {
                 <JornadaCard
                   userId={usuario.id}
                   temDesejo={temDesejo}
+                  jobs={jobs}
                   onAbrir={() => setJornadaAberta(true)}
                   onProximoPasso={(acao) => {
                     const destino = destinoDoProximoPasso(acao);

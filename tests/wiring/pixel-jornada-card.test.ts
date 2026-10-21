@@ -506,8 +506,33 @@ describe("Pixel card da Jornada — semana e próximo passo (ordem do operador)"
     expect(proximoPasso(base, { temDesejo: true })).toBe("guardar_meta");
   });
 
+  it("com o descanso indisponível hoje, o próximo passo pula descanso (a Agenda o desabilita)", () => {
+    const sem = { temDesejo: true, descansoDisponivel: false };
+    const feitas = {
+      guardar_meta: 1,
+      comprovante_cofre: 1,
+      planejar: 1,
+    };
+    const estado = { feitasHoje: feitas } as unknown as EstadoJornada;
+    expect(proximoPasso(estado, sem)).toBe("despesa");
+    expect(proximoPasso(estado, { temDesejo: true })).toBe("descanso");
+    expect(proximoPasso(estado, { descansoDisponivel: true })).toBe(
+      "descanso"
+    );
+  });
+
+  it("o card calcula se o descanso está disponível pelo estadoDoDescanso", () => {
+    expect(CARD).toContain("estadoDoDescanso(jobs, descansoDeHoje(estado)");
+    expect(CARD).toContain('=== "normal"');
+    for (const pagina of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
+      expect(read(pagina)).toContain("jobs={jobs}");
+    }
+  });
+
   it("o card olha se há Desejo ativo antes de escolher o passo", () => {
-    expect(CARD).toContain("proximoPasso(estado, { temDesejo })");
+    expect(CARD).toContain(
+      "proximoPasso(estado, { temDesejo, descansoDisponivel })"
+    );
     expect(CARD).toContain("temDesejo: boolean;");
     for (const pagina of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
       const src = read(pagina);

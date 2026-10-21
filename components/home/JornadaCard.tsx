@@ -2,6 +2,9 @@
 
 import type { CSSProperties } from "react";
 import { useJornada } from "@/components/jornada/useJornada";
+import { estadoDoDescanso } from "@/lib/atendimentos/status";
+import { useAgora } from "@/lib/useAgora";
+import type { Job } from "@/lib/types";
 import {
   FaiscaCheia,
   IconeDoEnfeite,
@@ -14,6 +17,7 @@ import {
   contadorDaSemana,
   faltaProProximo,
   fracaoDoEstagio,
+  descansoDeHoje,
   indiceDeHojeNaSemana,
   missoesFeitas,
   proximoPasso,
@@ -42,6 +46,7 @@ interface Props {
   /** Ela tem um Desejo ativo? Sem ele, o "Próximo passo" não pede para
    * guardar dinheiro no Desejo. */
   temDesejo: boolean;
+  jobs: readonly Job[];
   onAbrir: () => void;
   /** "Próximo passo": leva para onde ela faz a ação (Financeiro, Cofre,
    * Agenda). */
@@ -197,8 +202,15 @@ const FORTE: CSSProperties = { color: "var(--t-ink)" };
  * A Jornada nunca bloqueia o Início: sem estado ainda (carregando, ou erro
  * sem nada no cache), o card simplesmente não aparece.
  */
-export function JornadaCard({ userId, temDesejo, onAbrir, onProximoPasso }: Props) {
+export function JornadaCard({
+  userId,
+  temDesejo,
+  jobs,
+  onAbrir,
+  onProximoPasso,
+}: Props) {
   const { estado } = useJornada(userId);
+  const agora = useAgora();
   if (!estado) return null;
 
   const capitulo = estado.capitulo;
@@ -206,7 +218,9 @@ export function JornadaCard({ userId, temDesejo, onAbrir, onProximoPasso }: Prop
   const dias = diasFortesDeTres(contadorDaSemana(estado, "dias_fortes"));
   const bolinhas = bolinhasDaSemana(estado);
   const hoje = indiceDeHojeNaSemana(estado);
-  const passo = proximoPasso(estado, { temDesejo });
+  const descansoDisponivel =
+    estadoDoDescanso(jobs, descansoDeHoje(estado), agora) === "normal";
+  const passo = proximoPasso(estado, { temDesejo, descansoDisponivel });
 
   return (
     <div
