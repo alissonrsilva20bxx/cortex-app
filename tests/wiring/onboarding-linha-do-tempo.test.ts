@@ -130,8 +130,14 @@ describe("PlanosTela e PilulaTeste", () => {
   });
 
   it("a pílula fica acima da barra e do botão +", () => {
+    // A distância (barra 22 + "+" 60 + 14) vive em lib/bottomNavCompactStyle.ts.
     expect(pilula).toMatch(
-      /const BOTTOM = BOTTOM_NAV_OFFSET \+ BOTTOM_NAV_FAB_SIZE \+ 14;/
+      /import \{ PILULA_TESTE_BOTTOM as BOTTOM \} from "@\/lib\/bottomNavCompactStyle";/
+    );
+    expect(
+      ler("lib/bottomNavCompactStyle.ts")
+    ).toMatch(
+      /PILULA_TESTE_BOTTOM =\s*BOTTOM_NAV_OFFSET \+ BOTTOM_NAV_FAB_SIZE \+ 14;/
     );
     expect(pilula).toMatch(/"--ob-pilula-bottom": `\$\{BOTTOM\}px`/);
   });
