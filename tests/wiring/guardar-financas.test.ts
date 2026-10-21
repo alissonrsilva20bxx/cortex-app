@@ -20,20 +20,28 @@ describe("Guardar em Finanças está ligado de ponta a ponta", () => {
     expect(card).toContain("somarNoDesejo(supabase");
   });
 
-  it("o estado vazio chama onCriarDesejo e a página leva à Rede", () => {
+  it("o estado vazio chama onCriarDesejo, que abre o formulário de Desejo em Finanças (não leva à Rede)", () => {
     expect(card).toContain("onClick={onCriarDesejo}");
-    expect(read("app/page.tsx")).toContain(
+    const metas = read("components/financeiro/MetasTab.tsx");
+    expect(metas).toContain(
+      "onCriarDesejo={() => setPedidoNovoDesejo((n) => n + 1)}"
+    );
+    expect(metas).toContain("pedidoNovo={pedidoNovoDesejo}");
+    expect(metas).not.toContain('handleTabChange("rede")');
+    expect(read("app/page.tsx")).not.toContain(
       'onCriarDesejo={() => handleTabChange("rede")}'
     );
-    expect(read("components/financeiro/FinanceiroTab.tsx")).toContain(
-      "onCriarDesejo={onCriarDesejo}"
+    // o card de Desejos abre o formulário quando o pedido sobe
+    expect(read("components/financeiro/DesejosCard.tsx")).toMatch(
+      /if \(pedidoNovo > 0\) abrirNovo\(\)/
     );
   });
 
   it("a aba Metas mostra o card", () => {
-    expect(read("components/financeiro/MetasTab.tsx")).toContain(
-      "<GuardarCard userId={userId} onCriarDesejo={onCriarDesejo} />"
-    );
+    const metas = read("components/financeiro/MetasTab.tsx");
+    expect(metas).toContain("<GuardarCard");
+    expect(metas).toContain("userId={userId}");
+    expect(metas).toContain("<DesejosCard");
   });
 
   it("não escreve texto de tela solto nem dado de exemplo", () => {

@@ -57,10 +57,26 @@ describe('ObjetivosCard — botão "Ver todos" (estado não-vazio) dispara onGoT
   });
 });
 
+describe("DesejoCard (Início) dispara onGoToMetas, nos dois estados", () => {
+  const desejoCardSrc = read("components/home/DesejoCard.tsx");
+
+  it("o card com o Desejo principal usa onClick={onGoToMetas}", () => {
+    expect(desejoCardSrc).toMatch(
+      /onClick=\{onGoToMetas\}[\s\S]{0,300}ariaLabel/
+    );
+  });
+
+  it('o estado vazio ("Criar um Desejo") também usa onGoToMetas', () => {
+    expect(desejoCardSrc).toMatch(
+      /onClick=\{onGoToMetas\}[\s\S]{0,200}T\.criar/
+    );
+  });
+});
+
 describe("app/page.tsx — onGoToMetas dispara o pulso completo (troca de aba + focusTab)", () => {
-  it('ObjetivosCard.onGoToMetas troca pra aba "financeiro" E seta financeiroFocusTab("metas") na mesma ação', () => {
+  it('DesejoCard.onGoToMetas troca pra aba "financeiro" E seta financeiroFocusTab("metas") na mesma ação', () => {
     expect(pageSrc).toMatch(
-      /<ObjetivosCard[\s\S]*?onGoToMetas=\{\(\) => \{\s*\r?\n\s*handleTabChange\("financeiro"\);\s*\r?\n\s*setFinanceiroFocusTab\("metas"\);\s*\r?\n\s*\}\}/
+      /<DesejoCard[\s\S]*?onGoToMetas=\{\(\) => \{\s*\r?\n\s*handleTabChange\("financeiro"\);\s*\r?\n\s*setFinanceiroFocusTab\("metas"\);\s*\r?\n\s*\}\}/
     );
   });
 

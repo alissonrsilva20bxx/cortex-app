@@ -38,7 +38,7 @@ const COMPONENTES_INICIO = [
   "GreetingHeader",
   "HeroCard",
   "NextJobCard",
-  "ObjetivosCard",
+  "DesejoCard",
   "FaltaMetaCard",
   "CofreCard",
   "SemanaSection",

@@ -77,26 +77,9 @@ const LIGACOES = [
     vezes: 1,
   },
   {
-    // "Guardar dinheiro numa meta" = o "Já guardado" da Wishlist subiu.
-    // Editar nome/alvo sem guardar dinheiro não registra.
-    acao: "guardar_meta",
-    arquivo: "components/rede/RedeTab.tsx",
-    hook: "const { registrar } = useJornada(usuario.id);",
-    depoisDe: "const atualizado = await atualizarWishlistItem(",
-    chamada:
-      'if (atualizado.valorAtual > existing.valorAtual)\n          void registrar("guardar_meta");',
-    vezes: 2,
-  },
-  {
-    acao: "guardar_meta",
-    arquivo: "components/rede/RedeTab.tsx",
-    hook: "const { registrar } = useJornada(usuario.id);",
-    depoisDe: "const criado = await criarWishlistItem(",
-    chamada: 'if (criado.valorAtual > 0) void registrar("guardar_meta");',
-    vezes: 2,
-  },
-  {
-    // Guardar (Finanças): depósito gravado no histórico e somado no Desejo.
+    // "Guardar dinheiro num Desejo": o dinheiro só entra pelo Guardar
+    // (depósito gravado no histórico e somado no Desejo). Criar ou editar o
+    // Desejo não registra.
     acao: "guardar_meta",
     arquivo: "components/financeiro/GuardarCard.tsx",
     hook: "const { registrar } = useJornada(userId);",

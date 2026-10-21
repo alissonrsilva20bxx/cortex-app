@@ -323,8 +323,15 @@ describe("Pixel Jornada — textos: as frases do protótipo", () => {
         !["futuro"].includes(k)
     );
     expect(fixas.length).toBeGreaterThan(25);
+    // Troca decidida (Desejo e Objetivo são um só): estas frases dizem
+    // "Desejo" onde o protótipo diz "meta". Compara com o texto do protótipo.
+    const TROCAS_DESEJO: Record<string, string> = {
+      guardadosNasMetas: "guardados nas suas metas.",
+    };
     for (const [k, v] of fixas)
-      expect(slides + JS, `${k}: ${v}`).toContain(String(v));
+      expect(slides + JS, `${k}: ${v}`).toContain(
+        TROCAS_DESEJO[k] ?? String(v)
+      );
   });
 });
 

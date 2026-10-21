@@ -87,12 +87,12 @@ describe("serviços de Wishlist e Clientes com Supabase local", () => {
         itemId: created.id,
         nome: "Cadeira hidráulica premium",
         valorAlvo: 1500,
-        valorAtual: 400,
         estado: "planejando",
         privacidade: "comunidade",
       });
       expect(updated.nome).toBe("Cadeira hidráulica premium");
-      expect(updated.valorAtual).toBe(400);
+      // o update não mexe no dinheiro: só o Guardar grava valor_atual
+      expect(updated.valorAtual).toBe(0);
       expect(updated.estado).toBe("planejando");
 
       await excluirWishlistItem(owner.client, { itemId: created.id });
@@ -111,7 +111,6 @@ describe("serviços de Wishlist e Clientes com Supabase local", () => {
           itemId: foreign.id,
           nome: "Invasão",
           valorAlvo: 1,
-          valorAtual: 0,
           estado: "quero",
           privacidade: "privado",
         })

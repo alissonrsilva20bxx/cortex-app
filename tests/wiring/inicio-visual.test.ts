@@ -29,7 +29,7 @@ describe("/dev-preview/app renders the T2 Início components", () => {
     ["GreetingHeader", "@/components/home/GreetingHeader"],
     ["HeroCard", "@/components/home/HeroCard"],
     ["NextJobCard", "@/components/home/NextJobCard"],
-    ["ObjetivosCard", "@/components/home/ObjetivosCard"],
+    ["DesejoCard", "@/components/home/DesejoCard"],
   ])(
     "imports %s from the real component path, not a duplicate/mock",
     (name, path) => {
@@ -39,7 +39,7 @@ describe("/dev-preview/app renders the T2 Início components", () => {
     }
   );
 
-  it.each(["GreetingHeader", "HeroCard", "NextJobCard", "ObjetivosCard"])(
+  it.each(["GreetingHeader", "HeroCard", "NextJobCard", "DesejoCard"])(
     "actually renders <%s in the home tab JSX (imported but unused would still be a bug)",
     (name) => {
       expect(page).toContain(`<${name}`);
@@ -52,7 +52,7 @@ describe("/dev-preview/app renders the T2 Início components", () => {
       "GreetingHeader",
       "HeroCard",
       "NextJobCard",
-      "ObjetivosCard",
+      "DesejoCard",
     ]) {
       const matches = importLines.filter((l) =>
         new RegExp(`\\b${name}\\b`).test(l)
@@ -113,6 +113,7 @@ describe("the Início component files carry the #131 visual-review correction (r
       "components/home/HeroCard.tsx",
       "components/home/NextJobCard.tsx",
       "components/home/ObjetivosCard.tsx",
+      "components/home/DesejoCard.tsx",
     ]) {
       expect(read(file)).not.toContain("SOLID_SURFACE_STYLE");
     }
@@ -137,6 +138,7 @@ describe("the Início component files carry the #131 visual-review correction (r
       "components/home/HeroCard.tsx",
       "components/home/NextJobCard.tsx",
       "components/home/ObjetivosCard.tsx",
+      "components/home/DesejoCard.tsx",
       "components/home/FaltaMetaCard.tsx",
       "components/home/CofreCard.tsx",
       "components/home/SemanaSection.tsx",

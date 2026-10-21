@@ -467,7 +467,12 @@ describe("Pixel card da Jornada — semana e próximo passo (ordem do operador)"
       const m = txt.match(
         new RegExp(`${k}:'([^']*)'(?: \\+ money\\((\\d+)\\) \\+ '([^']*)')?`)
       )!;
-      const esperado = m[2] ? `${m[1]}€ ${m[2]}${m[3]}` : m[1];
+      // Troca decidida (Desejo e Objetivo são um só): o dinheiro guardado fala em
+      // "Desejo", não em "meta". Só esta frase muda; o resto segue o protótipo.
+      const esperado = (m[2] ? `${m[1]}€ ${m[2]}${m[3]}` : m[1]).replace(
+        "na sua meta",
+        "no seu Desejo"
+      );
       expect(
         TEXTO_DO_PROXIMO_PASSO[DE[k as keyof typeof DE]].replace(/€ /, "€ ")
       ).toBe(esperado);

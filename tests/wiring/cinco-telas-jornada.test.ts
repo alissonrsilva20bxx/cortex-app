@@ -40,7 +40,7 @@ const ABAS: Aba[] = [
       { nome: "GreetingHeader", caminho: "@/components/home/GreetingHeader" },
       { nome: "HeroCard", caminho: "@/components/home/HeroCard" },
       { nome: "NextJobCard", caminho: "@/components/home/NextJobCard" },
-      { nome: "ObjetivosCard", caminho: "@/components/home/ObjetivosCard" },
+      { nome: "DesejoCard", caminho: "@/components/home/DesejoCard" },
     ],
   },
   {
