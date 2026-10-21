@@ -1,3 +1,4 @@
+import { LOCALE, CURRENCY } from "@/lib/jornada/textos";
 import { TEXTOS_GUARDAR } from "./textos";
 
 /** Maior valor aceito pela coluna numeric(10, 2) da migration 0044. */
@@ -35,6 +36,17 @@ export function lerValorGuardar(texto: string): ValorGuardar {
 }
 
 export const formatEUR = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "EUR" }).format(
+  new Intl.NumberFormat(LOCALE, { style: "currency", currency: CURRENCY }).format(
     v
   );
+
+/** "21 de out. · 14:30", no formato do LOCALE. */
+export function quando(iso: string): string {
+  const d = new Date(iso);
+  const dia = d.toLocaleDateString(LOCALE, { day: "2-digit", month: "short" });
+  const hora = d.toLocaleTimeString(LOCALE, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${dia} · ${hora}`;
+}

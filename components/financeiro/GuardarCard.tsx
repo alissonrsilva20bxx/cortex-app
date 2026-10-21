@@ -14,7 +14,7 @@ import {
   type DepositoGuardado,
 } from "@/lib/guardar/guardar";
 import { TEXTOS_GUARDAR as T } from "@/lib/guardar/textos";
-import { formatEUR } from "@/lib/guardar/valor";
+import { formatEUR, quando } from "@/lib/guardar/valor";
 
 const sectionTitleStyle = {
   fontSize: "13px",
@@ -30,16 +30,6 @@ interface Props {
 
 /** Soma que falhou depois do depósito gravado; "Tentar novamente" só soma. */
 type SomaPendente = { desejoId: string; centavos: number };
-
-function quando(iso: string): string {
-  const d = new Date(iso);
-  const dia = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-  const hora = d.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${dia} · ${hora}`;
-}
 
 export function GuardarCard({ userId, onCriarDesejo }: Props) {
   const toast = useToast();
