@@ -142,12 +142,11 @@ describe("FinanceiroTab: a lixeira pede confirmação e confere o resultado", ()
     expect(src).toMatch(
       /if \(!ok\) toast\.error\(APAGAR\.falhou\);\s*else onLancamentoApagado\?\.\(\);/
     );
-    const pagina = readFileSync(
-      join(__dirname, "..", "..", "app/page.tsx"),
-      "utf-8"
-    );
-    expect(pagina).toContain(
-      "onLancamentoApagado={() => setFinanceiroRefreshKey((k) => k + 1)}"
-    );
+    for (const arq of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
+      const pagina = readFileSync(join(__dirname, "..", "..", arq), "utf-8");
+      expect(pagina, arq).toContain(
+        "onLancamentoApagado={() => setFinanceiroRefreshKey((k) => k + 1)}"
+      );
+    }
   });
 });

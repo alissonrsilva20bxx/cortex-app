@@ -742,6 +742,7 @@ export default function DevPreviewApp() {
           <FinanceiroTab
             userId={usuario.id}
             refreshTrigger={financeiroRefreshKey}
+            onLancamentoApagado={() => setFinanceiroRefreshKey((k) => k + 1)}
             onInnerTabChange={setFinInnerTab}
             onAddDespesa={() => setDespesaFormOpen(true)}
             onAddReceita={() => setReceitaFormOpen(true)}
