@@ -108,3 +108,21 @@ export function aguardandoResposta(
     .filter((j) => podeConcluir(j, agora))
     .sort((a, b) => instanteDoAtendimento(b) - instanteDoAtendimento(a));
 }
+
+/** "YYYY-MM-DD" no fuso local. */
+function diaLocal(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${dia}`;
+}
+
+/** Criar um atendimento para um dia DEPOIS de hoje é planejar: a Jornada
+ * conta "Amanhã está planejado". Editar atendimento e criar para hoje (ou
+ * para o passado) não planejam nada. */
+export function contaComoPlanejar(
+  jaExistia: boolean,
+  data: string,
+  hoje: Date = new Date()
+): boolean {
+  return !jaExistia && data > diaLocal(hoje);
+}

@@ -1,10 +1,1 @@
-[
-  {
-    "id": "jornada:planejar",
-    "motivo": "Missão 'Planejar X dias' e passo 'planejar' do Começo levam à Agenda, mas nenhuma tela chama registrar('planejar'). Nunca andam."
-  },
-  {
-    "id": "jornada:descanso",
-    "motivo": "Missão 'Tirar descansos' e passo 'descanso' levam à Agenda, mas nenhuma tela chama registrar('descanso'). Nunca andam."
-  }
-]
+[]

@@ -24,6 +24,7 @@ import { AgendaResumoSheet } from "./AgendaResumoSheet";
 import { NotasSection } from "./NotasSection";
 import { AgendaProximoCard } from "./AgendaProximoCard";
 import { AgendaAconteceu } from "./AgendaAconteceu";
+import { DescansoHoje } from "./DescansoHoje";
 import { LembrarClienteSheet } from "./LembrarClienteSheet";
 import type { Profissional } from "@/lib/lembrete/cartaoAgenda";
 import { AgendaAcoes } from "./AgendaAcoes";
@@ -629,6 +630,9 @@ export function JobsTab({
         }
         onAnotacoes={() => setAnotacoesOpen(true)}
       />
+
+      {/* O descanso de propósito que a Jornada pede ("Próximo passo"). */}
+      <DescansoHoje userId={userId} />
 
       <div>
         {/* Tira da semana (J03) — 7 pílulas de 58px sobre `--card-solid`,

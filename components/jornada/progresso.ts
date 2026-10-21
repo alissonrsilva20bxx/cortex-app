@@ -137,6 +137,12 @@ export function proximoPasso(estado: EstadoJornada): AcaoDoProximoPasso | null {
   return null;
 }
 
+/** Hoje ela já registrou o descanso de propósito (o servidor conta a ação
+ * `descanso`, no máximo uma por dia). */
+export function descansoDeHoje(estado: EstadoJornada): boolean {
+  return (estado.feitasHoje?.descanso ?? 0) >= 1;
+}
+
 /** Índice de hoje na semana do card (0 = segunda ... 6 = domingo). */
 export function indiceDeHojeNaSemana(estado: EstadoJornada): number {
   const d = new Date(`${estado.hoje ?? ""}T00:00:00`);

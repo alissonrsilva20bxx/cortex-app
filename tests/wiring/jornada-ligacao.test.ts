@@ -69,6 +69,24 @@ const LIGACOES = [
     vezes: 1,
   },
   {
+    // Criar atendimento para um dia depois de hoje é planejar.
+    acao: "planejar",
+    arquivo: "components/jobs/JobForm.tsx",
+    hook: "const { registrar } = useJornada(userId);",
+    depoisDe: "if (err) return setError(err.message);",
+    chamada: 'void registrar("planejar");',
+    vezes: 1,
+  },
+  {
+    // "Hoje é descanso" na Agenda: uma vez por dia (o servidor limita).
+    acao: "descanso",
+    arquivo: "components/jobs/DescansoHoje.tsx",
+    hook: "const { estado, registrar } = useJornada(userId);",
+    depoisDe: "<button",
+    chamada: 'void registrar("descanso")',
+    vezes: 1,
+  },
+  {
     // "Guardar comprovante no Cofre": só a categoria Comprovantes.
     acao: "comprovante_cofre",
     arquivo: "components/cofre/UploadSheet.tsx",
@@ -100,8 +118,9 @@ const LIGACOES = [
   },
 ] as const;
 
-/** Ações da spec §3 que NÃO existem hoje no app (listadas no PR). */
-const NAO_EXISTEM_NO_APP = ["planejar", "descanso"] as const;
+/** Ações da spec §3 que NÃO existem hoje no app. Vazio desde que "planejar"
+ * (JobForm) e "descanso" (botão "Hoje é descanso") ganharam escritor. */
+const NAO_EXISTEM_NO_APP: readonly string[] = [];
 
 describe("app/page.tsx monta a Jornada no app autenticado", () => {
   const page = soCodigo(read(PAGE));

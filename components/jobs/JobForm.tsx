@@ -6,7 +6,10 @@ import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 import { useJornada } from "@/components/jornada/useJornada";
-import { contaComoDiaAtivo } from "@/lib/atendimentos/status";
+import {
+  contaComoDiaAtivo,
+  contaComoPlanejar,
+} from "@/lib/atendimentos/status";
 import type { Job, JobStatus, Modalidade } from "@/lib/types";
 
 interface FormState {
@@ -137,6 +140,10 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
     // formulário, ou nos botões do detalhe / "Aconteceu?"), não ao criar.
     if (contaComoDiaAtivo(job?.status ?? null, form.status)) {
       void registrar("atendimento");
+    }
+    // Marcar atendimento para um dia depois de hoje é planejar.
+    if (contaComoPlanejar(job !== null, form.data)) {
+      void registrar("planejar");
     }
     onSaved();
     onClose();

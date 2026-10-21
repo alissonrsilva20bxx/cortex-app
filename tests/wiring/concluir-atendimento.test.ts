@@ -121,3 +121,21 @@ describe("Dia contado da Jornada: ao concluir, não ao criar", () => {
     }
   });
 });
+
+describe("Jornada: planejar e descanso têm botão", () => {
+  it("o JobForm registra planejar ao criar atendimento para um dia depois de hoje", () => {
+    const form = read("components/jobs/JobForm.tsx");
+    expect(form).toMatch(
+      /if \(contaComoPlanejar\(job !== null, form\.data\)\) \{\s*void registrar\("planejar"\);/
+    );
+  });
+
+  it("a Agenda tem o botão 'Hoje é descanso', que registra descanso", () => {
+    expect(read("components/jobs/JobsTab.tsx")).toContain(
+      "<DescansoHoje userId={userId} />"
+    );
+    const botao = read("components/jobs/DescansoHoje.tsx");
+    expect(botao).toMatch(/onClick=\{\(\) => void registrar\("descanso"\)\}/);
+    expect(botao).toContain("disabled={feito}");
+  });
+});
