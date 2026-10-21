@@ -734,6 +734,7 @@ export default function Page() {
                 onInnerTabChange={setFinInnerTab}
                 onAddDespesa={() => setDespesaFormOpen(true)}
                 onAddReceita={() => setReceitaFormOpen(true)}
+                onLancamentoApagado={() => setFinanceiroRefreshKey((k) => k + 1)}
                 avatar={{
                   inicial: usuario.nome.trim().charAt(0).toUpperCase(),
                   foto: fotoRede || usuario.avatarUrl,

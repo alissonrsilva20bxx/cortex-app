@@ -57,6 +57,9 @@ interface Props {
   onInnerTabChange?: (tab: string) => void;
   onAddDespesa?: () => void;
   onAddReceita?: () => void;
+  /** Avisa a página quando uma entrada ou despesa foi apagada de verdade,
+   * para o Início refazer a meta do mês. */
+  onLancamentoApagado?: () => void;
   /** Avatar do cabeçalho (como o do Início): abre Ajustes. Pixel do mockup. */
   avatar?: { inicial: string; foto?: string | null; onOpenAjustes: () => void };
   objetivos: Objetivo[];
@@ -88,6 +91,7 @@ export function FinanceiroTab({
   onInnerTabChange,
   onAddDespesa,
   onAddReceita,
+  onLancamentoApagado,
   avatar,
   objetivos,
   onObjetivoAdded,
@@ -300,6 +304,7 @@ export function FinanceiroTab({
             apagar,
           });
     if (!ok) toast.error(APAGAR.falhou);
+    else onLancamentoApagado?.();
   }
 
   return (

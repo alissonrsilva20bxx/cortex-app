@@ -137,4 +137,17 @@ describe("FinanceiroTab: a lixeira pede confirmação e confere o resultado", ()
     expect(src).toContain("apagarLancamento(");
     expect(src).toContain("toast.error(APAGAR.falhou)");
   });
+
+  it("apagou de verdade: avisa a página (só no sucesso), que sobe financeiroRefreshKey para o Início refazer a meta", () => {
+    expect(src).toMatch(
+      /if \(!ok\) toast\.error\(APAGAR\.falhou\);\s*else onLancamentoApagado\?\.\(\);/
+    );
+    const pagina = readFileSync(
+      join(__dirname, "..", "..", "app/page.tsx"),
+      "utf-8"
+    );
+    expect(pagina).toContain(
+      "onLancamentoApagado={() => setFinanceiroRefreshKey((k) => k + 1)}"
+    );
+  });
 });
