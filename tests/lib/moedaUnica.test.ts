@@ -33,6 +33,23 @@ describe("formatMoeda", () => {
   });
 });
 
+describe("formatarEuro (vitrine da Rede e planos)", () => {
+  it("vem do formatMoeda, sem escrever o símbolo da moeda à mão", () => {
+    const src = readFileSync(
+      join(__dirname, "..", "..", "lib/planos.ts"),
+      "utf-8"
+    );
+    const corpo = src.slice(src.indexOf("export function formatarEuro"));
+    expect(corpo.slice(0, corpo.indexOf("\n}\n"))).toContain("formatMoeda(");
+    expect(corpo.slice(0, corpo.indexOf("\n}\n"))).not.toContain("€");
+  });
+
+  it("mantém o formato do desenho com centavos só quando precisa", () => {
+    expect(formatarEuro(15)).toBe("€ 15");
+    expect(formatarEuro(12.5)).toBe("€ 12,50");
+  });
+});
+
 describe("nenhuma tela escreve reais solto", () => {
   const ROOT = join(__dirname, "..", "..");
   const IGNORADAS = [

@@ -12,6 +12,8 @@
  * Lógica pura (sem DOM): testada em tests/lib/planos.test.ts.
  */
 
+import { formatMoeda } from "@/lib/finance";
+
 export type PlanoId = "1m" | "2m" | "3m";
 
 export interface Plano {
@@ -54,9 +56,13 @@ export function percentualDesconto(plano: Plano): number {
     : Math.round(((plano.cheio - plano.preco) / plano.cheio) * 100);
 }
 
-/** "€ 15", "€ 12,50": o formato do desenho. */
+/** "€ 15", "€ 12,50": o formato do desenho, na moeda do app (CURRENCY,
+ * pelo formatMoeda), com espaço comum no lugar do espaço sem quebra. */
 export function formatarEuro(valor: number): string {
-  return `€ ${Number.isInteger(valor) ? String(valor) : valor.toFixed(2).replace(".", ",")}`;
+  return formatMoeda(valor, Number.isInteger(valor) ? 0 : 2).replace(
+    /\s/g,
+    " "
+  );
 }
 
 /** O menor preço por mês entre os planos (o "a partir de € 10 por mês"). */
