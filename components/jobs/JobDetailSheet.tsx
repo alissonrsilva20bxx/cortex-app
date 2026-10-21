@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { MapPin, Video } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { StatusBadge } from "./StatusBadge";
 import { formatDayBadge } from "@/components/home/NextJobCard";
 import { formatBRL } from "@/lib/finance";
-import { supabase } from "@/lib/supabase";
+import { podeConcluir, podeConfirmar } from "@/lib/atendimentos/status";
 import type { Job } from "@/lib/types";
+import { BOTOES_STATUS } from "./textosAgenda";
+import { useMudarStatus } from "./useMudarStatus";
 
 /** "15h30" — mesma convenção já usada em NextJobCard/lib/notificacoes.ts. */
 function formatHora(hora: string): string {
@@ -19,15 +21,10 @@ interface Props {
   job: Job | null;
   onClose: () => void;
   onEdit: (job: Job) => void;
-  /** O atendimento foi marcado como concluído: quem chama recarrega a
-   * Agenda, o Financeiro e a Início (o sheet já fechou). */
-  onConcluido?: () => void;
-}
-
-/** Agendado ou confirmado pode ser concluído; concluído e cancelado só
- * editam. */
-export function podeConcluir(job: Job): boolean {
-  return job.status === "agendado" || job.status === "confirmado";
+  /** O status do atendimento mudou (Confirmar, Concluir ou Não aconteceu):
+   * quem chama recarrega a Agenda, o Financeiro e a Início (o sheet já
+   * fechou). */
+  onStatusMudou?: () => void;
 }
 
 /**
@@ -45,38 +42,28 @@ export function podeConcluir(job: Job): boolean {
  * mesmo casco de `ClienteDetailSheet` (Rede) — em vez de reinventar
  * overlay/pega/foco: já tem focus trap, Esc e `role="dialog"`.
  */
-export function JobDetailSheet({ job, onClose, onEdit, onConcluido }: Props) {
+export function JobDetailSheet({ job, onClose, onEdit, onStatusMudou }: Props) {
   const dayBadge = job ? formatDayBadge(job.data) : null;
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const { mudar, salvando, erro, limparErro } = useMudarStatus(onStatusMudou);
 
-  // Outro atendimento aberto: começa sem erro e sem "Salvando…".
+  // Outro atendimento aberto: começa sem erro.
   useEffect(() => {
-    setSalvando(false);
-    setErro(null);
-  }, [job?.id]);
+    limparErro();
+  }, [job?.id, limparErro]);
 
-  // O mesmo `update` de status do JobForm, só com o status: o atendimento
-  // passa a contar no Financeiro, na Início e no Resumo.
-  async function marcarConcluido(alvo: Job) {
-    if (salvando) return;
-    setSalvando(true);
-    setErro(null);
-    const { error } = await supabase
-      .from("jobs")
-      .update({ status: "concluído", atualizado_em: new Date().toISOString() })
-      .eq("id", alvo.id);
-    setSalvando(false);
-    if (error) {
-      console.error("[JobDetailSheet] falha ao concluir:", error.message);
-      setErro("Não foi possível marcar como concluído. Tente de novo.");
-      return;
-    }
-    onClose();
-    onConcluido?.();
+  // Fluxo do capitão: Confirmar antes do horário; Concluir ou Não aconteceu
+  // a partir do horário. O atendimento concluído passa a contar no
+  // Financeiro, na Início e no Resumo.
+  async function aplicar(
+    alvo: Job,
+    novo: "confirmado" | "concluído" | "cancelado"
+  ) {
+    if (await mudar(alvo, novo)) onClose();
   }
 
+  const confirmar = job ? podeConfirmar(job) : false;
   const concluir = job ? podeConcluir(job) : false;
+  const temAcaoDeStatus = confirmar || concluir;
 
   return (
     <BottomSheet
@@ -95,26 +82,54 @@ export function JobDetailSheet({ job, onClose, onEdit, onConcluido }: Props) {
                 {erro}
               </p>
             )}
-            {concluir && (
+            {confirmar && (
               <button
                 type="button"
-                onClick={() => void marcarConcluido(job)}
+                onClick={() => void aplicar(job, "confirmado")}
                 disabled={salvando}
-                data-job-concluir
+                data-job-confirmar
                 className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
                 style={{ background: "var(--accent)", color: "white" }}
               >
-                {salvando ? "Salvando…" : "Marcar como concluído"}
+                {salvando ? BOTOES_STATUS.salvando : BOTOES_STATUS.confirmar}
               </button>
             )}
-            {/* Com o "Concluir" acima, o Editar vira o botão secundário. */}
+            {concluir && (
+              <div className="flex" style={{ gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => void aplicar(job, "concluído")}
+                  disabled={salvando}
+                  data-job-concluir
+                  className="flex-1 py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
+                  style={{ background: "var(--accent)", color: "white" }}
+                >
+                  {salvando ? BOTOES_STATUS.salvando : BOTOES_STATUS.concluir}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void aplicar(job, "cancelado")}
+                  disabled={salvando}
+                  data-job-nao-aconteceu
+                  className="flex-1 py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
+                  style={{
+                    background: "var(--surface-sub)",
+                    color: "var(--text)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  {BOTOES_STATUS.naoAconteceu}
+                </button>
+              </div>
+            )}
+            {/* Com uma ação de status acima, o Editar vira o botão secundário. */}
             <button
               type="button"
               onClick={() => onEdit(job)}
               disabled={salvando}
               className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80"
               style={
-                concluir
+                temAcaoDeStatus
                   ? {
                       background: "var(--surface-sub)",
                       color: "var(--text)",
@@ -123,7 +138,7 @@ export function JobDetailSheet({ job, onClose, onEdit, onConcluido }: Props) {
                   : { background: "var(--accent)", color: "white" }
               }
             >
-              Editar atendimento
+              {BOTOES_STATUS.editar}
             </button>
           </div>
         ) : undefined

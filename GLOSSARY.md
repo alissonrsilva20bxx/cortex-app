@@ -6,11 +6,16 @@ Um atendimento pago com um cliente. Entidade central do app.
 
 Um Job possui: nome do cliente (ou apelido), data, hora, valor cobrado (BRL), modalidade, local opcional, status e observações livres.
 
-**Status do Job** segue uma progressão linear: `agendado → confirmado → concluído`. O cancelamento pode ocorrer de qualquer estado anterior a `concluído`.
+**Status do Job** (decisão do capitão, 21/10/2026): `agendado → confirmado (opcional) → concluído` ou `cancelado`.
 
-Somente Jobs com status `concluído` contribuem para o progresso das Metas Financeiras.
+- **Confirmado** = a cliente confirmou, ANTES do horário. Não quer dizer que o atendimento deu certo.
+- No horário ou depois, o atendimento em aberto (`agendado` ou `confirmado`) vira `concluído` (aconteceu) ou `cancelado` ("Não aconteceu", inclui a cliente que desmarcou ou faltou).
+- Atendimento futuro não se conclui: "Concluir" e "Não aconteceu" só valem a partir do horário.
+- **Aconteceu?** é a pergunta que a Agenda e o card "Próximo" da Início fazem para o atendimento em aberto cujo horário já passou, com "Sim, concluir" e "Não aconteceu".
 
-O "Próximo Job" é o Job com status `agendado` ou `confirmado` de data/hora mais próxima ao momento atual.
+Somente Jobs com status `concluído` contribuem para o progresso das Metas Financeiras e para o dia contado da Jornada. O "Previsto do dia" da Agenda soma tudo que não é `cancelado`.
+
+O "Próximo Job" é o Job com status `agendado` ou `confirmado` de data/hora mais próxima a partir de agora; atendimento que já passou não é "próximo", entra no "Aconteceu?".
 
 ## Modalidade
 

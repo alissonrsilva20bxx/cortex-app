@@ -16,3 +16,70 @@ export function totalPrevistoDoDia(jobs: readonly Job[]): number {
     .filter((j) => j.status !== "cancelado")
     .reduce((soma, j) => soma + j.valor, 0);
 }
+
+/** Instante (ms) em que o atendimento começa. */
+function instanteDoAtendimento(job: Job): number {
+  return new Date(`${job.data}T${job.hora}`).getTime();
+}
+
+/** O horário do atendimento já chegou (ou passou). */
+export function horarioChegou(job: Job, agora: Date = new Date()): boolean {
+  return instanteDoAtendimento(job) <= agora.getTime();
+}
+
+const EM_ABERTO: ReadonlySet<Job["status"]> = new Set([
+  "agendado",
+  "confirmado",
+]);
+
+/** Confirmar: a cliente confirmou, ANTES do horário. Só do agendado. */
+export function podeConfirmar(job: Job, agora: Date = new Date()): boolean {
+  return job.status === "agendado" && !horarioChegou(job, agora);
+}
+
+/** Concluir ou "Não aconteceu": só a partir do horário, de um atendimento em
+ * aberto (agendado ou confirmado). Atendimento futuro não se conclui. */
+export function podeConcluir(job: Job, agora: Date = new Date()): boolean {
+  return EM_ABERTO.has(job.status) && horarioChegou(job, agora);
+}
+
+export type NovoStatus = "confirmado" | "concluído" | "cancelado";
+
+export interface DepsMudarStatus {
+  /** Grava o status no banco (update em `jobs`, pelo id). */
+  atualizar: (
+    id: string,
+    status: NovoStatus
+  ) => Promise<{ error: { message: string } | null }>;
+}
+
+export type ResultadoMudarStatus =
+  | { ok: true }
+  | {
+      ok: false;
+      motivo: "fora-do-fluxo" | "falha-ao-gravar";
+      detalhe?: string;
+    };
+
+/**
+ * Muda o status seguindo o fluxo do capitão. Recusa o que o fluxo não
+ * permite (confirmar depois do horário, concluir ou cancelar antes dele).
+ */
+export async function mudarStatus(
+  job: Job,
+  novo: NovoStatus,
+  deps: DepsMudarStatus,
+  agora: Date = new Date()
+): Promise<ResultadoMudarStatus> {
+  const permitido =
+    novo === "confirmado"
+      ? podeConfirmar(job, agora)
+      : podeConcluir(job, agora);
+  if (!permitido) return { ok: false, motivo: "fora-do-fluxo" };
+
+  const { error } = await deps.atualizar(job.id, novo);
+  if (error) {
+    return { ok: false, motivo: "falha-ao-gravar", detalhe: error.message };
+  }
+  return { ok: true };
+}

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * "Marcar como concluído" no detalhe do atendimento (teste do dono no
+ * "Concluir" no detalhe do atendimento (teste do dono no
  * iPhone, 17/10/2026): o Financeiro só conta atendimento concluído, e o
  * único jeito de concluir era o campo Status escondido no fim do
  * formulário. Teste de fiação (lê o código como texto), no mesmo padrão
@@ -14,54 +14,62 @@ const ROOT = join(__dirname, "..", "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf-8");
 
 const detalhe = read("components/jobs/JobDetailSheet.tsx");
+const hook = read("components/jobs/useMudarStatus.ts");
 const agenda = read("components/jobs/JobsTab.tsx");
 
-describe("JobDetailSheet: Marcar como concluído", () => {
-  it("só agendado ou confirmado pode ser concluído", () => {
-    expect(detalhe).toMatch(
-      /export function podeConcluir\(job: Job\): boolean \{\s*return job\.status === "agendado" \|\| job\.status === "confirmado";/
+describe("JobDetailSheet: botões do fluxo de status", () => {
+  it("usa as regras do fluxo (Confirmar antes do horário; Concluir e Não aconteceu a partir dele)", () => {
+    expect(detalhe).toContain(
+      "const confirmar = job ? podeConfirmar(job) : false;"
     );
-    expect(detalhe).toMatch(
-      /const concluir = job \? podeConcluir\(job\) : false;/
-    );
-  });
-
-  it("o botão aparece só quando pode concluir, acima do Editar", () => {
-    const botao = detalhe.indexOf("Marcar como concluído");
-    const editar = detalhe.lastIndexOf("Editar atendimento");
-    expect(botao).toBeGreaterThan(0);
-    expect(editar).toBeGreaterThan(botao);
-    expect(detalhe).toMatch(
-      /\{concluir && \(\s*<button[\s\S]{0,200}onClick=\{\(\) => void marcarConcluido\(job\)\}/
+    expect(detalhe).toContain(
+      "const concluir = job ? podeConcluir(job) : false;"
     );
   });
 
-  it("grava o status concluído no atendimento, pelo id", () => {
+  it("cada botão só aparece quando a regra deixa, acima do Editar", () => {
+    const confirmar = detalhe.indexOf("{confirmar && (");
+    const concluir = detalhe.indexOf("{concluir && (");
+    const editar = detalhe.lastIndexOf("BOTOES_STATUS.editar");
+    expect(confirmar).toBeGreaterThan(0);
+    expect(concluir).toBeGreaterThan(confirmar);
+    expect(editar).toBeGreaterThan(concluir);
+  });
+
+  it("cada botão pede o status certo", () => {
     expect(detalhe).toMatch(
-      /\.from\("jobs"\)\s*\.update\(\{ status: "concluído", atualizado_em: new Date\(\)\.toISOString\(\) \}\)\s*\.eq\("id", alvo\.id\)/
+      /onClick=\{\(\) => void aplicar\(job, "confirmado"\)\}/
+    );
+    expect(detalhe).toMatch(
+      /onClick=\{\(\) => void aplicar\(job, "concluído"\)\}/
+    );
+    expect(detalhe).toMatch(
+      /onClick=\{\(\) => void aplicar\(job, "cancelado"\)\}/
+    );
+  });
+
+  it("grava o status no atendimento, pelo id", () => {
+    expect(hook).toMatch(
+      /\.from\("jobs"\)\s*\.update\(\{ status, atualizado_em: new Date\(\)\.toISOString\(\) \}\)\s*\.eq\("id", id\)/
     );
   });
 
   it("com erro, avisa e não fecha; deu certo, fecha e avisa quem chamou", () => {
-    const fn = detalhe.slice(
-      detalhe.indexOf("async function marcarConcluido"),
-      detalhe.indexOf("const concluir =")
-    );
-    expect(fn).toMatch(/if \(error\) \{[\s\S]*?setErro\([\s\S]*?return;\s*\}/);
-    expect(fn.indexOf("onClose();")).toBeGreaterThan(fn.indexOf("if (error)"));
-    expect(fn).toContain("onConcluido?.();");
+    expect(detalhe).toMatch(/if \(await mudar\(alvo, novo\)\) onClose\(\);/);
+    expect(hook).toContain("setErro(ERRO_STATUS[novo]);");
+    expect(hook).toContain("aoMudar?.();");
   });
 
   it("dois toques não gravam duas vezes", () => {
-    expect(detalhe).toMatch(/if \(salvando\) return;/);
+    expect(hook).toMatch(/if \(salvando\) return false;/);
     expect(detalhe).toMatch(/disabled=\{salvando\}/);
   });
 });
 
 describe("Concluir recarrega a Agenda, o Financeiro e a Início", () => {
-  it("JobsTab passa o onConcluido para a página (ou recarrega só a Agenda)", () => {
+  it("JobsTab passa o onStatusMudou para a página (ou recarrega só a Agenda)", () => {
     expect(agenda).toMatch(
-      /onConcluido=\{\(\) => \{[\s\S]{0,200}if \(onJobSaved\) onJobSaved\(\);\s*else retryLoadJobs\(\);/
+      /onStatusMudou=\{\(\) => \{[\s\S]{0,200}if \(onJobSaved\) onJobSaved\(\);\s*else retryLoadJobs\(\);/
     );
   });
 
@@ -77,7 +85,9 @@ describe("Concluir recarrega a Agenda, o Financeiro e a Início", () => {
     it(`${pagina}: o JobForm e o detalhe usam o mesmo recarregamento`, () => {
       expect(src).toMatch(/onJobSaved=\{recarregarAposAtendimento\}/);
       const form = src.slice(src.lastIndexOf("<JobForm"));
-      expect(form).toMatch(/onSaved=\{\(\) => \{\s*recarregarAposAtendimento\(\);/);
+      expect(form).toMatch(
+        /onSaved=\{\(\) => \{\s*recarregarAposAtendimento\(\);/
+      );
     });
 
     it(`${pagina}: o Financeiro recarrega pelo financeiroRefreshKey`, () => {

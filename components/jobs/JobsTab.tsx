@@ -1125,7 +1125,7 @@ export function JobsTab({
           setDetailJob(null);
           onEditJob(job);
         }}
-        onConcluido={() => {
+        onStatusMudou={() => {
           // Sem a página (testes), recarrega só a lista da Agenda.
           if (onJobSaved) onJobSaved();
           else retryLoadJobs();
