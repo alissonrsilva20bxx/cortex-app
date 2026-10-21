@@ -1,0 +1,128 @@
+[
+  {
+    "arquivo": "app/global-error.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "app/layout.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/cofre/cofreResumo.ts",
+    "literal": "pt-BR",
+    "quantidade": 2,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/financeiro/FinanceiroHeroCard.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/financeiro/FinanceiroTab.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/financeiro/VisaoTab.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/home/GreetingHeader.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/home/HeroCard.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/home/inicioAgenda.ts",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/ios-prototype/IosPrototypeApp.tsx",
+    "literal": "pt-BR",
+    "quantidade": 4,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/jobs/agendaSemana.ts",
+    "literal": "pt-BR",
+    "quantidade": 3,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/jobs/JobsTab.tsx",
+    "literal": "pt-BR",
+    "quantidade": 4,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/pagamento/PagamentoTela.tsx",
+    "literal": "EUR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/pagamento/PagamentoTela.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/recap/RecapSheet.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/rede/ClienteCard.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "components/rede/ClienteDetailSheet.tsx",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "lib/finance.ts",
+    "literal": "pt-BR",
+    "quantidade": 3,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "lib/mockRede.ts",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "lib/pagamento/cliente.ts",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  },
+  {
+    "arquivo": "lib/proximoAtendimento.ts",
+    "literal": "pt-BR",
+    "quantidade": 1,
+    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
+  }
+]

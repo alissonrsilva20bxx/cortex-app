@@ -30,4 +30,4 @@ Use uma conta criada agora, sem nenhum dado antigo. Conta velha esconde bug.
 
 Provam que o código tem a estrutura certa (botão com ação, sem dado de exemplo em produção, todo valor lido tem quem escreva); NÃO provam que o fluxo funciona no iPhone: só o roteiro acima, feito por uma pessoa, prova.
 
-As checagens estão em `tests/wiring/`: `botoes-com-acao`, `sem-dados-de-exemplo-em-producao` e `quem-escreve-o-que-le`. Cada uma tem um arquivo `.baseline.json` com o que já existia; ao consertar um item, tire a linha da baseline.
+As checagens estão em `tests/wiring/`: `botoes-com-acao`, `sem-dados-de-exemplo-em-producao`, `quem-escreve-o-que-le` e `locale-moeda-em-constantes`. Cada uma tem um arquivo `.baseline.json` com o que já existia; ao consertar um item, tire a linha da baseline.
