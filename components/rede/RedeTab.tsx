@@ -57,10 +57,7 @@ import {
   buscarPessoas,
   type PessoaResumo,
 } from "@/lib/rede/perfis";
-import {
-  listarWishlistItems,
-  type WishlistItem,
-} from "@/lib/rede/wishlist";
+import { listarWishlistItems, type WishlistItem } from "@/lib/rede/wishlist";
 import { progressoDesejo } from "@/lib/desejo/desejo";
 import { useAoMudarDesejos } from "@/lib/desejo/eventos";
 import { TEXTOS_DESEJO } from "@/lib/desejo/textos";
@@ -220,6 +217,10 @@ interface Props {
   barraDoca?: boolean;
 }
 
+/** Layout effect no navegador; no servidor, um effect comum (não roda). */
+const useEfeitoDeLayout =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 export function RedeTab({
   usuario,
   active = true,
@@ -248,26 +249,10 @@ export function RedeTab({
 
   if (sementeRef.current === null || sementeRef.current.userId !== usuario.id) {
     redeCache.vincularUsuario(usuario.id);
-    let feedMem = redeCache.lerFeed(usuario.id);
-    if (!feedMem) {
-      const persistido = redeCachePersist.carregar(usuario.id);
-      if (persistido) {
-        if (persistido.feed.length > 0) {
-          const hasMore = persistido.feed.length >= FEED_PAGE_SIZE;
-          // sobe pro cache em memória pra próximos remounts nesta sessão
-          redeCache.escreverFeed(usuario.id, persistido.feed, hasMore);
-          feedMem = { posts: persistido.feed, hasMore, stale: true };
-        }
-        if (persistido.perfil && !redeCache.ler(usuario.id, "perfil")) {
-          redeCache.escrever<PerfilCache>(usuario.id, "perfil", {
-            perfil: persistido.perfil,
-            liveLinks: [],
-            wishlistItems: [],
-            clientes: [],
-          });
-        }
-      }
-    }
+    // Só a memória no 1º render. O localStorage NÃO é lido aqui: o servidor
+    // não o tem, então ler no 1º render da hidratação dava HTML diferente
+    // (erro de hidratação). Ele entra no efeito de layout logo abaixo.
+    const feedMem = redeCache.lerFeed(usuario.id);
     sementeRef.current = {
       userId: usuario.id,
       feed: feedMem ? { posts: feedMem.posts, hasMore: feedMem.hasMore } : null,
@@ -280,6 +265,49 @@ export function RedeTab({
     };
   }
   const semente = sementeRef.current;
+
+  // ── Semente do localStorage (só no navegador, antes da 1ª pintura) ──
+  // Cold start: a memória está vazia e o localStorage guarda o feed e o
+  // perfil da última visita. Lido aqui, depois da hidratação, e antes de
+  // pintar (layout effect): a tela nasce igual à do servidor (skeleton) e
+  // já troca pelo conteúdo guardado sem piscar. No servidor vira useEffect
+  // (que não roda), para o React não avisar.
+  const hidratouDoStorageRef = useRef<string | null>(null);
+  const [sementeStorage, setSementeStorage] = useState<{
+    feed: { posts: FeedPost[]; hasMore: boolean } | null;
+    perfil: PerfilCache | null;
+  } | null>(null);
+  useEfeitoDeLayout(() => {
+    if (hidratouDoStorageRef.current === usuario.id) return;
+    hidratouDoStorageRef.current = usuario.id;
+    if (semente.feed !== null && semente.perfil !== null) return;
+    const persistido = redeCachePersist.carregar(usuario.id);
+    if (!persistido) return;
+    let feed: { posts: FeedPost[]; hasMore: boolean } | null = null;
+    let perfil: PerfilCache | null = null;
+    if (semente.feed === null && persistido.feed.length > 0) {
+      const hasMore = persistido.feed.length >= FEED_PAGE_SIZE;
+      // sobe pro cache em memória pra próximos remounts nesta sessão
+      redeCache.escreverFeed(usuario.id, persistido.feed, hasMore);
+      feed = { posts: persistido.feed, hasMore };
+    }
+    if (semente.perfil === null && persistido.perfil) {
+      perfil = {
+        perfil: persistido.perfil,
+        liveLinks: [],
+        wishlistItems: [],
+        clientes: [],
+      };
+      if (!redeCache.ler(usuario.id, "perfil")) {
+        redeCache.escrever<PerfilCache>(usuario.id, "perfil", perfil);
+      }
+    }
+    // Os efeitos de busca leem `semente` para decidir skeleton x refresh em
+    // 2º plano; ela passa a refletir o que veio do storage.
+    if (feed) semente.feed = feed;
+    if (perfil) semente.perfil = perfil;
+    if (feed || perfil) setSementeStorage({ feed, perfil });
+  }, [usuario.id, semente]);
 
   // ── Offline / reconexão ──
   // `online` (navigator.onLine): a lista já carregada segue navegável
@@ -483,6 +511,19 @@ export function RedeTab({
   // 1ª página do feed, sempre "confirmada pelo servidor" — o que a camada
   // persistida grava (nunca o estado puramente otimista).
   const feedRef = useRef<FeedPost[]>(semente.feed?.posts ?? []);
+  // Aplica nos estados o que o efeito de layout leu do localStorage.
+  useEfeitoDeLayout(() => {
+    if (!sementeStorage) return;
+    if (sementeStorage.feed) {
+      feedRef.current = sementeStorage.feed.posts;
+      setPosts(sementeStorage.feed.posts);
+      setFeedHasMore(sementeStorage.feed.hasMore);
+      setFeedLoading(false);
+    }
+    if (sementeStorage.perfil) {
+      setPerfil(sementeStorage.perfil.perfil);
+    }
+  }, [sementeStorage]);
   // Curtidas otimistas ainda não confirmadas: um `listarFeed` que já estava
   // em voo quando a pessoa curtiu não pode desfazer o like (req 6).
   const likesPendentes = useRef<Set<string>>(new Set());
@@ -1041,9 +1082,7 @@ export function RedeTab({
   const [shareToConvoPost, setShareToConvoPost] = useState<FeedPost | null>(
     null
   );
-  const [wishlistAcoes, setWishlistAcoes] = useState<WishlistItem | null>(
-    null
-  );
+  const [wishlistAcoes, setWishlistAcoes] = useState<WishlistItem | null>(null);
   const [clienteDetail, setClienteDetail] = useState<Cliente | null>(null);
   const [clienteFormOpen, setClienteFormOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
