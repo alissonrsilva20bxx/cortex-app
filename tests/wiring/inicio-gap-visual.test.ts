@@ -148,8 +148,22 @@ describe("§2-P1-2 — homeCards controla NextJobCard/ObjetivosCard em tempo rea
       const grade = fonte.indexOf('className="grid grid-cols-2');
       expect(grade, arq).toBeGreaterThan(aconteceu);
       expect(fonte, arq).toMatch(
-        /\{homeCards\.nextJob && \(\s*<AconteceuCard\s+userId=\{usuario\.id\}\s+jobs=\{jobs\}\s+aoMudar=\{recarregarAposAtendimento\}\s+aoVerAgenda=\{\(\) => handleTabChange\("jobs"\)\}/
+        /<AconteceuCard\s+userId=\{usuario\.id\}\s+jobs=\{jobs\}\s+aoMudar=\{recarregarAposAtendimento\}\s+aoVerAgenda=\{\(\) => handleTabChange\("jobs"\)\}/
       );
+    }
+  });
+
+  it("o Aconteceu? não depende da chave homeCards.nextJob: aparece sempre que houver pendente", () => {
+    for (const arq of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
+      const fonte = read(arq);
+      const i = fonte.indexOf("<AconteceuCard");
+      expect(i, arq).toBeGreaterThan(-1);
+      // Nada de `homeCards.nextJob &&` abrindo o card.
+      expect(fonte.slice(Math.max(0, i - 80), i), arq).not.toContain(
+        "homeCards.nextJob"
+      );
+      // O Próximo continua com a chave dele.
+      expect(fonte, arq).toMatch(/homeCards\.nextJob && \(?\s*<NextJobCard/);
     }
   });
 

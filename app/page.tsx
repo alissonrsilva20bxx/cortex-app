@@ -632,14 +632,12 @@ export default function Page() {
                 {/* A pergunta "Aconteceu?", quando há atendimento esperando
                     resposta: largura total logo abaixo do cumprimento, para os
                     botões ficarem acima da pílula na primeira vista. */}
-                {homeCards.nextJob && (
-                  <AconteceuCard
+                <AconteceuCard
                     userId={usuario.id}
                     jobs={jobs}
                     aoMudar={recarregarAposAtendimento}
                     aoVerAgenda={() => handleTabChange("jobs")}
                   />
-                )}
                 {/* Grade de 2 colunas do mockup; o card principal ocupa as duas. Com
     quantidade ímpar de cards pequenos (um deles desligado em Ajustes,
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
