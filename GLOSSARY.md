@@ -11,7 +11,7 @@ Um Job possui: nome do cliente (ou apelido), data, hora, valor cobrado (na moeda
 - **Confirmado** = a cliente confirmou, ANTES do horário. Não quer dizer que o atendimento deu certo.
 - No horário ou depois, o atendimento em aberto (`agendado` ou `confirmado`) vira `concluído` (aconteceu) ou `cancelado` ("Não aconteceu", inclui a cliente que desmarcou ou faltou).
 - Atendimento futuro não se conclui: "Concluir" e "Não aconteceu" só valem a partir do horário.
-- **Aconteceu?** é a pergunta que a Agenda e o card "Próximo" da Início fazem para o atendimento em aberto cujo horário já passou, com "Sim, concluir" e "Não aconteceu".
+- **Aconteceu?** é a pergunta que a Agenda e o card "Aconteceu?" no topo da Início fazem para o atendimento em aberto cujo horário já passou, com "Sim, concluir" e "Não aconteceu". Na Início, o card "Próximo" some enquanto o "Aconteceu?" aparece.
 
 Somente Jobs com status `concluído` contam como atendimento no progresso das Metas Financeiras e no dia contado da Jornada. As entradas avulsas também somam na meta, mas não contam como atendimento. O "Previsto do dia" da Agenda soma tudo que não é `cancelado`.
 
