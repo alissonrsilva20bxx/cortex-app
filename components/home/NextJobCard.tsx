@@ -17,6 +17,7 @@ import { formatHora, proximoAtendimento, rotuloDiaCurto } from "./inicioAgenda";
 export { formatDayBadge } from "@/lib/proximoAtendimento";
 
 interface Props {
+  userId: string;
   jobs: Job[];
   /** O status de um atendimento mudou (pergunta "Aconteceu?"): a página
    * recarrega Agenda, Financeiro e Início. */
@@ -33,9 +34,9 @@ interface Props {
  * pergunta "Aconteceu?" (AconteceuCard) em vez de mostrar o passado como
  * se fosse o próximo.
  */
-export function NextJobCard({ jobs, aoMudar }: Props) {
+export function NextJobCard({ userId, jobs, aoMudar }: Props) {
   if (aguardandoResposta(jobs).length > 0) {
-    return <AconteceuCard jobs={jobs} aoMudar={aoMudar} />;
+    return <AconteceuCard userId={userId} jobs={jobs} aoMudar={aoMudar} />;
   }
   const job = proximoAtendimento(jobs);
 

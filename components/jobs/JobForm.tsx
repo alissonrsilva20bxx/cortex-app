@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 import { useJornada } from "@/components/jornada/useJornada";
+import { contaComoDiaAtivo } from "@/lib/atendimentos/status";
 import type { Job, JobStatus, Modalidade } from "@/lib/types";
 
 interface FormState {
@@ -132,7 +133,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
 
     setSaving(false);
     if (err) return setError(err.message);
-    if (!job) void registrar("atendimento");
+    // O dia só conta quando o atendimento vira concluído (aqui, no
+    // formulário, ou nos botões do detalhe / "Aconteceu?"), não ao criar.
+    if (contaComoDiaAtivo(job?.status ?? null, form.status)) {
+      void registrar("atendimento");
+    }
     onSaved();
     onClose();
   }

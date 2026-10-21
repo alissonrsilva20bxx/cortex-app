@@ -58,12 +58,14 @@ const LIGACOES = [
     vezes: 1,
   },
   {
-    // Só atendimento NOVO: editar um atendimento não registra de novo.
+    // Só quando o atendimento vira concluído (contaComoDiaAtivo): criar
+    // agendado não conta, e editar um concluído não registra de novo. Os
+    // botões do detalhe e do Aconteceu? registram por useMudarStatus.
     acao: "atendimento",
     arquivo: "components/jobs/JobForm.tsx",
     hook: "const { registrar } = useJornada(userId);",
     depoisDe: "if (err) return setError(err.message);",
-    chamada: 'if (!job) void registrar("atendimento");',
+    chamada: 'void registrar("atendimento");',
     vezes: 1,
   },
   {

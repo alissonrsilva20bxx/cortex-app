@@ -8,6 +8,7 @@ import { ACONTECEU } from "./textosAgenda";
 import { useMudarStatus } from "./useMudarStatus";
 
 interface Props {
+  userId: string;
   jobs: readonly Job[];
   /** Abre o detalhe do atendimento. */
   onOpen: (job: Job) => void;
@@ -21,8 +22,13 @@ interface Props {
  * (vira cancelado). Sem nenhum, não aparece. Sem isto o atendimento ficava
  * "agendado" para sempre e o dinheiro nunca entrava.
  */
-export function AgendaAconteceu({ jobs, onOpen, onStatusMudou }: Props) {
-  const { mudar, salvando, erro } = useMudarStatus(onStatusMudou);
+export function AgendaAconteceu({
+  userId,
+  jobs,
+  onOpen,
+  onStatusMudou,
+}: Props) {
+  const { mudar, salvando, erro } = useMudarStatus(userId, onStatusMudou);
   const pendentes = aguardandoResposta(jobs);
   if (pendentes.length === 0) return null;
 

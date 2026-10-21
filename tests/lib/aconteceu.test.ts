@@ -64,6 +64,7 @@ describe("Início: o card Próximo", () => {
     vi.setSystemTime(AGORA);
     const html = texto(
       createElement(NextJobCard, {
+        userId: "u1",
         jobs: [
           job("passou", "2026-10-21", "10:00", "agendado"),
           job("amanha", "2026-10-22", "09:00", "agendado"),
@@ -84,6 +85,7 @@ describe("Início: o card Próximo", () => {
     vi.setSystemTime(AGORA);
     const html = texto(
       createElement(NextJobCard, {
+        userId: "u1",
         jobs: [
           job("feito", "2026-10-21", "10:00", "concluído"),
           job("amanha", "2026-10-22", "09:00", "agendado"),
@@ -103,6 +105,7 @@ describe("Agenda: a lista Aconteceu?", () => {
     vi.setSystemTime(AGORA);
     const html = texto(
       createElement(AgendaAconteceu, {
+        userId: "u1",
         jobs: [
           job("a", "2026-10-21", "10:00", "agendado"),
           job("b", "2026-10-20", "10:00", "confirmado"),
@@ -125,6 +128,7 @@ describe("Agenda: a lista Aconteceu?", () => {
     vi.setSystemTime(AGORA);
     const html = renderToStaticMarkup(
       createElement(AgendaAconteceu, {
+        userId: "u1",
         jobs: [job("c", "2026-10-22", "10:00", "agendado")],
         onOpen: () => {},
         onStatusMudou: () => {},

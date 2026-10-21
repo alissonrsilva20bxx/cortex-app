@@ -9,6 +9,7 @@ import { CARD_PEQUENO, IconeCard, ROTULO_CARD } from "./pecasMockup";
 import { formatHora, rotuloDiaCurto } from "./inicioAgenda";
 
 interface Props {
+  userId: string;
   jobs: Job[];
   /** O status mudou: a página recarrega Agenda, Financeiro e Início. */
   aoMudar: () => void;
@@ -20,8 +21,8 @@ interface Props {
  * aconteceu". Atendimento que já passou não pode aparecer como se fosse o
  * próximo. Sem nenhum pendente, não renderiza nada.
  */
-export function AconteceuCard({ jobs, aoMudar }: Props) {
-  const { mudar, salvando, erro } = useMudarStatus(aoMudar);
+export function AconteceuCard({ userId, jobs, aoMudar }: Props) {
+  const { mudar, salvando, erro } = useMudarStatus(userId, aoMudar);
   const pendentes = aguardandoResposta(jobs);
   const job = pendentes[0];
   if (!job) return null;

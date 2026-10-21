@@ -605,6 +605,7 @@ export function JobsTab({
       {/* "Aconteceu?": atendimento em aberto cujo horário já passou. */}
       {hasLoadedOnce && (
         <AgendaAconteceu
+          userId={userId}
           jobs={jobs}
           onOpen={setDetailJob}
           onStatusMudou={() => {
@@ -1133,6 +1134,7 @@ export function JobsTab({
       />
 
       <JobDetailSheet
+        userId={userId}
         job={detailJob}
         onClose={() => setDetailJob(null)}
         onEdit={(job) => {

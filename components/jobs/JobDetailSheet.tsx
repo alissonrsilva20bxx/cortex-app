@@ -18,6 +18,7 @@ function formatHora(hora: string): string {
 }
 
 interface Props {
+  userId: string;
   job: Job | null;
   onClose: () => void;
   onEdit: (job: Job) => void;
@@ -42,9 +43,18 @@ interface Props {
  * mesmo casco de `ClienteDetailSheet` (Rede) — em vez de reinventar
  * overlay/pega/foco: já tem focus trap, Esc e `role="dialog"`.
  */
-export function JobDetailSheet({ job, onClose, onEdit, onStatusMudou }: Props) {
+export function JobDetailSheet({
+  userId,
+  job,
+  onClose,
+  onEdit,
+  onStatusMudou,
+}: Props) {
   const dayBadge = job ? formatDayBadge(job.data) : null;
-  const { mudar, salvando, erro, limparErro } = useMudarStatus(onStatusMudou);
+  const { mudar, salvando, erro, limparErro } = useMudarStatus(
+    userId,
+    onStatusMudou
+  );
 
   // Outro atendimento aberto: começa sem erro.
   useEffect(() => {

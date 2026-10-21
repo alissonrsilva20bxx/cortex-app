@@ -41,11 +41,12 @@ const avulsa: ReceitaAvulsa = {
   criadoEm: dia(1),
 };
 
-const brl = (v: number) =>
-  formatBRL(v).replace(/[\s\u00a0\u202f]+/g, " ");
+const brl = (v: number) => formatBRL(v).replace(/[\s\u00a0\u202f]+/g, " ");
 
 const texto = (el: Parameters<typeof renderToStaticMarkup>[0]) =>
-  renderToStaticMarkup(el).replace(/<[^>]+>/g, " ").replace(/[\s\u00a0\u202f]+/g, " ");
+  renderToStaticMarkup(el)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[\s\u00a0\u202f]+/g, " ");
 
 function heroFinanceiro(receitas: ReceitaAvulsa[]) {
   const entrou = calcEarnings([job], receitas, "mes");
@@ -72,8 +73,22 @@ describe("meta do mês: um número só", () => {
   });
 
   it("a entrada avulsa move o card principal do Início", () => {
-    const sem = texto(createElement(HeroCard, { jobs: [job], metas, receitas: [], onGoToFinanceiro: () => {} }));
-    const com = texto(createElement(HeroCard, { jobs: [job], metas, receitas: [avulsa], onGoToFinanceiro: () => {} }));
+    const sem = texto(
+      createElement(HeroCard, {
+        jobs: [job],
+        metas,
+        receitas: [],
+        onGoToFinanceiro: () => {},
+      })
+    );
+    const com = texto(
+      createElement(HeroCard, {
+        jobs: [job],
+        metas,
+        receitas: [avulsa],
+        onGoToFinanceiro: () => {},
+      })
+    );
     expect(sem).toContain(brl(400));
     expect(sem).toContain("40% da meta");
     expect(com).toContain(brl(500));
@@ -81,15 +96,31 @@ describe("meta do mês: um número só", () => {
   });
 
   it("a entrada avulsa move o Falta pra meta do Início", () => {
-    const sem = texto(createElement(FaltaMetaCard, { jobs: [job], metas, receitas: [], onGoToFinanceiro: () => {} }));
-    const com = texto(createElement(FaltaMetaCard, { jobs: [job], metas, receitas: [avulsa], onGoToFinanceiro: () => {} }));
+    const sem = texto(
+      createElement(FaltaMetaCard, {
+        jobs: [job],
+        metas,
+        receitas: [],
+        onGoToFinanceiro: () => {},
+      })
+    );
+    const com = texto(
+      createElement(FaltaMetaCard, {
+        jobs: [job],
+        metas,
+        receitas: [avulsa],
+        onGoToFinanceiro: () => {},
+      })
+    );
     expect(sem).toContain(brl(600));
     expect(com).toContain(brl(500));
   });
 
   it("a entrada avulsa move o card Meta do Financeiro", () => {
     expect(heroFinanceiro([])).toContain(`40% ${brl(400)} de ${brl(1000)}`);
-    expect(heroFinanceiro([avulsa])).toContain(`50% ${brl(500)} de ${brl(1000)}`);
+    expect(heroFinanceiro([avulsa])).toContain(
+      `50% ${brl(500)} de ${brl(1000)}`
+    );
   });
 
   it("os três lugares usam a conta da aba Metas (calcEarnings do mês)", () => {
@@ -101,6 +132,8 @@ describe("meta do mês: um número só", () => {
   it("a Início busca receitas_avulsas junto com jobs e metas e repassa aos cards", () => {
     const page = readFileSync(join(process.cwd(), "app/page.tsx"), "utf8");
     expect(page).toContain('supabase.from("receitas_avulsas")');
-    expect(page.match(/receitas=\{receitas\}/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(page.match(/receitas=\{receitas\}/g)?.length).toBeGreaterThanOrEqual(
+      2
+    );
   });
 });

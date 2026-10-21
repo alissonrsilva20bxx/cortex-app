@@ -97,3 +97,27 @@ describe("Concluir recarrega a Agenda, o Financeiro e a Início", () => {
     });
   }
 });
+
+describe("Dia contado da Jornada: ao concluir, não ao criar", () => {
+  const form = read("components/jobs/JobForm.tsx");
+  const hook = read("components/jobs/useMudarStatus.ts");
+
+  it("o formulário não registra mais ao criar; registra só na virada para concluído", () => {
+    expect(form).not.toMatch(/if \(!job\) void registrar\("atendimento"\)/);
+    expect(form).toMatch(
+      /if \(contaComoDiaAtivo\(job\?\.status \?\? null, form\.status\)\) \{\s*void registrar\("atendimento"\);/
+    );
+  });
+
+  it("o detalhe e o Aconteceu? registram pelo mesmo hook, com a Jornada da usuária", () => {
+    expect(hook).toContain("useJornada(userId)");
+    expect(hook).toMatch(/registrar: \(acao\) => void registrar\(acao\)/);
+    for (const f of [
+      "components/jobs/JobDetailSheet.tsx",
+      "components/jobs/AgendaAconteceu.tsx",
+      "components/home/AconteceuCard.tsx",
+    ]) {
+      expect(read(f), f).toMatch(/useMudarStatus\(\s*userId,/);
+    }
+  });
+});

@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useJornada } from "@/components/jornada/useJornada";
 import {
   mudarStatus,
   type DepsMudarStatus,
@@ -21,10 +22,11 @@ const gravarNoBanco: DepsMudarStatus["atualizar"] = async (id, status) => {
 
 /**
  * Muda o status de um atendimento pelo fluxo (Confirmar, Concluir, Não
- * aconteceu). Quem usa só recebe `mudar`, `salvando` e `erro`; depois de
+ * aconteceu); ao concluir, conta o dia na Jornada. Quem usa só recebe `mudar`, `salvando` e `erro`; depois de
  * gravar, chama `aoMudar` para recarregar Agenda, Financeiro e Início.
  */
-export function useMudarStatus(aoMudar?: () => void) {
+export function useMudarStatus(userId: string, aoMudar?: () => void) {
+  const { registrar } = useJornada(userId);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -35,7 +37,10 @@ export function useMudarStatus(aoMudar?: () => void) {
       if (salvando) return false;
       setSalvando(true);
       setErro(null);
-      const r = await mudarStatus(job, novo, { atualizar: gravarNoBanco });
+      const r = await mudarStatus(job, novo, {
+        atualizar: gravarNoBanco,
+        registrar: (acao) => void registrar(acao),
+      });
       setSalvando(false);
       if (!r.ok) {
         if (r.motivo === "falha-ao-gravar") {
@@ -49,7 +54,7 @@ export function useMudarStatus(aoMudar?: () => void) {
       aoMudar?.();
       return true;
     },
-    [salvando, aoMudar]
+    [salvando, aoMudar, registrar]
   );
 
   return { mudar, salvando, erro, limparErro };

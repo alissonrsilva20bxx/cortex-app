@@ -43,6 +43,16 @@ export function podeConcluir(job: Job, agora: Date = new Date()): boolean {
   return EM_ABERTO.has(job.status) && horarioChegou(job, agora);
 }
 
+/** O atendimento vira concluído agora (e não era antes): é aí que o dia
+ * conta na Jornada, não ao criar. `antes` é `null` para atendimento novo.
+ * Quem já estava concluído e só foi editado não conta de novo. */
+export function contaComoDiaAtivo(
+  antes: Job["status"] | null,
+  depois: Job["status"]
+): boolean {
+  return depois === "concluído" && antes !== "concluído";
+}
+
 export type NovoStatus = "confirmado" | "concluído" | "cancelado";
 
 export interface DepsMudarStatus {
@@ -51,6 +61,8 @@ export interface DepsMudarStatus {
     id: string,
     status: NovoStatus
   ) => Promise<{ error: { message: string } | null }>;
+  /** Registra a ação na Jornada (o "dia contado"). */
+  registrar: (acao: "atendimento") => unknown;
 }
 
 export type ResultadoMudarStatus =
@@ -64,6 +76,7 @@ export type ResultadoMudarStatus =
 /**
  * Muda o status seguindo o fluxo do capitão. Recusa o que o fluxo não
  * permite (confirmar depois do horário, concluir ou cancelar antes dele).
+ * Concluir, depois de gravar, conta o dia na Jornada.
  */
 export async function mudarStatus(
   job: Job,
@@ -81,6 +94,7 @@ export async function mudarStatus(
   if (error) {
     return { ok: false, motivo: "falha-ao-gravar", detalhe: error.message };
   }
+  if (contaComoDiaAtivo(job.status, novo)) deps.registrar("atendimento");
   return { ok: true };
 }
 

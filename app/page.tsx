@@ -662,6 +662,7 @@ export default function Page() {
                   </div>
                   {homeCards.nextJob && (
                     <NextJobCard
+                      userId={usuario.id}
                       jobs={jobs}
                       aoMudar={recarregarAposAtendimento}
                     />

@@ -660,6 +660,7 @@ export default function DevPreviewApp() {
               </div>
               {homeCards.nextJob && (
                     <NextJobCard
+                      userId={usuario.id}
                       jobs={jobs}
                       aoMudar={recarregarAposAtendimento}
                     />

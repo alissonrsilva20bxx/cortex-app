@@ -5,6 +5,7 @@ import {
   podeConcluir,
   podeConfirmar,
   totalPrevistoDoDia,
+  contaComoDiaAtivo,
   type NovoStatus,
 } from "@/lib/atendimentos/status";
 import type { Job, JobStatus } from "@/lib/types";
@@ -41,7 +42,6 @@ describe("totalPrevistoDoDia", () => {
   });
 });
 
-
 describe("fluxo de status: Agendado -> Confirmado -> Concluído ou Não aconteceu", () => {
   const ANTES = new Date("2026-10-21T09:00:00");
   const NO_HORARIO = new Date("2026-10-21T10:00:00");
@@ -77,6 +77,7 @@ describe("fluxo de status: Agendado -> Confirmado -> Concluído ou Não acontece
         gravados.push([id, status]);
         return { error: null };
       },
+      registrar: () => {},
     };
     expect(
       await mudarStatus(job("x", 1, "agendado"), "confirmado", deps, ANTES)
@@ -101,6 +102,7 @@ describe("fluxo de status: Agendado -> Confirmado -> Concluído ou Não acontece
         chamadas++;
         return { error: null };
       },
+      registrar: () => {},
     };
     const futuro = job("f", 1, "agendado");
     expect(await mudarStatus(futuro, "concluído", deps, ANTES)).toMatchObject({
@@ -118,7 +120,7 @@ describe("fluxo de status: Agendado -> Confirmado -> Concluído ou Não acontece
     const r = await mudarStatus(
       job("a", 1, "agendado"),
       "confirmado",
-      { atualizar: async () => ({ error: null }) },
+      { atualizar: async () => ({ error: null }), registrar: () => {} },
       DEPOIS
     );
     expect(r).toMatchObject({ ok: false, motivo: "fora-do-fluxo" });
@@ -128,7 +130,10 @@ describe("fluxo de status: Agendado -> Confirmado -> Concluído ou Não acontece
     const r = await mudarStatus(
       job("a", 1, "agendado"),
       "concluído",
-      { atualizar: async () => ({ error: { message: "sem rede" } }) },
+      {
+        atualizar: async () => ({ error: { message: "sem rede" } }),
+        registrar: () => {},
+      },
       DEPOIS
     );
     expect(r).toEqual({
@@ -136,5 +141,63 @@ describe("fluxo de status: Agendado -> Confirmado -> Concluído ou Não acontece
       motivo: "falha-ao-gravar",
       detalhe: "sem rede",
     });
+  });
+});
+
+describe("dia contado da Jornada: só quando o atendimento vira concluído", () => {
+  const DEPOIS = new Date("2026-10-21T15:00:00");
+  const ANTES = new Date("2026-10-21T09:00:00");
+
+  function deps() {
+    const acoes: string[] = [];
+    return {
+      acoes,
+      d: {
+        atualizar: async () => ({ error: null }),
+        registrar: (acao: string) => void acoes.push(acao),
+      },
+    };
+  }
+
+  it("concluir registra atendimento uma vez", async () => {
+    const { acoes, d } = deps();
+    await mudarStatus(job("a", 1, "agendado"), "concluído", d, DEPOIS);
+    expect(acoes).toEqual(["atendimento"]);
+  });
+
+  it("confirmar e Não aconteceu não registram", async () => {
+    const { acoes, d } = deps();
+    await mudarStatus(job("a", 1, "agendado"), "confirmado", d, ANTES);
+    await mudarStatus(job("b", 1, "agendado"), "cancelado", d, DEPOIS);
+    expect(acoes).toEqual([]);
+  });
+
+  it("se a gravação falha, não registra", async () => {
+    const acoes: string[] = [];
+    await mudarStatus(
+      job("a", 1, "agendado"),
+      "concluído",
+      {
+        atualizar: async () => ({ error: { message: "x" } }),
+        registrar: (acao) => void acoes.push(acao),
+      },
+      DEPOIS
+    );
+    expect(acoes).toEqual([]);
+  });
+
+  it("concluir fora do fluxo (atendimento futuro) não registra", async () => {
+    const { acoes, d } = deps();
+    await mudarStatus(job("a", 1, "agendado"), "concluído", d, ANTES);
+    expect(acoes).toEqual([]);
+  });
+
+  it("no formulário: criar agendado não conta; criar já concluído conta; editar o que já era concluído não conta de novo", () => {
+    expect(contaComoDiaAtivo(null, "agendado")).toBe(false);
+    expect(contaComoDiaAtivo(null, "concluído")).toBe(true);
+    expect(contaComoDiaAtivo("agendado", "concluído")).toBe(true);
+    expect(contaComoDiaAtivo("confirmado", "concluído")).toBe(true);
+    expect(contaComoDiaAtivo("concluído", "concluído")).toBe(false);
+    expect(contaComoDiaAtivo("agendado", "cancelado")).toBe(false);
   });
 });
