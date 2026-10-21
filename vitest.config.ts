@@ -6,8 +6,16 @@ import path from "node:path";
 // no process.env já na hora de decidir se tests/rede entra ou não.
 carregarEnv({ path: ".env.test.local", quiet: true });
 
-// Sem Supabase local de teste, tests/rede/** fica de fora (e
-// tests/banco-pulado.test.ts mostra o PULADO). Com ele, tudo roda.
+// Sem Supabase local de teste, só os testes que usam banco ficam de fora (e
+// tests/banco-pulado.test.ts mostra o PULADO). Os testes puros de tests/rede
+// (serviços e rotas com vi.mock) continuam no pre-teste. Com banco, tudo roda.
+// Arquivo novo que importe tests/rede/support/env|clients|testUsers de verdade
+// precisa entrar nesta lista.
+const testesDeBanco = [
+  "tests/rede/rls/**",
+  "tests/rede/concurrency/**",
+  "**/*.integration.test.ts",
+];
 const temBanco = Boolean(process.env.SUPABASE_TEST_URL);
 
 export default defineConfig({
@@ -26,7 +34,7 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.ts"],
-    exclude: temBanco ? configDefaults.exclude : [...configDefaults.exclude, "tests/rede/**"],
+    exclude: temBanco ? configDefaults.exclude : [...configDefaults.exclude, ...testesDeBanco],
     setupFiles: ["tests/rede/support/vitest.setup.ts"],
     environment: "node",
     // These hit a real Postgres/Auth instance over HTTP (local or staging),
