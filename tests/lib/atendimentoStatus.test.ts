@@ -4,10 +4,15 @@ import {
   mudarStatus,
   podeConcluir,
   podeConfirmar,
+  podeDesmarcar,
+  statusPermitidos,
+  estadoDoDescanso,
   totalPrevistoDoDia,
   contaComoDiaAtivo,
   type NovoStatus,
 } from "@/lib/atendimentos/status";
+import { proximoAtendimento as proximoDaInicio } from "@/components/home/inicioAgenda";
+import { proximoAtendimento as proximoDaAgenda } from "@/components/jobs/agendaSemana";
 import type { Job, JobStatus } from "@/lib/types";
 
 const job = (id: string, valor: number, status: JobStatus): Job => ({
@@ -95,7 +100,7 @@ describe("fluxo de status: Agendado -> Confirmado -> Concluído ou Não acontece
     ]);
   });
 
-  it("recusa concluir ou cancelar atendimento futuro, e não grava", async () => {
+  it("recusa concluir atendimento futuro, e não grava", async () => {
     let chamadas = 0;
     const deps = {
       atualizar: async () => {
@@ -106,10 +111,6 @@ describe("fluxo de status: Agendado -> Confirmado -> Concluído ou Não acontece
     };
     const futuro = job("f", 1, "agendado");
     expect(await mudarStatus(futuro, "concluído", deps, ANTES)).toMatchObject({
-      ok: false,
-      motivo: "fora-do-fluxo",
-    });
-    expect(await mudarStatus(futuro, "cancelado", deps, ANTES)).toMatchObject({
       ok: false,
       motivo: "fora-do-fluxo",
     });
@@ -199,5 +200,106 @@ describe("dia contado da Jornada: só quando o atendimento vira concluído", () 
     expect(contaComoDiaAtivo("confirmado", "concluído")).toBe(true);
     expect(contaComoDiaAtivo("concluído", "concluído")).toBe(false);
     expect(contaComoDiaAtivo("agendado", "cancelado")).toBe(false);
+  });
+});
+
+describe("Cliente desmarcou: cancelar ANTES do horário, só pelo mudarStatus", () => {
+  const ANTES = new Date("2026-10-21T09:00:00");
+  const DEPOIS = new Date("2026-10-21T15:00:00");
+  const deps = (gravados: string[] = []) => ({
+    atualizar: async (_id: string, status: NovoStatus) => {
+      gravados.push(status);
+      return { error: null };
+    },
+    registrar: () => {},
+  });
+
+  it.each(["agendado", "confirmado"] as const)(
+    "podeDesmarcar: %s antes do horário sim, no horário ou depois não",
+    (status) => {
+      expect(podeDesmarcar(job("a", 1, status), ANTES)).toBe(true);
+      expect(podeDesmarcar(job("a", 1, status), DEPOIS)).toBe(false);
+    }
+  );
+
+  it.each(["concluído", "cancelado"] as const)(
+    "podeDesmarcar: %s não se desmarca",
+    (status) => {
+      expect(podeDesmarcar(job("a", 1, status), ANTES)).toBe(false);
+    }
+  );
+
+  it("mudarStatus grava cancelado antes do horário (agendado e confirmado)", async () => {
+    const gravados: string[] = [];
+    for (const status of ["agendado", "confirmado"] as const) {
+      expect(
+        await mudarStatus(
+          job("a", 1, status),
+          "cancelado",
+          deps(gravados),
+          ANTES
+        )
+      ).toEqual({ ok: true });
+    }
+    expect(gravados).toEqual(["cancelado", "cancelado"]);
+  });
+
+  it("depois do horário o mesmo caminho continua valendo (Não aconteceu)", async () => {
+    expect(
+      await mudarStatus(job("a", 1, "agendado"), "cancelado", deps(), DEPOIS)
+    ).toEqual({ ok: true });
+  });
+
+  it("não cancela quem já foi concluído ou cancelado, e não grava", async () => {
+    const gravados: string[] = [];
+    for (const status of ["concluído", "cancelado"] as const) {
+      expect(
+        await mudarStatus(
+          job("a", 1, status),
+          "cancelado",
+          deps(gravados),
+          ANTES
+        )
+      ).toMatchObject({ ok: false, motivo: "fora-do-fluxo" });
+    }
+    expect(gravados).toEqual([]);
+  });
+
+  it("desmarcar não conta dia na Jornada", async () => {
+    const registros: string[] = [];
+    await mudarStatus(
+      job("a", 1, "agendado"),
+      "cancelado",
+      { ...deps(), registrar: (acao) => registros.push(acao) },
+      ANTES
+    );
+    expect(registros).toEqual([]);
+  });
+
+  it("o formulário continua sem oferecer Cancelado antes do horário", () => {
+    expect(statusPermitidos("2026-10-21", "10:00", null, ANTES)).not.toContain(
+      "cancelado"
+    );
+    expect(
+      statusPermitidos("2026-10-21", "10:00", job("a", 1, "agendado"), ANTES)
+    ).not.toContain("cancelado");
+  });
+
+  it("depois de desmarcar: sai do Próximo, do Previsto e do bloqueio do Descanso", () => {
+    const desmarcado = job("a", 100, "cancelado");
+    const outro = job("b", 50, "agendado");
+    outro.hora = "18:00";
+    // Próximo (Início e Agenda): o desmarcado não é mais o próximo.
+    expect(proximoDaInicio([desmarcado, outro], ANTES)?.id).toBe("b");
+    expect(proximoDaAgenda([desmarcado, outro], ANTES)?.id).toBe("b");
+    expect(proximoDaInicio([desmarcado], ANTES)).toBeNull();
+    expect(proximoDaAgenda([desmarcado], ANTES)).toBeNull();
+    // Previsto do dia.
+    expect(totalPrevistoDoDia([desmarcado, outro])).toBe(50);
+    // Descanso: dia só com o desmarcado fica livre; com o agendado, bloqueado.
+    expect(estadoDoDescanso([desmarcado], false, ANTES)).toBe("normal");
+    expect(estadoDoDescanso([desmarcado, outro], false, ANTES)).toBe(
+      "comAtendimento"
+    );
   });
 });

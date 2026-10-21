@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapPin, Video } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { StatusBadge } from "./StatusBadge";
 import { formatDayBadge } from "@/components/home/NextJobCard";
 import { formatMoeda } from "@/lib/finance";
-import { podeConcluir, podeConfirmar } from "@/lib/atendimentos/status";
+import {
+  podeConcluir,
+  podeConfirmar,
+  podeDesmarcar,
+} from "@/lib/atendimentos/status";
 import { useAgora } from "@/lib/useAgora";
 import type { Job } from "@/lib/types";
-import { BOTOES_STATUS } from "./textosAgenda";
+import { BOTOES_STATUS, CONFIRMA_DESMARCOU } from "./textosAgenda";
 import { useMudarStatus } from "./useMudarStatus";
 
 /** "15h30" — mesma convenção já usada em NextJobCard/lib/notificacoes.ts. */
@@ -57,9 +61,13 @@ export function JobDetailSheet({
     onStatusMudou
   );
 
-  // Outro atendimento aberto: começa sem erro.
+  // "Cliente desmarcou" pede confirmação antes de gravar.
+  const [confirmandoDesmarcou, setConfirmandoDesmarcou] = useState(false);
+
+  // Outro atendimento aberto: começa sem erro e sem confirmação pendente.
   useEffect(() => {
     limparErro();
+    setConfirmandoDesmarcou(false);
   }, [job?.id, limparErro]);
 
   // Fluxo do capitão: Confirmar antes do horário; Concluir ou Não aconteceu
@@ -76,6 +84,7 @@ export function JobDetailSheet({
   const agora = useAgora(!!job);
   const confirmar = job ? podeConfirmar(job, agora) : false;
   const concluir = job ? podeConcluir(job, agora) : false;
+  const desmarcar = job ? podeDesmarcar(job, agora) : false;
   const temAcaoDeStatus = confirmar || concluir;
 
   return (
@@ -135,6 +144,63 @@ export function JobDetailSheet({
                 </button>
               </div>
             )}
+            {desmarcar &&
+              (confirmandoDesmarcou ? (
+                <div
+                  data-job-desmarcou-confirmacao
+                  className="flex flex-col"
+                  style={{ gap: "8px" }}
+                >
+                  <p
+                    className="text-sm font-semibold text-center"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {CONFIRMA_DESMARCOU.pergunta}
+                  </p>
+                  <div className="flex" style={{ gap: "8px" }}>
+                    <button
+                      type="button"
+                      onClick={() => void aplicar(job, "cancelado")}
+                      disabled={salvando}
+                      data-job-desmarcou-sim
+                      className="flex-1 py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
+                      style={{ background: "var(--accent)", color: "white" }}
+                    >
+                      {salvando
+                        ? BOTOES_STATUS.salvando
+                        : CONFIRMA_DESMARCOU.sim}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmandoDesmarcou(false)}
+                      disabled={salvando}
+                      className="flex-1 py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
+                      style={{
+                        background: "var(--surface-sub)",
+                        color: "var(--text)",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {CONFIRMA_DESMARCOU.voltar}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoDesmarcou(true)}
+                  disabled={salvando}
+                  data-job-desmarcou
+                  className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
+                  style={{
+                    background: "var(--surface-sub)",
+                    color: "var(--text)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  {BOTOES_STATUS.desmarcou}
+                </button>
+              ))}
             {/* Com uma ação de status acima, o Editar vira o botão secundário. */}
             <button
               type="button"

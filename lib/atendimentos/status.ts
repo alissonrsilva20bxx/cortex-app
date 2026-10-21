@@ -5,7 +5,8 @@ import type { Job, JobStatus } from "@/lib/types";
  *
  * Fluxo decidido pelo capitão (21/10/2026): Agendado -> Confirmado (opcional,
  * a cliente confirmou, ANTES do horário) -> no horário ou depois: Concluído
- * ou Não aconteceu (= cancelado). Fica em `.ts` para ter teste de verdade.
+ * ou Não aconteceu (= cancelado). Antes do horário, "Cliente desmarcou"
+ * também grava cancelado (só pelo `mudarStatus`). Fica em `.ts` para ter teste de verdade.
  */
 
 /** A soma do dia: o que ainda vale (agendado, confirmado e concluído).
@@ -50,6 +51,15 @@ export function podeConcluir(
   agora: Date = new Date()
 ): boolean {
   return EM_ABERTO.has(job.status) && horarioChegou(job, agora);
+}
+
+/** "Cliente desmarcou": o atendimento em aberto é cancelado ANTES do horário.
+ * Só o `mudarStatus` aceita; o formulário não oferece Cancelado antes dele. */
+export function podeDesmarcar(
+  job: Pick<Job, "status" | "data" | "hora">,
+  agora: Date = new Date()
+): boolean {
+  return EM_ABERTO.has(job.status) && !horarioChegou(job, agora);
 }
 
 type EstadoGravado = Pick<Job, "status" | "data" | "hora">;
@@ -127,7 +137,8 @@ export type ResultadoMudarStatus =
 
 /**
  * Muda o status seguindo o fluxo do capitão. Recusa o que o fluxo não
- * permite (confirmar depois do horário, concluir ou cancelar antes dele).
+ * permite (confirmar depois do horário, concluir antes dele, cancelar um
+ * atendimento que já não está em aberto).
  * Concluir, depois de gravar, conta o dia na Jornada.
  */
 export async function mudarStatus(
@@ -136,10 +147,14 @@ export async function mudarStatus(
   deps: DepsMudarStatus,
   agora: Date = new Date()
 ): Promise<ResultadoMudarStatus> {
+  // Cancelado vale nos dois lados do horário: antes é "Cliente desmarcou",
+  // depois é "Não aconteceu". Os dois gravam o mesmo status.
   const permitido =
     novo === "confirmado"
       ? podeConfirmar(job, agora)
-      : podeConcluir(job, agora);
+      : novo === "cancelado"
+        ? podeDesmarcar(job, agora) || podeConcluir(job, agora)
+        : podeConcluir(job, agora);
   if (!permitido) return { ok: false, motivo: "fora-do-fluxo" };
 
   const { error } = await deps.atualizar(job.id, novo);

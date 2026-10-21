@@ -27,6 +27,19 @@ describe("JobDetailSheet: botões do fluxo de status", () => {
     );
   });
 
+  it("Cliente desmarcou: só antes do horário, pede confirmação e grava cancelado pelo mudarStatus", () => {
+    expect(detalhe).toContain(
+      "const desmarcar = job ? podeDesmarcar(job, agora) : false;"
+    );
+    expect(detalhe).toContain("BOTOES_STATUS.desmarcou");
+    expect(detalhe).toContain("CONFIRMA_DESMARCOU.pergunta");
+    // O primeiro toque só abre a confirmação; quem grava é o "Sim".
+    expect(detalhe).toContain("onClick={() => setConfirmandoDesmarcou(true)}");
+    expect(detalhe).toMatch(
+      /data-job-desmarcou-sim[\s\S]*?aplicar\(job, "cancelado"\)|aplicar\(job, "cancelado"\)[\s\S]*?data-job-desmarcou-sim/
+    );
+  });
+
   it("cada botão só aparece quando a regra deixa, acima do Editar", () => {
     const confirmar = detalhe.indexOf("{confirmar && (");
     const concluir = detalhe.indexOf("{concluir && (");

@@ -9,7 +9,8 @@ Um Job possui: nome do cliente (ou apelido), data, hora, valor cobrado (na moeda
 **Status do Job** (decisão do capitão, 21/10/2026): `agendado → confirmado (opcional) → concluído` ou `cancelado`.
 
 - **Confirmado** = a cliente confirmou, ANTES do horário. Não quer dizer que o atendimento deu certo.
-- No horário ou depois, o atendimento em aberto (`agendado` ou `confirmado`) vira `concluído` (aconteceu) ou `cancelado` ("Não aconteceu", inclui a cliente que desmarcou ou faltou).
+- No horário ou depois, o atendimento em aberto (`agendado` ou `confirmado`) vira `concluído` (aconteceu) ou `cancelado` ("Não aconteceu", inclui a cliente que faltou).
+- **Não aconteceu** = depois do horário. **Cliente desmarcou** = antes do horário, botão no detalhe do atendimento, com confirmação. Os dois gravam `cancelado`, saem do Próximo e do Previsto, deixam de bloquear o Descanso e não contam na Jornada nem no Financeiro. O formulário não oferece Cancelado antes do horário.
 - Atendimento futuro não se conclui: "Concluir" e "Não aconteceu" só valem a partir do horário.
 - **Aconteceu?** é a pergunta que a Agenda e o card "Aconteceu?" no topo da Início fazem para o atendimento em aberto cujo horário já passou, com "Sim, concluir" e "Não aconteceu". Na Início, o card "Próximo" some enquanto o "Aconteceu?" aparece.
 

@@ -13,8 +13,16 @@ export const BOTOES_STATUS = {
   confirmar: "Confirmar",
   concluir: "Concluir",
   naoAconteceu: "Não aconteceu",
+  desmarcou: "Cliente desmarcou",
   salvando: "Salvando…",
   editar: "Editar atendimento",
+} as const;
+
+/** Confirmação do "Cliente desmarcou" (antes do horário). */
+export const CONFIRMA_DESMARCOU = {
+  pergunta: "Marcar como desmarcado? Ele sai do Previsto e da Agenda de hoje.",
+  sim: "Sim, desmarcado",
+  voltar: "Voltar",
 } as const;
 
 /** Erro mostrado quando o status não foi gravado, por status pedido. */
