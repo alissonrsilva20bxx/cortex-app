@@ -128,7 +128,7 @@ export function GuardarCard({ userId, onCriarDesejo }: Props) {
       ? Math.min(100, (escolhido.valorAtual / escolhido.valorAlvo) * 100)
       : 0;
   const nomeDe = (id: string) =>
-    desejos.find((d) => d.id === id)?.nome ?? "Desejo removido";
+    desejos.find((d) => d.id === id)?.nome ?? T.desejoRemovido;
 
   return (
     <GlassCard radius="md" className="p-4">

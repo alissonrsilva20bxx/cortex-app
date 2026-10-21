@@ -20,6 +20,7 @@ export const TEXTOS_GUARDAR = {
   erroCarregar: "Não foi possível carregar seus Desejos.",
   tentarNovamente: "Tentar novamente",
   sucesso: "Valor guardado!",
+  desejoRemovido: "Desejo removido",
   erroValorVazio: "Informe um valor em euro.",
   erroValorInvalido: "Valor inválido. Use só números, como 25 ou 25,50.",
   erroValorZero: "O valor precisa ser maior que zero.",
