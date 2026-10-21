@@ -44,6 +44,7 @@ import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
 import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
+import { EspacoDaPilula } from "@/components/assinatura/EspacoDaPilula";
 import {
   guardarPlanoEscolhido,
   type OnEscolherPlano,
@@ -707,6 +708,7 @@ export default function Page() {
                 {/* Convite de instalação — dispensável, nunca compete com o
                     card principal pela atenção (por isso vem por último). */}
                 <InstallBanner />
+                <EspacoDaPilula />
               </div>
             </TabPanel>
 

@@ -2,14 +2,7 @@
 
 import styles from "@/components/onboarding/linhaDoTempo.module.css";
 import { Icone } from "@/components/onboarding/obIcones";
-import {
-  BOTTOM_NAV_FAB_SIZE,
-  BOTTOM_NAV_OFFSET,
-} from "@/lib/bottomNavCompactStyle";
-
-/** 14px acima da barra de abas, como no desenho (24 + 60 + 14 = 98 lá; a
- * barra do app fica a 22 do fundo). */
-const BOTTOM = BOTTOM_NAV_OFFSET + BOTTOM_NAV_FAB_SIZE + 14;
+import { PILULA_TESTE_BOTTOM as BOTTOM } from "@/lib/bottomNavCompactStyle";
 
 interface Props {
   /** Quantos dias faltam (7 no 1º dia, 1 no último). */

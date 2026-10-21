@@ -49,6 +49,7 @@ import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
 import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
+import { EspacoDaPilula } from "@/components/assinatura/EspacoDaPilula";
 import { PagamentoTela } from "@/components/pagamento/PagamentoTela";
 import { usarPagamento } from "@/lib/pagamento/cliente";
 import {
@@ -704,6 +705,7 @@ export default function DevPreviewApp() {
             {/* Convite de instalação — dispensável, nunca compete com o
                 card principal pela atenção (por isso vem por último). */}
             <InstallBanner />
+                <EspacoDaPilula />
           </div>
         </TabPanel>
 

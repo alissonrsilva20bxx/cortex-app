@@ -56,6 +56,34 @@ export const BOTTOM_NAV_FAB_SIZE = 60;
 /** Distância da pílula e do "+" até o fundo da tela (mockup: 22). */
 export const BOTTOM_NAV_OFFSET = 22;
 
+/** A pílula "Faltam N dias de teste" (components/assinatura/PilulaTeste.tsx)
+ * flutua 14px acima do "+": a distância dela até o fundo da tela. */
+export const PILULA_TESTE_BOTTOM =
+  BOTTOM_NAV_OFFSET + BOTTOM_NAV_FAB_SIZE + 14;
+
+/** Altura da pílula do teste (`.trial` em linhaDoTempo.module.css). */
+export const PILULA_TESTE_ALTURA = 44;
+
+/** Folga mínima entre o fim do conteúdo e o topo da pílula. */
+export const PILULA_TESTE_FOLGA = 12;
+
+/** O que a casca do app já deixa embaixo de toda tela (`pb-40`). */
+export const CASCA_PADDING_FIM = 160;
+
+/** Quanto o fim do Início precisa de espaço a mais, além da casca, para o
+ * último botão rolar até ficar livre da pílula e da barra de abas (a área
+ * segura do iPhone soma nos dois lados e entra no CSS). Hoje a casca já
+ * basta fora da área segura: devolve 0. */
+export function espacoExtraParaPilulaPx(): number {
+  return Math.max(
+    0,
+    PILULA_TESTE_BOTTOM +
+      PILULA_TESTE_ALTURA +
+      PILULA_TESTE_FOLGA -
+      CASCA_PADDING_FIM
+  );
+}
+
 /** Respiro da linha até as bordas da tela, e entre a pílula e o "+". */
 export const BOTTOM_NAV_EDGE = 16;
 export const BOTTOM_NAV_GAP = 10;
