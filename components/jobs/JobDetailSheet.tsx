@@ -5,7 +5,7 @@ import { MapPin, Video } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { StatusBadge } from "./StatusBadge";
 import { formatDayBadge } from "@/components/home/NextJobCard";
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import { podeConcluir, podeConfirmar } from "@/lib/atendimentos/status";
 import type { Job } from "@/lib/types";
 import { BOTOES_STATUS } from "./textosAgenda";
@@ -232,7 +232,7 @@ export function JobDetailSheet({
                 className="text-sm font-bold"
                 style={{ color: "var(--accent)" }}
               >
-                {formatBRL(job.valor, 2)}
+                {formatMoeda(job.valor, 2)}
               </strong>
             </div>
             <div className="flex items-center justify-between">

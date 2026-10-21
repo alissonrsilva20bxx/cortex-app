@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SIMBOLO_MOEDA } from "@/lib/finance";
 import styles from "./LoadingScreen.module.css";
 
 interface Props {
@@ -54,7 +55,7 @@ export function LoadingScreen({ isLoading }: Props) {
             } as React.CSSProperties
           }
         >
-          R$
+          {SIMBOLO_MOEDA}
         </span>
       ))}
 

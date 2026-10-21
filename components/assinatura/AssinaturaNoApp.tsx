@@ -9,7 +9,7 @@ import {
   TRIAL_DIAS,
   type EstadoAssinatura,
 } from "@/lib/assinatura";
-import { formatBRL, totalEarnings } from "@/lib/finance";
+import { formatMoeda, totalEarnings } from "@/lib/finance";
 import type { OnEscolherPlano } from "@/lib/planos";
 import type { AssinaturaStatus, Job } from "@/lib/types";
 import { AvisoTeste } from "./AvisoTeste";
@@ -149,7 +149,7 @@ export function AssinaturaNoApp({
           resumo={{
             atendimentos: jobs.filter((j) => j.status === "concluído").length,
             registrado:
-              totalEarnings(jobs) > 0 ? formatBRL(totalEarnings(jobs)) : null,
+              totalEarnings(jobs) > 0 ? formatMoeda(totalEarnings(jobs)) : null,
           }}
           onEscolherPlano={(plano) => {
             setPlanosAbertos(false);

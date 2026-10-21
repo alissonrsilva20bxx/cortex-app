@@ -2,7 +2,7 @@
 
 import { Plus, TrendingUp, Trash2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { formatBRL, formatShortDate } from "@/lib/finance";
+import { formatMoeda, formatShortDate } from "@/lib/finance";
 import { REC_CAT_EMOJIS, REC_CAT_LABELS } from "./constants";
 import type { Job, ReceitaAvulsa } from "@/lib/types";
 
@@ -67,7 +67,7 @@ export function EntradasTab({
             className="font-extrabold text-[22px] tabular-nums"
             style={{ color: "var(--success)" }}
           >
-            {formatBRL(totalEntradaMes, 2)}
+            {formatMoeda(totalEntradaMes, 2)}
           </p>
         </div>
         <TrendingUp size={24} color="var(--success)" style={{ opacity: 0.5 }} />
@@ -127,7 +127,7 @@ export function EntradasTab({
                 className="font-bold text-sm tabular-nums shrink-0"
                 style={{ color: "var(--success)" }}
               >
-                +{formatBRL(item.valor)}
+                +{formatMoeda(item.valor)}
               </span>
               {item.tipo === "receita" && (
                 // 44×44px — alvo de toque mínimo (spec); era 28×28px

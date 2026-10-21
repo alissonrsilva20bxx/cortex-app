@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import { useToast } from "@/components/Toast";
-import { localKey } from "@/lib/finance";
+import { localKey, SIMBOLO_MOEDA } from "@/lib/finance";
 import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 import { useJornada } from "@/components/jornada/useJornada";
 
@@ -172,7 +172,7 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
           <input
             type="number"
             inputMode="decimal"
-            placeholder="Valor (R$)"
+            placeholder={`Valor (${SIMBOLO_MOEDA})`}
             value={valor}
             onChange={(e) => setValor(e.target.value)}
             className="rounded-xl px-4 py-3 text-sm font-medium outline-none"

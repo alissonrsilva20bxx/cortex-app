@@ -821,7 +821,7 @@ if (roda("smoke")) {
   const form = page.getByRole("dialog", { name: "Nova Despesa" });
   await form.waitFor({ state: "visible" });
   await form.getByPlaceholder("Descrição").fill("Despesa J16 rede caída");
-  await form.getByPlaceholder("Valor (R$)").fill("42");
+  await form.getByPlaceholder("Valor (€)").fill("42");
   await form.getByRole("button", { name: "Salvar Despesa" }).click();
   await page.waitForTimeout(2500);
   const r = await page.evaluate(() => ({

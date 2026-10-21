@@ -129,9 +129,15 @@ describe("The real gate keeps using the real services — nothing swapped for th
     expect(src).toContain('fetch("/api/rede/solicitar-beta"');
   });
 
-  it("no fabricated/placeholder pricing, badge copy, or card content was changed (preserved exactly, pending product decision per the audit)", () => {
+  it("o preço da vitrine vem dos planos reais (lib/planos.ts, em euro), não de um valor solto; o resto do texto segue igual", () => {
     const src = read("components/rede/RedeTeaserGate.tsx");
-    expect(src).toContain("Plano previsto: R$ 49,90/mês");
+    expect(src).toMatch(
+      /import \{[^}]*\bPLANOS\b[^}]*\} from "@\/lib\/planos"/
+    );
+    expect(src).toContain("{PLANOS_PREVISTOS}");
+    expect(src).toContain("formatarEuro(p.preco)");
+    expect(src).not.toContain("49,90");
+    expect(src).not.toContain("R$");
     expect(src).toContain("Em breve");
   });
 });

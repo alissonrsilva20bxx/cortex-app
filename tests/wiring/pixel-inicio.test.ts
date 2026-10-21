@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildMockAppSeed } from "../../lib/mockAppData";
 import {
   calcEarnings,
-  formatBRL,
   monthEarnings,
   monthProjection,
 } from "../../lib/finance";
@@ -25,6 +24,18 @@ import {
   variaveisDoApp,
   variaveisDoMockup,
 } from "./pixelMockup";
+
+/** O mockup é em reais; estes testes comparam os NÚMEROS do laboratório com
+ * os do mockup. O app mostra a moeda única (formatMoeda), então aqui o valor
+ * é formatado em reais só para casar com o texto do mockup. */
+const reais = (n: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  })
+    .format(n)
+    .replace(/\u00a0/g, " ");
 
 /**
  * Pixel do Início A (#206): trava a tela contra o PRÓPRIO mockup normativo
@@ -452,7 +463,7 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
     const objetivos = t.objetivos as { concluido: boolean }[];
     return { jobs, metas, receitas, objetivos };
   }
-  const brl = (n: number) => formatBRL(n).replace(/ /g, " ");
+  const brl = (n: number) => reais(n);
   const texto = (re: RegExp) => {
     const m = INI.match(re);
     if (!m) throw new Error(`${re} não está no mockup`);
@@ -598,7 +609,7 @@ describe('Pixel Início A — "Esta semana" como o mockup', () => {
             rotuloDiaCurto(d.data),
             j.clienteNome,
             `${formatHora(j.hora)} · ${j.local ?? "Presencial"}`,
-            formatBRL(j.valor).replace(/ /g, " "),
+            reais(j.valor),
           ])
     );
   }

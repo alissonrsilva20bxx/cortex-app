@@ -120,7 +120,7 @@ describe("J04 — entrada x saída nunca só pela cor", () => {
   it("o valor de cada movimentação leva o sinal no texto", () => {
     const src = semComentarios(read("components/financeiro/VisaoTab.tsx"));
     expect(src).toMatch(
-      /\{`\$\{m\.positive \? "\+" : "-"\}\$\{formatBRL\(m\.valor\)\}`\}/
+      /\{`\$\{m\.positive \? "\+" : "-"\}\$\{formatMoeda\(m\.valor\)\}`\}/
     );
     // As duas listas usam esse mesmo componente de valor.
     expect(src.match(/<Valor m=\{m\}/g)).toHaveLength(2);
@@ -146,13 +146,13 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     read("components/financeiro/FinanceiroHeroCard.tsx")
   );
 
-  it("FinanceiroHeroCard: todo formatBRL(...) recebe um total pronto do FinanceiroTab ou a meta mensal", () => {
-    const args = [...hero.matchAll(/formatBRL\(\s*([^()]*?)\s*\)/g)].map(
+  it("FinanceiroHeroCard: todo formatMoeda(...) recebe um total pronto do FinanceiroTab ou a meta mensal", () => {
+    const args = [...hero.matchAll(/formatMoeda\(\s*([^()]*?)\s*\)/g)].map(
       (m) => m[1]
     );
     expect(args.length).toBeGreaterThan(0);
     for (const a of args) {
-      expect(a, `formatBRL(${a})`).toMatch(
+      expect(a, `formatMoeda(${a})`).toMatch(
         /^(saldo|totalEntradaMes|totalDespMes|metaMes|ticketMedio|faturamento)$/
       );
     }
@@ -167,7 +167,7 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     expect(hero).toMatch(
       /atendimentosMes > 0\s*\?\s*Math\.round\(totalEntradaMes \/ atendimentosMes\)\s*:\s*null/
     );
-    expect(hero).toContain("{formatBRL(ticketMedio)}");
+    expect(hero).toContain("{formatMoeda(ticketMedio)}");
   });
 
   it("FinanceiroHeroCard: cada valor exibido recebe o seu total, não outro total real", () => {
@@ -175,9 +175,9 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     // pronto. Trocar o saldo grande por totalEntradaMes (ou "Entrou" por
     // totalDespMes) passava verde. Mesmo molde da meta: a expressão exata
     // por slot.
-    expect(hero).toContain("{formatBRL(saldo)}");
-    expect(hero).toContain("Entrou {formatBRL(totalEntradaMes)}");
-    expect(hero).toContain("Saiu {formatBRL(totalDespMes)}");
+    expect(hero).toContain("{formatMoeda(saldo)}");
+    expect(hero).toContain("Entrou {formatMoeda(totalEntradaMes)}");
+    expect(hero).toContain("Saiu {formatMoeda(totalDespMes)}");
   });
 
   it("FinanceiroHeroCard: saldo e totais chegam como props, sem reconstruir a conta", () => {
@@ -200,7 +200,7 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
       'const faturamento = calcEarnings(jobs, receitas, "mes", now);'
     );
     expect(hero).toContain("progressoMeta(faturamento, metaMes)");
-    expect(hero).toContain("{formatBRL(faturamento)} de {formatBRL(metaMes)}");
+    expect(hero).toContain("{formatMoeda(faturamento)} de {formatMoeda(metaMes)}");
     expect(hero).toContain("{Math.round(metaPct)}%");
     const metas = semComentarios(read("components/financeiro/MetasTab.tsx"));
     expect(metas).toContain(
@@ -224,7 +224,7 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
 
   it("VisaoTab: o valor exibido é sempre o da movimentação", () => {
     const src = semComentarios(read("components/financeiro/VisaoTab.tsx"));
-    const args = [...src.matchAll(/formatBRL\(\s*([^()]*?)\s*\)/g)].map(
+    const args = [...src.matchAll(/formatMoeda\(\s*([^()]*?)\s*\)/g)].map(
       (m) => m[1]
     );
     expect(args).toEqual(["m.valor"]);

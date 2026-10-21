@@ -23,7 +23,7 @@ import { Switch } from "@/components/ui/Switch";
 import { NotificacoesSheet } from "@/components/notificacoes/NotificacoesSheet";
 import { InstallSheet } from "@/components/install/InstallSheet";
 import { computeAssinatura } from "@/lib/assinatura";
-import { formatBRL, totalEarnings } from "@/lib/finance";
+import { formatMoeda, totalEarnings } from "@/lib/finance";
 import { exportarDadosCSV } from "@/lib/exportarDados";
 import { isIOS, isStandalone } from "@/lib/platform";
 import {
@@ -596,7 +596,7 @@ export function AjustesTab({
               titulo="Conta"
               rodape={
                 estadoAssinatura?.status === "vencida" && concluidos > 0
-                  ? `Você já construiu ${formatBRL(construido)} em ${concluidos} ${concluidos === 1 ? "atendimento" : "atendimentos"}. Nada disso se perde: exporte seus dados quando quiser.`
+                  ? `Você já construiu ${formatMoeda(construido)} em ${concluidos} ${concluidos === 1 ? "atendimento" : "atendimentos"}. Nada disso se perde: exporte seus dados quando quiser.`
                   : estadoAssinatura?.status === "trial"
                     ? "Sem cartão, sem compromisso. Continue no seu ritmo."
                     : undefined

@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildMockAppSeed } from "../../lib/mockAppData";
 import {
   calcEarnings,
-  formatBRL,
   monthConcludedCount,
   monthEarnings,
   monthExpenses,
@@ -22,6 +21,18 @@ import {
   variaveisDoApp,
   variaveisDoMockup,
 } from "./pixelMockup";
+
+/** O mockup é em reais; estes testes comparam os NÚMEROS do laboratório com
+ * os do mockup. O app mostra a moeda única (formatMoeda), então aqui o valor
+ * é formatado em reais só para casar com o texto do mockup. */
+const reais = (n: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  })
+    .format(n)
+    .replace(/\u00a0/g, " ");
 
 /**
  * Pixel do Financeiro A (#206): trava a tela contra o PRÓPRIO mockup
@@ -276,8 +287,8 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
     return { jobs, despesas, receitas, metaMes };
   }
 
-  /** "R$ 530" -> o texto do app pelo mesmo formatBRL. */
-  const brl = (n: number) => formatBRL(n).replace(/\u00a0/g, " ");
+  /** "R$ 530" -> o texto do app pelo mesmo formatMoeda. */
+  const brl = (n: number) => reais(n);
   const re = escapar;
 
   /** O texto do mockup logo depois de `antes` (o valor de um rótulo). */

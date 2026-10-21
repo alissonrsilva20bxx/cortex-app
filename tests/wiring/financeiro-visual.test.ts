@@ -63,10 +63,10 @@ describe("FinanceiroTab.tsx keeps the 4 real sub-tabs, no reduction to a single 
 describe("FinanceiroHeroCard.tsx (issue #136) uses real data/calculations, never a hardcoded lab value", () => {
   const src = read("components/financeiro/FinanceiroHeroCard.tsx");
 
-  it("formats every displayed value through formatBRL(prop), never a literal currency string", () => {
-    expect(src).toContain("formatBRL(totalEntradaMes");
-    expect(src).toContain("formatBRL(totalDespMes");
-    expect(src).toContain("formatBRL(saldo");
+  it("formats every displayed value through formatMoeda(prop), never a literal currency string", () => {
+    expect(src).toContain("formatMoeda(totalEntradaMes");
+    expect(src).toContain("formatMoeda(totalDespMes");
+    expect(src).toContain("formatMoeda(saldo");
   });
 
   it("does not contain any of the lab's hardcoded FinanceScreen numbers/text", () => {
@@ -149,15 +149,15 @@ describe("Financeiro sem palitos: só a barra entrou x saiu do Saldo do mês", (
       /flex: totalDespMes, background: "var\(--t-red\)"/
     );
     expect(semComentarios).toContain(
-      "<span>Entrou {formatBRL(totalEntradaMes)}</span>"
+      "<span>Entrou {formatMoeda(totalEntradaMes)}</span>"
     );
     expect(semComentarios).toContain(
-      "<span>Saiu {formatBRL(totalDespMes)}</span>"
+      "<span>Saiu {formatMoeda(totalDespMes)}</span>"
     );
   });
 
   it("no lugar do desenho: abaixo do saldo e acima dos 4 cards", () => {
-    const saldo = semComentarios.indexOf("{formatBRL(saldo)}");
+    const saldo = semComentarios.indexOf("{formatMoeda(saldo)}");
     const barra = semComentarios.indexOf('background: "var(--t-green)"');
     const entradas = semComentarios.indexOf(
       "<span style={ROTULO}>Entradas</span>"

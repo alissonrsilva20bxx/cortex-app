@@ -1,6 +1,6 @@
 "use client";
 
-import { formatBRL, monthProjection } from "@/lib/finance";
+import { formatMoeda, monthProjection } from "@/lib/finance";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
 import {
@@ -35,7 +35,7 @@ export function FaltaMetaCard({ jobs, metas, receitas, onGoToFinanceiro }: Props
       </IconeCard>
       <span style={ROTULO_CARD}>Falta pra meta</span>
       <span className="truncate" style={VALOR_CARD}>
-        {formatBRL(p.remaining)}
+        {formatMoeda(p.remaining)}
       </span>
     </InicioCard>
   );

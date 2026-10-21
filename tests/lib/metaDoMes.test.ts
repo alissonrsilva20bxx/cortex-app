@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { HeroCard } from "@/components/home/HeroCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { FinanceiroHeroCard } from "@/components/financeiro/FinanceiroHeroCard";
-import { calcEarnings, formatBRL, monthProjection } from "@/lib/finance";
+import { calcEarnings, formatMoeda, monthProjection } from "@/lib/finance";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 
 /**
@@ -41,7 +41,7 @@ const avulsa: ReceitaAvulsa = {
   criadoEm: dia(1),
 };
 
-const brl = (v: number) => formatBRL(v).replace(/[\s\u00a0\u202f]+/g, " ");
+const brl = (v: number) => formatMoeda(v).replace(/[\s\u00a0\u202f]+/g, " ");
 
 const texto = (el: Parameters<typeof renderToStaticMarkup>[0]) =>
   renderToStaticMarkup(el)

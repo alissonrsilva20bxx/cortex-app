@@ -1,6 +1,6 @@
 "use client";
 
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import { LinkSecao } from "@/components/ui/LinkSecao";
 import type { Job, Despesa, ReceitaAvulsa } from "@/lib/types";
 import { buildMovements, type Movement } from "./movimentos";
@@ -43,7 +43,7 @@ function Valor({ m, tamanho }: { m: Movement; tamanho: string }) {
       }}
     >
       {/* Um nó de texto só ("+R$ 150"), como no mockup. */}
-      {`${m.positive ? "+" : "-"}${formatBRL(m.valor)}`}
+      {`${m.positive ? "+" : "-"}${formatMoeda(m.valor)}`}
     </span>
   );
 }

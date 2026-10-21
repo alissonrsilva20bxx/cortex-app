@@ -42,7 +42,7 @@ describe("dadosDoLembrete: só dado real do agendamento e da profissional", () =
       status: "Confirmado",
       confirmado: true,
     });
-    expect(d.valor.replace(/\s/g, " ")).toBe("R$ 180,00");
+    expect(d.valor.replace(/\s/g, " ")).toBe("€ 180,00");
   });
   it("sem serviço salvo: 'Atendimento' (ou 'Atendimento online'); com serviço, o serviço", () => {
     expect(dadosDoLembrete(job(), PRO).servico).toBe("Atendimento");
@@ -128,7 +128,7 @@ describe("cartaoAgendaSvg: o cartão de agenda (proposta 2)", () => {
       POLITICA_24H,
     ])
       expect(svg, t).toContain(t);
-    expect(svg.replace(/\s/g, " ")).toContain("R$ 180,00");
+    expect(svg.replace(/\s/g, " ")).toContain("€ 180,00");
     expect(POLITICA_24H).toContain("24h");
   });
   it("o relógio marca o tempo do atendimento (arco rosa) só quando há duração", () => {

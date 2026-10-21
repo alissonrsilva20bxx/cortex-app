@@ -106,9 +106,9 @@ describe("euro e textos em constantes", () => {
     "components/home/DesejoCard.tsx",
     "components/financeiro/DesejosCard.tsx",
     "components/desejo/DesejoForm.tsx",
-  ])("%s nao usa formatBRL nem R$", (f) => {
+  ])("%s nao usa formatMoeda nem R$", (f) => {
     const src = read(f);
-    expect(src).not.toContain("formatBRL");
+    expect(src).not.toContain("formatMoeda");
     expect(src).not.toContain("R$");
   });
 

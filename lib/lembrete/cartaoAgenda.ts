@@ -14,7 +14,7 @@
  */
 import { STATUS_META } from "@/components/jobs/status";
 import { formatHora, localDoAtendimento } from "@/components/jobs/agendaSemana";
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 
 export interface Profissional {
@@ -116,7 +116,7 @@ export function dadosDoLembrete(
     local: localDoAtendimento(job),
     profissional: limpo(profissional.nome) ?? "",
     telefone: limpo(profissional.telefone),
-    valor: formatBRL(job.valor, 2),
+    valor: formatMoeda(job.valor, 2),
     status: STATUS_META[job.status].label,
     confirmado: job.status === "confirmado",
   };

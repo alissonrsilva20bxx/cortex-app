@@ -1,6 +1,6 @@
 "use client";
 
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
 import {
@@ -79,7 +79,7 @@ export function ProximosAtendimentos({ jobs }: Props) {
                 flexShrink: 0,
               }}
             >
-              {formatBRL(job.valor)}
+              {formatMoeda(job.valor)}
             </span>
           </div>
         ))}

@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import {
-  formatBRL,
+  formatMoeda,
   calcEarnings,
   monthExpenses,
   monthMeta,
@@ -193,7 +193,7 @@ export function FinanceiroHeroCard({
             color: saldo >= 0 ? undefined : "var(--t-red)",
           }}
         >
-          {formatBRL(saldo)}
+          {formatMoeda(saldo)}
         </span>
 
         {/* Barra entrou x saiu: proporção dos dois totais do mês. Sempre
@@ -230,8 +230,8 @@ export function FinanceiroHeroCard({
             color: "var(--t-mut)",
           }}
         >
-          <span>Entrou {formatBRL(totalEntradaMes)}</span>
-          <span>Saiu {formatBRL(totalDespMes)}</span>
+          <span>Entrou {formatMoeda(totalEntradaMes)}</span>
+          <span>Saiu {formatMoeda(totalDespMes)}</span>
         </div>
       </section>
 
@@ -240,7 +240,7 @@ export function FinanceiroHeroCard({
           <path d="M7 17 17 7M7 7h10v10" />
         </Icone>
         <span style={ROTULO}>Entradas</span>
-        <span style={VALOR}>{formatBRL(totalEntradaMes)}</span>
+        <span style={VALOR}>{formatMoeda(totalEntradaMes)}</span>
         <span style={APOIO}>{plural(qtdEntradas)}</span>
       </section>
 
@@ -249,7 +249,7 @@ export function FinanceiroHeroCard({
           <path d="M17 7 7 17M17 17H7V7" />
         </Icone>
         <span style={ROTULO}>Saídas</span>
-        <span style={VALOR}>{formatBRL(totalDespMes)}</span>
+        <span style={VALOR}>{formatMoeda(totalDespMes)}</span>
         <span style={APOIO}>{plural(qtdSaidas)}</span>
       </section>
 
@@ -263,7 +263,7 @@ export function FinanceiroHeroCard({
           <span style={ROTULO}>Meta</span>
           <span style={VALOR}>{`${Math.round(metaPct)}%`}</span>
           <span style={APOIO}>
-            {formatBRL(faturamento)} de {formatBRL(metaMes)}
+            {formatMoeda(faturamento)} de {formatMoeda(metaMes)}
           </span>
         </section>
       )}
@@ -274,7 +274,7 @@ export function FinanceiroHeroCard({
             <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
           </Icone>
           <span style={ROTULO}>Ticket médio</span>
-          <span style={VALOR}>{formatBRL(ticketMedio)}</span>
+          <span style={VALOR}>{formatMoeda(ticketMedio)}</span>
           <span style={APOIO}>por atendimento</span>
         </section>
       )}

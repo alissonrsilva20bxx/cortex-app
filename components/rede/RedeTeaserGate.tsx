@@ -16,6 +16,14 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useToast } from "@/components/Toast";
 import { Avatar } from "./Avatar";
+import { PLANOS, formatarEuro } from "@/lib/planos";
+
+/** O preço da vitrine: os mesmos planos da assinatura (lib/planos.ts), em
+ * euro. Antes era um valor solto em outra moeda, que não existe em plano
+ * nenhum. */
+const PLANOS_PREVISTOS = `Planos previstos: ${PLANOS.map(
+  (p) => `${formatarEuro(p.preco)} (${p.nome})`
+).join(" · ")}`;
 
 const BENEFICIOS = [
   { Icon: Sparkles, texto: "Trocar experiências com segurança" },
@@ -333,7 +341,7 @@ export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
               className="text-[11px] mt-0.5"
               style={{ color: "var(--text-muted)" }}
             >
-              Plano previsto: R$ 49,90/mês
+              {PLANOS_PREVISTOS}
             </p>
           </div>
         </GlassCard>

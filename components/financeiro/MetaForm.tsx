@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
+import { SIMBOLO_MOEDA } from "@/lib/finance";
 import type { PeriodoMeta } from "@/lib/types";
 
 interface MetaValues {
@@ -41,9 +42,17 @@ const labelStyle: React.CSSProperties = {
 };
 
 const ROWS: { periodo: PeriodoMeta; label: string; hint: string }[] = [
-  { periodo: "dia", label: "Meta diária (R$)", hint: "Ex: 300" },
-  { periodo: "mes", label: "Meta mensal (R$)", hint: "Ex: 3.000" },
-  { periodo: "ano", label: "Meta anual (R$)", hint: "Ex: 36.000" },
+  { periodo: "dia", label: `Meta diária (${SIMBOLO_MOEDA})`, hint: "Ex: 300" },
+  {
+    periodo: "mes",
+    label: `Meta mensal (${SIMBOLO_MOEDA})`,
+    hint: "Ex: 3.000",
+  },
+  {
+    periodo: "ano",
+    label: `Meta anual (${SIMBOLO_MOEDA})`,
+    hint: "Ex: 36.000",
+  },
 ];
 
 export function MetaForm({ open, userId, onClose, onSaved }: Props) {

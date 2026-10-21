@@ -4,7 +4,7 @@
 
 Um atendimento pago com um cliente. Entidade central do app.
 
-Um Job possui: nome do cliente (ou apelido), data, hora, valor cobrado (BRL), modalidade, local opcional, status e observações livres.
+Um Job possui: nome do cliente (ou apelido), data, hora, valor cobrado (na moeda do app, hoje euro: `CURRENCY` em `lib/jornada/textos.ts`), modalidade, local opcional, status e observações livres.
 
 **Status do Job** (decisão do capitão, 21/10/2026): `agendado → confirmado (opcional) → concluído` ou `cancelado`.
 

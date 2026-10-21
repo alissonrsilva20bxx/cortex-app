@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Check, Target } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { calcEarnings, formatBRL } from "@/lib/finance";
+import { calcEarnings, formatMoeda } from "@/lib/finance";
 import { GuardarCard } from "./GuardarCard";
 import { DesejosCard } from "./DesejosCard";
 import { TEXTOS_AFAZERES as TA } from "@/lib/desejo/textos";
@@ -134,7 +134,7 @@ export function MetasTab({
                       className="text-xs tabular-nums"
                       style={{ color: "var(--text-muted)" }}
                     >
-                      {formatBRL(current)} / {formatBRL(meta.valorAlvo)}
+                      {formatMoeda(current)} / {formatMoeda(meta.valorAlvo)}
                     </span>
                   </div>
                   <div className="progress-track">

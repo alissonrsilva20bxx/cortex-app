@@ -2,7 +2,7 @@
 
 import { ChevronRight, MapPin, Video } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 
 /**
@@ -71,7 +71,7 @@ export function JobCard({
           className="font-bold tabular-nums shrink-0"
           style={{ fontSize: "13px", color: "var(--accent)" }}
         >
-          {formatBRL(job.valor, 2)}
+          {formatMoeda(job.valor, 2)}
         </strong>
       </div>
     </button>

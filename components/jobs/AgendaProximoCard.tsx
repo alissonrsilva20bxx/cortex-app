@@ -1,6 +1,6 @@
 "use client";
 
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import { podeLembrar } from "@/lib/lembrete/cartaoAgenda";
 import { countdownLabel, getDaysUntil } from "@/lib/proximoAtendimento";
 import type { Job } from "@/lib/types";
@@ -113,7 +113,7 @@ export function AgendaProximoCard({ job, onOpen, onLembrar }: Props) {
           >
             {/* Sem tabular-nums: o mockup usa os dígitos proporcionais. */}
             <span style={{ fontSize: "20px", fontWeight: 800 }}>
-              {formatBRL(job.valor, 2)}
+              {formatMoeda(job.valor, 2)}
             </span>
             {/* Toque de 44px sem crescer a linha (30px no mockup). */}
             <button

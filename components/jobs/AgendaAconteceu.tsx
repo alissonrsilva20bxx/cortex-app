@@ -1,7 +1,7 @@
 "use client";
 
 import { aguardandoResposta } from "@/lib/atendimentos/status";
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 import { formatDiaCurto, formatHora } from "./agendaSemana";
 import { ACONTECEU } from "./textosAgenda";
@@ -79,7 +79,7 @@ export function AgendaAconteceu({
                 color: "var(--text)",
               }}
             >
-              {formatBRL(job.valor)}
+              {formatMoeda(job.valor)}
             </strong>
           </button>
           <div className="flex" style={{ gap: "8px" }}>

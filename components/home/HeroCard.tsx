@@ -1,6 +1,6 @@
 "use client";
 
-import { formatBRL, monthProjection } from "@/lib/finance";
+import { formatMoeda, monthProjection } from "@/lib/finance";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
 
@@ -35,10 +35,10 @@ export function HeroCard({ jobs, metas, receitas, onGoToFinanceiro }: Props) {
         ? `No seu ritmo, você chega lá até ${etaLabel}.`
         : null;
     } else {
-      projecao = `Você alcançou ${formatBRL(p.meta)} este mês — no seu ritmo.`;
+      projecao = `Você alcançou ${formatMoeda(p.meta)} este mês — no seu ritmo.`;
     }
   } else {
-    projecao = `No seu ritmo, você chega em ${formatBRL(
+    projecao = `No seu ritmo, você chega em ${formatMoeda(
       p.projectedMonthEnd
     )} até o fim de ${p.monthLabel}.`;
   }
@@ -88,11 +88,11 @@ export function HeroCard({ jobs, metas, receitas, onGoToFinanceiro }: Props) {
         <span
           style={{ fontSize: "36px", fontWeight: 800, letterSpacing: "-1px" }}
         >
-          {formatBRL(p.earned)}
+          {formatMoeda(p.earned)}
         </span>
         {p.meta !== null && (
           <span style={{ fontSize: "13px", color: "var(--t-mut)" }}>
-            {`de ${formatBRL(p.meta)}`}
+            {`de ${formatMoeda(p.meta)}`}
           </span>
         )}
       </div>

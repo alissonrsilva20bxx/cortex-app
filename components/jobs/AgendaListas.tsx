@@ -2,7 +2,7 @@
 
 import { CalendarCheck, X } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import type { Job, JobStatus } from "@/lib/types";
 import { STATUS_META } from "./status";
 import { formatDiaCurto, formatHora, inicialDoNome } from "./agendaSemana";
@@ -146,7 +146,7 @@ export function EstaSemanaSection({
                 isLast={i === jobs.length - 1}
                 onOpen={onOpen}
                 detalhe={`${formatDiaCurto(job.data)} · ${formatHora(job.hora)} · ${meta.label}`}
-                valor={formatBRL(job.valor)}
+                valor={formatMoeda(job.valor)}
                 marca={
                   <span
                     className="flex shrink-0 items-center justify-center"
@@ -195,7 +195,7 @@ export function ProximasSemanasSection({
               isLast={i === jobs.length - 1}
               onOpen={onOpen}
               detalhe={`${formatDiaCurto(job.data)} · ${formatHora(job.hora)}`}
-              valor={formatBRL(job.valor)}
+              valor={formatMoeda(job.valor)}
               marca={
                 <span
                   aria-hidden="true"

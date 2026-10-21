@@ -102,12 +102,6 @@
     "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
   },
   {
-    "arquivo": "lib/finance.ts",
-    "literal": "pt-BR",
-    "quantidade": 3,
-    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
-  },
-  {
     "arquivo": "lib/mockRede.ts",
     "literal": "pt-BR",
     "quantidade": 1,

@@ -10,6 +10,7 @@ import {
   contaComoDiaAtivo,
   contaComoPlanejar,
 } from "@/lib/atendimentos/status";
+import { SIMBOLO_MOEDA } from "@/lib/finance";
 import type { Job, JobStatus, Modalidade } from "@/lib/types";
 
 interface FormState {
@@ -246,7 +247,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
 
           {/* Valor */}
           <div>
-            <label style={labelStyle}>Valor (R$)</label>
+            <label style={labelStyle}>Valor ({SIMBOLO_MOEDA})</label>
             <input
               type="number"
               min="0"

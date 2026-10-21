@@ -164,13 +164,13 @@ describe("J02 — 'não mude cálculo': todo número vem da conta que já existi
     /^(p\.(earned|meta|remaining|projectedMonthEnd)|job\.valor)$/;
 
   for (const arquivo of COM_DINHEIRO) {
-    it(`${arquivo}: todo formatBRL(...) recebe um campo de monthProjection ou o valor do atendimento`, () => {
+    it(`${arquivo}: todo formatMoeda(...) recebe um campo de monthProjection ou o valor do atendimento`, () => {
       const src = semComentarios(read(arquivo));
-      const args = [...src.matchAll(/formatBRL\(\s*([^()]*?)\s*\)/g)].map(
+      const args = [...src.matchAll(/formatMoeda\(\s*([^()]*?)\s*\)/g)].map(
         (m) => m[1]
       );
       expect(args.length).toBeGreaterThan(0);
-      for (const a of args) expect(a, `formatBRL(${a})`).toMatch(ARG_PERMITIDO);
+      for (const a of args) expect(a, `formatMoeda(${a})`).toMatch(ARG_PERMITIDO);
     });
   }
 
@@ -204,7 +204,7 @@ describe("J02 — 'não mude cálculo': todo número vem da conta que já existi
     expect(src).toContain(
       "if (p.meta === null || p.remaining === null) return null;"
     );
-    expect(src).toContain("{formatBRL(p.remaining)}");
+    expect(src).toContain("{formatMoeda(p.remaining)}");
   });
 
   it("ObjetivosCard: a contagem sai do campo binário `concluido`", () => {

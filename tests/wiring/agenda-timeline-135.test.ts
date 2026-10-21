@@ -111,7 +111,7 @@ describe('"Abrir atendimento" (JobDetailSheet) é um passo distinto de "editar" 
       expect(jobDetailSrc).toContain(field);
     }
     expect(jobDetailSrc).toContain("<StatusBadge status={job.status} />");
-    expect(jobDetailSrc).toContain("formatBRL(job.valor, 2)");
+    expect(jobDetailSrc).toContain("formatMoeda(job.valor, 2)");
   });
 });
 

@@ -2,7 +2,7 @@
 
 import { Plus, TrendingDown, Trash2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { formatBRL, formatShortDate } from "@/lib/finance";
+import { formatMoeda, formatShortDate } from "@/lib/finance";
 import { CAT_LABELS, CAT_EMOJIS } from "./constants";
 import type { Despesa } from "@/lib/types";
 
@@ -55,7 +55,7 @@ export function SaidasTab({
             className="font-extrabold text-[22px] tabular-nums"
             style={{ color: "var(--danger)" }}
           >
-            {formatBRL(totalDespMes, 2)}
+            {formatMoeda(totalDespMes, 2)}
           </p>
         </div>
         <TrendingDown
@@ -102,7 +102,7 @@ export function SaidasTab({
                     className="text-xs tabular-nums"
                     style={{ color: "var(--danger)" }}
                   >
-                    {formatBRL(val)}
+                    {formatMoeda(val)}
                   </span>
                 </div>
                 <div className="progress-track" style={{ height: 3 }}>
@@ -157,7 +157,7 @@ export function SaidasTab({
                 className="font-bold text-sm tabular-nums shrink-0"
                 style={{ color: "var(--danger)" }}
               >
-                -{formatBRL(d.valor)}
+                -{formatMoeda(d.valor)}
               </span>
               {/* 44×44px — alvo de toque mínimo (spec); era 28×28px
                   (achado P1-6 do relatório de paridade). */}

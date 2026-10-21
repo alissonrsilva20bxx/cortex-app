@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
-import { formatBRL, monthEarnings, monthConcludedCount } from "@/lib/finance";
+import { formatMoeda, monthEarnings, monthConcludedCount } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 import { usePausarComemoracao } from "@/components/jornada/celebracao/pausa";
 
@@ -90,7 +90,7 @@ export function RecapSheet({ jobs }: Props) {
               color: "var(--text)",
             }}
           >
-            {formatBRL(recap.total)}
+            {formatMoeda(recap.total)}
           </p>
           <p className="text-sm mb-8" style={{ color: "var(--text-muted)" }}>
             em {recap.atendimentos}{" "}

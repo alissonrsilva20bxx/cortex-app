@@ -15,7 +15,7 @@ import {
   Clock3,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { formatBRL } from "@/lib/finance";
+import { formatMoeda } from "@/lib/finance";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { JobCard } from "./JobCard";
@@ -1112,7 +1112,7 @@ export function JobsTab({
                     className="font-bold tabular-nums"
                     style={{ fontSize: "20px", color: "var(--accent)" }}
                   >
-                    {formatBRL(dayTotal, 2)}
+                    {formatMoeda(dayTotal, 2)}
                   </strong>
                 </div>
               )}

@@ -7,6 +7,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { HeroCard } from "@/components/home/HeroCard";
 import { PinSetup } from "@/components/pin/PinSetup";
 import { hasNoRealGoal } from "@/lib/onboarding";
+import { SIMBOLO_MOEDA } from "@/lib/finance";
 import { AVISO_FALTAM_DIAS, TRIAL_DIAS } from "@/lib/assinatura";
 import { formatarEuro, menorPrecoPorMes } from "@/lib/planos";
 import type { Job, Meta, Usuario } from "@/lib/types";
@@ -349,7 +350,7 @@ export function OnboardingFlow({
               className="text-xs font-semibold uppercase tracking-wider mb-2 block"
               style={{ color: "var(--text-muted)" }}
             >
-              Meta mensal (R$)
+              Meta mensal ({SIMBOLO_MOEDA})
             </label>
             <input
               type="number"
