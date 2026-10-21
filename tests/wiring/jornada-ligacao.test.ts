@@ -96,6 +96,15 @@ const LIGACOES = [
     vezes: 2,
   },
   {
+    // Guardar (Finanças): depósito gravado no histórico e somado no Desejo.
+    acao: "guardar_meta",
+    arquivo: "components/financeiro/GuardarCard.tsx",
+    hook: "const { registrar } = useJornada(userId);",
+    depoisDe: "toast.success(T.sucesso);",
+    chamada: 'void registrar("guardar_meta");',
+    vezes: 1,
+  },
+  {
     // Jornada de Começo (0036): criar o PIN, depois de salvo.
     acao: "criar_pin",
     arquivo: "components/pin/PinSetup.tsx",
