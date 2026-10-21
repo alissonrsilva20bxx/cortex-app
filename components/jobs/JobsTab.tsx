@@ -43,6 +43,8 @@ import {
   toISODate,
 } from "./agendaSemana";
 import { STATUS_META } from "./status";
+import { TOTAL_PREVISTO } from "./textosAgenda";
+import { totalPrevistoDoDia } from "@/lib/atendimentos/status";
 import type { Job, JobStatus } from "@/lib/types";
 
 type Filter = "todos" | JobStatus;
@@ -360,7 +362,7 @@ export function JobsTab({
   const selectedDayJobs = filtered.filter((j) => j.data === selectedDate);
   const isViewingToday = selectedDate === today;
   const timelineItems = buildTimelineItems(selectedDayJobs);
-  const dayTotal = selectedDayJobs.reduce((s, j) => s + j.valor, 0);
+  const dayTotal = totalPrevistoDoDia(selectedDayJobs);
 
   // Card do próximo atendimento e as duas listas do mockup (J03). Usam
   // todos os atendimentos (`jobs`), não o filtro de status do painel do
@@ -1082,12 +1084,11 @@ export function JobsTab({
                 </div>
               )}
 
-              {/* Total do dia — soma real dos atendimentos visíveis
-                  (respeita o filtro ativo, mesmo dado que a timeline acima
-                  mostra; nunca um valor de "previsão" separado que
-                  incluiria atendimentos escondidos pelo filtro). Rótulo
-                  muda conforme o dia selecionado seja hoje ou não —
-                  "previsto hoje" só faz sentido pra hoje. */}
+              {/* Previsto do dia — soma dos atendimentos visíveis (respeita o
+                  filtro ativo, mesmo dado que a timeline acima mostra) sem os
+                  cancelados, que não aconteceram. É previsão, não ganho: o
+                  ganho é o concluído, no Financeiro. O rótulo muda conforme o
+                  dia selecionado seja hoje ou não. */}
               {!initialLoading && selectedDayJobs.length > 0 && (
                 <div
                   className="flex items-center justify-between mt-5 pt-4"
@@ -1096,7 +1097,7 @@ export function JobsTab({
                   <span
                     style={{ fontSize: "12px", color: "var(--text-muted)" }}
                   >
-                    {isViewingToday ? "Total de hoje" : "Total do dia"}
+                    {isViewingToday ? TOTAL_PREVISTO.hoje : TOTAL_PREVISTO.dia}
                   </span>
                   <strong
                     className="font-bold tabular-nums"

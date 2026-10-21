@@ -152,16 +152,16 @@ describe("Resumo e Anotações viraram sheets (composição aprovada) preservand
   });
 });
 
-describe("Total do dia usa dado real, respeitando o filtro visível", () => {
-  it("dayTotal soma valor real dos atendimentos do dia selecionado (selectedDayJobs), nunca um número fixo", () => {
+describe("Previsto do dia usa dado real, respeitando o filtro visível", () => {
+  it("dayTotal soma o valor real dos atendimentos do dia selecionado (selectedDayJobs) sem os cancelados, nunca um número fixo", () => {
     expect(jobsTabSrc).toContain(
-      "const dayTotal = selectedDayJobs.reduce((s, j) => s + j.valor, 0);"
+      "const dayTotal = totalPrevistoDoDia(selectedDayJobs);"
     );
   });
 
-  it('rótulo muda entre "Total de hoje" e "Total do dia" conforme o dia selecionado seja hoje', () => {
+  it('rótulo muda entre "Previsto de hoje" e "Previsto do dia" conforme o dia selecionado seja hoje', () => {
     expect(jobsTabSrc).toContain(
-      '{isViewingToday ? "Total de hoje" : "Total do dia"}'
+      "{isViewingToday ? TOTAL_PREVISTO.hoje : TOTAL_PREVISTO.dia}"
     );
   });
 });
