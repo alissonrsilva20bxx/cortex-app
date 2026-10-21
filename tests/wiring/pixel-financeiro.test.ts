@@ -440,7 +440,11 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
    * a Agenda continua com Camila Duarte no domingo 20/09 (ela pagou em
    * 17/09, que é quando entra no Financeiro).
    */
-  it("iguais ao mockup: Meta (12%, R$ 430 de R$ 3.500) e Ticket médio (R$ 177)", () => {
+  // Atenção: este teste confere a CONTA DO MOCKUP (monthEarnings e "entrou ÷
+  // concluídos"), não a que o card usa (calcEarnings e monthTicketMedio). Ele
+  // protege a semente do laboratório e o texto do card contra o mockup; a
+  // conta da tela é a do teste logo abaixo.
+  it("conta do mockup (não a da tela): Meta (12%, R$ 430 de R$ 3.500) e Ticket médio (R$ 177)", () => {
     const { jobs, receitas, metaMes } = seed();
     const entrou = calcEarnings(jobs, receitas, "mes");
     // O mockup conta o atendimento pelo dia do atendimento (R$ 430). O app

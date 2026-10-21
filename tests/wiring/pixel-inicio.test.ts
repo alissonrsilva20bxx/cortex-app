@@ -529,7 +529,10 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
    * o laboratório mostra R$ 100 a mais que o mockup: divergência decidida,
    * testada abaixo.
    */
-  it("iguais ao mockup: faturamento, % da meta, projeção e falta pra meta", () => {
+  // Atenção: este teste confere a CONTA DO MOCKUP (sem pagoEm e sem
+  // entradas avulsas), não a que o Início usa (calcEarnings). A conta da tela
+  // é coberta pelos testes de divergência decidida, logo abaixo.
+  it("conta do mockup (não a da tela): faturamento, % da meta, projeção e falta pra meta", () => {
     const { jobs, metas } = seed();
     // Conta do mockup: pelo dia do atendimento, sem o dinheiro adiantado.
     const p = monthProjection(
