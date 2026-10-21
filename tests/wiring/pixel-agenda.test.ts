@@ -362,11 +362,11 @@ describe("os ícones da Agenda e da barra têm o traço do mockup", () => {
 describe("a Agenda na ordem do mockup", () => {
   const tab = read("components/jobs/JobsTab.tsx");
 
-  it("cabeçalho com busca e sino desabilitados (não existem no app)", () => {
-    expect(tab).toMatch(/rotulo: "Buscar", Icone: IconeBusca/);
-    expect(tab).toMatch(/rotulo: "Notificações", Icone: IconeSino/);
-    // Sem onClick = desabilitado (BotaoRedondo, components/ui/cabecalho).
-    expect(tab).toMatch(/<BotaoRedondo key=\{rotulo\} rotulo=\{rotulo\}>/);
+  it("cabeçalho sem busca nem sino (não existem no app; botão sem função não aparece)", () => {
+    expect(tab).not.toContain("IconeBusca");
+    expect(tab).not.toContain("IconeSino");
+    expect(tab).not.toContain("<BotaoRedondo");
+    // BotaoRedondo sem onClick continua desabilitado (components/ui/cabecalho).
     expect(read("components/ui/cabecalho.tsx")).toMatch(
       /disabled=\{!onClick\}/
     );

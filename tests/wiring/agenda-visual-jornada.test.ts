@@ -177,8 +177,8 @@ describe("As 4 ações ligam no que já existe", () => {
     expect(jobsTab).not.toMatch(/>\s*Bloco de notas\s*<\/button>/);
   });
 
-  it('"Ver tudo ›" fica desabilitado (não existe ação para ele no app)', () => {
-    expect(listas).toMatch(/disabled[\s\S]{0,300}Ver tudo ›/);
+  it('"Ver tudo ›" não aparece enquanto não existe ação para ele', () => {
+    expect(listas).not.toContain("Ver tudo");
   });
 
   it('"Lembrar cliente ›" tem ação (decisão antiga revogada pelo operador): abre o cartão de agenda', () => {

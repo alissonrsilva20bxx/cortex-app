@@ -116,8 +116,8 @@ function Linha({
 /**
  * Seção "Esta semana" (J03): todos os atendimentos da semana real da
  * usuária, cada um com `dia · hora · status`. O status é o rótulo de
- * `STATUS_META`, sem texto novo. "Ver tudo ›" fica desabilitado: o app
- * não tem hoje uma tela de lista completa para onde ele levaria.
+ * `STATUS_META`, sem texto novo. O botão de lista completa do
+ * mockup fica de fora: o app não tem uma tela de lista completa para onde ele levaria.
  */
 export function EstaSemanaSection({
   jobs,
@@ -130,21 +130,6 @@ export function EstaSemanaSection({
     <section className="flex flex-col" style={{ gap: "16px" }}>
       <div className="flex items-center justify-between">
         <h2 style={SECTION_TITLE_STYLE}>Esta semana</h2>
-        {/* Sem esmaecer (pixel do mockup); toque de 44px sem crescer a linha. */}
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          style={{
-            fontSize: "12px",
-            fontWeight: 700,
-            color: "var(--accent-deep)",
-            minHeight: "44px",
-            margin: "-11px 0",
-          }}
-        >
-          Ver tudo ›
-        </button>
       </div>
       <div style={LIST_STYLE}>
         {jobs.length === 0 ? (

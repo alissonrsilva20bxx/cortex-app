@@ -27,8 +27,6 @@ import { AgendaAconteceu } from "./AgendaAconteceu";
 import { LembrarClienteSheet } from "./LembrarClienteSheet";
 import type { Profissional } from "@/lib/lembrete/cartaoAgenda";
 import { AgendaAcoes } from "./AgendaAcoes";
-import { IconeBusca, IconeSino } from "./agendaIcones";
-import { BotaoRedondo } from "@/components/ui/cabecalho";
 import { EstaSemanaSection, ProximasSemanasSection } from "./AgendaListas";
 import {
   addDays,
@@ -589,17 +587,9 @@ export function JobsTab({
         >
           Agenda
         </h1>
-        {/* Busca e sino do mockup (pixel do mockup, layout C). A Agenda não
-            tem busca nem notificação ligadas: ficam desabilitados, como o
-            "Bloquear" (J03: não criar ação nova), e listados no PR. */}
-        {[
-          { rotulo: "Buscar", Icone: IconeBusca },
-          { rotulo: "Notificações", Icone: IconeSino },
-        ].map(({ rotulo, Icone }) => (
-          <BotaoRedondo key={rotulo} rotulo={rotulo}>
-            <Icone size={20} />
-          </BotaoRedondo>
-        ))}
+        {/* Busca e sino do mockup ficam de fora: a Agenda não tem busca nem
+            notificação, e botão sem função não aparece (CODING_STANDARDS).
+            Voltam quando tiverem ação. */}
       </div>
 
       {/* "Aconteceu?": atendimento em aberto cujo horário já passou. */}

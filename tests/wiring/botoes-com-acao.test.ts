@@ -11,6 +11,12 @@ import ts from "typescript";
  * type="submit", nem disabled, nem spread de props. Botão dentro de um
  * <form> sem type também não é morto (o navegador trata como submit).
  *
+ * `disabled` NÃO salva o botão quando é só enfeite: `disabled` fixo
+ * (`disabled` ou `disabled={true}`) ou `disabled={!onClick}`, sem handler,
+ * é botão morto que só tem cara de desabilitado. O mesmo vale para o uso de
+ * um componente que se desabilita assim quando falta a prop (BotaoRedondo)
+ * sem passar a prop.
+ *
  * A lista de hoje fica em botoes-sem-acao.baseline.json. O teste falha
  * quando surge um botão morto NOVO. Para consertar um da lista, ligue a
  * ação e tire a linha do JSON. A comparação é por arquivo + trecho (a
@@ -72,17 +78,88 @@ function textoDe(a: ts.JsxAttribute | undefined): string | null {
 
 function dentroDeForm(no: ts.Node): boolean {
   for (let p = no.parent; p; p = p.parent) {
-    if (
-      ts.isJsxElement(p) &&
-      p.openingElement.tagName.getText() === "form"
-    ) {
+    if (ts.isJsxElement(p) && p.openingElement.tagName.getText() === "form") {
       return true;
     }
   }
   return false;
 }
 
-function acharMortos(rel: string, codigo: string): Morto[] {
+/** `disabled`, `disabled={true}` ou `disabled={!algo}`: desabilitado sem
+ * depender de nada que mude, ou só porque falta um handler. */
+function desabilitadoDeEnfeite(a: ts.JsxAttribute | undefined): boolean {
+  if (!a) return false;
+  if (!a.initializer) return true;
+  if (!ts.isJsxExpression(a.initializer) || !a.initializer.expression) {
+    return false;
+  }
+  const e = a.initializer.expression;
+  if (e.kind === ts.SyntaxKind.TrueKeyword) return true;
+  return (
+    ts.isPrefixUnaryExpression(e) &&
+    e.operator === ts.SyntaxKind.ExclamationToken &&
+    ts.isIdentifier(e.operand)
+  );
+}
+
+/** Componentes que se desabilitam quando falta uma prop (`disabled={!onClick}`
+ * dentro de `function Nome({ onClick })`): nome -> prop. */
+function componentesQueSeDesabilitam(
+  codigo: string
+): { nome: string; prop: string }[] {
+  const fonte = ts.createSourceFile(
+    "x.tsx",
+    codigo,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX
+  );
+  const achados: { nome: string; prop: string }[] = [];
+  const ver = (no: ts.Node, atual: string | null, props: Set<string>) => {
+    let nome = atual;
+    let seusProps = props;
+    if (
+      ts.isFunctionDeclaration(no) &&
+      no.name &&
+      /^[A-Z]/.test(no.name.text)
+    ) {
+      nome = no.name.text;
+      // Só vale a prop do próprio componente: `disabled={!podeEnviar}` de um
+      // estado local não é "falta o handler".
+      seusProps = new Set(
+        no.parameters.flatMap((p) =>
+          ts.isObjectBindingPattern(p.name)
+            ? p.name.elements.map((e) => e.name.getText())
+            : []
+        )
+      );
+    }
+    if (ts.isJsxAttribute(no) && no.name.getText() === "disabled" && nome) {
+      const e =
+        no.initializer && ts.isJsxExpression(no.initializer)
+          ? no.initializer.expression
+          : undefined;
+      if (
+        e &&
+        ts.isPrefixUnaryExpression(e) &&
+        e.operator === ts.SyntaxKind.ExclamationToken &&
+        ts.isIdentifier(e.operand) &&
+        seusProps.has(e.operand.text)
+      ) {
+        achados.push({ nome, prop: e.operand.text });
+      }
+    }
+    ts.forEachChild(no, (f) => ver(f, nome, seusProps));
+  };
+  ver(fonte, null, new Set());
+  return achados;
+}
+
+function acharMortos(
+  rel: string,
+  codigo: string,
+  comportamentos: { nome: string; prop: string }[] = []
+): Morto[] {
   const fonte = ts.createSourceFile(
     rel,
     codigo,
@@ -104,12 +181,21 @@ function acharMortos(rel: string, codigo: string): Morto[] {
         // type={expressão}: não dá para provar que é morto
         (tipo !== undefined && textoDe(tipo) === null) ||
         (no.tagName.getText() === "button" && !tipo && dentroDeForm(no));
+      const disabled = atributo(attrs, "disabled");
+      const temHandler = atributo(attrs, "onClick") !== undefined;
       const vivo =
         temSpread ||
         viraSubmit ||
-        atributo(attrs, "onClick") !== undefined ||
-        atributo(attrs, "disabled") !== undefined;
-      if (ehBotao && !vivo) {
+        temHandler ||
+        (disabled !== undefined && !desabilitadoDeEnfeite(disabled));
+      // Uso de um componente que se desabilita sem a prop (BotaoRedondo).
+      const semAProp = comportamentos.some(
+        (c) =>
+          c.nome === no.tagName.getText() &&
+          !temSpread &&
+          atributo(attrs, c.prop) === undefined
+      );
+      if ((ehBotao && !vivo) || semAProp) {
         const { line } = fonte.getLineAndCharacterOfPosition(
           no.getStart(fonte)
         );
@@ -130,6 +216,20 @@ function acharMortos(rel: string, codigo: string): Morto[] {
   return mortos;
 }
 
+/**
+ * Ações desenhadas sem função que o detector não enxerga porque o botão é
+ * gerado de uma lista (AgendaAcoes: `{ label, Icon }` sem `onClick`).
+ * Continuam explícitas aqui. Quando ganharem ação, o teste abaixo falha
+ * para a linha sair daqui.
+ */
+const SEM_ACAO_CONHECIDOS = [
+  {
+    arquivo: "components/jobs/AgendaAcoes.tsx",
+    trecho: '{ label: "Bloquear", Icon: IconeBloquear }',
+    motivo: "vira item próprio com a migration 0043 (bloqueio de horário)",
+  },
+];
+
 const chave = (m: Morto) => `${m.arquivo}::${m.trecho}`;
 
 describe("botões com ação", () => {
@@ -137,10 +237,12 @@ describe("botões com ação", () => {
     readFileSync(join(__dirname, "botoes-sem-acao.baseline.json"), "utf-8")
   );
 
-  const achados: Morto[] = PASTAS.flatMap((p) =>
-    arquivosTsx(join(ROOT, p))
-  ).flatMap((rel) =>
-    acharMortos(rel, readFileSync(join(ROOT, rel), "utf-8"))
+  const arquivos = PASTAS.flatMap((p) => arquivosTsx(join(ROOT, p)));
+  const comportamentos = arquivos.flatMap((rel) =>
+    componentesQueSeDesabilitam(readFileSync(join(ROOT, rel), "utf-8"))
+  );
+  const achados: Morto[] = arquivos.flatMap((rel) =>
+    acharMortos(rel, readFileSync(join(ROOT, rel), "utf-8"), comportamentos)
   );
 
   it("o detector acha botão sem ação e deixa passar os que têm ação", () => {
@@ -149,13 +251,41 @@ describe("botões com ação", () => {
       const b = <div role="button">morto</div>;
       const c = <button onClick={f}>vivo</button>;
       const d = <button type="submit">vivo</button>;
-      const e = <button disabled>vivo</button>;
+      const e = <button disabled={salvando}>vivo</button>;
       const g = <button {...props}>vivo</button>;
       const h = <form><button>envia</button></form>;
       const i = <div role="button" onClick={f} />;
     `;
     const m = acharMortos("x.tsx", codigo);
     expect(m.map((x) => x.linha)).toEqual([2, 3]);
+  });
+
+  it("disabled de enfeite (fixo ou só porque falta o handler) conta como morto", () => {
+    const codigo = `
+      const a = <button disabled>fixo</button>;
+      const b = <button disabled={true}>fixo</button>;
+      const c = <button disabled={!onClick}>sem handler</button>;
+      const d = <button onClick={f} disabled={!onClick}>vivo</button>;
+      const e = <button disabled={salvando}>por estado</button>;
+      const f = <button onClick={f} disabled>com handler</button>;
+    `;
+    const m = acharMortos("x.tsx", codigo);
+    expect(m.map((x) => x.linha)).toEqual([2, 3, 4]);
+  });
+
+  it("achou o componente que se desabilita sem a prop e o uso sem ela", () => {
+    const def = `
+      export function Redondo({ onClick }) {
+        return <button onClick={onClick} disabled={!onClick} />;
+      }
+    `;
+    const comp = componentesQueSeDesabilitam(def);
+    expect(comp).toEqual([{ nome: "Redondo", prop: "onClick" }]);
+    const uso = `
+      const a = <Redondo rotulo="x" />;
+      const b = <Redondo rotulo="y" onClick={f} />;
+    `;
+    expect(acharMortos("x.tsx", uso, comp).map((x) => x.linha)).toEqual([2]);
   });
 
   it("a varredura lê os arquivos de verdade e o ios-prototype só vai ao laboratório", () => {
@@ -192,6 +322,13 @@ describe("botões com ação", () => {
       `Botão sem ação (sem onClick, type="submit", disabled ou spread):\n${msg}\n` +
         "Ligue a ação ou deixe o botão desabilitado de forma visível."
     ).toEqual([]);
+  });
+
+  it("as ações de lista sem função continuam explícitas (e saem daqui quando ganharem ação)", () => {
+    for (const c of SEM_ACAO_CONHECIDOS) {
+      const src = readFileSync(join(ROOT, c.arquivo), "utf-8");
+      expect(src, `${c.arquivo}: ${c.motivo}`).toContain(c.trecho);
+    }
   });
 
   it("a baseline não guarda botão que já foi consertado", () => {
