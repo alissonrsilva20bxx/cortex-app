@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { listarWishlistItems, type WishlistItem } from "@/lib/rede/wishlist";
-import { desejoPrincipal, progressoDesejo, textoPrazo } from "@/lib/desejo/desejo";
+import {
+  desejoPrincipal,
+  progressoDesejo,
+  textoPrazo,
+} from "@/lib/desejo/desejo";
 import { useAoMudarDesejos } from "@/lib/desejo/eventos";
 import { TEXTOS_DESEJO as T } from "@/lib/desejo/textos";
 import { formatEUR } from "@/lib/guardar/valor";

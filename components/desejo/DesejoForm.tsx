@@ -154,10 +154,7 @@ export function DesejoForm({
             onChange={(e) => set("valorAlvo", e.target.value)}
           />
           {item && (
-            <p
-              className="text-xs mt-2"
-              style={{ color: "var(--text-muted)" }}
-            >
+            <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
               {T.jaGuardado(formatEUR(item.valorAtual))}. {T.dicaGuardar}
             </p>
           )}

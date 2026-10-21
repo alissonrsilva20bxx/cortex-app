@@ -5,7 +5,10 @@ import { AlertCircle, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useToast } from "@/components/Toast";
-import { DesejoForm, type DesejoFormState } from "@/components/desejo/DesejoForm";
+import {
+  DesejoForm,
+  type DesejoFormState,
+} from "@/components/desejo/DesejoForm";
 import { OptionsSheet } from "@/components/rede/OptionsSheet";
 import { WishlistCard } from "@/components/rede/WishlistCard";
 import {
