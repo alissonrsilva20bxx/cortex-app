@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Trash2, X } from "lucide-react";
 import { AvatarAjustes, BotaoNovo } from "@/components/ui/cabecalho";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { calcEarnings } from "@/lib/finance";
+import { apagarLancamento } from "@/lib/financeiro/apagar";
+import { useToast } from "@/components/Toast";
+import { OptionsSheet } from "@/components/rede/OptionsSheet";
+import { APAGAR } from "./textosApagar";
 import { DEFAULT_METAS } from "./constants";
 import { FinanceiroHeroCard } from "./FinanceiroHeroCard";
 import { VisaoTab } from "./VisaoTab";
@@ -94,6 +98,7 @@ export function FinanceiroTab({
   podeCriarDesejo,
   onAbrirRede,
 }: Props) {
+  const toast = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>(DEFAULT_METAS);
   const [despesas, setDespesas] = useState<Despesa[]>([]);
@@ -259,14 +264,42 @@ export function FinanceiroTab({
         ? undefined
         : onAddDespesa;
 
-  async function deleteDespesa(id: string) {
-    await supabase.from("despesas").delete().eq("id", id);
-    setDespesas((prev) => prev.filter((d) => d.id !== id));
+  // A lixeira só pede a confirmação; quem apaga é `confirmarApagar`.
+  const [apagando, setApagando] = useState<{
+    tipo: "despesa" | "receita";
+    id: string;
+    descricao: string;
+  } | null>(null);
+
+  function deleteDespesa(id: string) {
+    const d = despesas.find((x) => x.id === id);
+    if (d) setApagando({ tipo: "despesa", id, descricao: d.descricao });
   }
 
-  async function deleteReceita(id: string) {
-    await supabase.from("receitas_avulsas").delete().eq("id", id);
-    setReceitas((prev) => prev.filter((r) => r.id !== id));
+  function deleteReceita(id: string) {
+    const r = receitas.find((x) => x.id === id);
+    if (r) setApagando({ tipo: "receita", id, descricao: r.descricao });
+  }
+
+  async function confirmarApagar(alvo: NonNullable<typeof apagando>) {
+    const tabela = alvo.tipo === "despesa" ? "despesas" : "receitas_avulsas";
+    const apagar = () =>
+      supabase.from(tabela).delete().eq("id", alvo.id).select("id");
+    const ok =
+      alvo.tipo === "despesa"
+        ? await apagarLancamento({
+            lista: despesas,
+            id: alvo.id,
+            atualizar: setDespesas,
+            apagar,
+          })
+        : await apagarLancamento({
+            lista: receitas,
+            id: alvo.id,
+            atualizar: setReceitas,
+            apagar,
+          });
+    if (!ok) toast.error(APAGAR.falhou);
   }
 
   return (
@@ -468,6 +501,35 @@ export function FinanceiroTab({
           </div>
         </>
       )}
+
+      <OptionsSheet
+        open={!!apagando}
+        title={
+          apagando
+            ? apagando.tipo === "despesa"
+              ? APAGAR.tituloDespesa(apagando.descricao)
+              : APAGAR.tituloEntrada(apagando.descricao)
+            : ""
+        }
+        onClose={() => setApagando(null)}
+        options={[
+          {
+            key: "apagar",
+            label: APAGAR.sim,
+            Icon: Trash2,
+            danger: true,
+            onSelect: () => {
+              if (apagando) void confirmarApagar(apagando);
+            },
+          },
+          {
+            key: "cancelar",
+            label: APAGAR.cancelar,
+            Icon: X,
+            onSelect: () => {},
+          },
+        ]}
+      />
     </div>
   );
 }
