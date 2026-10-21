@@ -14,6 +14,8 @@ interface Props {
   jobs: Job[];
   metas: Meta[];
   receitas: ReceitaAvulsa[];
+  /** O relógio da tela (`useAgora`): vira o mês junto com o resto. */
+  agora: Date;
   onGoToFinanceiro: () => void;
 }
 
@@ -24,8 +26,14 @@ interface Props {
  * "Faltam € X". Sem meta definida não há o que faltar: o card não
  * aparece, em vez de mostrar um número inventado.
  */
-export function FaltaMetaCard({ jobs, metas, receitas, onGoToFinanceiro }: Props) {
-  const p = monthProjection(jobs, metas, receitas);
+export function FaltaMetaCard({
+  jobs,
+  metas,
+  receitas,
+  agora,
+  onGoToFinanceiro,
+}: Props) {
+  const p = monthProjection(jobs, metas, receitas, agora);
   if (p.meta === null || p.remaining === null) return null;
 
   return (

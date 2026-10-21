@@ -642,7 +642,7 @@ describe('Pixel Início A — "Esta semana" como o mockup', () => {
 
   it('a seção usa a regra de antes (diasRestantesDaSemana) e mostra "Dia livre"', () => {
     const src = read(SEMANA);
-    expect(src).toContain("const dias = diasRestantesDaSemana(jobs);");
+    expect(src).toContain("const dias = diasRestantesDaSemana(jobs, agora);");
     expect(src).toMatch(
       /if \(dia\.jobs\.length === 0\) \{[\s\S]{0,400}Dia livre/
     );

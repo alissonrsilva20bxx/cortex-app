@@ -13,6 +13,8 @@ import { LinkSecao } from "@/components/ui/LinkSecao";
 
 interface Props {
   jobs: Job[];
+  /** O relógio da tela (`useAgora`): vira a semana junto com o resto. */
+  agora: Date;
   onGoToAgenda: () => void;
 }
 
@@ -22,8 +24,8 @@ interface Props {
  * linha; dia sem atendimento aparece como "Dia livre". O atalho
  * "Agenda ›" leva à aba Agenda.
  */
-export function SemanaSection({ jobs, onGoToAgenda }: Props) {
-  const dias = diasRestantesDaSemana(jobs);
+export function SemanaSection({ jobs, agora, onGoToAgenda }: Props) {
+  const dias = diasRestantesDaSemana(jobs, agora);
   // Valores do mockup normativo (tela Início, "Esta semana").
   const linhaStyle = {
     display: "flex",

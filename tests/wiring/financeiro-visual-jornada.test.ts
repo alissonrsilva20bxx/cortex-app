@@ -203,7 +203,7 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
     expect(hero).toContain("{Math.round(metaPct)}%");
     const metas = semComentarios(read("components/financeiro/MetasTab.tsx"));
     expect(metas).toContain(
-      "const current = calcEarnings(jobs, receitas, meta.periodo);"
+      "const current = calcEarnings(jobs, receitas, meta.periodo, agora);"
     );
     expect(metas).toContain(
       "const pct = progressoMeta(current, meta.valorAlvo);"
@@ -213,7 +213,7 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
   it("FinanceiroTab: as contas do mês continuam as de antes", () => {
     const src = semComentarios(read("components/financeiro/FinanceiroTab.tsx"));
     expect(src).toContain(
-      'const totalEntradaMes = calcEarnings(jobs, receitas, "mes");'
+      'const totalEntradaMes = calcEarnings(jobs, receitas, "mes", agora);'
     );
     expect(src).toContain(
       "const totalDespMes = despMes.reduce((s, d) => s + d.valor, 0);"

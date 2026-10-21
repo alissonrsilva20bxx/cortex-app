@@ -24,7 +24,7 @@ describe("§2-P0-1 — HeroCard clicável (navega a Financeiro) e calculado de j
     expect(src).toMatch(
       /import\s*\{[^}]*monthProjection[^}]*\}\s*from\s*"@\/lib\/finance"/
     );
-    expect(src).toMatch(/monthProjection\(jobs, metas, receitas\)/);
+    expect(src).toMatch(/monthProjection\(jobs, metas, receitas, agora\)/);
   });
 
   it("o card inteiro é clicável via onClick={onGoToFinanceiro}", () => {

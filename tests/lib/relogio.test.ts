@@ -4,7 +4,9 @@ import { join } from "node:path";
 import {
   agoraSeMudouDeMinuto,
   assinarRelogio,
+  diaDoRelogio,
   INTERVALO_DO_RELOGIO_MS,
+  selecaoAposVirarODia,
 } from "@/lib/relogio";
 import {
   aguardandoResposta,
@@ -154,5 +156,95 @@ describe("fiação nos componentes", () => {
     const src = ler("lib/useAgora.ts");
     expect(src).toContain("assinarRelogio(renovar)");
     expect(src).toContain("agoraSeMudouDeMinuto(anterior, new Date())");
+  });
+});
+
+describe("virar a meia-noite com o app aberto", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  /** Um relógio de tela só: o que `useAgora` guarda, sem React. */
+  function telaAberta() {
+    let agora = new Date();
+    const parar = assinarRelogio(
+      () => {
+        agora = agoraSeMudouDeMinuto(agora, new Date());
+      },
+      { documento: alvo(), janela: alvo() }
+    );
+    return { agora: () => agora, parar };
+  }
+
+  it("o dia do relógio vira à meia-noite e o mês vira junto", () => {
+    vi.setSystemTime(new Date("2026-10-31T23:58:00"));
+    const tela = telaAberta();
+    expect(diaDoRelogio(tela.agora())).toBe("2026-10-31");
+    vi.advanceTimersByTime(3 * INTERVALO_DO_RELOGIO_MS);
+    expect(diaDoRelogio(tela.agora())).toBe("2026-11-01");
+    expect(tela.agora().getMonth()).toBe(10);
+    tela.parar();
+  });
+
+  it("quem olhava o hoje antigo vai para o novo hoje", () => {
+    vi.setSystemTime(new Date("2026-10-21T23:59:00"));
+    const tela = telaAberta();
+    const hojeAntes = diaDoRelogio(tela.agora());
+    let selecionado = hojeAntes;
+    vi.advanceTimersByTime(2 * INTERVALO_DO_RELOGIO_MS);
+    const hojeAgora = diaDoRelogio(tela.agora());
+    expect(hojeAgora).toBe("2026-10-22");
+    selecionado = selecaoAposVirarODia(selecionado, hojeAntes, hojeAgora);
+    expect(selecionado).toBe("2026-10-22");
+    tela.parar();
+  });
+
+  it("quem escolheu outro dia de propósito continua nele", () => {
+    expect(selecaoAposVirarODia("2026-10-25", "2026-10-21", "2026-10-22")).toBe(
+      "2026-10-25"
+    );
+    expect(selecaoAposVirarODia("2026-10-20", "2026-10-21", "2026-10-22")).toBe(
+      "2026-10-20"
+    );
+  });
+
+  it("o Início e o Financeiro passam o relógio da tela às contas de data", () => {
+    const ler = (p: string) =>
+      readFileSync(join(__dirname, "..", "..", p), "utf-8");
+    for (const pagina of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
+      const src = ler(pagina);
+      expect(src).toContain("useAgora()");
+      expect(src).toContain("<HeroCard");
+      expect(src.match(/agora=\{agora\}/g)?.length).toBeGreaterThanOrEqual(4);
+    }
+    expect(ler("components/home/HeroCard.tsx")).toContain(
+      "monthProjection(jobs, metas, receitas, agora)"
+    );
+    expect(ler("components/home/FaltaMetaCard.tsx")).toContain(
+      "monthProjection(jobs, metas, receitas, agora)"
+    );
+    expect(ler("components/home/SemanaSection.tsx")).toContain(
+      "diasRestantesDaSemana(jobs, agora)"
+    );
+    expect(ler("components/home/ProximosAtendimentos.tsx")).toContain(
+      "atendimentosDepoisDaSemana(jobs, agora)"
+    );
+    expect(ler("components/home/GreetingHeader.tsx")).toContain("useAgora()");
+    const fin = ler("components/financeiro/FinanceiroTab.tsx");
+    expect(fin).toContain("useAgora()");
+    expect(fin).toContain('calcEarnings(jobs, receitas, "mes", agora)');
+    expect(ler("components/financeiro/MetasTab.tsx")).toContain(
+      "meta.periodo, agora)"
+    );
+  });
+
+  it("a Jornada recarrega quando o dia muda e a Agenda leva a seleção ao novo hoje", () => {
+    const ler = (p: string) =>
+      readFileSync(join(__dirname, "..", "..", p), "utf-8");
+    const jornada = ler("components/jornada/useJornada.ts");
+    expect(jornada).toContain("diaDoRelogio(useAgora())");
+    expect(jornada).toMatch(/void loja\.carregar\(\);\s+\}, \[dia, loja\]\)/);
+    const agenda = ler("components/jobs/JobsTab.tsx");
+    expect(agenda).toContain("selecaoAposVirarODia(selectedDate, antes, today)");
+    expect(agenda).toContain("setWeekStart(startOfWeek(now))");
   });
 });

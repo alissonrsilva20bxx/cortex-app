@@ -92,7 +92,7 @@ describe("J02 — /dev-preview/app e app/page.tsx montam a Início real, na orde
       );
       // "Agenda ›" leva à aba Agenda.
       expect(painel).toMatch(
-        /<SemanaSection\s+jobs=\{jobs\}\s+onGoToAgenda=\{\(\) => handleTabChange\("jobs"\)\}/
+        /<SemanaSection\s+jobs=\{jobs\}\s+agora=\{agora\}\s+onGoToAgenda=\{\(\) => handleTabChange\("jobs"\)\}/
       );
     });
   }
@@ -185,7 +185,7 @@ describe("J02 — 'não mude cálculo': todo número vem da conta que já existi
       );
       expect(src.match(/monthProjection\(/g)).toHaveLength(1);
       expect(src).toContain(
-        "const p = monthProjection(jobs, metas, receitas);"
+        "const p = monthProjection(jobs, metas, receitas, agora);"
       );
       // Nenhuma reconstrução local da conta.
       expect(src).not.toMatch(/monthEarnings|monthMeta|reduce\(/);

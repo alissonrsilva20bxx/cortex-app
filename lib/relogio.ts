@@ -53,3 +53,20 @@ export function agoraSeMudouDeMinuto(anterior: Date, agora: Date): Date {
     ? anterior
     : agora;
 }
+
+/** O dia local de `d` como "AAAA-MM-DD" (o que muda à meia-noite). */
+export function diaDoRelogio(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${dia}`;
+}
+
+/** Quando o dia vira, quem olhava o "hoje" antigo passa a olhar o novo
+ * "hoje"; quem escolheu outro dia de propósito continua nele. */
+export function selecaoAposVirarODia(
+  selecionado: string,
+  hojeAntes: string,
+  hojeAgora: string
+): string {
+  return selecionado === hojeAntes ? hojeAgora : selecionado;
+}

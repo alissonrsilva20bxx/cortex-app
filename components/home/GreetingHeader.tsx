@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AvatarAjustes, BotaoNovo } from "@/components/ui/cabecalho";
 import type { Usuario } from "@/lib/types";
+import { useAgora } from "@/lib/useAgora";
 
 interface Props {
   usuario: Usuario;
@@ -18,8 +19,8 @@ function getFirstName(nome: string): string {
   return nome.split(" ")[0];
 }
 
-function getFormattedDate(): string {
-  const raw = new Date().toLocaleDateString("pt-BR", {
+function getFormattedDate(agora: Date): string {
+  const raw = agora.toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -52,7 +53,8 @@ export function GreetingHeader({
 }: Props) {
   // Foto da Rede tem prioridade; sem ela, a da conta (Google).
   const foto = fotoUrl || usuario.avatarUrl;
-  const date = useMemo(getFormattedDate, []);
+  const agora = useAgora();
+  const date = useMemo(() => getFormattedDate(agora), [agora]);
   const firstName = getFirstName(usuario.nome);
 
   // Valores do mockup normativo (tela Início): avatar 42px `--t-soft`,

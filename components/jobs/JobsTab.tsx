@@ -26,6 +26,7 @@ import { AgendaProximoCard } from "./AgendaProximoCard";
 import { AgendaAconteceu } from "./AgendaAconteceu";
 import { useDescanso } from "./useDescanso";
 import { useAgora } from "@/lib/useAgora";
+import { selecaoAposVirarODia } from "@/lib/relogio";
 import { LembrarClienteSheet } from "./LembrarClienteSheet";
 import type { Profissional } from "@/lib/lembrete/cartaoAgenda";
 import { AgendaAcoes } from "./AgendaAcoes";
@@ -365,6 +366,19 @@ export function JobsTab({
   const days = weekStrip.map((d) => d.iso);
   const selectedDayJobs = filtered.filter((j) => j.data === selectedDate);
   const isViewingToday = selectedDate === today;
+
+  // Virou o dia com o app aberto: quem olhava o "hoje" de ontem vai para o
+  // de hoje; quem escolheu outro dia de propósito fica onde está.
+  const hojeAnterior = useRef(today);
+  useEffect(() => {
+    const antes = hojeAnterior.current;
+    if (antes === today) return;
+    hojeAnterior.current = today;
+    if (selecaoAposVirarODia(selectedDate, antes, today) === today) {
+      setSelectedDate(today);
+      setWeekStart(startOfWeek(now));
+    }
+  }, [today, selectedDate, now]);
   const timelineItems = buildTimelineItems(selectedDayJobs);
   const dayTotal = totalPrevistoDoDia(selectedDayJobs);
 

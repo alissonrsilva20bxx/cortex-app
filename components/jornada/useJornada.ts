@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from "react";
+import { diaDoRelogio } from "@/lib/relogio";
+import { useAgora } from "@/lib/useAgora";
 import { lojaDaUsuaria, type RetratoJornada } from "@/lib/jornada/cliente";
 import type {
   Acao,
@@ -66,6 +74,16 @@ export function useJornada(userId: string): UsoJornada {
     void loja.carregar();
     void loja.enviarPendentes();
   }, [loja]);
+
+  // Virou o dia com o app aberto: o servidor conta "hoje", então o estado
+  // (bolinhas, Próximo passo, Descansou) é buscado de novo.
+  const dia = diaDoRelogio(useAgora());
+  const diaCarregado = useRef(dia);
+  useEffect(() => {
+    if (diaCarregado.current === dia) return;
+    diaCarregado.current = dia;
+    void loja.carregar();
+  }, [dia, loja]);
 
   const registrar = useCallback((acao: Acao) => loja.registrar(acao), [loja]);
   const registrarAbertura = useCallback(() => loja.registrarAbertura(), [loja]);

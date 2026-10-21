@@ -8,6 +8,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { calcEarnings } from "@/lib/finance";
 import { apagarLancamento } from "@/lib/financeiro/apagar";
+import { useAgora } from "@/lib/useAgora";
 import { useToast } from "@/components/Toast";
 import { OptionsSheet } from "@/components/rede/OptionsSheet";
 import { APAGAR } from "./textosApagar";
@@ -36,8 +37,8 @@ type InnerTab = "visao" | "entradas" | "saidas" | "metas";
  * escopo visual deste ticket) — só o rótulo de contexto, calculado a
  * partir da data real, sem seta/chevron (não é clicável).
  */
-function getMonthYearLabel(): string {
-  const label = new Date().toLocaleDateString("pt-BR", {
+function getMonthYearLabel(agora: Date): string {
+  const label = agora.toLocaleDateString("pt-BR", {
     month: "long",
     year: "numeric",
   });
@@ -109,7 +110,8 @@ export function FinanceiroTab({
   const [receitas, setReceitas] = useState<ReceitaAvulsa[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<InnerTab>("visao");
-  const monthYearLabel = useMemo(getMonthYearLabel, []);
+  const agora = useAgora();
+  const monthYearLabel = useMemo(() => getMonthYearLabel(agora), [agora]);
   // "Extrato ›" (mockup) leva até as listas completas, abaixo do gráfico.
   const detalhesRef = useRef<HTMLDivElement>(null);
 
@@ -246,7 +248,7 @@ export function FinanceiroTab({
   const initialLoading = loading && !hasLoadedOnce;
   const blockingError = loadError && !hasLoadedOnce;
 
-  const now = new Date();
+  const now = agora;
   const despMes = despesas.filter((d) => {
     const dd = new Date(d.data + "T00:00:00");
     return (
@@ -254,7 +256,7 @@ export function FinanceiroTab({
     );
   });
   const totalDespMes = despMes.reduce((s, d) => s + d.valor, 0);
-  const totalEntradaMes = calcEarnings(jobs, receitas, "mes");
+  const totalEntradaMes = calcEarnings(jobs, receitas, "mes", agora);
   const saldo = totalEntradaMes - totalDespMes;
 
   // "Novo" do cabeçalho abre o mesmo formulário que o "+" abre em cada
@@ -436,6 +438,7 @@ export function FinanceiroTab({
             totalDespMes={totalDespMes}
             saldo={saldo}
             metas={metas}
+            agora={agora}
           />
 
           {/* Visão do mockup (Recentes + Mais lançamentos): sempre visível,
@@ -492,6 +495,7 @@ export function FinanceiroTab({
             {tab === "metas" && (
               <MetasTab
                 jobs={jobs}
+                agora={agora}
                 receitas={receitas}
                 metas={metas}
                 objetivos={objetivos}

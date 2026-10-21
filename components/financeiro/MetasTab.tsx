@@ -28,6 +28,8 @@ const sectionTitleStyle = {
 
 interface Props {
   jobs: Job[];
+  /** O relógio da tela (`useAgora`): vira o mês junto com o resto. */
+  agora: Date;
   receitas: ReceitaAvulsa[];
   metas: Meta[];
   objetivos: Objetivo[];
@@ -43,6 +45,7 @@ const PERIODO_ORDER = ["dia", "mes", "ano"];
 
 export function MetasTab({
   jobs,
+  agora,
   receitas,
   metas,
   objetivos,
@@ -104,7 +107,7 @@ export function MetasTab({
                 PERIODO_ORDER.indexOf(b.periodo)
             )
             .map((meta) => {
-              const current = calcEarnings(jobs, receitas, meta.periodo);
+              const current = calcEarnings(jobs, receitas, meta.periodo, agora);
               const pct = progressoMeta(current, meta.valorAlvo);
               const done = pct >= 100;
               return (

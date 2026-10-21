@@ -11,6 +11,8 @@ import {
 
 interface Props {
   jobs: Job[];
+  /** O relógio da tela (`useAgora`): vira a semana junto com o resto. */
+  agora: Date;
 }
 
 /**
@@ -19,8 +21,8 @@ interface Props {
  * semana (a semana corrente já aparece em "Esta semana"), com a inicial,
  * o nome, "<dia> · <hora>" e o valor. Sem nenhum, a seção não aparece.
  */
-export function ProximosAtendimentos({ jobs }: Props) {
-  const proximos = atendimentosDepoisDaSemana(jobs);
+export function ProximosAtendimentos({ jobs, agora }: Props) {
+  const proximos = atendimentosDepoisDaSemana(jobs, agora);
   if (proximos.length === 0) return null;
 
   // Valores do mockup normativo (tela Início, "Próximos atendimentos").
