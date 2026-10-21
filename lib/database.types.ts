@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.15";
+  };
   graphql_public: {
     Tables: {
       [_ in never]: never;
@@ -34,6 +39,39 @@ export type Database = {
   };
   public: {
     Tables: {
+      bloqueios_agenda: {
+        Row: {
+          atualizado_em: string;
+          criado_em: string;
+          data: string;
+          fim: string;
+          id: string;
+          inicio: string;
+          motivo: string | null;
+          user_id: string;
+        };
+        Insert: {
+          atualizado_em?: string;
+          criado_em?: string;
+          data: string;
+          fim: string;
+          id?: string;
+          inicio: string;
+          motivo?: string | null;
+          user_id: string;
+        };
+        Update: {
+          atualizado_em?: string;
+          criado_em?: string;
+          data?: string;
+          fim?: string;
+          id?: string;
+          inicio?: string;
+          motivo?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       configuracoes: {
         Row: {
           assinatura_status: Database["public"]["Enums"]["assinatura_status"];
@@ -55,6 +93,24 @@ export type Database = {
           tema?: Database["public"]["Enums"]["tema"];
           trial_started_at?: string;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      cortex_state: {
+        Row: {
+          id: string;
+          payload: Json;
+          updated_at: string | null;
+        };
+        Insert: {
+          id: string;
+          payload: Json;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          payload?: Json;
+          updated_at?: string | null;
         };
         Relationships: [];
       };
@@ -87,6 +143,41 @@ export type Database = {
           valor?: number;
         };
         Relationships: [];
+      };
+      guardar_historico: {
+        Row: {
+          criado_em: string;
+          data: string;
+          desejo_id: string;
+          id: string;
+          user_id: string;
+          valor: number;
+        };
+        Insert: {
+          criado_em?: string;
+          data?: string;
+          desejo_id: string;
+          id?: string;
+          user_id: string;
+          valor: number;
+        };
+        Update: {
+          criado_em?: string;
+          data?: string;
+          desejo_id?: string;
+          id?: string;
+          user_id?: string;
+          valor?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guardar_historico_desejo_id_fkey";
+            columns: ["desejo_id"];
+            isOneToOne: false;
+            referencedRelation: "rede_wishlist_items";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       jobs: {
         Row: {
@@ -133,6 +224,248 @@ export type Database = {
           status?: Database["public"]["Enums"]["job_status"];
           user_id?: string;
           valor?: number;
+        };
+        Relationships: [];
+      };
+      jornada_acoes: {
+        Row: {
+          acao: string;
+          chaves_recentes: string[];
+          contagem_total: number;
+          dia: string | null;
+          ganhos_no_dia: number;
+          user_id: string;
+        };
+        Insert: {
+          acao: string;
+          chaves_recentes?: string[];
+          contagem_total?: number;
+          dia?: string | null;
+          ganhos_no_dia?: number;
+          user_id: string;
+        };
+        Update: {
+          acao?: string;
+          chaves_recentes?: string[];
+          contagem_total?: number;
+          dia?: string | null;
+          ganhos_no_dia?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_colecao: {
+        Row: {
+          ano: number;
+          mes: number;
+          user_id: string;
+        };
+        Insert: {
+          ano: number;
+          mes: number;
+          user_id: string;
+        };
+        Update: {
+          ano?: number;
+          mes?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_contadores: {
+        Row: {
+          chave: string;
+          total: number;
+          user_id: string;
+        };
+        Insert: {
+          chave: string;
+          total?: number;
+          user_id: string;
+        };
+        Update: {
+          chave?: string;
+          total?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_destravados: {
+        Row: {
+          item: string;
+          user_id: string;
+        };
+        Insert: {
+          item: string;
+          user_id: string;
+        };
+        Update: {
+          item?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_marcos: {
+        Row: {
+          marco: number;
+          user_id: string;
+        };
+        Insert: {
+          marco: number;
+          user_id: string;
+        };
+        Update: {
+          marco?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_metas_premiadas: {
+        Row: {
+          item_id: string;
+          user_id: string;
+        };
+        Insert: {
+          item_id: string;
+          user_id: string;
+        };
+        Update: {
+          item_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "jornada_metas_premiadas_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "rede_wishlist_items";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      jornada_periodos: {
+        Row: {
+          contadores: Json;
+          fechado: boolean;
+          inicio: string;
+          tipo: string;
+          user_id: string;
+        };
+        Insert: {
+          contadores?: Json;
+          fechado: boolean;
+          inicio: string;
+          tipo: string;
+          user_id: string;
+        };
+        Update: {
+          contadores?: Json;
+          fechado?: boolean;
+          inicio?: string;
+          tipo?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_preferencias: {
+        Row: {
+          comemoracoes_calmas: boolean;
+          estagio_no_perfil: boolean;
+          fuso: string | null;
+          jornada_comeco: boolean;
+          modo_discreto: boolean;
+          selos_no_perfil: boolean;
+          som_ligado: boolean;
+          user_id: string;
+        };
+        Insert: {
+          comemoracoes_calmas?: boolean;
+          estagio_no_perfil?: boolean;
+          fuso?: string | null;
+          jornada_comeco?: boolean;
+          modo_discreto?: boolean;
+          selos_no_perfil?: boolean;
+          som_ligado?: boolean;
+          user_id: string;
+        };
+        Update: {
+          comemoracoes_calmas?: boolean;
+          estagio_no_perfil?: boolean;
+          fuso?: string | null;
+          jornada_comeco?: boolean;
+          modo_discreto?: boolean;
+          selos_no_perfil?: boolean;
+          som_ligado?: boolean;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_saldo: {
+        Row: {
+          glow_conectar: number;
+          glow_organizar: number;
+          glow_prosperar: number;
+          glow_proteger: number;
+          glow_total: number;
+          user_id: string;
+        };
+        Insert: {
+          glow_conectar?: number;
+          glow_organizar?: number;
+          glow_prosperar?: number;
+          glow_proteger?: number;
+          glow_total?: number;
+          user_id: string;
+        };
+        Update: {
+          glow_conectar?: number;
+          glow_organizar?: number;
+          glow_prosperar?: number;
+          glow_proteger?: number;
+          glow_total?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_selos: {
+        Row: {
+          conquistado_ano: number;
+          conquistado_mes: number;
+          nivel: number;
+          selo: string;
+          user_id: string;
+        };
+        Insert: {
+          conquistado_ano: number;
+          conquistado_mes: number;
+          nivel: number;
+          selo: string;
+          user_id: string;
+        };
+        Update: {
+          conquistado_ano?: number;
+          conquistado_mes?: number;
+          nivel?: number;
+          selo?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      jornada_semana_dias: {
+        Row: {
+          dia: string;
+          marca: string;
+          user_id: string;
+        };
+        Insert: {
+          dia: string;
+          marca: string;
+          user_id: string;
+        };
+        Update: {
+          dia?: string;
+          marca?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -496,16 +829,19 @@ export type Database = {
         Row: {
           criado_em: string;
           post_id: string;
+          tipo: string;
           user_id: string;
         };
         Insert: {
           criado_em?: string;
           post_id: string;
+          tipo?: string;
           user_id: string;
         };
         Update: {
           criado_em?: string;
           post_id?: string;
+          tipo?: string;
           user_id?: string;
         };
         Relationships: [
@@ -788,6 +1124,7 @@ export type Database = {
           estado: string;
           id: string;
           nome: string;
+          prazo: string | null;
           privacidade: string;
           user_id: string;
           valor_alvo: number;
@@ -799,6 +1136,7 @@ export type Database = {
           estado?: string;
           id?: string;
           nome: string;
+          prazo?: string | null;
           privacidade?: string;
           user_id: string;
           valor_alvo: number;
@@ -810,6 +1148,7 @@ export type Database = {
           estado?: string;
           id?: string;
           nome?: string;
+          prazo?: string | null;
           privacidade?: string;
           user_id?: string;
           valor_alvo?: number;
@@ -830,6 +1169,25 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      configuracoes_papel_da_sessao: { Args: never; Returns: string };
+      jornada_estado: {
+        Args: { p_deslocamento_min?: number; p_fuso?: string };
+        Returns: Json;
+      };
+      jornada_estagio_de: { Args: { glow: number }; Returns: number };
+      jornada_estagio_publico: { Args: { alvo: string }; Returns: number };
+      jornada_inicio_do_estagio: { Args: { glow: number }; Returns: number };
+      jornada_proximo_estagio_em: { Args: { glow: number }; Returns: number };
+      jornada_registrar: {
+        Args: {
+          p_acao: string;
+          p_chave: string;
+          p_deslocamento_min?: number;
+          p_fuso?: string;
+        };
+        Returns: Json;
+      };
+      jornada_so_contadores: { Args: { mapa: Json }; Returns: boolean };
       rede_aprovar_solicitacao_beta: {
         Args: { solicitacao_id: string };
         Returns: Json;
@@ -869,7 +1227,9 @@ export type Database = {
       };
       rede_midia_drenar_pendentes: {
         Args: { lote?: number };
-        Returns: { path: string }[];
+        Returns: {
+          path: string;
+        }[];
       };
       rede_midia_reenfileirar_pendentes: {
         Args: { paths: string[] };
@@ -877,6 +1237,10 @@ export type Database = {
       };
       rede_ocultar_conversa: {
         Args: { alvo_conversa_id: string };
+        Returns: undefined;
+      };
+      rede_posts_retencao_definir_habilitada: {
+        Args: { habilitada: boolean };
         Returns: undefined;
       };
       rede_reordenar_livelinks: {
