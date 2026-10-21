@@ -25,6 +25,7 @@ import { NotasSection } from "./NotasSection";
 import { AgendaProximoCard } from "./AgendaProximoCard";
 import { AgendaAconteceu } from "./AgendaAconteceu";
 import { useDescanso } from "./useDescanso";
+import { useAgora } from "@/lib/useAgora";
 import { LembrarClienteSheet } from "./LembrarClienteSheet";
 import type { Profissional } from "@/lib/lembrete/cartaoAgenda";
 import { AgendaAcoes } from "./AgendaAcoes";
@@ -255,6 +256,9 @@ export function JobsTab({
 }: Props) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const descanso = useDescanso(userId, jobs);
+  // Relógio de 1 minuto, o mesmo do Início: o card Próximo muda sozinho
+  // quando o horário passa, sem esperar outro render.
+  const now = useAgora();
   const [filter, setFilter] = useState<Filter>("todos");
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("sem");
@@ -356,8 +360,7 @@ export function JobsTab({
   // de status ativo, pra o indicador do calendário ficar consistente com
   // a lista mostrada abaixo dele) + qual é hoje de verdade (indicação do
   // dia atual, distinta da seleção — contrato de paridade, seção Agenda).
-  const now = new Date();
-  const today = toISODate(new Date());
+  const today = toISODate(now);
   const weekStrip = buildWeekStrip(weekStart, filtered);
   const days = weekStrip.map((d) => d.iso);
   const selectedDayJobs = filtered.filter((j) => j.data === selectedDate);

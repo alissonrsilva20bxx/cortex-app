@@ -143,6 +143,7 @@ describe("fiação nos componentes", () => {
     ["components/home/AconteceuCard.tsx", "aguardandoResposta(jobs, agora)"],
     ["components/jobs/AgendaAconteceu.tsx", "aguardandoResposta(jobs, agora)"],
     ["components/jobs/JobDetailSheet.tsx", "podeConcluir(job, agora)"],
+    ["components/jobs/JobsTab.tsx", "proximoAtendimento(jobs, now)"],
   ])("%s usa o relógio (useAgora) e passa a hora a regra", (arq, uso) => {
     const src = ler(arq);
     expect(src).toContain("useAgora(");

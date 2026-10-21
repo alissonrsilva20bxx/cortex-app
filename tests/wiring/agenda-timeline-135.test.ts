@@ -117,7 +117,9 @@ describe('"Abrir atendimento" (JobDetailSheet) é um passo distinto de "editar" 
 
 describe("Indicação do dia atual (hoje) é distinta da seleção", () => {
   it("calcula isToday comparando com a data real do sistema, não com selectedDate", () => {
-    expect(jobsTabSrc).toContain("const today = toISODate(new Date());");
+    // `now` é o relógio real (useAgora, renovado a cada minuto), nunca selectedDate.
+    expect(jobsTabSrc).toContain("const now = useAgora();");
+    expect(jobsTabSrc).toContain("const today = toISODate(now);");
     expect(jobsTabSrc).toContain("const isToday = iso === today;");
   });
 
