@@ -8,13 +8,18 @@ set -euo pipefail
 REF="seciereacfestemdhzhp"
 SUPABASE="${SUPABASE_BIN:-/home/miguel/.local/bin/supabase}"
 DESTINO="${DESTINO:-/mnt/c/Users/miguel/Desktop/BACKUP-SCHEMA}"
+RAIZ_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+DESTINO="$(realpath -m "$DESTINO")"
+case "$DESTINO/" in
+  "$RAIZ_REPO"/*) echo "DESTINO dentro do repo ($RAIZ_REPO) é recusado: use uma pasta fora dele." >&2; exit 1 ;;
+esac
+mkdir -p "$DESTINO"
 ARQ="$DESTINO/schema-public-$(date +%Y-%m-%d-%H%M).json"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-mkdir -p "$DESTINO"
 
 consulta() { # nome, sql
-  "$SUPABASE" db query --linked --project-ref "$REF" --output-format json "$2" > "$TMP/$1.json"
+  "$SUPABASE" db query --linked --project-ref "$REF" --output-format json "set transaction read only; $2" > "$TMP/$1.json"
 }
 
 consulta colunas "select table_name, ordinal_position, column_name, data_type, udt_name, is_nullable, column_default
