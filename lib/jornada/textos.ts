@@ -131,7 +131,7 @@ export const ROTULO_ACAO: Record<Acao, string> = {
   despesa: "Despesa lançada",
   receita: "Entrada lançada",
   planejar: "Amanhã está planejado",
-  guardar_meta: "Dinheiro guardado na sua meta",
+  guardar_meta: "Dinheiro guardado no seu Desejo",
   comprovante_cofre: "Comprovante seguro no Cofre",
   descanso: "Dia de descanso garantido",
   atendimento: "Dia ativo",
@@ -182,7 +182,7 @@ export const SELO: Record<SeloId, TextoSelo> = {
   },
   rumo_a_meta: {
     nome: "Rumo à meta",
-    descricao: "Seu primeiro dinheiro guardado numa meta.",
+    descricao: "Seu primeiro dinheiro guardado num Desejo.",
     unidade: "vezes guardando dinheiro",
   },
   tudo_guardado: {
@@ -489,7 +489,7 @@ export const PROXIMO_PASSO = {
 };
 
 export const TEXTO_DO_PROXIMO_PASSO: Record<AcaoDoProximoPasso, string> = {
-  guardar_meta: `Guardar ${money(VALOR_SUGERIDO_PARA_GUARDAR)} na sua meta`,
+  guardar_meta: `Guardar ${money(VALOR_SUGERIDO_PARA_GUARDAR)} no seu Desejo`,
   comprovante_cofre: "Guardar um comprovante no Cofre",
   planejar: "Planejar amanhã em 1 minuto",
   descanso: "Garantir um descanso esta semana",
@@ -604,10 +604,10 @@ export const RECAP = {
     n === 1 ? "vez guardando dinheiro." : "vezes guardando dinheiro.",
   futuro: "A você do futuro agradece.",
   // Prosperar com a meta de dinheiro (0036, `dinheiro`).
-  naMeta: (nome: string) => `na meta ${nome}.`,
+  naMeta: (nome: string) => `no Desejo ${nome}.`,
   jaECaminho: (fracao: number) =>
     `Já é ${emPorcento(fracao)} do caminho. A você do futuro agradece.`,
-  guardadosNasMetas: "guardados nas suas metas.",
+  guardadosNasMetas: "guardados nos seus Desejos.",
   agoraMeta: (concluidas: number, nome: string | null) =>
     `${concluidas > 0 ? `${contagemMetas(concluidas)}. ` : ""}${nome ? `Agora: ${nome}.` : ""}`,
   guardadosDeVerdade: "guardados de verdade.",
@@ -935,7 +935,7 @@ export const LEGENDA_RITMO = {
 } as const;
 
 /** Seu dinheiro: a meta atual e o total. */
-export const META_ATUAL = "Meta atual";
+export const META_ATUAL = "Desejo atual";
 /** "€120 de €300" */
 export function metaDeAte(atual: number, alvo: number): string {
   return `${money(atual)} de ${money(alvo)}`;
@@ -986,7 +986,7 @@ export const UMA_VEZ_POR_MES = "1x por mês";
 export const LINHA_GLOW = {
   planejar: "Planejar o dia ou a semana",
   despesa: "Lançar uma despesa",
-  guardar_meta: "Guardar dinheiro numa meta",
+  guardar_meta: "Guardar dinheiro num Desejo",
   comprovante_cofre: "Guardar um comprovante no Cofre",
   descanso: "Tirar um dia de descanso",
   dica_ajudou: "Sua dica ajudou alguém",

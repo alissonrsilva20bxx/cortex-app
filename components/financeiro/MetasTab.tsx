@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { calcEarnings, formatBRL } from "@/lib/finance";
 import { GuardarCard } from "./GuardarCard";
+import { DesejosCard } from "./DesejosCard";
+import { TEXTOS_AFAZERES as TA } from "@/lib/desejo/textos";
 import { progressoMeta } from "./progressoMeta";
 import { PERIODO_LABELS, OBJ_CATS } from "./constants";
 import type { Job, Meta, ReceitaAvulsa, Objetivo } from "@/lib/types";
@@ -14,7 +16,7 @@ import type { Job, Meta, ReceitaAvulsa, Objetivo } from "@/lib/types";
  * Título de seção — 13px/semibold/-0.035em, cor plena, mesmo tratamento
  * já usado pros títulos de card de Início/Agenda (não `.section-label`,
  * o eyebrow uppercase cuja causa-raiz foi corrigida em T2). "Metas
- * Financeiras" e "Objetivos de Vida" encabeçam cada seu próprio
+ * Financeiras" e "Afazeres" encabeçam cada seu próprio
  * `GlassCard`, mesma proeminência de "Próximo atendimento"/"Objetivos"
  * no Início.
  */
@@ -30,7 +32,9 @@ interface Props {
   metas: Meta[];
   objetivos: Objetivo[];
   userId: string;
-  onCriarDesejo: () => void;
+  nomeUsuaria: string;
+  podeCriarDesejo: boolean;
+  onAbrirRede: () => void;
   onObjetivoAdded: () => void;
   onToggleObjetivo: (id: string, done: boolean) => Promise<void>;
 }
@@ -43,10 +47,13 @@ export function MetasTab({
   metas,
   objetivos,
   userId,
-  onCriarDesejo,
+  nomeUsuaria,
+  podeCriarDesejo,
+  onAbrirRede,
   onObjetivoAdded,
   onToggleObjetivo,
 }: Props) {
+  const [pedidoNovoDesejo, setPedidoNovoDesejo] = useState(0);
   const [objTitulo, setObjTitulo] = useState("");
   const [objCat, setObjCat] = useState("afazeres");
   const [objSaving, setObjSaving] = useState(false);
@@ -69,7 +76,18 @@ export function MetasTab({
 
   return (
     <div className="space-y-4">
-      <GuardarCard userId={userId} onCriarDesejo={onCriarDesejo} />
+      <DesejosCard
+        userId={userId}
+        nomeUsuaria={nomeUsuaria}
+        podeCriar={podeCriarDesejo}
+        pedidoNovo={pedidoNovoDesejo}
+        onAbrirRede={onAbrirRede}
+      />
+
+      <GuardarCard
+        userId={userId}
+        onCriarDesejo={() => setPedidoNovoDesejo((n) => n + 1)}
+      />
 
       {/* Metas financeiras. Fundação Visual (#142): sem `style` — material
           neutro compartilhado de `.glass-card` (globals.css), mesma
@@ -139,13 +157,13 @@ export function MetasTab({
         </div>
       </GlassCard>
 
-      {/* Objetivos de vida. Fundação Visual (#142): mesma correção acima. */}
+      {/* Afazeres (tabela objetivos). Fundação Visual (#142): mesma correção acima. */}
       <GlassCard radius="md" className="p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span style={{ fontSize: 14 }}>🌟</span>
             <h2 className="font-semibold" style={sectionTitleStyle}>
-              Objetivos de Vida
+              {TA.titulo}
             </h2>
           </div>
           {/* minHeight 44px — era ~28px (px-3 py-1.5 + text-xs). */}
@@ -162,7 +180,7 @@ export function MetasTab({
             }}
           >
             <Plus size={12} />
-            Novo
+            {TA.novo}
           </button>
         </div>
 
@@ -177,7 +195,7 @@ export function MetasTab({
           >
             <input
               type="text"
-              placeholder="Título do objetivo..."
+              placeholder={TA.placeholder}
               value={objTitulo}
               onChange={(e) => setObjTitulo(e.target.value)}
               className="w-full rounded-xl px-3 py-2.5 mb-2 text-sm font-medium outline-none"
@@ -217,7 +235,7 @@ export function MetasTab({
                   color: "var(--text-muted)",
                 }}
               >
-                Cancelar
+                {TA.cancelar}
               </button>
               <button
                 onClick={saveObjetivo}
@@ -230,7 +248,7 @@ export function MetasTab({
                   opacity: objSaving || !objTitulo.trim() ? 0.6 : 1,
                 }}
               >
-                {objSaving ? "..." : "Salvar"}
+                {objSaving ? TA.salvando : TA.salvar}
               </button>
             </div>
           </div>
@@ -241,7 +259,7 @@ export function MetasTab({
             className="text-sm text-center py-6"
             style={{ color: "var(--text-muted)" }}
           >
-            Nenhum objetivo ainda. Toque em + Novo para criar.
+            {TA.vazio}
           </p>
         ) : (
           <div className="space-y-2">

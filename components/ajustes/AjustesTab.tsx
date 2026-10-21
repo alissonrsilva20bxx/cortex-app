@@ -33,6 +33,7 @@ import {
   unsubscribeFromPush,
 } from "@/lib/push";
 import type { Theme } from "@/lib/theme";
+import { TEXTOS_DESEJO } from "@/lib/desejo/textos";
 import type {
   HomeCardConfig,
   CardStyleConfig,
@@ -503,8 +504,8 @@ export function AjustesTab({
     },
     {
       key: "objetivos",
-      label: "Objetivos Pessoais",
-      desc: "Metas de vida e afazeres",
+      label: TEXTOS_DESEJO.ajustesRotulo,
+      desc: TEXTOS_DESEJO.ajustesDescricao,
     },
     {
       key: "agenda",

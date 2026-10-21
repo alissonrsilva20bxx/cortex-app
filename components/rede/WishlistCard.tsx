@@ -2,13 +2,16 @@
 
 import { Lock, Users, Globe } from "lucide-react";
 import { MockImage } from "./MockImage";
-import { formatBRL } from "@/lib/finance";
-import type { Privacidade, WishlistEstado, WishlistItem } from "@/lib/mockRede";
+import { formatEUR } from "@/lib/guardar/valor";
+import type { Privacidade, WishlistEstado } from "@/lib/mockRede";
+import type { WishlistItem } from "@/lib/rede/wishlist";
+import { progressoDesejo, textoPrazo } from "@/lib/desejo/desejo";
+import { TEXTOS_DESEJO as T } from "@/lib/desejo/textos";
 
 const ESTADO_META: Record<WishlistEstado, { label: string; rgb: string }> = {
-  quero: { label: "Quero", rgb: "var(--info-rgb)" },
-  planejando: { label: "Planejando", rgb: "var(--warning-rgb)" },
-  conquistado: { label: "Conquistado", rgb: "var(--success-rgb)" },
+  quero: { label: T.estados.quero, rgb: "var(--info-rgb)" },
+  planejando: { label: T.estados.planejando, rgb: "var(--warning-rgb)" },
+  conquistado: { label: T.estados.conquistado, rgb: "var(--success-rgb)" },
 };
 
 const PRIVACIDADE_ICON: Record<Privacidade, typeof Lock> = {
@@ -24,10 +27,8 @@ interface Props {
 }
 
 export function WishlistCard({ item, onClick, compact }: Props) {
-  const pct = Math.min(
-    100,
-    Math.round((item.valorAtual / item.valorAlvo) * 100)
-  );
+  const pct = progressoDesejo(item.valorAtual, item.valorAlvo);
+  const prazo = textoPrazo(item.prazo);
   const estado = ESTADO_META[item.estado];
   const PrivIcon = PRIVACIDADE_ICON[item.privacidade];
   const Tag = onClick ? "button" : "div";
@@ -68,8 +69,16 @@ export function WishlistCard({ item, onClick, compact }: Props) {
         className="text-[11px] mt-1.5 font-medium"
         style={{ color: "var(--text-muted)" }}
       >
-        {formatBRL(item.valorAtual)} de {formatBRL(item.valorAlvo)}
+        {T.deAte(formatEUR(item.valorAtual), formatEUR(item.valorAlvo))}
       </p>
+      {prazo && (
+        <p
+          className="text-[11px] mt-0.5"
+          style={{ color: "var(--text-muted)" }}
+        >
+          {prazo}
+        </p>
+      )}
     </Tag>
   );
 }

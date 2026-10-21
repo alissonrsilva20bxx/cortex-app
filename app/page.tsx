@@ -14,7 +14,7 @@ import { FAB } from "@/components/FAB";
 import { GreetingHeader } from "@/components/home/GreetingHeader";
 import { HeroCard } from "@/components/home/HeroCard";
 import { NextJobCard } from "@/components/home/NextJobCard";
-import { ObjetivosCard } from "@/components/home/ObjetivosCard";
+import { DesejoCard } from "@/components/home/DesejoCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { CofreCard } from "@/components/home/CofreCard";
 import { JornadaCard } from "@/components/home/JornadaCard";
@@ -645,8 +645,8 @@ export default function Page() {
                   </div>
                   {homeCards.nextJob && <NextJobCard jobs={jobs} />}
                   {(homeCards.objetivos ?? true) && (
-                    <ObjetivosCard
-                      objetivos={objetivos}
+                    <DesejoCard
+                      userId={usuario.id}
                       onGoToMetas={() => {
                         handleTabChange("financeiro");
                         setFinanceiroFocusTab("metas");
@@ -720,7 +720,9 @@ export default function Page() {
                 onToggleObjetivo={handleToggleObjetivo}
                 focusTab={financeiroFocusTab}
                 onFocusTabHandled={() => setFinanceiroFocusTab(null)}
-                onCriarDesejo={() => handleTabChange("rede")}
+                nomeUsuaria={usuario.nome}
+                podeCriarDesejo={redeAcesso !== "bloqueado"}
+                onAbrirRede={() => handleTabChange("rede")}
               />
             </TabPanel>
 
@@ -753,6 +755,10 @@ export default function Page() {
                 onAcessoChange={setRedeAcesso}
                 onFotoPerfilChange={setFotoRede}
                 onSairDaRede={() => handleTabChange("home")}
+                onAbrirDesejos={() => {
+                  handleTabChange("financeiro");
+                  setFinanceiroFocusTab("metas");
+                }}
                 barraDoca={!tourOpen}
               />
             </TabPanel>

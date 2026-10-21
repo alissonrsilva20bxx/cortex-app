@@ -30,6 +30,8 @@ interface Props {
   onFotoPerfilChange?: (url: string | null) => void;
   /** Modelo Doca: a casinha do cabeçalho da Rede volta ao Início. */
   onSairDaRede?: () => void;
+  /** Vai para Finanças › Metas, onde o Desejo é criado e editado. */
+  onAbrirDesejos?: () => void;
   /** Modelo Doca: mostra a barra própria da Rede (só com acesso). */
   barraDoca?: boolean;
 }
@@ -67,6 +69,7 @@ export function RedeGatedTab({
   onAcessoChange,
   onFotoPerfilChange,
   onSairDaRede,
+  onAbrirDesejos,
   barraDoca,
 }: Props) {
   // ── Política do acesso lembrado (teto de confiança, não "validade curta") ──
@@ -333,6 +336,7 @@ export function RedeGatedTab({
         onChatFocusChange={onChatFocusChange}
         onFotoPerfilChange={onFotoPerfilChange}
         onSairDaRede={onSairDaRede}
+        onAbrirDesejos={onAbrirDesejos}
         barraDoca={barraDoca}
       />
     );

@@ -17,7 +17,7 @@ import { WishlistCard } from "./WishlistCard";
 import { ProfilePostsGrid } from "./ProfilePostsGrid";
 import { OptionsSheet } from "./OptionsSheet";
 import { SkeletonProfileHeader, SkeletonList, SkeletonGrid } from "./Skeleton";
-import type { WishlistItem } from "@/lib/mockRede";
+import type { WishlistItem } from "@/lib/rede/wishlist";
 import type { FeedPost } from "@/lib/rede/feed";
 
 interface Props {

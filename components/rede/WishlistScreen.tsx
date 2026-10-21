@@ -6,25 +6,28 @@ import { ScreenHeader } from "./ScreenHeader";
 import { WishlistCard } from "./WishlistCard";
 import { SkeletonGrid } from "./Skeleton";
 import { FilterChips } from "@/components/ui/FilterChips";
-import type { WishlistEstado, WishlistItem } from "@/lib/mockRede";
+import type { WishlistEstado } from "@/lib/mockRede";
+import type { WishlistItem } from "@/lib/rede/wishlist";
+import { TEXTOS_DESEJO as T } from "@/lib/desejo/textos";
 
 type FiltroEstado = "todos" | WishlistEstado;
 
 const FILTROS: { id: FiltroEstado; label: string }[] = [
   { id: "todos", label: "Todos" },
-  { id: "quero", label: "Quero" },
-  { id: "planejando", label: "Planejando" },
-  { id: "conquistado", label: "Conquistado" },
+  { id: "quero", label: T.estados.quero },
+  { id: "planejando", label: T.estados.planejando },
+  { id: "conquistado", label: T.estados.conquistado },
 ];
 
 interface Props {
   items: WishlistItem[];
   onBack: () => void;
-  onAddNew: () => void;
+  /** Leva a Finanças › Metas, onde o Desejo é criado e editado. */
+  onAbrirDesejos: () => void;
   onOpenItem: (item: WishlistItem) => void;
 }
 
-export function WishlistScreen({ items, onBack, onAddNew, onOpenItem }: Props) {
+export function WishlistScreen({ items, onBack, onAbrirDesejos, onOpenItem }: Props) {
   const [filtro, setFiltro] = useState<FiltroEstado>("todos");
   const [loading, setLoading] = useState(true);
 
@@ -39,12 +42,12 @@ export function WishlistScreen({ items, onBack, onAddNew, onOpenItem }: Props) {
   return (
     <div className="pb-4">
       <ScreenHeader
-        title="Desejos"
+        title={T.nomePlural}
         onBack={onBack}
         action={
           <button
-            onClick={onAddNew}
-            aria-label="Novo desejo"
+            onClick={onAbrirDesejos}
+            aria-label={T.criar}
             className="flex items-center justify-center rounded-full shrink-0 transition-opacity active:opacity-70"
             style={{ width: 40, height: 40, background: "var(--accent)" }}
           >
@@ -67,7 +70,7 @@ export function WishlistScreen({ items, onBack, onAddNew, onOpenItem }: Props) {
           className="text-sm text-center py-12"
           style={{ color: "var(--text-muted)" }}
         >
-          Nenhum desejo aqui ainda. Toque no + para adicionar.
+          {T.vitrineVazia}
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3">

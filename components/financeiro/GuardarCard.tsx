@@ -14,6 +14,8 @@ import {
   type DepositoGuardado,
 } from "@/lib/guardar/guardar";
 import { TEXTOS_GUARDAR as T } from "@/lib/guardar/textos";
+import { progressoDesejo, textoPrazo } from "@/lib/desejo/desejo";
+import { avisarDesejosMudaram, useAoMudarDesejos } from "@/lib/desejo/eventos";
 import { formatEUR, quando } from "@/lib/guardar/valor";
 
 const sectionTitleStyle = {
@@ -24,7 +26,7 @@ const sectionTitleStyle = {
 
 interface Props {
   userId: string;
-  /** Leva a pessoa até onde se cria um Desejo (Meu Espaço / Rede). */
+  /** Abre o formulário de Desejo novo (card "Seus Desejos", logo acima). */
   onCriarDesejo: () => void;
 }
 
@@ -75,13 +77,15 @@ export function GuardarCard({ userId, onCriarDesejo }: Props) {
     void carregar();
   }, [carregar]);
 
+  useAoMudarDesejos(carregar);
+
   async function depoisDeGuardar() {
     toast.success(T.sucesso);
     void registrar("guardar_meta");
     setTexto("");
     setErro(null);
     setPendente(null);
-    await carregar();
+    avisarDesejosMudaram();
   }
 
   async function guardar() {
@@ -113,10 +117,10 @@ export function GuardarCard({ userId, onCriarDesejo }: Props) {
   }
 
   const escolhido = desejos.find((d) => d.id === desejoId);
-  const pct =
-    escolhido && escolhido.valorAlvo > 0
-      ? Math.min(100, (escolhido.valorAtual / escolhido.valorAlvo) * 100)
-      : 0;
+  const pct = escolhido
+    ? progressoDesejo(escolhido.valorAtual, escolhido.valorAlvo)
+    : 0;
+  const prazo = textoPrazo(escolhido?.prazo);
   const nomeDe = (id: string) =>
     desejos.find((d) => d.id === id)?.nome ?? T.desejoRemovido;
 
@@ -228,12 +232,20 @@ export function GuardarCard({ userId, onCriarDesejo }: Props) {
                   {formatEUR(escolhido.valorAlvo)}
                 </span>
               </div>
+              {prazo && (
+                <p
+                  className="text-[11px] mb-2"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {prazo}
+                </p>
+              )}
               <div
                 className="progress-track"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-valuenow={Math.round(pct)}
+                aria-valuenow={pct}
               >
                 <div
                   className="progress-fill"

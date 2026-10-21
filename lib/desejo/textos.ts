@@ -51,6 +51,7 @@ export const TEXTOS_DESEJO = {
   deAte: (atual: string, alvo: string) => `${atual} de ${alvo}`,
   prazo: (data: string) => `Até ${data}`,
   todosConquistados: "Todos conquistados!",
+  pertoDoAlvo: "Desejo perto de ser conquistado",
   editarEmFinancas: "Editar em Finanças",
   compartilhar: "Compartilhar no Feed",
   compartilhado: "Desejo compartilhado no Feed!",

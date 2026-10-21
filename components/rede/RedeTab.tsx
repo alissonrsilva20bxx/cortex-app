@@ -17,9 +17,9 @@ import {
   X,
   Ban,
   Camera,
+  Share2,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
-import { useJornada } from "@/components/jornada/useJornada";
 import { FeedScreen } from "./FeedScreen";
 import { SearchScreen } from "./SearchScreen";
 import { AmigasScreen } from "./AmigasScreen";
@@ -28,7 +28,6 @@ import { ChatThreadScreen, type ChatMessage } from "./ChatThreadScreen";
 import { MeuEspacoScreen } from "./MeuEspacoScreen";
 import { PerfilPublicoScreen } from "./PerfilPublicoScreen";
 import { WishlistScreen } from "./WishlistScreen";
-import { WishlistForm, WISHLIST_PALETTE } from "./WishlistForm";
 import { ClientesScreen } from "./ClientesScreen";
 import { BlockedUsersScreen } from "./BlockedUsersScreen";
 import { ClienteDetailSheet } from "./ClienteDetailSheet";
@@ -59,12 +58,12 @@ import {
   type PessoaResumo,
 } from "@/lib/rede/perfis";
 import {
-  criarWishlistItem,
-  atualizarWishlistItem,
   listarWishlistItems,
-  excluirWishlistItem,
   type WishlistItem,
 } from "@/lib/rede/wishlist";
+import { progressoDesejo } from "@/lib/desejo/desejo";
+import { useAoMudarDesejos } from "@/lib/desejo/eventos";
+import { TEXTOS_DESEJO } from "@/lib/desejo/textos";
 import {
   criarCliente,
   atualizarCliente,
@@ -213,6 +212,8 @@ interface Props {
   onFotoPerfilChange?: (url: string | null) => void;
   /** Modelo Doca: a casinha do cabeçalho sai da Rede e volta ao Início. */
   onSairDaRede?: () => void;
+  /** Vai para Finanças › Metas, onde o Desejo é criado e editado. */
+  onAbrirDesejos?: () => void;
   /** Modelo Doca: mostra a barra própria da Rede (a página esconde a
    * barra do app enquanto ela está na tela). Falso no tour do app, que
    * aponta para a barra do app. */
@@ -227,10 +228,10 @@ export function RedeTab({
   onChatFocusChange,
   onFotoPerfilChange,
   onSairDaRede,
+  onAbrirDesejos,
   barraDoca = true,
 }: Props) {
   const toast = useToast();
-  const { registrar } = useJornada(usuario.id);
 
   // ── Semente do cache (síncrona, 1x por conta) ──
   // Lida no 1º render pra que os inicializadores de estado abaixo já
@@ -1000,6 +1001,24 @@ export function RedeTab({
   const [defaultPrivacidade, setDefaultPrivacidade] =
     useState<Privacidade>("amigas");
 
+  // O Desejo é criado e guardado em Finanças: quando muda lá, recarrega aqui
+  // e reescreve o cache da Rede para não mostrar o valor velho.
+  useAoMudarDesejos(() => {
+    const ep = redeCache.epocaAtual();
+    listarWishlistItems(supabase, usuario.id)
+      .then((novos) => {
+        if (!epocaValida(ep)) return;
+        setWishlistItems(novos);
+        redeCache.escrever<PerfilCache>(
+          usuario.id,
+          "perfil",
+          { perfil, liveLinks, wishlistItems: novos, clientes },
+          ep
+        );
+      })
+      .catch((e) => console.error("[RedeTab recarregar desejos]", e));
+  });
+
   // ── Sheets ──
   const [composerOpen, setComposerOpen] = useState(false);
 
@@ -1022,15 +1041,12 @@ export function RedeTab({
   const [shareToConvoPost, setShareToConvoPost] = useState<FeedPost | null>(
     null
   );
-  const [wishlistFormOpen, setWishlistFormOpen] = useState(false);
-  const [editingWishlist, setEditingWishlist] = useState<WishlistItem | null>(
+  const [wishlistAcoes, setWishlistAcoes] = useState<WishlistItem | null>(
     null
   );
   const [clienteDetail, setClienteDetail] = useState<Cliente | null>(null);
   const [clienteFormOpen, setClienteFormOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
-  const [deleteConfirmWishlist, setDeleteConfirmWishlist] =
-    useState<WishlistItem | null>(null);
   const [deleteConfirmCliente, setDeleteConfirmCliente] =
     useState<Cliente | null>(null);
   const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
@@ -1831,84 +1847,23 @@ export function RedeTab({
     }
   }
 
-  // ── Wishlist (issue #64 -- persistência real) ──
-  async function saveWishlist(
-    form: {
-      nome: string;
-      valorAlvo: string;
-      valorAtual: string;
-      estado: WishlistItem["estado"];
-      privacidade: Privacidade;
-    },
-    existing: WishlistItem | null
-  ) {
-    try {
-      if (existing) {
-        const atualizado = await atualizarWishlistItem(supabase, {
-          itemId: existing.id,
-          nome: form.nome,
-          valorAlvo: Number(form.valorAlvo) || existing.valorAlvo,
-          valorAtual: Number(form.valorAtual) || 0,
-          estado: form.estado,
-          privacidade: form.privacidade,
-        });
-        setWishlistItems((prev) =>
-          prev.map((w) => (w.id === atualizado.id ? atualizado : w))
-        );
-        if (atualizado.valorAtual > existing.valorAtual)
-          void registrar("guardar_meta");
-        toast.success("Desejo atualizado!");
-      } else {
-        const criado = await criarWishlistItem(supabase, {
-          nome: form.nome,
-          cor: WISHLIST_PALETTE[wishlistItems.length % WISHLIST_PALETTE.length],
-          valorAlvo: Number(form.valorAlvo) || 0,
-          valorAtual: Number(form.valorAtual) || 0,
-          estado: form.estado,
-          privacidade: form.privacidade,
-        });
-        setWishlistItems((prev) => [criado, ...prev]);
-        if (criado.valorAtual > 0) void registrar("guardar_meta");
-        toast.success("Desejo adicionado!");
-      }
-      setWishlistFormOpen(false);
-      setEditingWishlist(null);
-    } catch (e) {
-      console.error("[RedeTab salvar desejo]", e);
-      toast.error("Não foi possível salvar o desejo.");
-    }
-  }
-  async function deleteWishlist(id: string) {
-    try {
-      await excluirWishlistItem(supabase, { itemId: id });
-      setWishlistItems((prev) => prev.filter((w) => w.id !== id));
-      setDeleteConfirmWishlist(null);
-      setWishlistFormOpen(false);
-      setEditingWishlist(null);
-      toast.success("Desejo excluído");
-    } catch (e) {
-      console.error("[RedeTab excluir desejo]", e);
-      toast.error("Não foi possível excluir o desejo.");
-    }
-  }
   // rede_posts não tem como guardar um card de desejo embutido, então
   // compartilhar vira um post de texto normal descrevendo o progresso,
   // publicado de verdade no Feed.
   async function shareWishlistToFeed(item: WishlistItem) {
-    const progresso = Math.round((item.valorAtual / item.valorAlvo) * 100);
+    const progresso = progressoDesejo(item.valorAtual, item.valorAlvo);
     try {
       const { post } = await criarPost(supabase, {
         categoria: "conquista",
-        texto: `Compartilhando meu progresso com "${item.nome}" — ${progresso}% da meta!`,
+        texto: TEXTOS_DESEJO.textoCompartilhar(item.nome, progresso),
       });
       aplicarPosts((prev) => [feedPostFromCreated(post), ...prev]);
-      setWishlistFormOpen(false);
-      setEditingWishlist(null);
-      toast.success("Desejo compartilhado no Feed!");
+      setWishlistAcoes(null);
+      toast.success(TEXTOS_DESEJO.compartilhado);
       popToRoot({ toTop: true });
     } catch (e) {
       console.error("[RedeTab compartilhar desejo]", e);
-      toast.error("Não foi possível compartilhar no Feed.");
+      toast.error(TEXTOS_DESEJO.erroCompartilhar);
     }
   }
 
@@ -2276,14 +2231,8 @@ export function RedeTab({
             <WishlistScreen
               items={wishlistItems}
               onBack={pop}
-              onAddNew={() => {
-                setEditingWishlist(null);
-                setWishlistFormOpen(true);
-              }}
-              onOpenItem={(item) => {
-                setEditingWishlist(item);
-                setWishlistFormOpen(true);
-              }}
+              onAbrirDesejos={() => onAbrirDesejos?.()}
+              onOpenItem={(item) => setWishlistAcoes(item)}
             />
           )}
 
@@ -2662,19 +2611,32 @@ export function RedeTab({
           ]}
         />
 
-        <WishlistForm
-          open={wishlistFormOpen}
-          item={editingWishlist}
-          onClose={() => {
-            setWishlistFormOpen(false);
-            setEditingWishlist(null);
-          }}
-          onSave={saveWishlist}
-          onShareToFeed={shareWishlistToFeed}
-          onDeleteRequest={(item) => {
-            setWishlistFormOpen(false);
-            setDeleteConfirmWishlist(item);
-          }}
+        <OptionsSheet
+          open={!!wishlistAcoes}
+          title={wishlistAcoes?.nome ?? TEXTOS_DESEJO.nome}
+          onClose={() => setWishlistAcoes(null)}
+          options={[
+            {
+              key: "editar",
+              label: TEXTOS_DESEJO.editarEmFinancas,
+              Icon: Pencil,
+              onSelect: () => onAbrirDesejos?.(),
+            },
+            {
+              key: "compartilhar",
+              label: TEXTOS_DESEJO.compartilhar,
+              Icon: Share2,
+              onSelect: () => {
+                if (wishlistAcoes) void shareWishlistToFeed(wishlistAcoes);
+              },
+            },
+            {
+              key: "cancelar",
+              label: TEXTOS_DESEJO.cancelar,
+              Icon: X,
+              onSelect: () => {},
+            },
+          ]}
         />
 
         <ClienteDetailSheet
@@ -2698,30 +2660,6 @@ export function RedeTab({
             setEditingCliente(null);
           }}
           onSave={saveCliente}
-        />
-
-        <OptionsSheet
-          open={!!deleteConfirmWishlist}
-          title="Excluir desejo?"
-          onClose={() => setDeleteConfirmWishlist(null)}
-          options={[
-            {
-              key: "confirmar",
-              label: "Sim, excluir",
-              Icon: Trash2,
-              danger: true,
-              onSelect: () => {
-                if (deleteConfirmWishlist)
-                  deleteWishlist(deleteConfirmWishlist.id);
-              },
-            },
-            {
-              key: "cancelar",
-              label: "Cancelar",
-              Icon: X,
-              onSelect: () => {},
-            },
-          ]}
         />
 
         <OptionsSheet

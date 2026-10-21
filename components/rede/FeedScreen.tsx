@@ -11,6 +11,8 @@ import { IconeCamera, IconeVoltar } from "./redeIcones";
 import { PullToRefresh } from "@/components/ui/PullToRefresh";
 import type { FeedPost } from "@/lib/rede/feed";
 import type { WishlistItem } from "@/lib/rede/wishlist";
+import { progressoDesejo } from "@/lib/desejo/desejo";
+import { TEXTOS_DESEJO } from "@/lib/desejo/textos";
 import type { Usuario } from "@/lib/types";
 import {
   ABAS_FEED,
@@ -429,7 +431,9 @@ export function FeedScreen({
   const novasAmigas = contarNovasDasAmigas(posts, friends, ultimaVisita);
 
   const wishlistPertoDaMeta = wishlistItems.find(
-    (w) => w.estado !== "conquistado" && w.valorAtual / w.valorAlvo >= 0.7
+    (w) =>
+      w.estado !== "conquistado" &&
+      progressoDesejo(w.valorAtual, w.valorAlvo) >= 70
   );
 
   const blocks: ContextualBlockDef[] = [];
@@ -461,8 +465,8 @@ export function FeedScreen({
     blocks.push({
       key: "wishlist",
       icon: <Gift size={18} />,
-      title: "Desejo perto da meta",
-      subtitle: `${wishlistPertoDaMeta.nome} — ${Math.round((wishlistPertoDaMeta.valorAtual / wishlistPertoDaMeta.valorAlvo) * 100)}%`,
+      title: TEXTOS_DESEJO.pertoDoAlvo,
+      subtitle: `${wishlistPertoDaMeta.nome} — ${progressoDesejo(wishlistPertoDaMeta.valorAtual, wishlistPertoDaMeta.valorAlvo)}%`,
       onClick: onOpenWishlist,
     });
   }
