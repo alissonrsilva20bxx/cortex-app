@@ -16,7 +16,7 @@ import type {
 } from "../../lib/jornada/estado";
 
 /**
- * "Hoje é descanso" e "planejar": quem escreve (registrar) -> quem lê
+ * "Descanso" e "planejar": quem escreve (registrar) -> quem lê
  * (feitasHoje, que o card "Próximo passo" e o botão leem). A loja é a de
  * verdade; o servidor é falso e segue a regra de uma vez por dia.
  */
@@ -92,7 +92,7 @@ beforeEach(() => {
   limparTudo();
 });
 
-describe("Hoje é descanso", () => {
+describe("Descanso", () => {
   it("registrar descanso chega ao servidor e o botão passa a ver 'já registrado hoje'", async () => {
     const { transporte, recebidas } = servidor();
     let n = 0;

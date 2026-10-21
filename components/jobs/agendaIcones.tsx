@@ -63,6 +63,12 @@ export const IconeBloquear = ({ size = 22 }: P) => (
   </Svg>
 );
 
+export const IconeDescanso = ({ size = 22 }: P) => (
+  <Svg size={size}>
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+  </Svg>
+);
+
 export const IconeResumo = ({ size = 22 }: P) => (
   <Svg size={size}>
     <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />

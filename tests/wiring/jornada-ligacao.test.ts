@@ -78,11 +78,11 @@ const LIGACOES = [
     vezes: 1,
   },
   {
-    // "Hoje é descanso" na Agenda: uma vez por dia (o servidor limita).
+    // "Descanso" na Agenda: uma vez por dia (o servidor limita).
     acao: "descanso",
-    arquivo: "components/jobs/DescansoHoje.tsx",
+    arquivo: "components/jobs/useDescanso.ts",
     hook: "const { estado, registrar } = useJornada(userId);",
-    depoisDe: "<button",
+    depoisDe: "const { estado, registrar } = useJornada(userId);",
     chamada: 'void registrar("descanso")',
     vezes: 1,
   },
@@ -119,7 +119,7 @@ const LIGACOES = [
 ] as const;
 
 /** Ações da spec §3 que NÃO existem hoje no app. Vazio desde que "planejar"
- * (JobForm) e "descanso" (botão "Hoje é descanso") ganharam escritor. */
+ * (JobForm) e "descanso" (botão "Descanso") ganharam escritor. */
 const NAO_EXISTEM_NO_APP: readonly string[] = [];
 
 describe("app/page.tsx monta a Jornada no app autenticado", () => {

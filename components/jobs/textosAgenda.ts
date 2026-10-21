@@ -40,10 +40,12 @@ export const ACONTECEU = {
     n === 1 ? "+1 esperando resposta" : `+${n} esperando resposta`,
 } as const;
 
-/** "Hoje é descanso": o descanso de propósito que a Jornada pede. */
+/** O botão "Descanso" da Agenda: o descanso de propósito que a Jornada pede. */
 export const DESCANSO = {
-  botao: "Hoje é descanso",
-  feito: "Descanso de hoje registrado",
+  botao: "Descanso",
+  feito: "Descansou",
   /** Por que o botão está desabilitado depois de registrado. */
   motivoDesabilitado: "Um descanso por dia",
+  /** Por que está desabilitado num dia com atendimento. */
+  motivoComAtendimento: "Hoje você tem atendimento",
 } as const;

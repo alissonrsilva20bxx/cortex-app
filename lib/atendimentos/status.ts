@@ -168,6 +168,25 @@ function diaLocal(d: Date): string {
   return `${d.getFullYear()}-${m}-${dia}`;
 }
 
+/** Como o botão "Descanso" da Agenda se comporta hoje. */
+export type EstadoDescanso = "normal" | "feito" | "comAtendimento";
+
+/** "Já registrado hoje" vence: o descanso é um por dia. Depois, o dia com
+ * atendimento (agendado, confirmado ou concluído) não é dia de descanso;
+ * "não aconteceu" (cancelado) não conta. */
+export function estadoDoDescanso(
+  jobs: readonly Pick<Job, "status" | "data">[],
+  descansoFeito: boolean,
+  hoje: Date = new Date()
+): EstadoDescanso {
+  if (descansoFeito) return "feito";
+  const dia = diaLocal(hoje);
+  const temAtendimento = jobs.some(
+    (j) => j.data === dia && j.status !== "cancelado"
+  );
+  return temAtendimento ? "comAtendimento" : "normal";
+}
+
 /** Criar um atendimento para um dia DEPOIS de hoje é planejar: a Jornada
  * conta "Amanhã está planejado". Editar atendimento e criar para hoje (ou
  * para o passado) não planejam nada. */

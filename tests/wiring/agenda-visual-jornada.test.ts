@@ -136,15 +136,24 @@ describe("Títulos de seção exatos", () => {
 });
 
 describe("As 4 ações ligam no que já existe", () => {
-  it("os 4 rótulos existem, na ordem do mockup", () => {
-    const labels = [...acoes.matchAll(/\{ label: "([^"]+)"/g)].map((m) => m[1]);
-    expect(labels).toEqual(["Novo", "Bloquear", "Resumo", "Anotações"]);
+  it("os 4 rótulos existem, na ordem do mockup (Descanso no lugar de Bloquear)", () => {
+    const ordem = [
+      'label: "Novo"',
+      "DESCANSO.botao",
+      'label: "Resumo"',
+      'label: "Anotações"',
+    ].map((trecho) => acoes.indexOf(trecho));
+    expect(ordem.every((i) => i >= 0)).toBe(true);
+    expect([...ordem].sort((a, b) => a - b)).toEqual(ordem);
+    expect(acoes).not.toContain("IconeBloquear");
   });
 
-  it('"Bloquear" não tem ação (não existe no app) e o botão sem ação fica desabilitado', () => {
-    // Ícone com o traço do mockup (components/jobs/agendaIcones.tsx).
-    expect(acoes).toMatch(/\{ label: "Bloquear", Icon: IconeBloquear \}/);
+  it('"Descanso" tem o ícone de lua e fica desabilitado quando não há ação (com o motivo na tela)', () => {
+    expect(acoes).toContain("IconeDescanso");
     expect(acoes).toContain("disabled={!onClick}");
+    expect(acoes).toContain("DESCANSO.motivoComAtendimento");
+    expect(acoes).toContain("DESCANSO.motivoDesabilitado");
+    expect(jsxTag(jobsTab, "AgendaAcoes")).toMatch(/descanso=\{\{/);
   });
 
   it('"Novo" abre o JobForm real da página em modo de criação (onEditJob(null)), sem formulário próprio', () => {

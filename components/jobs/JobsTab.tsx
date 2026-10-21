@@ -24,7 +24,7 @@ import { AgendaResumoSheet } from "./AgendaResumoSheet";
 import { NotasSection } from "./NotasSection";
 import { AgendaProximoCard } from "./AgendaProximoCard";
 import { AgendaAconteceu } from "./AgendaAconteceu";
-import { DescansoHoje } from "./DescansoHoje";
+import { useDescanso } from "./useDescanso";
 import { LembrarClienteSheet } from "./LembrarClienteSheet";
 import type { Profissional } from "@/lib/lembrete/cartaoAgenda";
 import { AgendaAcoes } from "./AgendaAcoes";
@@ -254,6 +254,7 @@ export function JobsTab({
   onJobSaved,
 }: Props) {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const descanso = useDescanso(userId, jobs);
   const [filter, setFilter] = useState<Filter>("todos");
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("sem");
@@ -619,8 +620,8 @@ export function JobsTab({
 
       {/* As 4 ações do mockup. "Novo" abre o mesmo JobForm do "+";
           "Resumo" e "Anotações" abrem os sheets que já existiam (antes eram
-          os dois botões do fim da página); "Bloquear" não existe no app e
-          fica desabilitado (ver AgendaAcoes.tsx). */}
+          os dois botões do fim da página); "Descanso" registra o descanso do
+          dia na Jornada (ver AgendaAcoes.tsx). */}
       <AgendaAcoes
         onNovo={() => onEditJob(null)}
         onResumo={
@@ -629,10 +630,11 @@ export function JobsTab({
             : undefined
         }
         onAnotacoes={() => setAnotacoesOpen(true)}
+        descanso={{
+          situacao: descanso.situacao,
+          onDescansar: descanso.descansar,
+        }}
       />
-
-      {/* O descanso de propósito que a Jornada pede ("Próximo passo"). */}
-      <DescansoHoje userId={userId} />
 
       <div>
         {/* Tira da semana (J03) — 7 pílulas de 58px sobre `--card-solid`,

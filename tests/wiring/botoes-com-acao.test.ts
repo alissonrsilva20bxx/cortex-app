@@ -216,20 +216,6 @@ function acharMortos(
   return mortos;
 }
 
-/**
- * Ações desenhadas sem função que o detector não enxerga porque o botão é
- * gerado de uma lista (AgendaAcoes: `{ label, Icon }` sem `onClick`).
- * Continuam explícitas aqui. Quando ganharem ação, o teste abaixo falha
- * para a linha sair daqui.
- */
-const SEM_ACAO_CONHECIDOS = [
-  {
-    arquivo: "components/jobs/AgendaAcoes.tsx",
-    trecho: '{ label: "Bloquear", Icon: IconeBloquear }',
-    motivo: "vira item próprio com a migration 0043 (bloqueio de horário)",
-  },
-];
-
 const chave = (m: Morto) => `${m.arquivo}::${m.trecho}`;
 
 describe("botões com ação", () => {
@@ -322,13 +308,6 @@ describe("botões com ação", () => {
       `Botão sem ação (sem onClick, type="submit", disabled ou spread):\n${msg}\n` +
         "Ligue a ação ou deixe o botão desabilitado de forma visível."
     ).toEqual([]);
-  });
-
-  it("as ações de lista sem função continuam explícitas (e saem daqui quando ganharem ação)", () => {
-    for (const c of SEM_ACAO_CONHECIDOS) {
-      const src = readFileSync(join(ROOT, c.arquivo), "utf-8");
-      expect(src, `${c.arquivo}: ${c.motivo}`).toContain(c.trecho);
-    }
   });
 
   it("a baseline não guarda botão que já foi consertado", () => {

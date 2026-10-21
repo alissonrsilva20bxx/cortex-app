@@ -130,12 +130,14 @@ describe("Jornada: planejar e descanso têm botão", () => {
     );
   });
 
-  it("a Agenda tem o botão 'Hoje é descanso', que registra descanso", () => {
+  it("a Agenda tem o botão 'Descanso', que registra descanso", () => {
     expect(read("components/jobs/JobsTab.tsx")).toContain(
-      "<DescansoHoje userId={userId} />"
+      "const descanso = useDescanso(userId, jobs);"
     );
-    const botao = read("components/jobs/DescansoHoje.tsx");
-    expect(botao).toMatch(/onClick=\{\(\) => void registrar\("descanso"\)\}/);
-    expect(botao).toContain("disabled={feito}");
+    const hook = read("components/jobs/useDescanso.ts");
+    expect(hook).toMatch(/descansar: \(\) => void registrar\("descanso"\)/);
+    expect(read("components/jobs/AgendaAcoes.tsx")).toContain(
+      "onClick: feito || comAtendimento ? undefined : descanso.onDescansar"
+    );
   });
 });

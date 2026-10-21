@@ -350,8 +350,24 @@ describe("os ícones da Agenda e da barra têm o traço do mockup", () => {
     expect(svgs.length).toBeGreaterThan(10);
   });
 
-  it.each(doApp)("%s existe no mockup", (forma) => {
-    expect(formas).toContain(forma);
+  // Único desenho fora do mockup: a lua do "Descanso", pedida pelo capitão
+  // (2026-10-21) no lugar do "Bloquear". Ela está em agendaIcones.tsx; o
+  // mockup não a tem, então não há traço dele para comparar.
+  const DECIDIDOS_PELO_CAPITAO = [
+    'path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"',
+  ];
+
+  it.each(doApp.filter((f) => !DECIDIDOS_PELO_CAPITAO.includes(f)))(
+    "%s existe no mockup",
+    (forma) => {
+      expect(formas).toContain(forma);
+    }
+  );
+
+  it("a única forma fora do mockup é a lua do Descanso, decidida pelo capitão", () => {
+    expect(doApp.filter((f) => !formas.has(f))).toEqual(
+      DECIDIDOS_PELO_CAPITAO
+    );
   });
 });
 
