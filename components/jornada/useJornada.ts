@@ -7,8 +7,7 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
-import { diaDoRelogio } from "@/lib/relogio";
-import { useAgora } from "@/lib/useAgora";
+import { assinarRelogio, diaDoRelogio } from "@/lib/relogio";
 import { lojaDaUsuaria, type RetratoJornada } from "@/lib/jornada/cliente";
 import type {
   Acao,
@@ -76,14 +75,17 @@ export function useJornada(userId: string): UsoJornada {
   }, [loja]);
 
   // Virou o dia com o app aberto: o servidor conta "hoje", então o estado
-  // (bolinhas, Próximo passo, Descansou) é buscado de novo.
-  const dia = diaDoRelogio(useAgora());
-  const diaCarregado = useRef(dia);
+  // (bolinhas, Próximo passo, Descansou) é buscado de novo. Sem estado: quem
+  // usa o hook não redesenha por causa do relógio.
+  const dia = useRef(diaDoRelogio(new Date()));
   useEffect(() => {
-    if (diaCarregado.current === dia) return;
-    diaCarregado.current = dia;
-    void loja.carregar();
-  }, [dia, loja]);
+    return assinarRelogio(() => {
+      const hoje = diaDoRelogio(new Date());
+      if (hoje === dia.current) return;
+      dia.current = hoje;
+      void loja.carregarNoDia(hoje);
+    });
+  }, [loja]);
 
   const registrar = useCallback((acao: Acao) => loja.registrar(acao), [loja]);
   const registrarAbertura = useCallback(() => loja.registrarAbertura(), [loja]);

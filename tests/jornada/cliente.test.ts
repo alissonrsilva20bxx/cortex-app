@@ -266,6 +266,19 @@ describe("montar duas vezes (StrictMode) não registra nem carrega duas vezes", 
     expect(s.lerEstado).toHaveBeenCalledTimes(1);
   });
 
+  it("virar o dia carrega UMA vez por dia, mesmo se várias telas avisarem", async () => {
+    const s = servidorFalso();
+    const l = loja(s.transporte);
+    await Promise.all([
+      l.carregarNoDia("2026-10-22"),
+      l.carregarNoDia("2026-10-22"),
+    ]);
+    await l.carregarNoDia("2026-10-22");
+    expect(s.lerEstado).toHaveBeenCalledTimes(1);
+    await l.carregarNoDia("2026-10-23");
+    expect(s.lerEstado).toHaveBeenCalledTimes(2);
+  });
+
   it("reenviar pendentes duas vezes seguidas manda cada pedido UMA vez", async () => {
     const s = servidorFalso();
     s.semRede = true;

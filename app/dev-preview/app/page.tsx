@@ -73,7 +73,6 @@ import { TRIAL_DIAS, type EstadoAssinatura } from "@/lib/assinatura";
 import { supabase, __setMockSupabaseClient } from "@/lib/supabase";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { createMockSupabaseClient } from "@/lib/mockSupabase";
-import { useAgora } from "@/lib/useAgora";
 import {
   buildMockAppSeed,
   MOCK_APP_USUARIO,
@@ -175,7 +174,6 @@ export default function DevPreviewApp() {
       : MOCK_APP_USUARIO;
   });
   const temDesejo = useTemDesejoAtivo(usuario.id);
-  const agora = useAgora();
 
   // Só afeta as duas chamadas reais do Gate da Rede (solicitar-beta,
   // convites) — anexa um bearer token de uma conta de teste local
@@ -656,7 +654,6 @@ export default function DevPreviewApp() {
                 <div data-tour="home-hero">
                   <HeroCard
                     jobs={jobs}
-                    agora={agora}
                     metas={metas}
                     receitas={receitas}
                     onGoToFinanceiro={() => {
@@ -690,7 +687,6 @@ export default function DevPreviewApp() {
               )}
               <FaltaMetaCard
                 jobs={jobs}
-                agora={agora}
                 metas={metas}
                 receitas={receitas}
                 onGoToFinanceiro={() => {
@@ -710,10 +706,9 @@ export default function DevPreviewApp() {
               <>
                 <SemanaSection
                   jobs={jobs}
-                  agora={agora}
                   onGoToAgenda={() => handleTabChange("jobs")}
                 />
-                <ProximosAtendimentos jobs={jobs} agora={agora} />
+                <ProximosAtendimentos jobs={jobs} />
               </>
             )}
 

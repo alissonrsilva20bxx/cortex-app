@@ -444,7 +444,6 @@ export function OnboardingFlow({
               jobs={jobs}
               metas={metas}
               receitas={[]}
-              agora={new Date()}
               onGoToFinanceiro={() => {}}
             />
           </div>

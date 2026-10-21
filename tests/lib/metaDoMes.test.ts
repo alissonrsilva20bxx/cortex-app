@@ -64,7 +64,6 @@ function heroFinanceiro(receitas: ReceitaAvulsa[]) {
       totalDespMes: 0,
       saldo: entrou,
       metas,
-      agora: new Date(),
     })
   );
 }
@@ -84,7 +83,6 @@ describe("meta do mês: um número só", () => {
         jobs: [job],
         metas,
         receitas: [],
-        agora: new Date(),
         onGoToFinanceiro: () => {},
       })
     );
@@ -93,7 +91,6 @@ describe("meta do mês: um número só", () => {
         jobs: [job],
         metas,
         receitas: [avulsa],
-        agora: new Date(),
         onGoToFinanceiro: () => {},
       })
     );
@@ -109,7 +106,6 @@ describe("meta do mês: um número só", () => {
         jobs: [job],
         metas,
         receitas: [],
-        agora: new Date(),
         onGoToFinanceiro: () => {},
       })
     );
@@ -118,7 +114,6 @@ describe("meta do mês: um número só", () => {
         jobs: [job],
         metas,
         receitas: [avulsa],
-        agora: new Date(),
         onGoToFinanceiro: () => {},
       })
     );
@@ -183,7 +178,6 @@ describe("ticket médio: só atendimentos", () => {
         totalDespMes: 0,
         saldo: entrou,
         metas,
-        agora: new Date(),
       })
     );
     expect(t).toContain(`Ticket médio ${brl(200)} por atendimento`);

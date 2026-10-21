@@ -10,6 +10,7 @@ import {
   monthPaidJobsCount,
 } from "@/lib/finance";
 import type { Job, Despesa, Meta, ReceitaAvulsa } from "@/lib/types";
+import { useAgora } from "@/lib/useAgora";
 import { progressoMeta } from "./progressoMeta";
 
 interface Props {
@@ -20,8 +21,6 @@ interface Props {
   totalDespMes: number;
   saldo: number;
   metas: Meta[];
-  /** O relógio da tela (`useAgora`): vira o mês junto com o resto. */
-  agora: Date;
 }
 
 /**
@@ -103,8 +102,8 @@ export function FinanceiroHeroCard({
   totalDespMes,
   saldo,
   metas,
-  agora: now,
 }: Props) {
+  const now = useAgora();
   const prevRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevSaldo =
     calcEarnings(jobs, receitas, "mes", prevRef) -

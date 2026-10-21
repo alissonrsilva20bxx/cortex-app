@@ -215,37 +215,55 @@ describe("virar a meia-noite com o app aberto", () => {
       readFileSync(join(__dirname, "..", "..", p), "utf-8");
     for (const pagina of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
       const src = ler(pagina);
-      expect(src).toContain("useAgora()");
+      // A página não tem relógio: quem precisa dele chama dentro do card.
+      expect(src).not.toContain("useAgora");
+      expect(src).not.toContain("agora={");
       expect(src).toContain("<HeroCard");
-      expect(src.match(/agora=\{agora\}/g)?.length).toBeGreaterThanOrEqual(4);
     }
-    expect(ler("components/home/HeroCard.tsx")).toContain(
-      "monthProjection(jobs, metas, receitas, agora)"
-    );
-    expect(ler("components/home/FaltaMetaCard.tsx")).toContain(
-      "monthProjection(jobs, metas, receitas, agora)"
-    );
-    expect(ler("components/home/SemanaSection.tsx")).toContain(
-      "diasRestantesDaSemana(jobs, agora)"
-    );
-    expect(ler("components/home/ProximosAtendimentos.tsx")).toContain(
-      "atendimentosDepoisDaSemana(jobs, agora)"
+    for (const [arq, conta] of [
+      [
+        "components/home/HeroCard.tsx",
+        "monthProjection(jobs, metas, receitas, agora)",
+      ],
+      [
+        "components/home/FaltaMetaCard.tsx",
+        "monthProjection(jobs, metas, receitas, agora)",
+      ],
+      [
+        "components/home/SemanaSection.tsx",
+        "diasRestantesDaSemana(jobs, agora)",
+      ],
+      [
+        "components/home/ProximosAtendimentos.tsx",
+        "atendimentosDepoisDaSemana(jobs, agora)",
+      ],
+    ]) {
+      const src = ler(arq);
+      expect(src).toContain("const agora = useAgora();");
+      expect(src).toContain(conta);
+    }
+    expect(ler("components/financeiro/FinanceiroHeroCard.tsx")).toContain(
+      "const now = useAgora();"
     );
     expect(ler("components/home/GreetingHeader.tsx")).toContain("useAgora()");
     const fin = ler("components/financeiro/FinanceiroTab.tsx");
     expect(fin).toContain("useAgora()");
     expect(fin).toContain('calcEarnings(jobs, receitas, "mes", agora)');
-    expect(ler("components/financeiro/MetasTab.tsx")).toContain(
-      "meta.periodo, agora)"
-    );
+    const metas = ler("components/financeiro/MetasTab.tsx");
+    expect(metas).toContain("const agora = useAgora();");
+    expect(metas).toContain("meta.periodo, agora)");
   });
 
   it("a Jornada recarrega quando o dia muda e a Agenda leva a seleção ao novo hoje", () => {
     const ler = (p: string) =>
       readFileSync(join(__dirname, "..", "..", p), "utf-8");
     const jornada = ler("components/jornada/useJornada.ts");
-    expect(jornada).toContain("diaDoRelogio(useAgora())");
-    expect(jornada).toMatch(/void loja\.carregar\(\);\s+\}, \[dia, loja\]\)/);
+    // Sem useAgora: o relógio não vira estado, então ninguém redesenha.
+    expect(jornada).not.toContain("useAgora");
+    expect(jornada).toContain("assinarRelogio(");
+    expect(jornada).toMatch(
+      /hoje === dia\.current\) return;[\s\S]*?loja\.carregarNoDia\(hoje\)/
+    );
     const agenda = ler("components/jobs/JobsTab.tsx");
     expect(agenda).toContain(
       "selecaoAposVirarODia(selectedDate, antes, today)"

@@ -92,7 +92,7 @@ describe("J02 — /dev-preview/app e app/page.tsx montam a Início real, na orde
       );
       // "Agenda ›" leva à aba Agenda.
       expect(painel).toMatch(
-        /<SemanaSection\s+jobs=\{jobs\}\s+agora=\{agora\}\s+onGoToAgenda=\{\(\) => handleTabChange\("jobs"\)\}/
+        /<SemanaSection\s+jobs=\{jobs\}\s+onGoToAgenda=\{\(\) => handleTabChange\("jobs"\)\}/
       );
     });
   }

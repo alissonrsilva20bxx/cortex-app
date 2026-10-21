@@ -2,6 +2,7 @@
 
 import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
+import { useAgora } from "@/lib/useAgora";
 import { InicioCard } from "./InicioCard";
 import {
   atendimentosDepoisDaSemana,
@@ -11,8 +12,6 @@ import {
 
 interface Props {
   jobs: Job[];
-  /** O relógio da tela (`useAgora`): vira a semana junto com o resto. */
-  agora: Date;
 }
 
 /**
@@ -21,7 +20,8 @@ interface Props {
  * semana (a semana corrente já aparece em "Esta semana"), com a inicial,
  * o nome, "<dia> · <hora>" e o valor. Sem nenhum, a seção não aparece.
  */
-export function ProximosAtendimentos({ jobs, agora }: Props) {
+export function ProximosAtendimentos({ jobs }: Props) {
+  const agora = useAgora();
   const proximos = atendimentosDepoisDaSemana(jobs, agora);
   if (proximos.length === 0) return null;
 

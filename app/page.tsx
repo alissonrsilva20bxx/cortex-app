@@ -63,7 +63,6 @@ import { reauthAtual } from "@/lib/reauth";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { isFreshAccount } from "@/lib/onboarding";
 import { tourDoneKey, type RedeAcessoTour } from "@/lib/appTour";
-import { useAgora } from "@/lib/useAgora";
 import type {
   TabId,
   Usuario,
@@ -115,7 +114,6 @@ export default function Page() {
   const [fabOpen, setFabOpen] = useState(false);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const temDesejo = useTemDesejoAtivo(usuario?.id);
-  const agora = useAgora();
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
@@ -654,7 +652,6 @@ export default function Page() {
                     <div data-tour="home-hero">
                       <HeroCard
                         jobs={jobs}
-                        agora={agora}
                         metas={metas}
                         receitas={receitas}
                         onGoToFinanceiro={() => {
@@ -690,7 +687,6 @@ export default function Page() {
                   )}
                   <FaltaMetaCard
                     jobs={jobs}
-                    agora={agora}
                     metas={metas}
                     receitas={receitas}
                     onGoToFinanceiro={() => {
@@ -711,10 +707,9 @@ export default function Page() {
                   <>
                     <SemanaSection
                       jobs={jobs}
-                      agora={agora}
                       onGoToAgenda={() => handleTabChange("jobs")}
                     />
-                    <ProximosAtendimentos jobs={jobs} agora={agora} />
+                    <ProximosAtendimentos jobs={jobs} />
                   </>
                 )}
 

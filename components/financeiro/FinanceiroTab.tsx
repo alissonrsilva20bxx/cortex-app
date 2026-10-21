@@ -438,7 +438,6 @@ export function FinanceiroTab({
             totalDespMes={totalDespMes}
             saldo={saldo}
             metas={metas}
-            agora={agora}
           />
 
           {/* Visão do mockup (Recentes + Mais lançamentos): sempre visível,
@@ -495,7 +494,6 @@ export function FinanceiroTab({
             {tab === "metas" && (
               <MetasTab
                 jobs={jobs}
-                agora={agora}
                 receitas={receitas}
                 metas={metas}
                 objetivos={objetivos}

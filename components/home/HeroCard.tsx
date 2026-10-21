@@ -2,14 +2,13 @@
 
 import { formatMoeda, monthProjection } from "@/lib/finance";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
+import { useAgora } from "@/lib/useAgora";
 import { InicioCard } from "./InicioCard";
 
 interface Props {
   jobs: Job[];
   metas: Meta[];
   receitas: ReceitaAvulsa[];
-  /** O relógio da tela (`useAgora`): vira o mês junto com o resto. */
-  agora: Date;
   onGoToFinanceiro: () => void;
 }
 
@@ -21,13 +20,8 @@ interface Props {
  * concluídos + entradas avulsas, a mesma conta do Financeiro). O card inteiro é tocável e leva ao
  * Financeiro (Visão), o mesmo destino do antigo botão do card (#134).
  */
-export function HeroCard({
-  jobs,
-  metas,
-  receitas,
-  agora,
-  onGoToFinanceiro,
-}: Props) {
+export function HeroCard({ jobs, metas, receitas, onGoToFinanceiro }: Props) {
+  const agora = useAgora();
   const p = monthProjection(jobs, metas, receitas, agora);
 
   const etaLabel = p.metaEta

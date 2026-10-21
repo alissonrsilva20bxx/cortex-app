@@ -2,6 +2,7 @@
 
 import { formatMoeda, monthProjection } from "@/lib/finance";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
+import { useAgora } from "@/lib/useAgora";
 import { InicioCard } from "./InicioCard";
 import {
   CARD_PEQUENO,
@@ -14,8 +15,6 @@ interface Props {
   jobs: Job[];
   metas: Meta[];
   receitas: ReceitaAvulsa[];
-  /** O relógio da tela (`useAgora`): vira o mês junto com o resto. */
-  agora: Date;
   onGoToFinanceiro: () => void;
 }
 
@@ -30,9 +29,9 @@ export function FaltaMetaCard({
   jobs,
   metas,
   receitas,
-  agora,
   onGoToFinanceiro,
 }: Props) {
+  const agora = useAgora();
   const p = monthProjection(jobs, metas, receitas, agora);
   if (p.meta === null || p.remaining === null) return null;
 

@@ -90,6 +90,9 @@ export interface LojaJornada {
   assinar(ouvinte: () => void): () => void;
   retrato(): RetratoJornada;
   carregar(): Promise<void>;
+  /** Virou o dia: busca de novo, mas só uma vez por dia, mesmo que várias
+   * telas avisem juntas. */
+  carregarNoDia(dia: string): Promise<void>;
   registrar(acao: Acao): Promise<Comemoracao[]>;
   /**
    * Abriu a tela "Sua Jornada" (selo Primeiros passos, §5). Conta UMA vez
@@ -141,6 +144,7 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
   let carregando = false;
   let erro: ErroJornada | null = null;
   let carregamento: Promise<void> | null = null;
+  let diaCarregado: string | null = null;
   let envio: Promise<void> | null = null;
   /** Chaves sendo enviadas agora: o mesmo pedido nunca vai duas vezes ao mesmo tempo. */
   const emVoo = new Set<string>();
@@ -264,6 +268,12 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
           avisar();
         });
       return carregamento;
+    },
+
+    carregarNoDia(dia) {
+      if (dia === diaCarregado) return carregamento ?? Promise.resolve();
+      diaCarregado = dia;
+      return loja.carregar();
     },
 
     registrar(acao) {

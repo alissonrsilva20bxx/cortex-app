@@ -5,6 +5,7 @@ import { Plus, Check, Target } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { calcEarnings, formatMoeda } from "@/lib/finance";
+import { useAgora } from "@/lib/useAgora";
 import { GuardarCard } from "./GuardarCard";
 import { DesejosCard } from "./DesejosCard";
 import { TEXTOS_AFAZERES as TA } from "@/lib/desejo/textos";
@@ -28,8 +29,6 @@ const sectionTitleStyle = {
 
 interface Props {
   jobs: Job[];
-  /** O relógio da tela (`useAgora`): vira o mês junto com o resto. */
-  agora: Date;
   receitas: ReceitaAvulsa[];
   metas: Meta[];
   objetivos: Objetivo[];
@@ -45,7 +44,6 @@ const PERIODO_ORDER = ["dia", "mes", "ano"];
 
 export function MetasTab({
   jobs,
-  agora,
   receitas,
   metas,
   objetivos,
@@ -56,6 +54,7 @@ export function MetasTab({
   onObjetivoAdded,
   onToggleObjetivo,
 }: Props) {
+  const agora = useAgora();
   const [objTitulo, setObjTitulo] = useState("");
   const [objCat, setObjCat] = useState("afazeres");
   const [objSaving, setObjSaving] = useState(false);
