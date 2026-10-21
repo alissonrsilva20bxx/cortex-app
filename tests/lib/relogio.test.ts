@@ -140,6 +140,7 @@ describe("fiação nos componentes", () => {
 
   it.each([
     ["components/home/NextJobCard.tsx", "aguardandoResposta(jobs, agora)"],
+    ["components/home/AconteceuCard.tsx", "aguardandoResposta(jobs, agora)"],
     ["components/jobs/AgendaAconteceu.tsx", "aguardandoResposta(jobs, agora)"],
     ["components/jobs/JobDetailSheet.tsx", "podeConcluir(job, agora)"],
   ])("%s usa o relógio (useAgora) e passa a hora a regra", (arq, uso) => {

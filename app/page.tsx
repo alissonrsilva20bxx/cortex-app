@@ -13,6 +13,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { FAB } from "@/components/FAB";
 import { GreetingHeader } from "@/components/home/GreetingHeader";
 import { HeroCard } from "@/components/home/HeroCard";
+import { AconteceuCard } from "@/components/home/AconteceuCard";
 import { NextJobCard } from "@/components/home/NextJobCard";
 import { DesejoCard } from "@/components/home/DesejoCard";
 import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
@@ -626,6 +627,17 @@ export default function Page() {
                 className="grid grid-cols-[minmax(0,1fr)]"
                 style={{ gap: "12px", marginTop: "18px" }}
               >
+                {/* A pergunta "Aconteceu?", quando há atendimento esperando
+                    resposta: largura total logo abaixo do cumprimento, para os
+                    botões ficarem acima da pílula na primeira vista. */}
+                {homeCards.nextJob && (
+                  <AconteceuCard
+                    userId={usuario.id}
+                    jobs={jobs}
+                    aoMudar={recarregarAposAtendimento}
+                    aoVerAgenda={() => handleTabChange("jobs")}
+                  />
+                )}
                 {/* Grade de 2 colunas do mockup; o card principal ocupa as duas. Com
     quantidade ímpar de cards pequenos (um deles desligado em Ajustes,
     sem meta ou sem PIN), o último ocupa a linha toda em vez de deixar
@@ -664,14 +676,7 @@ export default function Page() {
                       />
                     )}
                   </div>
-                  {homeCards.nextJob && (
-                    <NextJobCard
-                      userId={usuario.id}
-                      jobs={jobs}
-                      aoMudar={recarregarAposAtendimento}
-                      aoVerAgenda={() => handleTabChange("jobs")}
-                    />
-                  )}
+                  {homeCards.nextJob && <NextJobCard jobs={jobs} />}
                   {(homeCards.objetivos ?? true) && (
                     <DesejoCard
                       userId={usuario.id}

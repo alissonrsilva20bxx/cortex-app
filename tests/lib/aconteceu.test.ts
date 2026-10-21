@@ -11,6 +11,7 @@ import type { Job, JobStatus } from "@/lib/types";
 // O hook grava em jobs pelo supabase; aqui só se renderiza, nada é enviado.
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
+import { AconteceuCard } from "@/components/home/AconteceuCard";
 import { NextJobCard } from "@/components/home/NextJobCard";
 import { AgendaAconteceu } from "@/components/jobs/AgendaAconteceu";
 
@@ -63,16 +64,18 @@ describe("aguardandoResposta", () => {
 });
 
 describe("Início: o card Próximo", () => {
-  it("atendimento que já passou vira a pergunta Aconteceu?, não o Próximo", () => {
+  it("atendimento que já passou tira o Próximo da grade e vira a pergunta Aconteceu? no topo", () => {
     vi.useFakeTimers();
     vi.setSystemTime(AGORA);
+    const jobs = [
+      job("passou", "2026-10-21", "10:00", "agendado"),
+      job("amanha", "2026-10-22", "09:00", "agendado"),
+    ];
+    expect(renderToStaticMarkup(createElement(NextJobCard, { jobs }))).toBe("");
     const html = texto(
-      createElement(NextJobCard, {
+      createElement(AconteceuCard, {
         userId: "u1",
-        jobs: [
-          job("passou", "2026-10-21", "10:00", "agendado"),
-          job("amanha", "2026-10-22", "09:00", "agendado"),
-        ],
+        jobs,
         aoMudar: () => {},
         aoVerAgenda: () => {},
       })
@@ -90,18 +93,25 @@ describe("Início: o card Próximo", () => {
     vi.setSystemTime(AGORA);
     const html = texto(
       createElement(NextJobCard, {
-        userId: "u1",
         jobs: [
           job("feito", "2026-10-21", "10:00", "concluído"),
           job("amanha", "2026-10-22", "09:00", "agendado"),
         ],
-        aoMudar: () => {},
-        aoVerAgenda: () => {},
       })
     );
     expect(html).toContain("Próximo");
     expect(html).toContain("09h00");
     expect(html).not.toContain("Aconteceu?");
+    expect(
+      renderToStaticMarkup(
+        createElement(AconteceuCard, {
+          userId: "u1",
+          jobs: [job("feito", "2026-10-21", "10:00", "concluído")],
+          aoMudar: () => {},
+          aoVerAgenda: () => {},
+        })
+      )
+    ).toBe("");
   });
 });
 
@@ -203,7 +213,7 @@ describe("Início: o mais recente e +N esperando resposta", () => {
     vi.useFakeTimers();
     vi.setSystemTime(AGORA);
     const html = renderToStaticMarkup(
-      createElement(NextJobCard, {
+      createElement(AconteceuCard, {
         userId: "u1",
         jobs: cinco,
         aoMudar: () => {},

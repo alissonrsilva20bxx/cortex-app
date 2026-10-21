@@ -10,7 +10,6 @@ import {
 } from "./pecasMockup";
 import { aguardandoResposta } from "@/lib/atendimentos/status";
 import { useAgora } from "@/lib/useAgora";
-import { AconteceuCard } from "./AconteceuCard";
 import { formatHora, proximoAtendimento, rotuloDiaCurto } from "./inicioAgenda";
 
 // Reexportado só pra não quebrar quem já importa daqui
@@ -18,13 +17,7 @@ import { formatHora, proximoAtendimento, rotuloDiaCurto } from "./inicioAgenda";
 export { formatDayBadge } from "@/lib/proximoAtendimento";
 
 interface Props {
-  userId: string;
   jobs: Job[];
-  /** O status de um atendimento mudou (pergunta "Aconteceu?"): a página
-   * recarrega Agenda, Financeiro e Início. */
-  aoMudar: () => void;
-  /** Leva à Agenda (o "+N esperando resposta" do Aconteceu?). */
-  aoVerAgenda: () => void;
 }
 
 /**
@@ -33,24 +26,14 @@ interface Props {
  * "<nome> · <dia curto>". O detalhe (local, modalidade) passou pra lista
  * "Esta semana" logo abaixo, então o card não expande mais.
  *
- * Se existe atendimento em aberto cujo horário já passou, o card vira a
- * pergunta "Aconteceu?" (AconteceuCard) em vez de mostrar o passado como
- * se fosse o próximo.
+ * Enquanto existe atendimento em aberto cujo horário já passou, o card some:
+ * quem pergunta "Aconteceu?" é o AconteceuCard, no topo da Início. Atendimento
+ * que já passou não pode aparecer como se fosse o próximo.
  */
-export function NextJobCard({ userId, jobs, aoMudar, aoVerAgenda }: Props) {
-  // Relógio de 1 minuto: passou o horário, o card vira "Aconteceu?" sozinho.
+export function NextJobCard({ jobs }: Props) {
+  // Relógio de 1 minuto: passou o horário, o card some sozinho.
   const agora = useAgora();
-  if (aguardandoResposta(jobs, agora).length > 0) {
-    return (
-      <AconteceuCard
-        userId={userId}
-        jobs={jobs}
-        agora={agora}
-        aoMudar={aoMudar}
-        aoVerAgenda={aoVerAgenda}
-      />
-    );
-  }
+  if (aguardandoResposta(jobs, agora).length > 0) return null;
   const job = proximoAtendimento(jobs, agora);
 
   return (

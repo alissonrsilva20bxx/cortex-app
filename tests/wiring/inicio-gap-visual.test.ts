@@ -131,8 +131,26 @@ describe("§2-P1-2 — homeCards controla NextJobCard/ObjetivosCard em tempo rea
 
   it("NextJobCard só renderiza quando homeCards.nextJob está ligado", () => {
     expect(page).toMatch(
-      /\{homeCards\.nextJob && \(\s*<NextJobCard\s+userId=\{usuario\.id\}\s+jobs=\{jobs\}\s+aoMudar=\{recarregarAposAtendimento\}\s+aoVerAgenda=\{\(\) => handleTabChange\("jobs"\)\}\s*\/>\s*\)\}/
+      /\{homeCards\.nextJob && <NextJobCard jobs=\{jobs\} \/>\}/
     );
+  });
+
+  it("o Aconteceu? fica em largura total logo abaixo do cumprimento, acima da grade (Faturamento), nas duas páginas", () => {
+    for (const arq of ["app/page.tsx", "app/dev-preview/app/page.tsx"]) {
+      const fonte = read(arq);
+      const cumprimento = fonte.indexOf("<GreetingHeader");
+      const aconteceu = fonte.indexOf("<AconteceuCard");
+      const faturamento = fonte.indexOf("<HeroCard");
+      expect(cumprimento, arq).toBeGreaterThan(-1);
+      expect(aconteceu, arq).toBeGreaterThan(cumprimento);
+      expect(faturamento, arq).toBeGreaterThan(aconteceu);
+      // Fora da grade de 2 colunas, para ocupar a largura toda.
+      const grade = fonte.indexOf('className="grid grid-cols-2');
+      expect(grade, arq).toBeGreaterThan(aconteceu);
+      expect(fonte, arq).toMatch(
+        /\{homeCards\.nextJob && \(\s*<AconteceuCard\s+userId=\{usuario\.id\}\s+jobs=\{jobs\}\s+aoMudar=\{recarregarAposAtendimento\}\s+aoVerAgenda=\{\(\) => handleTabChange\("jobs"\)\}/
+      );
+    }
   });
 
   it("ObjetivosCard só renderiza quando homeCards.objetivos está ligado", () => {
