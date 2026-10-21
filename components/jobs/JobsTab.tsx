@@ -23,6 +23,7 @@ import { JobDetailSheet } from "./JobDetailSheet";
 import { AgendaResumoSheet } from "./AgendaResumoSheet";
 import { NotasSection } from "./NotasSection";
 import { AgendaProximoCard } from "./AgendaProximoCard";
+import { AgendaAconteceu } from "./AgendaAconteceu";
 import { LembrarClienteSheet } from "./LembrarClienteSheet";
 import type { Profissional } from "@/lib/lembrete/cartaoAgenda";
 import { AgendaAcoes } from "./AgendaAcoes";
@@ -600,6 +601,19 @@ export function JobsTab({
           </BotaoRedondo>
         ))}
       </div>
+
+      {/* "Aconteceu?": atendimento em aberto cujo horário já passou. */}
+      {hasLoadedOnce && (
+        <AgendaAconteceu
+          jobs={jobs}
+          onOpen={setDetailJob}
+          onStatusMudou={() => {
+            // Sem a página (testes), recarrega só a lista da Agenda.
+            if (onJobSaved) onJobSaved();
+            else retryLoadJobs();
+          }}
+        />
+      )}
 
       {/* Próximo atendimento em destaque (J03). Só depois da 1ª carga
           bem-sucedida: antes disso "nenhum agendado" seria mentira. */}

@@ -8,6 +8,8 @@ import {
   ROTULO_CARD,
   VALOR_CARD,
 } from "./pecasMockup";
+import { aguardandoResposta } from "@/lib/atendimentos/status";
+import { AconteceuCard } from "./AconteceuCard";
 import { formatHora, proximoAtendimento, rotuloDiaCurto } from "./inicioAgenda";
 
 // Reexportado só pra não quebrar quem já importa daqui
@@ -16,6 +18,9 @@ export { formatDayBadge } from "@/lib/proximoAtendimento";
 
 interface Props {
   jobs: Job[];
+  /** O status de um atendimento mudou (pergunta "Aconteceu?"): a página
+   * recarrega Agenda, Financeiro e Início. */
+  aoMudar: () => void;
 }
 
 /**
@@ -23,8 +28,15 @@ interface Props {
  * `5-telas-8-temas-claro-escuro.html`): o horário em destaque e
  * "<nome> · <dia curto>". O detalhe (local, modalidade) passou pra lista
  * "Esta semana" logo abaixo, então o card não expande mais.
+ *
+ * Se existe atendimento em aberto cujo horário já passou, o card vira a
+ * pergunta "Aconteceu?" (AconteceuCard) em vez de mostrar o passado como
+ * se fosse o próximo.
  */
-export function NextJobCard({ jobs }: Props) {
+export function NextJobCard({ jobs, aoMudar }: Props) {
+  if (aguardandoResposta(jobs).length > 0) {
+    return <AconteceuCard jobs={jobs} aoMudar={aoMudar} />;
+  }
   const job = proximoAtendimento(jobs);
 
   return (

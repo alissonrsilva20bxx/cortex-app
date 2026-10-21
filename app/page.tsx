@@ -660,7 +660,12 @@ export default function Page() {
                       />
                     )}
                   </div>
-                  {homeCards.nextJob && <NextJobCard jobs={jobs} />}
+                  {homeCards.nextJob && (
+                    <NextJobCard
+                      jobs={jobs}
+                      aoMudar={recarregarAposAtendimento}
+                    />
+                  )}
                   {(homeCards.objetivos ?? true) && (
                     <DesejoCard
                       userId={usuario.id}

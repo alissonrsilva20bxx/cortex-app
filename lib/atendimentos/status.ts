@@ -83,3 +83,14 @@ export async function mudarStatus(
   }
   return { ok: true };
 }
+
+/** Atendimentos em aberto (agendado ou confirmado) cujo horário já passou:
+ * a Agenda e o Início perguntam "Aconteceu?". O mais recente primeiro. */
+export function aguardandoResposta(
+  jobs: readonly Job[],
+  agora: Date = new Date()
+): Job[] {
+  return jobs
+    .filter((j) => podeConcluir(j, agora))
+    .sort((a, b) => instanteDoAtendimento(b) - instanteDoAtendimento(a));
+}
