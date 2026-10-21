@@ -1,0 +1,73 @@
+/**
+ * Textos do Desejo e dos Afazeres. Tudo em um lugar só, para a tradução
+ * depois. O app ainda é PT-BR.
+ */
+export const TEXTOS_DESEJO = {
+  nome: "Desejo",
+  nomePlural: "Desejos",
+  cardTitulo: "Seus Desejos",
+  novo: "Novo",
+  criar: "Criar um Desejo",
+  formNovo: "Novo Desejo",
+  formEditar: "Editar Desejo",
+  campoNome: "O que você deseja",
+  placeholderNome: "Ex.: Cadeira hidráulica",
+  campoAlvo: "Quanto custa (€)",
+  campoPrazo: "Até quando (opcional)",
+  semPrazo: "Sem prazo",
+  jaGuardado: (v: string) => `Já guardado: ${v}`,
+  dicaGuardar: "Para somar dinheiro, use Guardar.",
+  estado: "Estado",
+  estados: {
+    quero: "Quero",
+    planejando: "Planejando",
+    conquistado: "Conquistado",
+  },
+  privacidade: "Quem vê",
+  privacidades: {
+    privado: "Só eu",
+    amigas: "Amigas",
+    comunidade: "Comunidade",
+  },
+  salvarNovo: "Adicionar Desejo",
+  salvarEdicao: "Salvar alterações",
+  excluir: "Excluir Desejo",
+  excluirConfirmar: "Excluir este Desejo?",
+  excluirSim: "Sim, excluir",
+  cancelar: "Cancelar",
+  okCriado: "Desejo adicionado!",
+  okSalvo: "Desejo atualizado!",
+  okExcluido: "Desejo excluído",
+  erroSalvar: "Não foi possível salvar o Desejo.",
+  erroExcluir: "Não foi possível excluir o Desejo.",
+  erroCarregar: "Não foi possível carregar seus Desejos.",
+  tentarNovamente: "Tentar novamente",
+  carregando: "Carregando seus Desejos…",
+  vazio: "Você ainda não tem um Desejo. Crie o primeiro e comece a guardar.",
+  semRedeTitulo: "Desejos fazem parte da Rede",
+  semRedeTexto:
+    "Entre na Rede com seu convite para criar Desejos e guardar dinheiro neles.",
+  semRedeBotao: "Ir para a Rede",
+  deAte: (atual: string, alvo: string) => `${atual} de ${alvo}`,
+  prazo: (data: string) => `Até ${data}`,
+  todosConquistados: "Todos conquistados!",
+  editarEmFinancas: "Editar em Finanças",
+  compartilhar: "Compartilhar no Feed",
+  compartilhado: "Desejo compartilhado no Feed!",
+  erroCompartilhar: "Não foi possível compartilhar no Feed.",
+  vitrineVazia: "Nenhum Desejo ainda. Crie em Finanças › Metas.",
+  textoCompartilhar: (nome: string, pct: number) =>
+    `Compartilhando meu progresso com "${nome}" — ${pct}% do meu Desejo!`,
+  ajustesRotulo: "Desejo",
+  ajustesDescricao: "Seu Desejo principal e quanto falta",
+} as const;
+
+export const TEXTOS_AFAZERES = {
+  titulo: "Afazeres",
+  novo: "Novo",
+  placeholder: "Novo afazer…",
+  vazio: "Nenhum afazer ainda. Toque em + Novo para criar.",
+  cancelar: "Cancelar",
+  salvar: "Salvar",
+  salvando: "…",
+} as const;

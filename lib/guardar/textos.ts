@@ -14,7 +14,7 @@ export const TEXTOS_GUARDAR = {
   historicoVazio: "Você ainda não guardou nada. O primeiro valor aparece aqui.",
   historicoErro: "Não foi possível carregar o histórico.",
   vazioTitulo: "Você ainda não tem um Desejo",
-  vazioTexto: "Crie um Desejo na Rede para começar a guardar dinheiro nele.",
+  vazioTexto: "Crie um Desejo para começar a guardar dinheiro nele.",
   vazioBotao: "Criar um Desejo",
   carregando: "Carregando seus Desejos…",
   erroCarregar: "Não foi possível carregar seus Desejos.",

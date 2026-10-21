@@ -14,6 +14,8 @@ export type WishlistItem = {
   valorAtual: number;
   estado: WishlistEstado;
   privacidade: Privacidade;
+  prazo: string | null;
+  criadoEm: string;
 };
 
 function paraWishlistItem(row: WishlistRow): WishlistItem {
@@ -25,6 +27,8 @@ function paraWishlistItem(row: WishlistRow): WishlistItem {
     valorAtual: Number(row.valor_atual),
     estado: row.estado as WishlistEstado,
     privacidade: row.privacidade as Privacidade,
+    prazo: row.prazo ?? null,
+    criadoEm: row.criado_em,
   };
 }
 
@@ -49,9 +53,9 @@ export type CriarWishlistItemInput = {
   nome: string;
   cor: string;
   valorAlvo: number;
-  valorAtual?: number;
   estado?: WishlistEstado;
   privacidade?: Privacidade;
+  prazo?: string | null;
 };
 
 export async function criarWishlistItem(
@@ -66,9 +70,9 @@ export async function criarWishlistItem(
       nome: input.nome.trim(),
       cor: input.cor,
       valor_alvo: input.valorAlvo,
-      valor_atual: input.valorAtual,
       estado: input.estado,
       privacidade: input.privacidade,
+      prazo: input.prazo ?? null,
     })
     .select()
     .single();
@@ -84,9 +88,9 @@ export type AtualizarWishlistItemInput = {
   itemId: string;
   nome: string;
   valorAlvo: number;
-  valorAtual: number;
   estado: WishlistEstado;
   privacidade: Privacidade;
+  prazo?: string | null;
 };
 
 export async function atualizarWishlistItem(
@@ -99,9 +103,9 @@ export async function atualizarWishlistItem(
     .update({
       nome: input.nome.trim(),
       valor_alvo: input.valorAlvo,
-      valor_atual: input.valorAtual,
       estado: input.estado,
       privacidade: input.privacidade,
+      ...(input.prazo !== undefined ? { prazo: input.prazo } : {}),
     })
     .eq("id", input.itemId)
     .eq("user_id", userId)

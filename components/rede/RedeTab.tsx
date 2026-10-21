@@ -48,6 +48,7 @@ import { supabase } from "@/lib/supabase";
 import {
   buscarPerfil,
   criarPerfil,
+  corAvatarAleatoria,
   atualizarPerfil,
   criarLiveLink,
   atualizarLiveLink,
@@ -154,19 +155,6 @@ interface AmigasCache {
   sugestoes: PessoaResumo[];
 }
 type DenunciaMotivo = CriarDenunciaInput["motivo"];
-
-const CORES_AVATAR = [
-  "#ec4899",
-  "#8b5cf6",
-  "#06b6d4",
-  "#f59e0b",
-  "#10b981",
-  "#6366f1",
-];
-
-function corAvatarAleatoria(): string {
-  return CORES_AVATAR[Math.floor(Math.random() * CORES_AVATAR.length)];
-}
 
 const AVATAR_STORAGE_MARKER = "/object/public/avatares/";
 

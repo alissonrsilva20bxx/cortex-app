@@ -336,3 +336,31 @@ export async function excluirLiveLink(
     throw error;
   }
 }
+
+const CORES_AVATAR = [
+  "#ec4899",
+  "#8b5cf6",
+  "#06b6d4",
+  "#f59e0b",
+  "#10b981",
+  "#6366f1",
+];
+
+export function corAvatarAleatoria(): string {
+  return CORES_AVATAR[Math.floor(Math.random() * CORES_AVATAR.length)];
+}
+
+/** Devolve o perfil da Rede; se a pessoa nunca abriu a Rede, cria em silêncio
+ * (nome da conta, cor aleatória), igual o RedeTab faz na primeira visita. */
+export async function garantirPerfil(
+  client: RedeClient,
+  userId: string,
+  nomeExibicao: string
+): Promise<Perfil> {
+  const existente = await buscarPerfil(client, userId);
+  if (existente) return existente;
+  return criarPerfil(client, {
+    nomeExibicao,
+    corAvatar: corAvatarAleatoria(),
+  });
+}
