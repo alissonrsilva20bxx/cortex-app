@@ -44,8 +44,8 @@ const isConcluido = (j: Job) => j.status === "concluído";
 
 /** Dia em que o dinheiro de um atendimento entrou: `pagoEm` (sinal pago
  * antes, ou atendimento pago depois) ou, sem ele, o dia do atendimento.
- * O Financeiro (entradas, lançamentos, extrato) conta por este dia; o
- * faturamento (Início, Meta, ticket) conta pelo dia do atendimento. */
+ * O Financeiro (entradas, lançamentos, extrato) e a meta do mês (Início,
+ * Financeiro, aba Metas) contam por este dia. */
 export const diaDoDinheiro = (j: Job): string => j.pagoEm ?? j.data;
 
 /** Nº de atendimentos concluídos cujo dinheiro entrou no mês de `ref`
@@ -141,9 +141,8 @@ function inPeriod(dateStr: string, periodo: PeriodoMeta, ref: Date): boolean {
 /**
  * Entradas totais (jobs concluídos + receitas avulsas) num período, pelo
  * dia em que o dinheiro entrou (`diaDoDinheiro`).
- * Diferente de monthEarnings (só jobs) usado no herói da Home: aqui é a
- * visão completa do Financeiro. Ambos vivem aqui — telas consomem, não
- * recalculam.
+ * É a conta única da meta: Início, Financeiro e aba Metas usam esta.
+ * monthEarnings (só jobs) fica para o recap e comparações de tendência.
  */
 export function calcEarnings(
   jobs: Job[],
@@ -161,7 +160,7 @@ export function calcEarnings(
 }
 
 export interface Projection {
-  /** Já construído este mês (jobs concluídos). */
+  /** Já construído este mês (jobs concluídos + entradas avulsas). */
   earned: number;
   /** Meta mensal, se definida. */
   meta: number | null;
@@ -186,14 +185,18 @@ export interface Projection {
 /**
  * Motor de projeção viva — o coração da Home. Converte o que ela já registrou
  * numa leitura empoderadora: "no seu ritmo você chega em X" e/ou "faltam X".
- * Usa apenas dados existentes (jobs concluídos + meta mensal).
+ * Usa apenas dados existentes (jobs concluídos + entradas avulsas + meta
+ * mensal).
  */
 export function monthProjection(
   jobs: Job[],
   metas: Meta[],
+  receitas: ReceitaAvulsa[],
   ref = new Date()
 ): Projection {
-  const earned = monthEarnings(jobs, ref);
+  // Mesma conta da aba Metas e do Financeiro: atendimentos concluídos mais
+  // entradas avulsas, pelo dia do dinheiro. Um número só para a meta do mês.
+  const earned = calcEarnings(jobs, receitas, "mes", ref);
   const meta = monthMeta(metas);
 
   const daysInMonth = new Date(

@@ -66,6 +66,7 @@ import type {
   Job,
   Meta,
   Objetivo,
+  ReceitaAvulsa,
   HomeCardConfig,
   CardStyleConfig,
   ChartPrefConfig,
@@ -112,6 +113,7 @@ export default function Page() {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
+  const [receitas, setReceitas] = useState<ReceitaAvulsa[]>([]);
   const [objetivos, setObjetivos] = useState<Objetivo[]>([]);
 
   const [pinHash, setPinHash] = useState<string | null>(null);
@@ -324,14 +326,28 @@ export default function Page() {
         .order("data")
         .order("hora"),
       supabase.from("metas").select("*").eq("user_id", usuario.id),
+      supabase.from("receitas_avulsas").select("*").eq("user_id", usuario.id),
     ]).then(
       ([
         { data: jobsData, error: jobsErr },
         { data: metasData, error: metasErr },
+        { data: receitasData, error: receitasErr },
       ]) => {
         // Sem rede: mantém o que já está na tela e não decide "1º uso" com
         // listas vazias que só estão vazias porque a busca falhou.
-        if (jobsErr || metasErr) return;
+        if (jobsErr || metasErr || receitasErr) return;
+        if (receitasData) {
+          setReceitas(
+            receitasData.map((r) => ({
+              id: r.id,
+              descricao: r.descricao,
+              valor: r.valor,
+              categoria: r.categoria,
+              data: r.data,
+              criadoEm: r.criado_em,
+            }))
+          );
+        }
         if (jobsData) {
           setJobs(
             jobsData.map((j) => ({
@@ -624,6 +640,7 @@ export default function Page() {
                       <HeroCard
                         jobs={jobs}
                         metas={metas}
+                        receitas={receitas}
                         onGoToFinanceiro={() => {
                           handleTabChange("financeiro");
                           setFinanceiroFocusTab("visao");
@@ -656,6 +673,7 @@ export default function Page() {
                   <FaltaMetaCard
                     jobs={jobs}
                     metas={metas}
+                    receitas={receitas}
                     onGoToFinanceiro={() => {
                       handleTabChange("financeiro");
                       setFinanceiroFocusTab("visao");

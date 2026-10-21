@@ -12,6 +12,9 @@ const testesDeBanco = ["tests/rede/**", "tests/desejo/desejo.fluxo.test.ts"];
 const temBanco = Boolean(process.env.SUPABASE_TEST_URL);
 
 export default defineConfig({
+  // tsconfig usa jsx "preserve" (o Next compila); no vitest o oxc precisa
+  // transformar o JSX para os testes que renderizam componentes.
+  oxc: { jsx: { runtime: "automatic" } },
   // Espelha tsconfig.json `compilerOptions.paths` -- sem isso, importar um
   // arquivo que usa "@/lib/..."/"@/components/..." direto num teste
   // (ex.: app/api/cron/*/route.ts) falha a resolver o módulo. Só os dois

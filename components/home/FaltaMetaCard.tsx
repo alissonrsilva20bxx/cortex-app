@@ -1,7 +1,7 @@
 "use client";
 
 import { formatBRL, monthProjection } from "@/lib/finance";
-import type { Job, Meta } from "@/lib/types";
+import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
 import {
   CARD_PEQUENO,
@@ -13,6 +13,7 @@ import {
 interface Props {
   jobs: Job[];
   metas: Meta[];
+  receitas: ReceitaAvulsa[];
   onGoToFinanceiro: () => void;
 }
 
@@ -23,8 +24,8 @@ interface Props {
  * "Faltam R$ X". Sem meta definida não há o que faltar: o card não
  * aparece, em vez de mostrar um número inventado.
  */
-export function FaltaMetaCard({ jobs, metas, onGoToFinanceiro }: Props) {
-  const p = monthProjection(jobs, metas);
+export function FaltaMetaCard({ jobs, metas, receitas, onGoToFinanceiro }: Props) {
+  const p = monthProjection(jobs, metas, receitas);
   if (p.meta === null || p.remaining === null) return null;
 
   return (

@@ -181,20 +181,24 @@ describe("J04 — 'nenhuma conta muda': todo número vem do que já existia", ()
   });
 
   it("FinanceiroHeroCard: saldo e totais chegam como props, sem reconstruir a conta", () => {
-    // O único calcEarnings/monthExpenses do arquivo é o do mês anterior
-    // (variação, #136); o mês corrente vem pronto do FinanceiroTab.
-    expect(hero.match(/calcEarnings\(/g)).toHaveLength(1);
+    // Os calcEarnings do arquivo são o do mês anterior (variação, #136) e o
+    // do faturamento da Meta (a mesma conta da aba Metas); o saldo e os
+    // totais do mês corrente vêm prontos do FinanceiroTab.
+    expect(hero.match(/calcEarnings\(/g)).toHaveLength(2);
     expect(hero).toContain('calcEarnings(jobs, receitas, "mes", prevRef)');
     expect(hero.match(/monthExpenses\(/g)).toHaveLength(1);
     expect(hero).toContain("monthExpenses(despesas, prevRef)");
     expect(hero).not.toMatch(/\.reduce\(/);
   });
 
-  // Ordem do operador (#209): o card Meta mostra o faturamento do mês (o
-  // mesmo número do card principal do Início), com a conta do MetasTab.
+  // Ordem do operador (#209): o card Meta mostra o faturamento do mês
+  // (atendimentos + entradas avulsas, o mesmo número do Início), com a conta
+  // do MetasTab.
   it("FinanceiroHeroCard: a meta usa monthMeta, o faturamento do mês e progressoMeta", () => {
     expect(hero).toContain("const metaMes = monthMeta(metas);");
-    expect(hero).toContain("const faturamento = monthEarnings(jobs, now);");
+    expect(hero).toContain(
+      'const faturamento = calcEarnings(jobs, receitas, "mes", now);'
+    );
     expect(hero).toContain("progressoMeta(faturamento, metaMes)");
     expect(hero).toContain("{formatBRL(faturamento)} de {formatBRL(metaMes)}");
     expect(hero).toContain("{Math.round(metaPct)}%");

@@ -20,11 +20,11 @@ function read(relPath: string): string {
 describe("§2-P0-1 — HeroCard clicável (navega a Financeiro) e calculado de jobs/metas reais", () => {
   const src = read("components/home/HeroCard.tsx");
 
-  it("usa monthProjection(jobs, metas) de lib/finance.ts, não valor fixo", () => {
+  it("usa monthProjection(jobs, metas, receitas) de lib/finance.ts, não valor fixo", () => {
     expect(src).toMatch(
       /import\s*\{[^}]*monthProjection[^}]*\}\s*from\s*"@\/lib\/finance"/
     );
-    expect(src).toMatch(/monthProjection\(jobs, metas\)/);
+    expect(src).toMatch(/monthProjection\(jobs, metas, receitas\)/);
   });
 
   it("o card inteiro é clicável via onClick={onGoToFinanceiro}", () => {

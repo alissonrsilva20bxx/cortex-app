@@ -1,12 +1,13 @@
 "use client";
 
 import { formatBRL, monthProjection } from "@/lib/finance";
-import type { Job, Meta } from "@/lib/types";
+import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 import { InicioCard } from "./InicioCard";
 
 interface Props {
   jobs: Job[];
   metas: Meta[];
+  receitas: ReceitaAvulsa[];
   onGoToFinanceiro: () => void;
 }
 
@@ -14,12 +15,12 @@ interface Props {
  * O card principal da Início no visual novo (Jornada J02, mockup
  * `5-telas-8-temas-claro-escuro.html`): "Faturamento · <mês>", a pílula com
  * o percentual da meta, o valor do mês em destaque, "de <meta>", a barra e
- * a linha de projeção. Todos os números vêm de `monthProjection` -- a
- * mesma conta de antes, nenhuma nova. O card inteiro é tocável e leva ao
+ * a linha de projeção. Todos os números vêm de `monthProjection` (atendimentos
+ * concluídos + entradas avulsas, a mesma conta do Financeiro). O card inteiro é tocável e leva ao
  * Financeiro (Visão), o mesmo destino do antigo botão do card (#134).
  */
-export function HeroCard({ jobs, metas, onGoToFinanceiro }: Props) {
-  const p = monthProjection(jobs, metas);
+export function HeroCard({ jobs, metas, receitas, onGoToFinanceiro }: Props) {
+  const p = monthProjection(jobs, metas, receitas);
 
   const etaLabel = p.metaEta
     ? p.metaEta.toLocaleDateString("pt-BR", { day: "numeric", month: "long" })

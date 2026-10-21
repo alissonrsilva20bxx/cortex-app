@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildMockAppSeed } from "../../lib/mockAppData";
-import { formatBRL, monthProjection } from "../../lib/finance";
+import {
+  calcEarnings,
+  formatBRL,
+  monthEarnings,
+  monthProjection,
+} from "../../lib/finance";
 import {
   atendimentosDepoisDaSemana,
   diasRestantesDaSemana,
@@ -9,7 +14,7 @@ import {
   rotuloDiaCurto,
   rotuloDiaFrase,
 } from "../../components/home/inicioAgenda";
-import type { Job, Meta } from "../../lib/types";
+import type { Job, Meta, ReceitaAvulsa } from "../../lib/types";
 import {
   celular,
   esperarEstilo,
@@ -436,8 +441,16 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
       periodo: r.periodo,
       valorAlvo: r.valor_alvo,
     })) as unknown as Meta[];
+    const receitas = t.receitas_avulsas.map((r) => ({
+      id: r.id,
+      descricao: r.descricao,
+      valor: r.valor,
+      categoria: r.categoria,
+      data: r.data,
+      criadoEm: r.criado_em,
+    })) as unknown as ReceitaAvulsa[];
     const objetivos = t.objetivos as { concluido: boolean }[];
-    return { jobs, metas, objetivos };
+    return { jobs, metas, receitas, objetivos };
   }
   const brl = (n: number) => formatBRL(n).replace(/ /g, " ");
   const texto = (re: RegExp) => {
@@ -498,10 +511,21 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
    * O laboratório tem o faturamento do mockup (R$ 430): Helena Brito, de
    * 13/09, vale R$ 310, e Camila Duarte continua em 20/09 por R$ 120 (o
    * mockup da Agenda). Daí saem a % da meta, a projeção e o que falta.
+   * O mockup conta o atendimento pelo dia do atendimento. O app agora usa a
+   * conta do Financeiro (decisão do capitão: a meta do mês é um número só),
+   * que conta pelo dia do dinheiro (`pago_em`) e soma entradas avulsas. Na
+   * semente, um atendimento de depois de hoje foi pago antes (R$ 100), então
+   * o laboratório mostra R$ 100 a mais que o mockup: divergência decidida,
+   * testada abaixo.
    */
   it("iguais ao mockup: faturamento, % da meta, projeção e falta pra meta", () => {
     const { jobs, metas } = seed();
-    const p = monthProjection(jobs, metas);
+    // Conta do mockup: pelo dia do atendimento, sem o dinheiro adiantado.
+    const p = monthProjection(
+      jobs.map((j) => ({ ...j, pagoEm: null })),
+      metas,
+      []
+    );
     const eta = p.metaEta!.toLocaleDateString("pt-BR", {
       day: "numeric",
       month: "long",
@@ -522,6 +546,14 @@ describe("Pixel Início A — dados do laboratório = os do mockup", () => {
     ]);
     // A meta é a mesma dos dois lados.
     expect(texto(/>de ([^<]+)</)).toBe(brl(p.meta!));
+  });
+
+  it("com o dinheiro adiantado da semente, o Início soma R$ 100 a mais que o mockup", () => {
+    const { jobs, metas, receitas } = seed();
+    const p = monthProjection(jobs, metas, receitas);
+    expect(p.earned).toBe(calcEarnings(jobs, receitas, "mes"));
+    expect(p.earned - monthEarnings(jobs)).toBe(100);
+    expect(brl(p.earned)).toBe("R$ 530");
   });
 });
 

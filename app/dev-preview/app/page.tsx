@@ -86,6 +86,7 @@ import type {
   Job,
   Meta,
   Objetivo,
+  ReceitaAvulsa,
   HomeCardConfig,
   ChartPrefConfig,
 } from "@/lib/types";
@@ -197,6 +198,7 @@ export default function DevPreviewApp() {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>([]);
+  const [receitas, setReceitas] = useState<ReceitaAvulsa[]>([]);
   const [objetivos, setObjetivos] = useState<Objetivo[]>([]);
 
   const [pinHash, setPinHash] = useState<string | null>(null);
@@ -392,7 +394,20 @@ export default function DevPreviewApp() {
     Promise.all([
       supabase.from("jobs").select("*").order("data").order("hora"),
       supabase.from("metas").select("*").eq("user_id", usuario.id),
-    ]).then(([{ data: jobsData }, { data: metasData }]) => {
+      supabase.from("receitas_avulsas").select("*").eq("user_id", usuario.id),
+    ]).then(([{ data: jobsData }, { data: metasData }, { data: receitasData }]) => {
+      if (receitasData) {
+        setReceitas(
+          (receitasData as Record<string, unknown>[]).map((r) => ({
+            id: r.id as string,
+            descricao: r.descricao as string,
+            valor: r.valor as number,
+            categoria: r.categoria as string,
+            data: r.data as string,
+            criadoEm: r.criado_em as string,
+          }))
+        );
+      }
       if (jobsData) {
         setJobs(
           (jobsData as Record<string, unknown>[]).map((j) => ({
@@ -625,6 +640,7 @@ export default function DevPreviewApp() {
                   <HeroCard
                     jobs={jobs}
                     metas={metas}
+                    receitas={receitas}
                     onGoToFinanceiro={() => {
                       handleTabChange("financeiro");
                       setFinanceiroFocusTab("visao");
@@ -655,6 +671,7 @@ export default function DevPreviewApp() {
               <FaltaMetaCard
                 jobs={jobs}
                 metas={metas}
+                receitas={receitas}
                 onGoToFinanceiro={() => {
                   handleTabChange("financeiro");
                   setFinanceiroFocusTab("visao");

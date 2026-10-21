@@ -439,7 +439,12 @@ export function OnboardingFlow({
             Essa é a sua projeção viva
           </p>
           <div className="w-full mb-6">
-            <HeroCard jobs={jobs} metas={metas} onGoToFinanceiro={() => {}} />
+            <HeroCard
+              jobs={jobs}
+              metas={metas}
+              receitas={[]}
+              onGoToFinanceiro={() => {}}
+            />
           </div>
           <p
             className="text-sm leading-relaxed mb-6 max-w-xs"

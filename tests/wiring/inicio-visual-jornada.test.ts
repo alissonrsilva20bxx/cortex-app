@@ -178,13 +178,15 @@ describe("J02 — 'não mude cálculo': todo número vem da conta que já existi
     "components/home/HeroCard.tsx",
     "components/home/FaltaMetaCard.tsx",
   ]) {
-    it(`${arquivo}: calcula só com monthProjection(jobs, metas), uma vez, de lib/finance`, () => {
+    it(`${arquivo}: calcula só com monthProjection(jobs, metas, receitas), uma vez, de lib/finance`, () => {
       const src = semComentarios(read(arquivo));
       expect(src).toMatch(
         /^import \{[^}]*\bmonthProjection\b[^}]*\} from "@\/lib\/finance";$/m
       );
       expect(src.match(/monthProjection\(/g)).toHaveLength(1);
-      expect(src).toContain("const p = monthProjection(jobs, metas);");
+      expect(src).toContain(
+        "const p = monthProjection(jobs, metas, receitas);"
+      );
       // Nenhuma reconstrução local da conta.
       expect(src).not.toMatch(/monthEarnings|monthMeta|reduce\(/);
     });

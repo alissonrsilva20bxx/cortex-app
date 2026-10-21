@@ -7,7 +7,6 @@ import {
   monthExpenses,
   monthMeta,
   monthConcludedCount,
-  monthEarnings,
   monthPaidJobsCount,
 } from "@/lib/finance";
 import type { Job, Despesa, Meta, ReceitaAvulsa } from "@/lib/types";
@@ -33,8 +32,9 @@ interface Props {
  * Saldo e totais chegam prontos do FinanceiroTab e a variação é a de antes
  * (#136). Regras de exibição revistas por ordem do operador para o mockup
  * fechar inteiro (pixel do Financeiro, #209):
- *  - Meta: o faturamento do mês (atendimentos concluídos pelo dia do
- *    atendimento, o mesmo número do card principal do Início) sobre a meta;
+ *  - Meta: o faturamento do mês (atendimentos concluídos + entradas
+ *    avulsas, `calcEarnings`, o mesmo número do Início e da aba Metas)
+ *    sobre a meta;
  *  - Ticket médio: o que entrou no mês ÷ atendimentos concluídos no mês;
  *  - "N lançamentos" de Entradas: atendimentos cujo dinheiro entrou no mês
  *    (`diaDoDinheiro`) + receitas avulsas do mês.
@@ -111,7 +111,7 @@ export function FinanceiroHeroCard({
   const mesAnterior = prevRef.toLocaleDateString("pt-BR", { month: "long" });
 
   const metaMes = monthMeta(metas);
-  const faturamento = monthEarnings(jobs, now);
+  const faturamento = calcEarnings(jobs, receitas, "mes", now);
   const metaPct =
     metaMes !== null && metaMes > 0
       ? progressoMeta(faturamento, metaMes)

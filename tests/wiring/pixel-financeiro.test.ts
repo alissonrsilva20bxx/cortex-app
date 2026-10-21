@@ -431,6 +431,10 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
   it("iguais ao mockup: Meta (12%, R$ 430 de R$ 3.500) e Ticket médio (R$ 177)", () => {
     const { jobs, receitas, metaMes } = seed();
     const entrou = calcEarnings(jobs, receitas, "mes");
+    // O mockup conta o atendimento pelo dia do atendimento (R$ 430). O app
+    // usa a conta única da meta (calcEarnings: dia do dinheiro + entradas
+    // avulsas), então o card Meta do laboratório mostra R$ 100 a mais
+    // (um atendimento pago antes); testado logo abaixo.
     const faturamento = monthEarnings(jobs);
     const mockMeta = [
       doMockup(/>Meta<\/span><span[^>]*>([^<]+)</),
@@ -443,6 +447,11 @@ describe("Pixel Financeiro A — dados do laboratório = os do mockup", () => {
     expect(brl(Math.round(entrou / monthConcludedCount(jobs)))).toBe(
       doMockup(/>Ticket médio<\/span><span[^>]*>([^<]+)</)
     );
+  });
+
+  it("com o dinheiro adiantado da semente, o card Meta soma R$ 100 a mais que o mockup", () => {
+    const { jobs, receitas } = seed();
+    expect(calcEarnings(jobs, receitas, "mes")).toBe(monthEarnings(jobs) + 100);
   });
 
   it("Recentes: as três linhas iguais às do mockup", () => {
