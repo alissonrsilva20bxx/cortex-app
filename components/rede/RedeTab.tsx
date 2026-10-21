@@ -320,9 +320,14 @@ export function RedeTab({
   // conteúdo/scroll/slide ficam intactos. Uma requisição por recurso por
   // reconexão. Declarado aqui em cima porque os effects mais acima
   // dependem dele.
-  const [online, setOnline] = useState(
-    typeof navigator === "undefined" ? true : navigator.onLine
-  );
+  // Nasce `true` no servidor e no 1º render do navegador: o Node 21+ tem
+  // `navigator` mas sem `onLine` (vira "offline" no servidor) e o HTML saía
+  // diferente do navegador (erro de hidratação, banner "Você está offline"
+  // só no servidor). O valor real entra antes da 1ª pintura.
+  const [online, setOnline] = useState(true);
+  useEfeitoDeLayout(() => {
+    if (!navigator.onLine) setOnline(false);
+  }, []);
   const [reconexaoKey, setReconexaoKey] = useState(0);
   useEffect(() => {
     function goOnline() {

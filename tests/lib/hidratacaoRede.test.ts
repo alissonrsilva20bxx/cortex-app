@@ -79,3 +79,11 @@ describe("RedeTab: o 1º render não lê o localStorage", () => {
     );
   });
 });
+
+describe("RedeTab: 'offline' não depende do navigator no servidor", () => {
+  it("com um navigator sem onLine (Node 21+), o HTML não traz o aviso de offline", () => {
+    vi.stubGlobal("navigator", {});
+    const html = renderToString(createElement(RedeTab, { usuario }));
+    expect(html).not.toContain("Você está offline");
+  });
+});
