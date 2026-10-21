@@ -5,6 +5,7 @@ import { Plus, Check, Target } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { calcEarnings, formatBRL } from "@/lib/finance";
+import { GuardarCard } from "./GuardarCard";
 import { progressoMeta } from "./progressoMeta";
 import { PERIODO_LABELS, OBJ_CATS } from "./constants";
 import type { Job, Meta, ReceitaAvulsa, Objetivo } from "@/lib/types";
@@ -29,6 +30,7 @@ interface Props {
   metas: Meta[];
   objetivos: Objetivo[];
   userId: string;
+  onCriarDesejo: () => void;
   onObjetivoAdded: () => void;
   onToggleObjetivo: (id: string, done: boolean) => Promise<void>;
 }
@@ -41,6 +43,7 @@ export function MetasTab({
   metas,
   objetivos,
   userId,
+  onCriarDesejo,
   onObjetivoAdded,
   onToggleObjetivo,
 }: Props) {
@@ -66,6 +69,8 @@ export function MetasTab({
 
   return (
     <div className="space-y-4">
+      <GuardarCard userId={userId} onCriarDesejo={onCriarDesejo} />
+
       {/* Metas financeiras. Fundação Visual (#142): sem `style` — material
           neutro compartilhado de `.glass-card` (globals.css), mesma
           correção já feita em Início (achado #131) pro mesmo

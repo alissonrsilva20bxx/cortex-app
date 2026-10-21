@@ -715,6 +715,7 @@ export default function DevPreviewApp() {
             onToggleObjetivo={handleToggleObjetivo}
             focusTab={financeiroFocusTab}
             onFocusTabHandled={() => setFinanceiroFocusTab(null)}
+            onCriarDesejo={() => handleTabChange("rede")}
           />
         </TabPanel>
 

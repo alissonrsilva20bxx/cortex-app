@@ -720,6 +720,7 @@ export default function Page() {
                 onToggleObjetivo={handleToggleObjetivo}
                 focusTab={financeiroFocusTab}
                 onFocusTabHandled={() => setFinanceiroFocusTab(null)}
+                onCriarDesejo={() => handleTabChange("rede")}
               />
             </TabPanel>
 

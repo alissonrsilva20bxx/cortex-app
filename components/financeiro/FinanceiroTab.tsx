@@ -71,6 +71,8 @@ interface Props {
    */
   focusTab?: InnerTab | null;
   onFocusTabHandled?: () => void;
+  /** Estado vazio do Guardar: leva até a Rede, onde se cria o Desejo. */
+  onCriarDesejo: () => void;
 }
 
 export function FinanceiroTab({
@@ -85,6 +87,7 @@ export function FinanceiroTab({
   onToggleObjetivo,
   focusTab,
   onFocusTabHandled,
+  onCriarDesejo,
 }: Props) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [metas, setMetas] = useState<Meta[]>(DEFAULT_METAS);
@@ -450,6 +453,7 @@ export function FinanceiroTab({
                 metas={metas}
                 objetivos={objetivos}
                 userId={userId}
+                onCriarDesejo={onCriarDesejo}
                 onObjetivoAdded={onObjetivoAdded}
                 onToggleObjetivo={onToggleObjetivo}
               />
