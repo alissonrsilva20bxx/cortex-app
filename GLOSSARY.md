@@ -13,7 +13,7 @@ Um Job possui: nome do cliente (ou apelido), data, hora, valor cobrado (na moeda
 - Atendimento futuro não se conclui: "Concluir" e "Não aconteceu" só valem a partir do horário.
 - **Aconteceu?** é a pergunta que a Agenda e o card "Próximo" da Início fazem para o atendimento em aberto cujo horário já passou, com "Sim, concluir" e "Não aconteceu".
 
-Somente Jobs com status `concluído` contribuem para o progresso das Metas Financeiras e para o dia contado da Jornada. O "Previsto do dia" da Agenda soma tudo que não é `cancelado`.
+Somente Jobs com status `concluído` contam como atendimento no progresso das Metas Financeiras e no dia contado da Jornada. As entradas avulsas também somam na meta, mas não contam como atendimento. O "Previsto do dia" da Agenda soma tudo que não é `cancelado`.
 
 O "Próximo Job" é o Job com status `agendado` ou `confirmado` de data/hora mais próxima a partir de agora; atendimento que já passou não é "próximo", entra no "Aconteceu?".
 
@@ -23,7 +23,7 @@ A forma de entrega de um Job: `presencial` (encontro físico com local) ou `onli
 
 ## Meta Financeira
 
-Um objetivo de faturamento num período definido: `dia`, `mês` ou `ano`. O progresso é calculado automaticamente somando o `valor` dos Jobs `concluídos` no período correspondente. O usuário define o `valorAlvo` manualmente nos Ajustes.
+Um objetivo de faturamento num período definido: `dia`, `mês` ou `ano`. O progresso é calculado automaticamente somando o `valor` dos Jobs `concluídos` mais as entradas avulsas do período correspondente. O usuário define o `valorAlvo` pelo botão "+" em Finanças > Metas.
 
 ## Cofre
 
