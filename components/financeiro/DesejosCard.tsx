@@ -34,8 +34,6 @@ interface Props {
   nomeUsuaria: string;
   /** false só quando já se sabe que não há acesso à Rede (convite). */
   podeCriar: boolean;
-  /** Cada vez que sobe, abre o formulário de Desejo novo (vazio do Guardar). */
-  pedidoNovo: number;
   onAbrirRede: () => void;
 }
 
@@ -49,7 +47,6 @@ export function DesejosCard({
   userId,
   nomeUsuaria,
   podeCriar,
-  pedidoNovo,
   onAbrirRede,
 }: Props) {
   const toast = useToast();
@@ -78,10 +75,6 @@ export function DesejosCard({
   }, [carregar]);
 
   useAoMudarDesejos(carregar);
-
-  useEffect(() => {
-    if (pedidoNovo > 0) abrirNovo();
-  }, [pedidoNovo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function abrirNovo() {
     setEditando(null);

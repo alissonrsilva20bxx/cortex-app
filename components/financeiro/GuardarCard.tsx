@@ -26,14 +26,12 @@ const sectionTitleStyle = {
 
 interface Props {
   userId: string;
-  /** Abre o formulário de Desejo novo (card "Seus Desejos", logo acima). */
-  onCriarDesejo: () => void;
 }
 
 /** Soma que falhou depois do depósito gravado; "Tentar novamente" só soma. */
 type SomaPendente = { desejoId: string; centavos: number };
 
-export function GuardarCard({ userId, onCriarDesejo }: Props) {
+export function GuardarCard({ userId }: Props) {
   const toast = useToast();
   const { registrar } = useJornada(userId);
   const [desejos, setDesejos] = useState<WishlistItem[]>([]);
@@ -116,6 +114,7 @@ export function GuardarCard({ userId, onCriarDesejo }: Props) {
     else setErro(T.erroSoma);
   }
 
+  const semDesejo = desejos.length === 0;
   const escolhido = desejos.find((d) => d.id === desejoId);
   const pct = escolhido
     ? progressoDesejo(escolhido.valorAtual, escolhido.valorAlvo)
@@ -162,100 +161,84 @@ export function GuardarCard({ userId, onCriarDesejo }: Props) {
             {T.tentarNovamente}
           </button>
         </div>
-      ) : desejos.length === 0 ? (
-        <div className="flex flex-col items-center text-center py-4">
-          <p className="font-semibold text-sm" style={{ color: "var(--text)" }}>
-            {T.vazioTitulo}
-          </p>
-          <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
-            {T.vazioTexto}
-          </p>
-          <button
-            onClick={onCriarDesejo}
-            className="mt-3 px-4 rounded-xl text-xs font-bold transition-all active:scale-95"
-            style={{
-              minHeight: "44px",
-              background: "var(--accent)",
-              color: "#fff",
-            }}
-          >
-            {T.vazioBotao}
-          </button>
-        </div>
       ) : (
         <>
-          <p
-            className="text-[11px] font-bold mb-2"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {T.escolherDesejo}
-          </p>
-          <div className="flex gap-1.5 flex-wrap mb-3">
-            {desejos.map((d) => {
-              const on = d.id === desejoId;
-              return (
-                <button
-                  key={d.id}
-                  onClick={() => {
-                    setDesejoId(d.id);
-                    setErro(null);
-                  }}
-                  aria-pressed={on}
-                  className="px-3 rounded-lg text-[11px] font-bold transition-all"
-                  style={{
-                    minHeight: "44px",
-                    background: on ? "var(--accent)" : "var(--surface)",
-                    color: on ? "#fff" : "var(--text-muted)",
-                    border: `1px solid ${on ? "var(--accent)" : "var(--border-color)"}`,
-                  }}
-                >
-                  {d.nome}
-                </button>
-              );
-            })}
-          </div>
-
-          {escolhido && (
-            <div className="mb-4">
-              <div className="flex items-baseline justify-between mb-2">
-                <span
-                  className="text-sm font-semibold truncate"
-                  style={{ color: "var(--text)" }}
-                >
-                  {T.progressoTitulo}
-                </span>
-                <span
-                  className="text-xs tabular-nums shrink-0 ml-2"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {formatEUR(escolhido.valorAtual)} /{" "}
-                  {formatEUR(escolhido.valorAlvo)}
-                </span>
-              </div>
-              {prazo && (
-                <p
-                  className="text-[11px] mb-2"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {prazo}
-                </p>
-              )}
-              <div
-                className="progress-track"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={pct}
+          {!semDesejo && (
+            <>
+              <p
+                className="text-[11px] font-bold mb-2"
+                style={{ color: "var(--text-muted)" }}
               >
-                <div
-                  className="progress-fill"
-                  style={{
-                    width: `${pct}%`,
-                    transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
-                  }}
-                />
+                {T.escolherDesejo}
+              </p>
+              <div className="flex gap-1.5 flex-wrap mb-3">
+                {desejos.map((d) => {
+                  const on = d.id === desejoId;
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => {
+                        setDesejoId(d.id);
+                        setErro(null);
+                      }}
+                      aria-pressed={on}
+                      className="px-3 rounded-lg text-[11px] font-bold transition-all"
+                      style={{
+                        minHeight: "44px",
+                        background: on ? "var(--accent)" : "var(--surface)",
+                        color: on ? "#fff" : "var(--text-muted)",
+                        border: `1px solid ${on ? "var(--accent)" : "var(--border-color)"}`,
+                      }}
+                    >
+                      {d.nome}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+
+              {escolhido && (
+                <div className="mb-4">
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span
+                      className="text-sm font-semibold truncate"
+                      style={{ color: "var(--text)" }}
+                    >
+                      {T.progressoTitulo}
+                    </span>
+                    <span
+                      className="text-xs tabular-nums shrink-0 ml-2"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {formatEUR(escolhido.valorAtual)} /{" "}
+                      {formatEUR(escolhido.valorAlvo)}
+                    </span>
+                  </div>
+                  {prazo && (
+                    <p
+                      className="text-[11px] mb-2"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {prazo}
+                    </p>
+                  )}
+                  <div
+                    className="progress-track"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={pct}
+                  >
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${pct}%`,
+                        transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <label
@@ -277,29 +260,43 @@ export function GuardarCard({ userId, onCriarDesejo }: Props) {
                 setTexto(e.target.value);
                 setErro(null);
               }}
-              disabled={salvando || Boolean(pendente)}
+              disabled={semDesejo || salvando || Boolean(pendente)}
+              aria-disabled={semDesejo || salvando || Boolean(pendente)}
               className="flex-1 min-w-0 rounded-xl px-3 text-sm font-medium outline-none"
               style={{
                 minHeight: "44px",
                 background: "var(--surface)",
                 border: `1px solid ${erro ? "var(--danger)" : "var(--border-color)"}`,
                 color: "var(--text)",
+                opacity: semDesejo ? 0.5 : 1,
+                cursor: semDesejo ? "not-allowed" : undefined,
               }}
             />
             <button
               onClick={guardar}
-              disabled={salvando || Boolean(pendente)}
+              disabled={semDesejo || salvando || Boolean(pendente)}
+              aria-disabled={semDesejo || salvando || Boolean(pendente)}
               className="px-4 rounded-xl text-xs font-bold transition-all active:scale-95"
               style={{
                 minHeight: "44px",
-                background: "var(--accent)",
-                color: "#fff",
-                opacity: salvando || pendente ? 0.6 : 1,
+                background: semDesejo ? "var(--surface)" : "var(--accent)",
+                color: semDesejo ? "var(--text-muted)" : "#fff",
+                opacity: semDesejo ? 0.5 : salvando || pendente ? 0.6 : 1,
+                cursor: semDesejo ? "not-allowed" : undefined,
               }}
             >
               {salvando ? T.botaoSalvando : T.botao}
             </button>
           </div>
+
+          {semDesejo && (
+            <p
+              className="text-[11px] mt-2"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {T.ajudaSemDesejo}
+            </p>
+          )}
 
           {erro && (
             <div
@@ -326,54 +323,58 @@ export function GuardarCard({ userId, onCriarDesejo }: Props) {
             </button>
           )}
 
-          <p
-            className="text-[11px] font-bold mt-5 mb-2"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {T.historicoTitulo}
-          </p>
-          {erroHistorico ? (
-            <p className="text-xs" style={{ color: "var(--danger)" }}>
-              {T.historicoErro}
-            </p>
-          ) : historico.length === 0 ? (
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              {T.historicoVazio}
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {historico.map((h) => (
-                <li
-                  key={h.id}
-                  className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <div className="min-w-0">
-                    <p
-                      className="text-sm font-semibold truncate"
-                      style={{ color: "var(--text)" }}
+          {!semDesejo && (
+            <>
+              <p
+                className="text-[11px] font-bold mt-5 mb-2"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {T.historicoTitulo}
+              </p>
+              {erroHistorico ? (
+                <p className="text-xs" style={{ color: "var(--danger)" }}>
+                  {T.historicoErro}
+                </p>
+              ) : historico.length === 0 ? (
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  {T.historicoVazio}
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {historico.map((h) => (
+                    <li
+                      key={h.id}
+                      className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl"
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border-color)",
+                      }}
                     >
-                      {nomeDe(h.desejoId)}
-                    </p>
-                    <p
-                      className="text-[10px]"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {quando(h.criadoEm)}
-                    </p>
-                  </div>
-                  <span
-                    className="text-sm font-bold tabular-nums shrink-0"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    {formatEUR(h.valor)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+                      <div className="min-w-0">
+                        <p
+                          className="text-sm font-semibold truncate"
+                          style={{ color: "var(--text)" }}
+                        >
+                          {nomeDe(h.desejoId)}
+                        </p>
+                        <p
+                          className="text-[10px]"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {quando(h.criadoEm)}
+                        </p>
+                      </div>
+                      <span
+                        className="text-sm font-bold tabular-nums shrink-0"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        {formatEUR(h.valor)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </>
       )}

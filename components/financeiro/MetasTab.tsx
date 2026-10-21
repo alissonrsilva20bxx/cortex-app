@@ -53,7 +53,6 @@ export function MetasTab({
   onObjetivoAdded,
   onToggleObjetivo,
 }: Props) {
-  const [pedidoNovoDesejo, setPedidoNovoDesejo] = useState(0);
   const [objTitulo, setObjTitulo] = useState("");
   const [objCat, setObjCat] = useState("afazeres");
   const [objSaving, setObjSaving] = useState(false);
@@ -80,14 +79,10 @@ export function MetasTab({
         userId={userId}
         nomeUsuaria={nomeUsuaria}
         podeCriar={podeCriarDesejo}
-        pedidoNovo={pedidoNovoDesejo}
         onAbrirRede={onAbrirRede}
       />
 
-      <GuardarCard
-        userId={userId}
-        onCriarDesejo={() => setPedidoNovoDesejo((n) => n + 1)}
-      />
+      <GuardarCard userId={userId} />
 
       {/* Metas financeiras. Fundação Visual (#142): sem `style` — material
           neutro compartilhado de `.glass-card` (globals.css), mesma
