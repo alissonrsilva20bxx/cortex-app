@@ -21,7 +21,7 @@ interface Props {
  * Card "Falta pra meta" da grade da Início (Jornada J02, mockup
  * `5-telas-8-temas-claro-escuro.html`). O valor é o `remaining` de
  * `monthProjection` -- a mesma conta que o card principal já usava pra
- * "Faltam R$ X". Sem meta definida não há o que faltar: o card não
+ * "Faltam € X". Sem meta definida não há o que faltar: o card não
  * aparece, em vez de mostrar um número inventado.
  */
 export function FaltaMetaCard({ jobs, metas, receitas, onGoToFinanceiro }: Props) {

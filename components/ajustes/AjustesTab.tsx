@@ -532,8 +532,8 @@ export function AjustesTab({
     else setActivePage(null);
   }
 
-  // "Você já construiu R$ X em N atendimentos" só quando há o que mostrar
-  // (como a tela de planos da Início): nunca "R$ 0 em 0".
+  // "Você já construiu € X em N atendimentos" só quando há o que mostrar
+  // (como a tela de planos da Início): nunca "€ 0 em 0".
   const concluidos = jobs.filter((j) => j.status === "concluído").length;
   const construido = totalEarnings(jobs);
 

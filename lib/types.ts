@@ -15,7 +15,7 @@ export interface Job {
   clienteNome: string;
   data: string; // YYYY-MM-DD
   hora: string; // HH:MM
-  valor: number; // BRL
+  valor: number; // na moeda do app (CURRENCY)
   modalidade: Modalidade;
   local?: string;
   status: JobStatus;

@@ -8,7 +8,7 @@ import type { Job } from "@/lib/types";
 import { usePausarComemoracao } from "@/components/jornada/celebracao/pausa";
 
 /**
- * Recap do mês fechado (§7.3): "Você construiu R$ X em <mês> — no seu
+ * Recap do mês fechado (§7.3): "Você construiu € X em <mês> — no seu
  * ritmo." Aparece uma vez por mês, só quando há algo a celebrar — se o mês
  * anterior não teve nenhum atendimento concluído, não aparece (nunca pune
  * mês parado, só fica em silêncio).
