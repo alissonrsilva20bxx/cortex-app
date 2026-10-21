@@ -8,7 +8,13 @@ npm run pre-teste
 
 Isso roda o typecheck, o lint e todos os testes (`vitest run`). Só peça teste se ficar tudo verde.
 
-Atenção: os testes de `tests/rede/` (RLS, concorrência, integração) precisam de um Supabase de teste (`SUPABASE_TEST_URL`, ver `docs/rede/TEST_HARNESS.md`). Sem isso eles falham por falta de configuração, não por bug.
+Os testes de `tests/rede/` (RLS, concorrência, integração) precisam de um Supabase local de teste (`SUPABASE_TEST_URL`, ver `docs/rede/TEST_HARNESS.md`). Sem a variável eles ficam de fora do `pre-teste` e aparecem como PULADO (1 teste "skipped" com a mensagem), não como falha. Pular não é provar: antes de mexer em RLS, migration ou serviço da Rede, rode:
+
+```
+npm run teste-banco
+```
+
+Esse comando exige `SUPABASE_TEST_URL` (no ambiente ou em `.env.test.local`) e roda só `tests/rede`. Sem a variável ele para com aviso.
 
 ## Roteiro manual com CONTA NOVA
 

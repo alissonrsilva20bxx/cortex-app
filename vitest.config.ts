@@ -1,5 +1,14 @@
-import { defineConfig } from "vitest/config";
+import { config as carregarEnv } from "dotenv";
+import { configDefaults, defineConfig } from "vitest/config";
 import path from "node:path";
+
+// Mesmo arquivo que tests/rede/support/vitest.setup.ts carrega: precisa estar
+// no process.env já na hora de decidir se tests/rede entra ou não.
+carregarEnv({ path: ".env.test.local", quiet: true });
+
+// Sem Supabase local de teste, tests/rede/** fica de fora (e
+// tests/banco-pulado.test.ts mostra o PULADO). Com ele, tudo roda.
+const temBanco = Boolean(process.env.SUPABASE_TEST_URL);
 
 export default defineConfig({
   // Espelha tsconfig.json `compilerOptions.paths` -- sem isso, importar um
@@ -17,6 +26,7 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.ts"],
+    exclude: temBanco ? configDefaults.exclude : [...configDefaults.exclude, "tests/rede/**"],
     setupFiles: ["tests/rede/support/vitest.setup.ts"],
     environment: "node",
     // These hit a real Postgres/Auth instance over HTTP (local or staging),
