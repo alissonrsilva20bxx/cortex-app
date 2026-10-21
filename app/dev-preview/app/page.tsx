@@ -667,6 +667,7 @@ export default function DevPreviewApp() {
                       userId={usuario.id}
                       jobs={jobs}
                       aoMudar={recarregarAposAtendimento}
+                      aoVerAgenda={() => handleTabChange("jobs")}
                     />
                   )}
               {(homeCards.objetivos ?? true) && (

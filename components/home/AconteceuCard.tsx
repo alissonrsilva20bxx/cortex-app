@@ -11,10 +11,12 @@ import { formatHora, rotuloDiaCurto } from "./inicioAgenda";
 interface Props {
   userId: string;
   jobs: Job[];
-  /** O status mudou: a página recarrega Agenda, Financeiro e Início. */
   /** A hora de agora (o relógio do NextJobCard). */
   agora: Date;
+  /** O status mudou: a página recarrega Agenda, Financeiro e Início. */
   aoMudar: () => void;
+  /** Leva à Agenda, onde está a lista dos que esperam resposta. */
+  aoVerAgenda: () => void;
 }
 
 /**
@@ -23,7 +25,13 @@ interface Props {
  * aconteceu". Atendimento que já passou não pode aparecer como se fosse o
  * próximo. Sem nenhum pendente, não renderiza nada.
  */
-export function AconteceuCard({ userId, jobs, agora, aoMudar }: Props) {
+export function AconteceuCard({
+  userId,
+  jobs,
+  agora,
+  aoMudar,
+  aoVerAgenda,
+}: Props) {
   const { mudar, salvando, erro } = useMudarStatus(userId, aoMudar);
   const pendentes = aguardandoResposta(jobs, agora);
   const job = pendentes[0];
@@ -72,9 +80,14 @@ export function AconteceuCard({ userId, jobs, agora, aoMudar }: Props) {
         </button>
       </div>
       {pendentes.length > 1 && (
-        <span style={{ fontSize: "11px", color: "var(--t-mut)" }}>
+        <button
+          type="button"
+          onClick={aoVerAgenda}
+          className="text-left font-semibold active:opacity-70"
+          style={{ fontSize: "11px", color: "var(--t-mut)" }}
+        >
           {ACONTECEU.outros(pendentes.length - 1)}
-        </span>
+        </button>
       )}
       {erro && (
         <span role="alert" style={{ fontSize: "11px", color: "var(--danger)" }}>

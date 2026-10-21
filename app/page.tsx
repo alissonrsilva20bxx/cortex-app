@@ -669,6 +669,7 @@ export default function Page() {
                       userId={usuario.id}
                       jobs={jobs}
                       aoMudar={recarregarAposAtendimento}
+                      aoVerAgenda={() => handleTabChange("jobs")}
                     />
                   )}
                   {(homeCards.objetivos ?? true) && (

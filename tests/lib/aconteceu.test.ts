@@ -1,7 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { aguardandoResposta } from "@/lib/atendimentos/status";
+import {
+  aguardandoResposta,
+  LIMITE_ACONTECEU_AGENDA,
+  pendentesVisiveis,
+} from "@/lib/atendimentos/status";
 import type { Job, JobStatus } from "@/lib/types";
 
 // O hook grava em jobs pelo supabase; aqui só se renderiza, nada é enviado.
@@ -70,6 +74,7 @@ describe("Início: o card Próximo", () => {
           job("amanha", "2026-10-22", "09:00", "agendado"),
         ],
         aoMudar: () => {},
+        aoVerAgenda: () => {},
       })
     );
     expect(html).toContain("Aconteceu?");
@@ -91,6 +96,7 @@ describe("Início: o card Próximo", () => {
           job("amanha", "2026-10-22", "09:00", "agendado"),
         ],
         aoMudar: () => {},
+        aoVerAgenda: () => {},
       })
     );
     expect(html).toContain("Próximo");
@@ -135,5 +141,80 @@ describe("Agenda: a lista Aconteceu?", () => {
       })
     );
     expect(html).toBe("");
+  });
+});
+
+const cinco = [
+  job("1", "2026-10-17", "10:00", "agendado"),
+  job("2", "2026-10-18", "10:00", "agendado"),
+  job("3", "2026-10-19", "10:00", "confirmado"),
+  job("4", "2026-10-20", "10:00", "agendado"),
+  job("5", "2026-10-21", "10:00", "agendado"),
+];
+
+describe("Agenda: no máximo 3 Aconteceu?, o resto atrás do Ver todos", () => {
+  it("pendentesVisiveis corta nos 3 mais recentes, ou entrega todos", () => {
+    const pendentes = aguardandoResposta(cinco, AGORA);
+    expect(LIMITE_ACONTECEU_AGENDA).toBe(3);
+    expect(pendentesVisiveis(pendentes, false).map((j) => j.id)).toEqual([
+      "5",
+      "4",
+      "3",
+    ]);
+    expect(pendentesVisiveis(pendentes, true)).toHaveLength(5);
+  });
+
+  it("com 5 pendentes mostra 3 (os mais recentes) e Ver todos (5), com os mesmos botões", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(AGORA);
+    const html = texto(
+      createElement(AgendaAconteceu, {
+        userId: "u1",
+        jobs: cinco,
+        onOpen: () => {},
+        onStatusMudou: () => {},
+      })
+    );
+    for (const id of ["5", "4", "3"]) expect(html).toContain(`Cliente ${id}`);
+    for (const id of ["2", "1"]) expect(html).not.toContain(`Cliente ${id}`);
+    expect(html).toContain("Ver todos (5)");
+    expect(html.match(/Sim, concluir/g)).toHaveLength(3);
+    expect(html.match(/Não aconteceu/g)).toHaveLength(3);
+  });
+
+  it("com 3 ou menos não aparece Ver todos", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(AGORA);
+    const html = texto(
+      createElement(AgendaAconteceu, {
+        userId: "u1",
+        jobs: cinco.slice(2),
+        onOpen: () => {},
+        onStatusMudou: () => {},
+      })
+    );
+    expect(html).not.toContain("Ver todos");
+    expect(html.match(/Sim, concluir/g)).toHaveLength(3);
+  });
+});
+
+describe("Início: o mais recente e +N esperando resposta", () => {
+  it("mostra só o mais recente e +4 esperando resposta (um botão que leva à Agenda)", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(AGORA);
+    const html = renderToStaticMarkup(
+      createElement(NextJobCard, {
+        userId: "u1",
+        jobs: cinco,
+        aoMudar: () => {},
+        aoVerAgenda: () => {},
+      })
+    );
+    const t = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    expect(t).toContain("Cliente");
+    expect(t).toContain("+4 esperando resposta");
+    expect(t.match(/Sim, concluir/g)).toHaveLength(1);
+    expect(t).not.toMatch(/concluir todos/i);
+    expect(html).toMatch(/<button[^>]*>\+4 esperando resposta<\/button>/);
   });
 });

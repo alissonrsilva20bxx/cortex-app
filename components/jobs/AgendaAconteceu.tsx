@@ -1,6 +1,11 @@
 "use client";
 
-import { aguardandoResposta } from "@/lib/atendimentos/status";
+import { useState } from "react";
+import {
+  aguardandoResposta,
+  LIMITE_ACONTECEU_AGENDA,
+  pendentesVisiveis,
+} from "@/lib/atendimentos/status";
 import { useAgora } from "@/lib/useAgora";
 import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
@@ -20,7 +25,8 @@ interface Props {
 /**
  * "Aconteceu?" da Agenda: cada atendimento agendado ou confirmado cujo
  * horário já passou, com "Sim, concluir" (vira concluído) e "Não aconteceu"
- * (vira cancelado). Sem nenhum, não aparece. Sem isto o atendimento ficava
+ * (vira cancelado). Mostra os 3 mais recentes; havendo mais, "Ver todos (N)"
+ * abre a lista completa, com os mesmos botões. Sem nenhum, não aparece. Sem isto o atendimento ficava
  * "agendado" para sempre e o dinheiro nunca entrava.
  */
 export function AgendaAconteceu({
@@ -31,8 +37,10 @@ export function AgendaAconteceu({
 }: Props) {
   const { mudar, salvando, erro } = useMudarStatus(userId, onStatusMudou);
   const agora = useAgora();
+  const [verTodos, setVerTodos] = useState(false);
   const pendentes = aguardandoResposta(jobs, agora);
   if (pendentes.length === 0) return null;
+  const visiveis = pendentesVisiveis(pendentes, verTodos);
 
   return (
     <section
@@ -48,7 +56,7 @@ export function AgendaAconteceu({
       <h2 style={{ fontSize: "15px", fontWeight: 800, color: "var(--text)" }}>
         {ACONTECEU.titulo}
       </h2>
-      {pendentes.map((job) => (
+      {visiveis.map((job) => (
         <div key={job.id} className="flex flex-col" style={{ gap: "8px" }}>
           <button
             type="button"
@@ -117,6 +125,26 @@ export function AgendaAconteceu({
           </div>
         </div>
       ))}
+      {pendentes.length > visiveis.length && (
+        <button
+          type="button"
+          onClick={() => setVerTodos(true)}
+          className="font-semibold active:opacity-70"
+          style={{ fontSize: "13px", color: "var(--accent-deep)" }}
+        >
+          {ACONTECEU.verTodos(pendentes.length)}
+        </button>
+      )}
+      {verTodos && pendentes.length > LIMITE_ACONTECEU_AGENDA && (
+        <button
+          type="button"
+          onClick={() => setVerTodos(false)}
+          className="font-semibold active:opacity-70"
+          style={{ fontSize: "13px", color: "var(--accent-deep)" }}
+        >
+          {ACONTECEU.verMenos}
+        </button>
+      )}
       {erro && (
         <p
           role="alert"

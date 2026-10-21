@@ -168,6 +168,21 @@ function diaLocal(d: Date): string {
   return `${d.getFullYear()}-${m}-${dia}`;
 }
 
+/** Quantos "Aconteceu?" a Agenda mostra de uma vez; o resto fica atrás do
+ * "Ver todos". */
+export const LIMITE_ACONTECEU_AGENDA = 3;
+
+/** O que a lista "Aconteceu?" da Agenda mostra: os mais recentes (a lista já
+ * vem do mais recente para o mais antigo) ou todos, quando ela pediu. */
+export function pendentesVisiveis(
+  pendentes: readonly Job[],
+  verTodos: boolean
+): Job[] {
+  return verTodos
+    ? [...pendentes]
+    : pendentes.slice(0, LIMITE_ACONTECEU_AGENDA);
+}
+
 /** Como o botão "Descanso" da Agenda se comporta hoje. */
 export type EstadoDescanso = "normal" | "feito" | "comAtendimento";
 

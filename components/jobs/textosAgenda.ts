@@ -35,6 +35,9 @@ export const ACONTECEU = {
   sim: "Sim, concluir",
   nao: "Não aconteceu",
   salvando: "Salvando…",
+  /** Abre a lista completa quando há mais do que a Agenda mostra. */
+  verTodos: (n: number) => `Ver todos (${n})`,
+  verMenos: "Ver menos",
   /** Quantos outros também esperam resposta, além do mostrado. */
   outros: (n: number) =>
     n === 1 ? "+1 esperando resposta" : `+${n} esperando resposta`,

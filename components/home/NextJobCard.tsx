@@ -23,6 +23,8 @@ interface Props {
   /** O status de um atendimento mudou (pergunta "Aconteceu?"): a página
    * recarrega Agenda, Financeiro e Início. */
   aoMudar: () => void;
+  /** Leva à Agenda (o "+N esperando resposta" do Aconteceu?). */
+  aoVerAgenda: () => void;
 }
 
 /**
@@ -35,7 +37,7 @@ interface Props {
  * pergunta "Aconteceu?" (AconteceuCard) em vez de mostrar o passado como
  * se fosse o próximo.
  */
-export function NextJobCard({ userId, jobs, aoMudar }: Props) {
+export function NextJobCard({ userId, jobs, aoMudar, aoVerAgenda }: Props) {
   // Relógio de 1 minuto: passou o horário, o card vira "Aconteceu?" sozinho.
   const agora = useAgora();
   if (aguardandoResposta(jobs, agora).length > 0) {
@@ -45,6 +47,7 @@ export function NextJobCard({ userId, jobs, aoMudar }: Props) {
         jobs={jobs}
         agora={agora}
         aoMudar={aoMudar}
+        aoVerAgenda={aoVerAgenda}
       />
     );
   }

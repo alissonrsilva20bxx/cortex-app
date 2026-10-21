@@ -131,7 +131,7 @@ describe("§2-P1-2 — homeCards controla NextJobCard/ObjetivosCard em tempo rea
 
   it("NextJobCard só renderiza quando homeCards.nextJob está ligado", () => {
     expect(page).toMatch(
-      /\{homeCards\.nextJob && \(\s*<NextJobCard\s+userId=\{usuario\.id\}\s+jobs=\{jobs\}\s+aoMudar=\{recarregarAposAtendimento\}\s*\/>\s*\)\}/
+      /\{homeCards\.nextJob && \(\s*<NextJobCard\s+userId=\{usuario\.id\}\s+jobs=\{jobs\}\s+aoMudar=\{recarregarAposAtendimento\}\s+aoVerAgenda=\{\(\) => handleTabChange\("jobs"\)\}\s*\/>\s*\)\}/
     );
   });
 
