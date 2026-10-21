@@ -25,6 +25,10 @@ export const ERRO_STATUS = {
   foraDoFluxo: "Essa ação não vale para este atendimento agora.",
 } as const;
 
+/** Recusa do formulário quando o status não vale para a data e a hora. */
+export const ERRO_FORM_STATUS =
+  "Esse status não vale para a data e a hora escolhidas. Concluído e Não aconteceu só a partir do horário; Confirmado só antes dele.";
+
 /** A pergunta "Aconteceu?" do atendimento em aberto cujo horário passou. */
 export const ACONTECEU = {
   titulo: "Aconteceu?",

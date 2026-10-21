@@ -9,7 +9,10 @@ import { useJornada } from "@/components/jornada/useJornada";
 import {
   contaComoDiaAtivo,
   contaComoPlanejar,
+  statusAposMudarHorario,
+  statusPermitidos,
 } from "@/lib/atendimentos/status";
+import { ERRO_FORM_STATUS } from "./textosAgenda";
 import { SIMBOLO_MOEDA } from "@/lib/finance";
 import type { Job, JobStatus, Modalidade } from "@/lib/types";
 
@@ -56,6 +59,13 @@ interface Props {
   onSaved: () => void;
 }
 
+const OPCOES_STATUS: { valor: JobStatus; rotulo: string }[] = [
+  { valor: "agendado", rotulo: "Agendado" },
+  { valor: "confirmado", rotulo: "Confirmado" },
+  { valor: "concluído", rotulo: "Concluído" },
+  { valor: "cancelado", rotulo: "Cancelado" },
+];
+
 const inputStyle: React.CSSProperties = {
   background: "var(--surface)",
   border: "1px solid var(--border-color)",
@@ -97,6 +107,20 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  // Mudar a data ou a hora pode tornar o status inválido (ex.: Concluído
+  // para um dia que ainda não chegou): ele volta para Agendado.
+  function setHorario(key: "data" | "hora", value: string) {
+    setForm((prev) => {
+      const prox = { ...prev, [key]: value };
+      return {
+        ...prox,
+        status: statusAposMudarHorario(prox.status, prox.data, prox.hora, job),
+      };
+    });
+  }
+
+  const statusOferecidos = statusPermitidos(form.data, form.hora, job);
+
   async function handleSave() {
     if (!form.clienteNome.trim())
       return setError("Nome do cliente obrigatório.");
@@ -106,6 +130,8 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
     if (isNaN(valor) || valor <= 0) return setError("Valor inválido.");
     if (form.modalidade === "presencial" && !form.local.trim())
       return setError("Local obrigatório para atendimento presencial.");
+    if (!statusPermitidos(form.data, form.hora, job).includes(form.status))
+      return setError(ERRO_FORM_STATUS);
 
     setSaving(true);
     setError(null);
@@ -231,7 +257,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
                 type="date"
                 style={inputStyle}
                 value={form.data}
-                onChange={(e) => set("data", e.target.value)}
+                onChange={(e) => setHorario("data", e.target.value)}
               />
             </div>
             <div>
@@ -240,7 +266,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
                 type="time"
                 style={inputStyle}
                 value={form.hora}
-                onChange={(e) => set("hora", e.target.value)}
+                onChange={(e) => setHorario("hora", e.target.value)}
               />
             </div>
           </div>
@@ -307,10 +333,13 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
               value={form.status}
               onChange={(e) => set("status", e.target.value as JobStatus)}
             >
-              <option value="agendado">Agendado</option>
-              <option value="confirmado">Confirmado</option>
-              <option value="concluído">Concluído</option>
-              <option value="cancelado">Cancelado</option>
+              {OPCOES_STATUS.filter((o) => statusOferecidos.includes(o.valor)).map(
+                (o) => (
+                  <option key={o.valor} value={o.valor}>
+                    {o.rotulo}
+                  </option>
+                )
+              )}
             </select>
           </div>
 

@@ -1,4 +1,4 @@
-import type { Job } from "@/lib/types";
+import type { Job, JobStatus } from "@/lib/types";
 
 /**
  * Regras puras do status do atendimento (Agenda e Início).
@@ -18,12 +18,15 @@ export function totalPrevistoDoDia(jobs: readonly Job[]): number {
 }
 
 /** Instante (ms) em que o atendimento começa. */
-function instanteDoAtendimento(job: Job): number {
+function instanteDoAtendimento(job: Pick<Job, "data" | "hora">): number {
   return new Date(`${job.data}T${job.hora}`).getTime();
 }
 
 /** O horário do atendimento já chegou (ou passou). */
-export function horarioChegou(job: Job, agora: Date = new Date()): boolean {
+export function horarioChegou(
+  job: Pick<Job, "data" | "hora">,
+  agora: Date = new Date()
+): boolean {
   return instanteDoAtendimento(job) <= agora.getTime();
 }
 
@@ -33,14 +36,63 @@ const EM_ABERTO: ReadonlySet<Job["status"]> = new Set([
 ]);
 
 /** Confirmar: a cliente confirmou, ANTES do horário. Só do agendado. */
-export function podeConfirmar(job: Job, agora: Date = new Date()): boolean {
+export function podeConfirmar(
+  job: Pick<Job, "status" | "data" | "hora">,
+  agora: Date = new Date()
+): boolean {
   return job.status === "agendado" && !horarioChegou(job, agora);
 }
 
 /** Concluir ou "Não aconteceu": só a partir do horário, de um atendimento em
  * aberto (agendado ou confirmado). Atendimento futuro não se conclui. */
-export function podeConcluir(job: Job, agora: Date = new Date()): boolean {
+export function podeConcluir(
+  job: Pick<Job, "status" | "data" | "hora">,
+  agora: Date = new Date()
+): boolean {
   return EM_ABERTO.has(job.status) && horarioChegou(job, agora);
+}
+
+type EstadoGravado = Pick<Job, "status" | "data" | "hora">;
+
+/** Os status que o formulário pode gravar para a data e a hora escolhidas,
+ * pelas mesmas regras do detalhe (`podeConfirmar` / `podeConcluir`):
+ * Agendado sempre; Confirmado só antes do horário; Concluído e Não aconteceu
+ * (cancelado) só a partir dele. `gravado` é o atendimento como já está salvo
+ * (`null` se é novo): o status que ele já tem, com a mesma data e hora,
+ * continua valendo, para editar outro campo sem esbarrar nele. */
+export function statusPermitidos(
+  data: string,
+  hora: string,
+  gravado: EstadoGravado | null,
+  agora: Date = new Date()
+): JobStatus[] {
+  const aberto = { status: "agendado" as const, data, hora };
+  const permitidos: JobStatus[] = ["agendado"];
+  if (podeConfirmar(aberto, agora)) permitidos.push("confirmado");
+  if (podeConcluir(aberto, agora)) permitidos.push("concluído", "cancelado");
+  if (
+    gravado &&
+    gravado.data === data &&
+    gravado.hora === hora &&
+    !permitidos.includes(gravado.status)
+  ) {
+    permitidos.push(gravado.status);
+  }
+  return permitidos;
+}
+
+/** O status escolhido no formulário, ou "agendado" se a data/hora escolhidas
+ * não o permitem mais. */
+export function statusAposMudarHorario(
+  status: JobStatus,
+  data: string,
+  hora: string,
+  gravado: EstadoGravado | null,
+  agora: Date = new Date()
+): JobStatus {
+  return statusPermitidos(data, hora, gravado, agora).includes(status)
+    ? status
+    : "agendado";
 }
 
 /** O atendimento vira concluído agora (e não era antes): é aí que o dia
