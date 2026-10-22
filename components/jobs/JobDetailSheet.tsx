@@ -105,7 +105,7 @@ export function JobDetailSheet({
               </p>
             )}
             {/* Com a pergunta de desmarcar aberta, o Confirmar sai: sobram só
-                o Sim e o Voltar. */}
+                o Desmarcar e o Voltar. */}
             {confirmar && !confirmandoDesmarcou && (
               <button
                 type="button"
@@ -153,12 +153,6 @@ export function JobDetailSheet({
                   className="flex flex-col"
                   style={{ gap: "8px" }}
                 >
-                  <p
-                    className="text-sm font-semibold text-center"
-                    style={{ color: "var(--text)" }}
-                  >
-                    {CONFIRMA_DESMARCOU.pergunta}
-                  </p>
                   <div className="flex" style={{ gap: "8px" }}>
                     <button
                       type="button"
@@ -166,11 +160,11 @@ export function JobDetailSheet({
                       disabled={salvando}
                       data-job-desmarcou-sim
                       className="flex-1 py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
-                      style={{ background: "var(--accent)", color: "white" }}
+                      style={{ background: "var(--danger)", color: "white" }}
                     >
                       {salvando
                         ? BOTOES_STATUS.salvando
-                        : CONFIRMA_DESMARCOU.sim}
+                        : CONFIRMA_DESMARCOU.desmarcar}
                     </button>
                     <button
                       type="button"
@@ -178,7 +172,7 @@ export function JobDetailSheet({
                       disabled={salvando}
                       className="flex-1 py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-60"
                       style={{
-                        background: "var(--surface-sub)",
+                        background: "var(--bg)",
                         color: "var(--text)",
                         border: "1px solid var(--border-color)",
                       }}

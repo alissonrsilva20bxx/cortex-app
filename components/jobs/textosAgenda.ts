@@ -20,9 +20,7 @@ export const BOTOES_STATUS = {
 
 /** Confirmação do "Cliente desmarcou" (antes do horário). */
 export const CONFIRMA_DESMARCOU = {
-  pergunta:
-    "Marcar como desmarcado? Ele fica como Cancelado e sai do Previsto.",
-  sim: "Sim, desmarcado",
+  desmarcar: "Desmarcar",
   voltar: "Voltar",
 } as const;
 

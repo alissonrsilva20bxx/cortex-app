@@ -32,8 +32,9 @@ describe("JobDetailSheet: botões do fluxo de status", () => {
       "const desmarcar = job ? podeDesmarcar(job, agora) : false;"
     );
     expect(detalhe).toContain("BOTOES_STATUS.desmarcou");
-    expect(detalhe).toContain("CONFIRMA_DESMARCOU.pergunta");
-    // O primeiro toque só abre a confirmação; quem grava é o "Sim".
+    // Sem frase em cima dos botões: só Desmarcar, Voltar e Editar.
+    expect(detalhe).not.toContain("CONFIRMA_DESMARCOU.pergunta");
+    // O primeiro toque só abre a confirmação; quem grava é o "Desmarcar".
     expect(detalhe).toContain("onClick={() => setConfirmandoDesmarcou(true)}");
     // Preso ao próprio botão: do `<button` até o atributo, sem passar por
     // outro botão (o "Não aconteceu" também chama aplicar cancelado).
@@ -44,7 +45,7 @@ describe("JobDetailSheet: botões do fluxo de status", () => {
 
   it("com a pergunta de desmarcar aberta, o Confirmar fica escondido", () => {
     expect(detalhe).toContain("{confirmar && !confirmandoDesmarcou && (");
-    // O Sim e o Voltar continuam: só o Editar fica junto da pergunta.
+    // O Desmarcar e o Voltar continuam: só o Editar fica junto da pergunta.
     expect(detalhe).toContain("data-job-desmarcou-sim");
     expect(detalhe).toContain("CONFIRMA_DESMARCOU.voltar");
   });
