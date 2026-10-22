@@ -35,8 +35,10 @@ describe("JobDetailSheet: botões do fluxo de status", () => {
     expect(detalhe).toContain("CONFIRMA_DESMARCOU.pergunta");
     // O primeiro toque só abre a confirmação; quem grava é o "Sim".
     expect(detalhe).toContain("onClick={() => setConfirmandoDesmarcou(true)}");
+    // Preso ao próprio botão: do `<button` até o atributo, sem passar por
+    // outro botão (o "Não aconteceu" também chama aplicar cancelado).
     expect(detalhe).toMatch(
-      /data-job-desmarcou-sim[\s\S]*?aplicar\(job, "cancelado"\)|aplicar\(job, "cancelado"\)[\s\S]*?data-job-desmarcou-sim/
+      /<button(?:(?!<button)[\s\S])*?aplicar\(job, "cancelado"\)(?:(?!<button)[\s\S])*?data-job-desmarcou-sim/
     );
   });
 
