@@ -135,10 +135,11 @@ describe("Resumo e Anotações viraram sheets (composição aprovada) preservand
     expect(jobsTabSrc).not.toContain("chartOpen");
   });
 
-  it("botão Resumo abre AgendaResumoSheet com o período/dado real calculado em JobsTab, não fabricado no sheet", () => {
+  it("botão Resumo abre AgendaResumoSheet com os atendimentos reais e o relógio da Agenda (useAgora), sem gráfico nem dinheiro", () => {
     expect(jobsTabSrc).toMatch(
-      /<AgendaResumoSheet[\s\S]*?periodData=\{periodData\}[\s\S]*?donutSegments=\{donutSegments\}/
+      /<AgendaResumoSheet[\s\S]*?jobs=\{jobs\}[\s\S]*?agora=\{now\}/
     );
+    expect(jobsTabSrc).not.toMatch(/periodData|donutSegments|buildPeriodData/);
   });
 
   it("botão Bloco de notas abre um BottomSheet com o NotasSection real (mesmo autosave de antes)", () => {
@@ -147,10 +148,13 @@ describe("Resumo e Anotações viraram sheets (composição aprovada) preservand
     );
   });
 
-  it("Resumo aceita Semana/Mês/Ano por extenso, mesma segmentação real de antes (buildPeriodData intocado)", () => {
-    expect(resumoSheetSrc).toContain('{ id: "sem", label: "Semana" }');
-    expect(resumoSheetSrc).toContain('{ id: "mes", label: "Mês" }');
-    expect(resumoSheetSrc).toContain('{ id: "ano", label: "Ano" }');
+  it("o Resumo é do tempo de trabalho: 4 números e uma frase, sem Semana/Mês/Ano nem gráfico", () => {
+    expect(resumoSheetSrc).toContain("resumoDaSemana(jobs, agora)");
+    expect(resumoSheetSrc).toContain("RESUMO_SEMANA.titulo");
+    expect(resumoSheetSrc).toContain("resumo.frase");
+    expect(resumoSheetSrc).not.toMatch(
+      /MiniBarChart|DonutChart|SegmentedControl|formatMoeda|valor:\s*j/
+    );
   });
 });
 

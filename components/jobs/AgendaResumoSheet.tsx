@@ -1,81 +1,67 @@
 "use client";
 
 import { BottomSheet } from "@/components/ui/BottomSheet";
-import { MiniBarChart } from "@/components/charts/MiniBarChart";
-import { DonutChart } from "@/components/charts/DonutChart";
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import type { Period } from "./JobsTab";
-
-const PERIOD_OPTS: { id: Period; label: string }[] = [
-  { id: "sem", label: "Semana" },
-  { id: "mes", label: "Mês" },
-  { id: "ano", label: "Ano" },
-];
+import { resumoDaSemana } from "@/lib/atendimentos/resumoSemana";
+import type { Job } from "@/lib/types";
+import { RESUMO_SEMANA } from "./textosAgenda";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** Preferência real de gráfico (Ajustes) — mesma prop que JobsTab já recebia. */
-  chartType: "bar" | "donut";
-  period: Period;
-  onPeriodChange: (p: Period) => void;
-  periodData: { label: string; value: number }[];
-  donutSegments: { label: string; value: number; color: string }[];
-  totalJobs: number;
+  jobs: readonly Job[];
+  /** O relógio da Agenda (`useAgora`), o mesmo das listas "Esta semana". */
+  agora: Date;
 }
 
 /**
- * "Resumo" — antes um card colapsável no fim da página (T3/#30); agora um
- * sheet aberto por botão, como `/dev-preview/ios` (`kind === "grafico-agenda"`,
- * segmentado Semana/Mês/Ano + gráfico). Decisão de #30 (colapsável) marcada
- * superseded pelo usuário nesta etapa de replanejamento (issue #122, Notes
- * 2026-09-22) — não é regrillada aqui.
- *
- * Mesmo dado real de antes (`buildPeriodData`/`donutSegments`, calculados em
- * `JobsTab.tsx` e só passados como props) — este componente não recalcula
- * nada, só reapresenta. Rótulos "Semana/Mês/Ano" por extenso (em vez de
- * "S/M/A" da versão colapsada) porque agora há espaço de sobra no sheet,
- * e bate literalmente com os rótulos do protótipo aprovado.
+ * "Resumo da semana": o tempo de trabalho (feitos, pela frente, desmarcados,
+ * dias livres), sem dinheiro, que mora no Financeiro. Só apresenta o que
+ * `resumoDaSemana` calcula, na mesma semana da Agenda.
  */
-export function AgendaResumoSheet({
-  open,
-  onClose,
-  chartType,
-  period,
-  onPeriodChange,
-  periodData,
-  donutSegments,
-  totalJobs,
-}: Props) {
+export function AgendaResumoSheet({ open, onClose, jobs, agora }: Props) {
+  const resumo = resumoDaSemana(jobs, agora);
+  const numeros = [
+    { rotulo: RESUMO_SEMANA.feitos, valor: resumo.feitos },
+    { rotulo: RESUMO_SEMANA.pelaFrente, valor: resumo.pelaFrente },
+    { rotulo: RESUMO_SEMANA.desmarcados, valor: resumo.desmarcados },
+    { rotulo: RESUMO_SEMANA.diasLivres, valor: resumo.diasLivres.length },
+  ];
+
   return (
-    <BottomSheet open={open} onClose={onClose} title="Resumo">
-      <div className="px-5 py-6">
-        {chartType === "donut" ? (
-          <div className="flex justify-center py-2">
-            <DonutChart
-              segments={donutSegments}
-              size={150}
-              centerValue={String(totalJobs)}
-              centerLabel="atend."
-            />
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-center mb-5">
-              <SegmentedControl
-                size="sm"
-                options={PERIOD_OPTS}
-                value={period}
-                onChange={onPeriodChange}
-              />
+    <BottomSheet open={open} onClose={onClose} title={RESUMO_SEMANA.titulo}>
+      <div className="px-5 py-6" data-resumo-semana>
+        <div className="grid grid-cols-2 gap-3">
+          {numeros.map(({ rotulo, valor }) => (
+            <div
+              key={rotulo}
+              className="rounded-2xl px-4 py-4"
+              style={{
+                background: "var(--card-solid)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <p
+                className="text-4xl font-bold leading-none"
+                style={{ color: "var(--text)" }}
+              >
+                {valor}
+              </p>
+              <p
+                className="text-sm mt-2"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {rotulo}
+              </p>
             </div>
-            <MiniBarChart
-              data={periodData}
-              height={140}
-              id="agenda-resumo-bar"
-            />
-          </>
-        )}
+          ))}
+        </div>
+        <p
+          className="text-base mt-5 text-center"
+          style={{ color: "var(--text)" }}
+          data-resumo-frase
+        >
+          {resumo.frase}
+        </p>
       </div>
     </BottomSheet>
   );

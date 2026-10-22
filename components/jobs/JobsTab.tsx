@@ -44,13 +44,11 @@ import {
   startOfWeek,
   toISODate,
 } from "./agendaSemana";
-import { STATUS_META } from "./status";
 import { TOTAL_PREVISTO } from "./textosAgenda";
 import { totalPrevistoDoDia } from "@/lib/atendimentos/status";
 import type { Job, JobStatus } from "@/lib/types";
 
 type Filter = "todos" | JobStatus;
-export type Period = "sem" | "mes" | "ano";
 type RatchetDirection = "forward" | "backward";
 
 const FILTERS: { id: Filter; label: string }[] = [
@@ -133,57 +131,6 @@ function dbRowToJob(row: {
   };
 }
 
-function buildPeriodData(
-  jobs: Job[],
-  period: Period
-): { label: string; value: number }[] {
-  const done = jobs.filter((j) => j.status === "concluído");
-
-  if (period === "sem") {
-    return Array.from({ length: 8 }, (_, i) => {
-      const end = new Date();
-      end.setDate(end.getDate() - i * 7);
-      const start = new Date(end);
-      start.setDate(start.getDate() - 6);
-      const value = done
-        .filter((j) => {
-          const d = new Date(j.data + "T00:00:00");
-          return d >= start && d <= end;
-        })
-        .reduce((s, j) => s + j.valor, 0);
-      return { label: `S${8 - i}`, value };
-    }).reverse();
-  }
-
-  if (period === "mes") {
-    const now = new Date();
-    return Array.from({ length: 12 }, (_, i) => {
-      const m = (now.getMonth() - 11 + i + 12) % 12;
-      const y = now.getFullYear() - (now.getMonth() - 11 + i < 0 ? 1 : 0);
-      const label = new Date(y, m, 1).toLocaleDateString("pt-BR", {
-        month: "short",
-      });
-      const value = done
-        .filter((j) => {
-          const d = new Date(j.data + "T00:00:00");
-          return d.getMonth() === m && d.getFullYear() === y;
-        })
-        .reduce((s, j) => s + j.valor, 0);
-      return { label, value };
-    });
-  }
-
-  // ano
-  const nowY = new Date().getFullYear();
-  return Array.from({ length: 5 }, (_, i) => {
-    const y = nowY - 4 + i;
-    const value = done
-      .filter((j) => new Date(j.data + "T00:00:00").getFullYear() === y)
-      .reduce((s, j) => s + j.valor, 0);
-    return { label: String(y), value };
-  });
-}
-
 /**
  * Itens da timeline do dia selecionado (issue #135, revisão
  * pós-fechamento): cada atendimento real, intercalado com uma nota
@@ -236,6 +183,7 @@ interface Props {
    * É o que o botão "Novo" (J03) usa, sem criar um segundo formulário.
    */
   onEditJob: (job: Job | null) => void;
+  /** Preferência de gráfico dos Ajustes: o Resumo não a usa mais (é só tempo). */
   chartType?: "bar" | "donut";
   /** Nome e telefone dela, para o cartão do "Lembrar cliente". */
   profissional?: Profissional;
@@ -251,7 +199,6 @@ export function JobsTab({
   userId,
   refreshTrigger,
   onEditJob,
-  chartType = "bar",
   profissional,
   onJobSaved,
 }: Props) {
@@ -262,7 +209,6 @@ export function JobsTab({
   const now = useAgora();
   const [filter, setFilter] = useState<Filter>("todos");
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<Period>("sem");
 
   // Estado de erro (issue #135, revisão pós-fechamento) — distinto de
   // "carregou e não tem nada" (achado: antes, `data ? ... : []` tratava
@@ -345,17 +291,6 @@ export function JobsTab({
 
   const filtered =
     filter === "todos" ? jobs : jobs.filter((j) => j.status === filter);
-
-  const periodData = buildPeriodData(jobs, period);
-  const donutSegments = (
-    ["agendado", "confirmado", "concluído", "cancelado"] as JobStatus[]
-  )
-    .map((s) => ({
-      label: STATUS_META[s].label,
-      value: jobs.filter((j) => j.status === s).length,
-      color: STATUS_META[s].color,
-    }))
-    .filter((s) => s.value > 0);
 
   // Dias da semana visível + quais têm compromisso (respeitando o filtro
   // de status ativo, pra o indicador do calendário ficar consistente com
@@ -1164,12 +1099,8 @@ export function JobsTab({
       <AgendaResumoSheet
         open={resumoOpen}
         onClose={() => setResumoOpen(false)}
-        chartType={chartType}
-        period={period}
-        onPeriodChange={setPeriod}
-        periodData={periodData}
-        donutSegments={donutSegments}
-        totalJobs={jobs.length}
+        jobs={jobs}
+        agora={now}
       />
 
       <BottomSheet

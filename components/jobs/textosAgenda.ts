@@ -59,3 +59,37 @@ export const DESCANSO = {
   /** Por que está desabilitado num dia com atendimento. */
   motivoComAtendimento: "Hoje você tem atendimento",
 } as const;
+
+/** Resumo da semana (sheet do botão "Resumo" da Agenda): só tempo, sem dinheiro. */
+export const RESUMO_SEMANA = {
+  titulo: "Resumo da semana",
+  feitos: "Feitos",
+  pelaFrente: "Pela frente",
+  desmarcados: "Desmarcados",
+  diasLivres: "Dias livres",
+  semanaLivre: "Semana livre. Nenhum atendimento marcado.",
+  nadaMaisMarcado: "Nada mais marcado esta semana.",
+} as const;
+
+/** Nome de cada dia, indexado por `Date.getDay()` (0 = domingo), sem "-feira". */
+export const NOMES_DIAS = [
+  "Domingo",
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
+] as const;
+
+/** "1 atendimento" / "2 atendimentos". */
+export function atendimentosPorExtenso(n: number): string {
+  return `${n} ${n === 1 ? "atendimento" : "atendimentos"}`;
+}
+
+/** "Quinta está livre." / "Quinta e sexta estão livres." (nomes já em ordem). */
+export function fraseDiasLivres(nomes: readonly string[]): string {
+  if (nomes.length === 0) return "";
+  if (nomes.length === 1) return `${nomes[0]} está livre.`;
+  return `${nomes[0]} e ${nomes[1].toLowerCase()} estão livres.`;
+}

@@ -67,7 +67,7 @@ describe("JobsTab.tsx carries the T3 weekly-calendar composition", () => {
   });
 
   it("preserves the real status filter and notes functionality", () => {
-    expect(src).toContain("STATUS_META");
+    expect(src).toContain("FILTERS");
     expect(src).toContain("chartType");
     expect(src).toContain("NotasSection");
   });
@@ -81,18 +81,18 @@ describe("JobsTab.tsx carries the T3 weekly-calendar composition", () => {
   });
 });
 
-describe("JobsTab.tsx delegates chart rendering to AgendaResumoSheet (#135) with real data, not fabricated", () => {
+describe("JobsTab.tsx delegates o Resumo ao AgendaResumoSheet com dado real, sem gráfico", () => {
   const src = read("components/jobs/AgendaResumoSheet.tsx");
 
-  it("AgendaResumoSheet.tsx still renders MiniBarChart and DonutChart (chart moved into a sheet, not dropped)", () => {
-    expect(src).toContain("MiniBarChart");
-    expect(src).toContain("DonutChart");
+  it("AgendaResumoSheet.tsx não desenha mais gráfico (o Resumo é do tempo, o dinheiro mora no Financeiro)", () => {
+    expect(src).not.toContain("MiniBarChart");
+    expect(src).not.toContain("DonutChart");
   });
 
-  it("chartType/periodData/donutSegments/totalJobs are props, not recomputed/mocked inside the sheet", () => {
-    expect(src).toMatch(/chartType\s*[,:]/);
-    expect(src).toMatch(/periodData\s*[,:]/);
-    expect(src).toMatch(/donutSegments\s*[,:]/);
+  it("jobs/agora são props e o cálculo vem de resumoDaSemana, nada fabricado nem lido do banco no sheet", () => {
+    expect(src).toMatch(/jobs\s*[,:]/);
+    expect(src).toMatch(/agora\s*[,:]/);
+    expect(src).toContain("resumoDaSemana(");
     expect(src).not.toMatch(/buildPeriodData\(|supabase\.from/);
   });
 });
