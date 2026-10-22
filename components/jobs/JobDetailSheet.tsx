@@ -27,8 +27,8 @@ interface Props {
   job: Job | null;
   onClose: () => void;
   onEdit: (job: Job) => void;
-  /** O status do atendimento mudou (Confirmar, Concluir ou Não aconteceu):
-   * quem chama recarrega a Agenda, o Financeiro e a Início (o sheet já
+  /** O status do atendimento mudou (Confirmar, Concluir, Não aconteceu ou Cliente
+   * desmarcou): quem chama recarrega a Agenda, o Financeiro e a Início (o sheet já
    * fechou). */
   onStatusMudou?: () => void;
 }
