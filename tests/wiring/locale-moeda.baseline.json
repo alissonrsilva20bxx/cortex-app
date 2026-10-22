@@ -68,7 +68,7 @@
   {
     "arquivo": "components/jobs/JobsTab.tsx",
     "literal": "pt-BR",
-    "quantidade": 4,
+    "quantidade": 3,
     "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
   },
   {
