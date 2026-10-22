@@ -104,7 +104,9 @@ export function JobDetailSheet({
                 {erro}
               </p>
             )}
-            {confirmar && (
+            {/* Com a pergunta de desmarcar aberta, o Confirmar sai: sobram só
+                o Sim e o Voltar. */}
+            {confirmar && !confirmandoDesmarcou && (
               <button
                 type="button"
                 onClick={() => void aplicar(job, "confirmado")}

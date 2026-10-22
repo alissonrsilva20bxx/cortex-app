@@ -42,8 +42,15 @@ describe("JobDetailSheet: botões do fluxo de status", () => {
     );
   });
 
+  it("com a pergunta de desmarcar aberta, o Confirmar fica escondido", () => {
+    expect(detalhe).toContain("{confirmar && !confirmandoDesmarcou && (");
+    // O Sim e o Voltar continuam: só o Editar fica junto da pergunta.
+    expect(detalhe).toContain("data-job-desmarcou-sim");
+    expect(detalhe).toContain("CONFIRMA_DESMARCOU.voltar");
+  });
+
   it("cada botão só aparece quando a regra deixa, acima do Editar", () => {
-    const confirmar = detalhe.indexOf("{confirmar && (");
+    const confirmar = detalhe.indexOf("{confirmar && ");
     const concluir = detalhe.indexOf("{concluir && (");
     const editar = detalhe.lastIndexOf("BOTOES_STATUS.editar");
     expect(confirmar).toBeGreaterThan(0);
