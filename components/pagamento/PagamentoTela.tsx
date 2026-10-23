@@ -37,7 +37,7 @@ import styles from "./pagamento.module.css";
  *    assina com o teste correndo não paga hoje: "Seu teste continua até
  *    DD/MM; a primeira cobrança é nessa data") e o formulário do Stripe.
  *    Sem teste grátis na tela, sem Pix (só cartão). O cartão vai direto do
- *    aparelho para o Stripe: o Arcelle não vê nem guarda.
+ *    aparelho para o Stripe: a Arcelle não vê nem guarda.
  *  - Tela 3, Confirmação; tela 4, Erro (a mensagem do Stripe, traduzida).
  *
  * Sem a chave do Stripe (o operador ainda não tem): o bloco do Stripe vira
