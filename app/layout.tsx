@@ -22,7 +22,9 @@ export const viewport: Viewport = {
 
 // Telas de abertura do PWA no iOS (ver app/pwa-splash/route.tsx): uma por
 // tamanho de iPhone em retrato — [largura CSS, altura CSS, densidade]. O
-// iOS só usa a imagem cuja media query bate EXATAMENTE com o aparelho.
+// iOS só usa a imagem cuja media query bate EXATAMENTE com o aparelho. O
+// `v` na URL fura o cache (a rota é immutable por 7 dias): suba quando a
+// arte da abertura mudar.
 const IOS_SPLASH_SCREENS: Array<[number, number, number]> = [
   [440, 956, 3], // 16/17 Pro Max
   [430, 932, 3], // 14 Pro Max, 15/16 Plus, 15 Pro Max
@@ -63,7 +65,7 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Arcelle",
     startupImage: IOS_SPLASH_SCREENS.map(([w, h, dpr]) => ({
-      url: `/pwa-splash?w=${w * dpr}&h=${h * dpr}`,
+      url: `/pwa-splash?w=${w * dpr}&h=${h * dpr}&v=2`,
       media: `(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${dpr}) and (orientation: portrait)`,
     })),
   },
