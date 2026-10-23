@@ -69,6 +69,16 @@ export const RESUMO_SEMANA = {
   diasLivres: "Dias livres",
   semanaLivre: "Semana livre. Nenhum atendimento marcado.",
   nadaMaisMarcado: "Nada mais marcado esta semana.",
+  /** Semana viva: as etiquetas de cada atendimento no detalhe do dia. */
+  tagFeito: "Feito",
+  tagPelaFrente: "Pela frente",
+  tagDesmarcado: "Desmarcado",
+  diasDaSemana: "Dias da semana",
+  hoje: "Hoje",
+  diaLivre: "Dia livre.",
+  diaSemAtendimento: "Dia sem atendimento.",
+  /** "+2" quando o dia tem mais bolinhas do que cabem na pilha. */
+  mais: (n: number) => `+${n}`,
 } as const;
 
 /** Nome de cada dia, indexado por `Date.getDay()` (0 = domingo), sem "-feira". */
