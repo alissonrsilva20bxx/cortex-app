@@ -24,7 +24,14 @@ const MAX_BOLINHAS = 3;
 
 const CINZA = "color-mix(in srgb, var(--text-muted) 45%, transparent)";
 
-/** As bolinhas da Jornada: feito cheio, pela frente vazado, desmarcado cinza. */
+/** Atraso entre as bolinhas que nascem: por dia e dentro da pilha. */
+const ATRASO_DIA_MS = 70;
+const ATRASO_BOLINHA_MS = 120;
+
+/**
+ * As bolinhas da Jornada: feito cheio, pela frente vazado, desmarcado cinza
+ * com um risco.
+ */
 const BOLINHA: Record<MarcaDoAtendimento, CSSProperties> = {
   feito: { background: "var(--accent)" },
   frente: { boxShadow: "inset 0 0 0 2px var(--accent)" },
@@ -46,8 +53,8 @@ const TAG: Record<
   frente: {
     texto: RESUMO_SEMANA.tagPelaFrente,
     estilo: {
-      boxShadow: "inset 0 0 0 1px var(--accent)",
-      color: "var(--accent-soft)",
+      background: "rgb(var(--warning-rgb) / 0.14)",
+      color: "var(--warning)",
     },
   },
   aberto: {
@@ -104,7 +111,7 @@ export function AgendaResumoSheet({ open, onClose, jobs, agora }: Props) {
           role="group"
           aria-label={RESUMO_SEMANA.diasDaSemana}
         >
-          {semana.dias.map((d) => {
+          {semana.dias.map((d, i) => {
             const ativo = d.iso === dia.iso;
             const extra = d.atendimentos.length - MAX_BOLINHAS;
             return (
@@ -113,7 +120,7 @@ export function AgendaResumoSheet({ open, onClose, jobs, agora }: Props) {
                 type="button"
                 aria-pressed={ativo}
                 onClick={() => setEscolhido(d.iso)}
-                className="flex flex-col items-center gap-2 rounded-2xl pt-2 pb-2.5 focus-visible:outline focus-visible:outline-2"
+                className="flex flex-col items-center gap-2 rounded-2xl pt-2 pb-2.5 transition-colors duration-200 focus-visible:outline focus-visible:outline-2"
                 style={{
                   background: ativo ? "var(--card-solid)" : "transparent",
                   border: `1px solid ${ativo ? "var(--border-color)" : "transparent"}`,
@@ -126,24 +133,15 @@ export function AgendaResumoSheet({ open, onClose, jobs, agora }: Props) {
                 >
                   {d.rotulo}
                 </span>
-                <span className="relative grid place-items-center w-7 h-7">
-                  {d.hoje && (
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 rounded-full animate-ping"
-                      style={{ background: "rgb(var(--accent-rgb) / 0.35)" }}
-                    />
-                  )}
-                  <span
-                    className="relative grid place-items-center w-7 h-7 rounded-full text-[15px] font-bold"
-                    style={
-                      d.hoje
-                        ? { background: "var(--accent)", color: "#fff" }
-                        : { color: "var(--text)" }
-                    }
-                  >
-                    {d.numero}
-                  </span>
+                <span
+                  className={`grid place-items-center w-7 h-7 rounded-full text-[15px] font-bold${d.hoje ? " semana-hoje-pulsa" : ""}`}
+                  style={
+                    d.hoje
+                      ? { background: "var(--accent)", color: "#fff" }
+                      : { color: "var(--text)" }
+                  }
+                >
+                  {d.numero}
                 </span>
                 <span
                   className="flex flex-col-reverse items-center gap-1"
@@ -160,15 +158,32 @@ export function AgendaResumoSheet({ open, onClose, jobs, agora }: Props) {
                       }}
                     />
                   ) : (
-                    d.atendimentos
-                      .slice(0, MAX_BOLINHAS)
-                      .map((a) => (
-                        <span
-                          key={a.id}
-                          className="rounded-full"
-                          style={{ width: 14, height: 14, ...BOLINHA[a.marca] }}
-                        />
-                      ))
+                    d.atendimentos.slice(0, MAX_BOLINHAS).map((a, k) => (
+                      <span
+                        key={a.id}
+                        className="relative rounded-full semana-bolinha-nasce"
+                        style={{
+                          width: 14,
+                          height: 14,
+                          animationDelay: `${i * ATRASO_DIA_MS + k * ATRASO_BOLINHA_MS}ms`,
+                          ...BOLINHA[a.marca],
+                        }}
+                      >
+                        {a.marca === "desmarcado" && (
+                          <span
+                            className="absolute"
+                            style={{
+                              left: 2,
+                              right: 2,
+                              top: 6,
+                              height: 2,
+                              background: "var(--text-muted)",
+                              transform: "rotate(-30deg)",
+                            }}
+                          />
+                        )}
+                      </span>
+                    ))
                   )}
                   {extra > 0 && (
                     <span

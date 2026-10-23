@@ -947,6 +947,36 @@ select:focus-visible,
   animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Semana viva do Resumo da semana (components/jobs/AgendaResumoSheet.tsx),
+   como no gabarito A: o dia de hoje pulsa uma sombra suave e as bolinhas
+   nascem com um pulinho. */
+@keyframes semana-hoje-pulsa {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgb(var(--accent-rgb) / 0);
+  }
+}
+
+@keyframes semana-bolinha-nasce {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.semana-hoje-pulsa {
+  animation: semana-hoje-pulsa 2.4s infinite;
+}
+
+.semana-bolinha-nasce {
+  animation: semana-bolinha-nasce 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
 /* ── Pilha de telas da Rede (lib/useStackNav.ts + lib/stackSnapshot.ts) ──
    Camadas `fixed` com clones estáticos das telas, só durante push/pop/
    arraste da borda. Ficam abaixo do FAB (z-40) e da BottomNav (z-50). */
