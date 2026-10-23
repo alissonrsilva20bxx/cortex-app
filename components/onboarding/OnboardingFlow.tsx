@@ -10,6 +10,12 @@ import { hasNoRealGoal } from "@/lib/onboarding";
 import { SIMBOLO_MOEDA } from "@/lib/finance";
 import { AVISO_FALTAM_DIAS, TRIAL_DIAS } from "@/lib/assinatura";
 import { formatarEuro, menorPrecoPorMes } from "@/lib/planos";
+import {
+  ESPELHO,
+  ICONE_VIEWBOX,
+  ROSTO_CENTRO,
+  ROSTO_MEIO,
+} from "@/lib/marcaArcelle";
 import type { Job, Meta, Usuario } from "@/lib/types";
 import styles from "./linhaDoTempo.module.css";
 import { Icone } from "./obIcones";
@@ -78,8 +84,12 @@ function BoasVindasTeste({
         {passo === 0 && (
           <>
             <div className={styles.welcome}>
-              <div className={styles.bigj} aria-hidden="true">
-                <b>J</b>
+              <div className={styles.marca} aria-hidden="true">
+                <svg viewBox={ICONE_VIEWBOX}>
+                  <path d={ROSTO_MEIO} />
+                  <path d={ROSTO_CENTRO} />
+                  <path transform={ESPELHO} d={ROSTO_MEIO} />
+                </svg>
               </div>
               <div className={styles.free}>
                 <b>{TRIAL_DIAS}</b>

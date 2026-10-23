@@ -147,12 +147,12 @@ describe("tema: só tokens", () => {
   it("o CSS usa os tokens do tema, sem a cor fixa do desenho", () => {
     expect(css).toMatch(/var\(--t-acc\)/);
     expect(css).toMatch(/:global\(\[data-mode="light"\]\)/);
-    // O "J" (.bigj) é o ícone do app, marca fixa em todos os temas.
+    // Os rostos (.marca) são o ícone do app, marca fixa em todos os temas.
     const semIcone = css
       .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/\.bigj[^{]*\{[^}]*\}/g, "");
+      .replace(/\.marca[^{]*\{[^}]*\}/g, "");
     expect(semIcone.toLowerCase()).not.toMatch(/#d6105c|#ff2d78|255, 45, 120/);
-    expect(css).toMatch(/\.bigj b \{[^}]*color: #ff2d78/);
+    expect(css).toMatch(/\.marca svg \{[^}]*fill: #ff2d78/);
   });
 });
 
