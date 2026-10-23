@@ -1,5 +1,7 @@
-// JobApp Service Worker — shell cache v1
-const CACHE = "jobapp-shell-v1";
+// Arcelle Service Worker — shell cache v1
+// O nome mudou de jobapp-shell-v1 junto com a marca: o activate apaga o
+// cache velho, que ainda guardava o manifest com o nome JobApp.
+const CACHE = "arcelle-shell-v1";
 
 // Pre-cache only the manifest (app shell bootstrap)
 const PRECACHE = ["/manifest.json"];
@@ -95,8 +97,8 @@ self.addEventListener("push", (e) => {
   e.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: "/pwa-icon?size=192",
-      badge: "/pwa-icon?size=192",
+      icon: "/icons/icone-app-192.png",
+      badge: "/icons/badge-96.png",
       tag: payload.tag ?? "jobapp-lembrete",
       data: { url: payload.url ?? "/" },
     })

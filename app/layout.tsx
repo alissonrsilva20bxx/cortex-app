@@ -39,21 +39,40 @@ const IOS_SPLASH_SCREENS: Array<[number, number, number]> = [
 ];
 
 export const metadata: Metadata = {
-  title: "JobApp",
+  title: "Arcelle",
   description: "Gerenciador de atendimentos e finanças.",
   manifest: "/manifest.json",
+  // Sem metadataBase: na Vercel o Next completa a URL da imagem com o
+  // endereço do próprio deploy. Pôr o domínio aqui quando ele existir.
+  openGraph: {
+    title: "Arcelle",
+    description: "Gerenciador de atendimentos e finanças.",
+    siteName: "Arcelle",
+    type: "website",
+    images: [
+      {
+        url: "/icons/compartilhar-1200x630.png",
+        width: 1200,
+        height: 630,
+        alt: "Arcelle",
+      },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "JobApp",
+    title: "Arcelle",
     startupImage: IOS_SPLASH_SCREENS.map(([w, h, dpr]) => ({
       url: `/pwa-splash?w=${w * dpr}&h=${h * dpr}`,
       media: `(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${dpr}) and (orientation: portrait)`,
     })),
   },
   icons: {
-    icon: "/pwa-icon?size=512",
-    apple: "/pwa-icon?size=512",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icons/icone-app-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: { url: "/icons/apple-touch-icon-180.png", sizes: "180x180" },
   },
   formatDetection: {
     telephone: false,
