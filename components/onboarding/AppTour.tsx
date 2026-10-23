@@ -312,7 +312,7 @@ export function AppTour({
               className="text-xs mt-3 leading-relaxed"
               style={{ color: "var(--text-muted)" }}
             >
-              No iPhone, as notificações chegam quando o JobApp está na Tela de
+              No iPhone, as notificações chegam quando o Arcelle está na Tela de
               Início (Compartilhar → Adicionar à Tela de Início).
             </p>
           )}

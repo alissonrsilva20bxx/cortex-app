@@ -348,7 +348,7 @@ export function PinScreen({
                 ? "Digite o PIN novo mais uma vez."
                 : vault
                   ? "Digite seu PIN para ver seus arquivos protegidos."
-                  : "Confirme que é você para entrar no JobApp.";
+                  : "Confirme que é você para entrar no Arcelle.";
   const titulo = unlocked
     ? pinNovo
       ? "PIN novo salvo"
@@ -394,7 +394,7 @@ export function PinScreen({
             {unlocked ? ICONE.certo : error ? ICONE.errado : ICONE.escudo}
           </div>
           <div>
-            <div className={styles.eyebrow}>{vault ? "Cofre" : "JobApp"}</div>
+            <div className={styles.eyebrow}>{vault ? "Cofre" : "Arcelle"}</div>
             <h1 id="pin-screen-title" className={styles.title}>
               {titulo}
             </h1>

@@ -39,7 +39,7 @@ describe("PinScreen — Cartão Cofre aprovado", () => {
   it("cartão do topo com escudo, sobretítulo e título (Cofre e app)", () => {
     expect(codigo).toMatch(/className=\{styles\.hero\}/);
     expect(codigo).toMatch(/className=\{styles\.shield\}/);
-    expect(codigo).toMatch(/vault \? "Cofre" : "JobApp"/);
+    expect(codigo).toMatch(/vault \? "Cofre" : "Arcelle"/);
     expect(codigo).toContain('"Abra seu Cofre"');
     expect(codigo).toContain('"Digite seu PIN"');
     expect(codigo).toContain('"Acesso liberado"');
@@ -75,7 +75,7 @@ describe("PinScreen — Cartão Cofre aprovado", () => {
     expect(codigo).toContain(
       '"Digite seu PIN para ver seus arquivos protegidos."'
     );
-    expect(codigo).toContain('"Confirme que é você para entrar no JobApp."');
+    expect(codigo).toContain('"Confirme que é você para entrar no Arcelle."');
     expect(codigo).toContain('"Esse PIN não confere. Tente de novo."');
     expect(codigo).toContain('"Tudo certo, abrindo…"');
     expect(codigo).toContain('"Verificando…"');

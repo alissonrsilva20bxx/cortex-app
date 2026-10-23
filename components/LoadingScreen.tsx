@@ -62,7 +62,7 @@ export function LoadingScreen({ isLoading }: Props) {
       <div className={styles.line}>
         <span className={styles.spark} />
       </div>
-      <span className={styles.wordmark}>JobApp</span>
+      <span className={styles.wordmark}>Arcelle</span>
       <span className={styles.chip}>no seu ritmo</span>
     </div>
   );

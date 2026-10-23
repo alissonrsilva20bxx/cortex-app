@@ -806,7 +806,7 @@ export function AjustesTab({
               {/* Instalar: abre a folha direto, num toque só. */}
               {!standalone ? (
                 <Linha
-                  title="Instalar JobApp"
+                  title="Instalar Arcelle"
                   detail={
                     pushNeedsInstall
                       ? "Abre mais rápido, funciona offline e libera as notificações"

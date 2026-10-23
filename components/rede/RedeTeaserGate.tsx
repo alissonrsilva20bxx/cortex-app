@@ -335,7 +335,7 @@ export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
               className="text-xs font-semibold"
               style={{ color: "var(--text)" }}
             >
-              Rede fará parte do JobApp Rede
+              Rede fará parte do Arcelle Rede
             </p>
             <p
               className="text-[11px] mt-0.5"

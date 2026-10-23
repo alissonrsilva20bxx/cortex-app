@@ -97,7 +97,7 @@ describe("movimento reduzido: versão estática curta", () => {
 describe("nunca trava a entrada: pular ao tocar", () => {
   it("tocar em qualquer lugar da tela pula", () => {
     expect(tsx).toMatch(
-      /className=\{`\$\{styles\.motionScreen\}[^`]*`\}\s*aria-label="Abertura do JobApp"\s*onClick=\{skip\}/
+      /className=\{`\$\{styles\.motionScreen\}[^`]*`\}\s*aria-label="Abertura do Arcelle"\s*onClick=\{skip\}/
     );
   });
 
@@ -169,6 +169,6 @@ describe("a cena do desenho", () => {
   });
 
   it("a marca e a frase do app no fim", () => {
-    expect(tsx).toMatch(/<b>JobApp<\/b>\s*<i>feito para a sua realidade<\/i>/);
+    expect(tsx).toMatch(/<b>Arcelle<\/b>\s*<i>feito para a sua realidade<\/i>/);
   });
 });

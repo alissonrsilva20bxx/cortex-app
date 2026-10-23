@@ -113,7 +113,7 @@ describe("outros consertos do mapa", () => {
 
   it("Instalar abre a folha direto, num toque", () => {
     expect(src).toMatch(
-      /title="Instalar JobApp"[\s\S]{0,300}onClick=\{\(\) => setInstallSheetOpen\(true\)\}/
+      /title="Instalar Arcelle"[\s\S]{0,300}onClick=\{\(\) => setInstallSheetOpen\(true\)\}/
     );
   });
 

@@ -290,7 +290,7 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <strong>JobApp</strong>
+          <strong>Arcelle</strong>
         </header>
 
         <section className={styles.intro}>
@@ -356,7 +356,7 @@ export default function LoginPage() {
 
         <section
           className={styles.signature}
-          aria-label="Rotina e comunidade no JobApp"
+          aria-label="Rotina e comunidade no Arcelle"
         >
           <p>
             Trabalho em ordem. <span>Rede por perto.</span>

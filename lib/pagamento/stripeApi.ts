@@ -144,7 +144,7 @@ export async function clienteDaConta(
   return novo.id;
 }
 
-/** O produto "JobApp" no Stripe (procura; cria na 1ª vez). */
+/** O produto "Arcelle" no Stripe (procura; cria na 1ª vez). */
 export async function produtoDoApp(stripe: ClienteStripe): Promise<string> {
   const achados = await stripe.chamar<Lista<{ id: string }>>(
     "GET",
@@ -153,7 +153,7 @@ export async function produtoDoApp(stripe: ClienteStripe): Promise<string> {
   );
   if (achados.data[0]) return achados.data[0].id;
   const novo = await stripe.chamar<{ id: string }>("POST", "products", {
-    name: "JobApp",
+    name: "Arcelle",
     metadata: { app: "jobapp" },
   });
   return novo.id;

@@ -17,7 +17,7 @@ interface Props {
 
 // Sempre toca por inteiro, mesmo pra quem já está logada — é a abertura do
 // app, não um tour de primeira visita. Home e login chamam com o mesmo
-// componente pra manter idêntico o "abriu o JobApp" em qualquer entrada.
+// componente pra manter idêntico o "abriu o Arcelle" em qualquer entrada.
 // Exportada pra Home (app/page.tsx) poder pular a própria montagem quando o
 // login acabou de tocar essa animação nesta mesma aba — ver comentário lá.
 export const SEEN_THIS_TAB_KEY = "jobapp-entry-motion-seen";
@@ -106,7 +106,7 @@ export function OpeningMotion({ onDone }: Props) {
   return (
     <div
       className={`${styles.motionScreen} ${leaving ? styles.motionLeaving : ""}`}
-      aria-label="Abertura do JobApp"
+      aria-label="Abertura do Arcelle"
       onClick={skip}
       data-abertura="rota-das-metas"
     >
@@ -211,7 +211,7 @@ function RotaDasMetas() {
         <small>48.8566° N · a viagem</small>
       </div>
       <div className={styles.mark}>
-        <b>JobApp</b>
+        <b>Arcelle</b>
         <i>feito para a sua realidade</i>
       </div>
     </>
