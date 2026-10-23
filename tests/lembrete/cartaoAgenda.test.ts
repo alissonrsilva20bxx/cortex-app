@@ -11,6 +11,7 @@ import {
 } from "../../lib/lembrete/cartaoAgenda";
 import { compartilharLembrete } from "../../lib/lembrete/imagem";
 import type { Job } from "../../lib/types";
+import { ROSTO_CENTRO } from "../../lib/marcaArcelle";
 
 const job = (extra: Partial<Job> = {}): Job => ({
   id: "j1",
@@ -153,6 +154,10 @@ describe("cartaoAgendaSvg: o cartão de agenda (proposta 2)", () => {
     );
     expect(s).toContain(">Agendado<");
     expect(s).not.toContain("#0f8a52");
+  });
+  it("a marca no topo são os 3 rostos da Arcelle, não o J antigo", () => {
+    expect(svg).toContain(ROSTO_CENTRO);
+    expect(svg).not.toContain(">J<");
   });
   it("claro e escuro trocam as cores (fundo branco / fundo escuro)", () => {
     expect(svg).toContain('fill="#ffffff"');

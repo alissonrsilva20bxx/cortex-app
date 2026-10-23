@@ -16,6 +16,14 @@ import { STATUS_META } from "@/components/jobs/status";
 import { formatHora, localDoAtendimento } from "@/components/jobs/agendaSemana";
 import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
+import {
+  ARCELLE_NOITE,
+  ARCELLE_ROSA,
+  ESPELHO,
+  ICONE_VIEWBOX,
+  ROSTO_CENTRO,
+  ROSTO_MEIO,
+} from "@/lib/marcaArcelle";
 
 export interface Profissional {
   nome: string;
@@ -224,8 +232,9 @@ const ic = (
   sw = 2
 ) =>
   `<g transform="translate(${x} ${y}) scale(${s / 24})" fill="none" stroke="${cor}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</g>`;
-const jIcon = (x: number, y: number, s: number) =>
-  `<g transform="translate(${x} ${y})"><rect width="${s}" height="${s}" rx="${s * 0.24}" fill="#0a0007"/><circle cx="${s / 2}" cy="${s / 2}" r="${s * 0.34}" fill="#ff2d78" opacity=".16"/><text x="${s / 2}" y="${s * 0.74}" text-anchor="middle" ${FONT} font-weight="800" font-size="${s * 0.6}" fill="#ff2d78">J</text></g>`;
+// Ícone da Arcelle (os 3 rostos, igual ao onboarding) na placa Noite.
+const marcaIcon = (x: number, y: number, s: number) =>
+  `<g transform="translate(${x} ${y})"><rect width="${s}" height="${s}" rx="${s * 0.24}" fill="${ARCELLE_NOITE}"/><circle cx="${s / 2}" cy="${s / 2}" r="${s * 0.34}" fill="${ARCELLE_ROSA}" opacity=".16"/><svg width="${s}" height="${s}" viewBox="${ICONE_VIEWBOX}" fill="${ARCELLE_ROSA}"><path d="${ROSTO_MEIO}"/><path d="${ROSTO_CENTRO}"/><path transform="${ESPELHO}" d="${ROSTO_MEIO}"/></svg></g>`;
 
 /** O cartão de agenda: data grande, relógio com o tempo do atendimento e o
  * resto em ordem embaixo (proposta 2). */
@@ -266,7 +275,7 @@ export function cartaoAgendaSvg(d: DadosLembrete, modo: ModoCartao): string {
     ? `${ic("pin", 48, 614, 22, t.deep)}<text x="80" y="632" ${FONT} font-size="19" font-weight="700" fill="${t.ink}">${esc(corta(d.local, 36))}</text>`
     : "";
   const corpo = `<rect width="600" height="750" fill="${t.bg}"/>
-    ${jIcon(48, 48, 40)}
+    ${marcaIcon(48, 48, 40)}
     ${cabecalho}
     <rect x="376" y="48" width="176" height="38" rx="19" fill="${pilula.fundo}"/>${d.confirmado ? ic("check", 390, 57, 20, pilula.cor, 2.6) : ic("clock", 390, 57, 20, pilula.cor, 2.4)}<text x="418" y="73" ${FONT} font-size="16" font-weight="800" fill="${pilula.cor}">${esc(d.status)}</text>
     <rect x="48" y="130" width="240" height="284" rx="26" fill="${t.card}"/>
