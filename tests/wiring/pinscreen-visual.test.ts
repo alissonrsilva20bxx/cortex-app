@@ -75,7 +75,7 @@ describe("PinScreen — Cartão Cofre aprovado", () => {
     expect(codigo).toContain(
       '"Digite seu PIN para ver seus arquivos protegidos."'
     );
-    expect(codigo).toContain('"Confirme que é você para entrar no Arcelle."');
+    expect(codigo).toContain('"Confirme que é você para entrar na Arcelle."');
     expect(codigo).toContain('"Esse PIN não confere. Tente de novo."');
     expect(codigo).toContain('"Tudo certo, abrindo…"');
     expect(codigo).toContain('"Verificando…"');

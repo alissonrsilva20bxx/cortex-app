@@ -419,7 +419,7 @@ export function PagamentoTela({
               </>
             )}
             <div className={styles.powered}>
-              Os dados do cartão vão direto para o Stripe; o Arcelle não vê nem
+              Os dados do cartão vão direto para o Stripe; a Arcelle não vê nem
               guarda.
             </div>
           </div>

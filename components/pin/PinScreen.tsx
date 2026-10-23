@@ -348,7 +348,7 @@ export function PinScreen({
                 ? "Digite o PIN novo mais uma vez."
                 : vault
                   ? "Digite seu PIN para ver seus arquivos protegidos."
-                  : "Confirme que é você para entrar no Arcelle.";
+                  : "Confirme que é você para entrar na Arcelle.";
   const titulo = unlocked
     ? pinNovo
       ? "PIN novo salvo"

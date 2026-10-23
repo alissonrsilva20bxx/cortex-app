@@ -93,7 +93,7 @@ function BoasVindasTeste({
                 Sua semana <em>por nossa conta</em>
               </h1>
               <p className={styles.txt}>
-                Use o Arcelle inteiro por {TRIAL_DIAS} dias, sem pagar nada.
+                Use a Arcelle inteira por {TRIAL_DIAS} dias, sem pagar nada.
                 Depois, você escolhe se quer continuar.
               </p>
             </div>

@@ -31,7 +31,7 @@ export const TOUR_STEPS: TourStep[] = [
     tab: "home",
     target: "home-hero",
     title: "Este é o seu Início",
-    body: "Aqui você vê quanto já ganhou no mês e quanto falta pras suas metas. É o coração do Arcelle.",
+    body: "Aqui você vê quanto já ganhou no mês e quanto falta pras suas metas. É o coração da Arcelle.",
   },
   {
     id: "fab",
@@ -146,7 +146,7 @@ const PASSOS_REDE_BLOQUEADA: Record<string, TourStep> = {
     tab: "rede",
     target: null,
     title: "A Rede",
-    body: "É a comunidade do Arcelle: feed, amigas e mensagens entre profissionais. A entrada é só por convite, então ela fica liberada quando você usar o seu.",
+    body: "É a comunidade da Arcelle: feed, amigas e mensagens entre profissionais. A entrada é só por convite, então ela fica liberada quando você usar o seu.",
   },
   "rede-perfil": {
     id: "rede-convite",

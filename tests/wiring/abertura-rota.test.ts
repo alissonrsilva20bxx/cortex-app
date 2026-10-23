@@ -97,7 +97,7 @@ describe("movimento reduzido: versão estática curta", () => {
 describe("nunca trava a entrada: pular ao tocar", () => {
   it("tocar em qualquer lugar da tela pula", () => {
     expect(tsx).toMatch(
-      /className=\{`\$\{styles\.motionScreen\}[^`]*`\}\s*aria-label="Abertura do Arcelle"\s*onClick=\{skip\}/
+      /className=\{`\$\{styles\.motionScreen\}[^`]*`\}\s*aria-label="Abertura da Arcelle"\s*onClick=\{skip\}/
     );
   });
 

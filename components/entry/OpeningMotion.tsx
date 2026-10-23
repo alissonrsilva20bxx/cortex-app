@@ -106,7 +106,7 @@ export function OpeningMotion({ onDone }: Props) {
   return (
     <div
       className={`${styles.motionScreen} ${leaving ? styles.motionLeaving : ""}`}
-      aria-label="Abertura do Arcelle"
+      aria-label="Abertura da Arcelle"
       onClick={skip}
       data-abertura="rota-das-metas"
     >

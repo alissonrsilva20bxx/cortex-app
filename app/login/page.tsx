@@ -356,7 +356,7 @@ export default function LoginPage() {
 
         <section
           className={styles.signature}
-          aria-label="Rotina e comunidade no Arcelle"
+          aria-label="Rotina e comunidade na Arcelle"
         >
           <p>
             Trabalho em ordem. <span>Rede por perto.</span>
