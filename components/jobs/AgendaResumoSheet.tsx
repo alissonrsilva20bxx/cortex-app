@@ -91,11 +91,11 @@ export function AgendaResumoSheet({ open, onClose, jobs, agora }: Props) {
           {semana.periodo}
         </p>
         <p
-          className="text-sm mt-1"
-          style={{ color: "var(--text-muted)" }}
+          className="text-[19px] font-bold leading-tight tracking-[-0.01em] mt-1"
+          style={{ color: "var(--text)" }}
           data-resumo-frase
         >
-          {resumo.frase}
+          {comNumerosEmDestaque(resumo.frase)}
         </p>
 
         <div
@@ -245,6 +245,19 @@ export function AgendaResumoSheet({ open, onClose, jobs, agora }: Props) {
         </div>
       </div>
     </BottomSheet>
+  );
+}
+
+/** Os números da frase na cor de destaque, como no gabarito. */
+function comNumerosEmDestaque(frase: string) {
+  return frase.split(/(\d+)/).map((parte, i) =>
+    i % 2 === 1 ? (
+      <em key={i} className="not-italic" style={{ color: "var(--accent)" }}>
+        {parte}
+      </em>
+    ) : (
+      parte
+    )
   );
 }
 
