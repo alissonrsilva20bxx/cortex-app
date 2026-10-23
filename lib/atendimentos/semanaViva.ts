@@ -3,7 +3,7 @@ import {
   startOfWeek,
   toISODate,
 } from "@/components/jobs/agendaSemana";
-import { NOMES_DIAS } from "@/components/jobs/textosAgenda";
+import { NOMES_DIAS, RESUMO_SEMANA } from "@/components/jobs/textosAgenda";
 import { LOCALE } from "@/lib/jornada/textos";
 import type { Job } from "@/lib/types";
 
@@ -83,9 +83,11 @@ export function semanaViva(jobs: readonly Job[], agora: Date): SemanaViva {
     };
   });
   const fim = addDays(inicio, 6);
-  const periodo =
+  const periodo = RESUMO_SEMANA.periodoDe(
     inicio.getMonth() === fim.getMonth()
-      ? `${inicio.getDate()} a ${fim.getDate()} ${mesCurto(fim)}`
-      : `${inicio.getDate()} ${mesCurto(inicio)} a ${fim.getDate()} ${mesCurto(fim)}`;
+      ? String(inicio.getDate())
+      : `${inicio.getDate()} ${mesCurto(inicio)}`,
+    `${fim.getDate()} ${mesCurto(fim)}`
+  );
   return { dias, periodo };
 }

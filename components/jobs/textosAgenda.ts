@@ -74,11 +74,15 @@ export const RESUMO_SEMANA = {
   tagPelaFrente: "Pela frente",
   tagDesmarcado: "Desmarcado",
   diasDaSemana: "Dias da semana",
-  hoje: "Hoje",
   diaLivre: "Dia livre.",
   diaSemAtendimento: "Dia sem atendimento.",
   /** "+2" quando o dia tem mais bolinhas do que cabem na pilha. */
   mais: (n: number) => `+${n}`,
+  /** "18 a 24 out" / "28 set a 4 out": as duas pontas já montadas. */
+  periodoDe: (inicio: string, fim: string) => `${inicio} a ${fim}`,
+  /** "Hoje, quinta 22" / "Terça 20". */
+  tituloDia: (hoje: boolean, nome: string, numero: number) =>
+    hoje ? `Hoje, ${nome.toLowerCase()} ${numero}` : `${nome} ${numero}`,
 } as const;
 
 /** Nome de cada dia, indexado por `Date.getDay()` (0 = domingo), sem "-feira". */

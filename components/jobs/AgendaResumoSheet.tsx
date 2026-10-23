@@ -212,7 +212,7 @@ export function AgendaResumoSheet({ open, onClose, jobs, agora }: Props) {
             className="text-sm font-bold mb-1.5"
             style={{ color: "var(--text)" }}
           >
-            {tituloDoDia(dia.hoje, dia.nome, dia.numero)}
+            {RESUMO_SEMANA.tituloDia(dia.hoje, dia.nome, dia.numero)}
           </p>
           {dia.atendimentos.length === 0 ? (
             <p className="text-sm py-1" style={{ color: "var(--text-muted)" }}>
@@ -274,11 +274,4 @@ function comNumerosEmDestaque(frase: string) {
       parte
     )
   );
-}
-
-/** "Hoje, quinta 22" / "Terça 20". */
-function tituloDoDia(hoje: boolean, nome: string, numero: number): string {
-  return hoje
-    ? `${RESUMO_SEMANA.hoje}, ${nome.toLowerCase()} ${numero}`
-    : `${nome} ${numero}`;
 }
