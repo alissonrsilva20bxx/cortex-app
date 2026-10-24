@@ -32,9 +32,8 @@
   gap: 10px;
 }
 .brand strong {
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 22px;
+  font-weight: 400;
   color: var(--text);
 }
 

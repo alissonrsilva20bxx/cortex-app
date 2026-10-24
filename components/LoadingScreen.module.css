@@ -125,8 +125,6 @@
   position: relative;
   z-index: 1;
   font-size: clamp(1.9rem, 7vw, 2.4rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
   color: var(--text);
   clip-path: inset(0 100% 0 0);
   animation: revealWordmark 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.55s forwards;

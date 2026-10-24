@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { DM_Serif_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "../styles/globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProvider } from "@/components/Toast";
@@ -8,6 +8,14 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-jakarta",
+  display: "swap",
+});
+
+// Letra da marca: só os wordmarks em texto (components/MarcaNome.tsx).
+const marca = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-marca",
   display: "swap",
 });
 
@@ -155,7 +163,7 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       data-theme="pink-neon"
-      className={`${jakarta.variable} no-scrollbar`}
+      className={`${jakarta.variable} ${marca.variable} no-scrollbar`}
       suppressHydrationWarning
     >
       <head>

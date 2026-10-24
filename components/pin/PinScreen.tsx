@@ -14,6 +14,7 @@ import {
 } from "@/lib/pinTentativas";
 import { limparReauthDaUrl, reauthAtual } from "@/lib/reauth";
 import type { ReauthAdapter } from "@/lib/reauthRegras";
+import { MarcaNome } from "@/components/MarcaNome";
 import { ReauthModal } from "./ReauthModal";
 import styles from "./PinScreen.module.css";
 
@@ -394,7 +395,7 @@ export function PinScreen({
             {unlocked ? ICONE.certo : error ? ICONE.errado : ICONE.escudo}
           </div>
           <div>
-            <div className={styles.eyebrow}>{vault ? "Cofre" : "Arcelle"}</div>
+            <div className={styles.eyebrow}>{vault ? "Cofre" : <MarcaNome className={styles.marca} />}</div>
             <h1 id="pin-screen-title" className={styles.title}>
               {titulo}
             </h1>

@@ -39,7 +39,7 @@ describe("PinScreen — Cartão Cofre aprovado", () => {
   it("cartão do topo com escudo, sobretítulo e título (Cofre e app)", () => {
     expect(codigo).toMatch(/className=\{styles\.hero\}/);
     expect(codigo).toMatch(/className=\{styles\.shield\}/);
-    expect(codigo).toMatch(/vault \? "Cofre" : "Arcelle"/);
+    expect(codigo).toMatch(/vault \? "Cofre" : <MarcaNome className=\{styles\.marca\} \/>/);
     expect(codigo).toContain('"Abra seu Cofre"');
     expect(codigo).toContain('"Digite seu PIN"');
     expect(codigo).toContain('"Acesso liberado"');

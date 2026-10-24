@@ -1,0 +1,12 @@
+/* Nome da marca em texto: DM Serif Display (Regular), -0,01em; "elle" em
+   rosa (cor do símbolo). Só nos wordmarks; o resto do app segue a Jakarta. */
+.nome {
+  font-family: var(--font-marca), "DM Serif Display", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.elle {
+  color: var(--accent);
+}

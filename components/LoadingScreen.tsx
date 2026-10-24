@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { simboloMoeda } from "@/lib/moeda";
 import { useMoeda } from "@/lib/useMoeda";
+import { MarcaNome } from "./MarcaNome";
 import styles from "./LoadingScreen.module.css";
 
 interface Props {
@@ -64,7 +65,7 @@ export function LoadingScreen({ isLoading }: Props) {
       <div className={styles.line}>
         <span className={styles.spark} />
       </div>
-      <span className={styles.wordmark}>Arcelle</span>
+      <MarcaNome className={styles.wordmark} />
       <span className={styles.chip}>no seu ritmo</span>
     </div>
   );

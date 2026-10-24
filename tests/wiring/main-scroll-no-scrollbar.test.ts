@@ -56,7 +56,7 @@ describe("o <html> (quem rola de verdade) usa a regra compartilhada", () => {
 
   it("className do <html> inclui no-scrollbar", () => {
     expect(src).toMatch(
-      /<html\s*\n\s*lang="pt-BR"\s*\n\s*data-theme="pink-neon"\s*\n\s*className=\{`\$\{jakarta\.variable\} no-scrollbar`\}/
+      /<html\s*\n\s*lang="pt-BR"\s*\n\s*data-theme="pink-neon"\s*\n\s*className=\{`\$\{jakarta\.variable\} \$\{marca\.variable\} no-scrollbar`\}/
     );
     expect(src).not.toMatch(/overflow-y-hidden|overflow-hidden/);
   });

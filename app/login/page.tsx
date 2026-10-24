@@ -18,6 +18,7 @@ import {
 } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import { OpeningMotion } from "@/components/entry/OpeningMotion";
+import { MarcaNome } from "@/components/MarcaNome";
 import styles from "./entry.module.css";
 
 type Stage = "motion" | "login" | "signup" | "forgot" | "check-email";
@@ -290,7 +291,9 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <strong>Arcelle</strong>
+          <strong>
+            <MarcaNome />
+          </strong>
         </header>
 
         <section className={styles.intro}>
