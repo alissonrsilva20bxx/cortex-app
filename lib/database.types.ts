@@ -39,39 +39,6 @@ export type Database = {
   };
   public: {
     Tables: {
-      bloqueios_agenda: {
-        Row: {
-          atualizado_em: string;
-          criado_em: string;
-          data: string;
-          fim: string;
-          id: string;
-          inicio: string;
-          motivo: string | null;
-          user_id: string;
-        };
-        Insert: {
-          atualizado_em?: string;
-          criado_em?: string;
-          data: string;
-          fim: string;
-          id?: string;
-          inicio: string;
-          motivo?: string | null;
-          user_id: string;
-        };
-        Update: {
-          atualizado_em?: string;
-          criado_em?: string;
-          data?: string;
-          fim?: string;
-          id?: string;
-          inicio?: string;
-          motivo?: string | null;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
       configuracoes: {
         Row: {
           assinatura_status: Database["public"]["Enums"]["assinatura_status"];
