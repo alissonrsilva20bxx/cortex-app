@@ -94,7 +94,7 @@ export async function exportarDadosCSV(userId: string): Promise<void> {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `jobapp-dados-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `arcelle-dados-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

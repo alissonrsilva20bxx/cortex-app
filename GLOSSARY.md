@@ -1,4 +1,4 @@
-# JobApp — Domain Glossary
+# Arcelle — Domain Glossary
 
 ## Job
 

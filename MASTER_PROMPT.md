@@ -1,4 +1,4 @@
-# JobApp — Master Context (cole no início de cada sessão)
+# Arcelle — Master Context (cole no início de cada sessão)
 
 **App**: PWA para profissionais autônomos gerenciarem jobs, finanças e documentos.  
 **Stack**: Next.js 14 App Router · TypeScript · Tailwind CSS · Supabase · PWA  

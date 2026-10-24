@@ -1,5 +1,5 @@
 /**
- * Planos do JobApp depois do teste grátis (onboarding "Linha do tempo",
+ * Planos da Arcelle depois do teste grátis (onboarding "Linha do tempo",
  * desenho aprovado em onboarding-linha-do-tempo.html). Cada plano tem preço
  * em euro e em dólar (a moeda que a pessoa escolheu):
  *
