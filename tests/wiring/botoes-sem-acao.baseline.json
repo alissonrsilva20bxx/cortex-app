@@ -1,7 +1,1 @@
-[
-  {
-    "arquivo": "components/cofre/CofreTab.tsx",
-    "linha": 478,
-    "trecho": "<BotaoRedondo rotulo=\"Travar o Cofre\"> <IconeCadeado size={20} /> </BotaoRedondo>"
-  }
-]
+[]

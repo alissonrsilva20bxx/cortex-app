@@ -3,6 +3,8 @@ import {
   computeGateState,
   nextUnlockedOnActiveChange,
   nextUnlockedOnLoseFocus,
+  nextUnlockedOnTravar,
+  podeTravarCofre,
 } from "../../components/cofre/lockGate";
 
 /**
@@ -131,5 +133,28 @@ describe("Cofre lock gate — sequência exata do bug relatado", () => {
       unlocked = nextUnlockedOnActiveChange(active, unlocked);
       expect(computeGateState({ active, pinHash, unlocked })).toBe("hidden");
     }
+  });
+});
+
+describe("botão Travar o Cofre", () => {
+  it("só existe quando há PIN", () => {
+    expect(podeTravarCofre(null)).toBe(false);
+    expect(podeTravarCofre("")).toBe(false);
+    expect(podeTravarCofre("hash-do-pin")).toBe(true);
+  });
+
+  it("travar com o Cofre aberto volta a pedir o PIN", () => {
+    const aberto = computeGateState({
+      active: true,
+      pinHash: "hash",
+      unlocked: true,
+    });
+    expect(aberto).toBe("content");
+    const depois = computeGateState({
+      active: true,
+      pinHash: "hash",
+      unlocked: nextUnlockedOnTravar(),
+    });
+    expect(depois).toBe("locked");
   });
 });

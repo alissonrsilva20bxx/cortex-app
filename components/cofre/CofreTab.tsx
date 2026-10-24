@@ -22,6 +22,8 @@ import {
   computeGateState,
   nextUnlockedOnActiveChange,
   nextUnlockedOnLoseFocus,
+  nextUnlockedOnTravar,
+  podeTravarCofre,
 } from "./lockGate";
 import * as cofreCache from "@/lib/cofre/cofreCache";
 import type { CofreFile } from "@/lib/cofre/cofreCache";
@@ -448,9 +450,8 @@ export function CofreTab({
         {/* Cabeçalho (J05) — "Cofre" grande e em negrito forte, como o
             mockup (24px/800), com o botão de busca à direita. A busca é a
             mesma de antes (filtro local por nome, sem rede); o botão só
-            mostra/esconde o campo. O cadeado do mockup entra desabilitado
-            (pixel do mockup): "travar agora" não existe no app (J05: não
-            criar ação nova). Botões nas medidas do mockup
+            mostra/esconde o campo. O cadeado trava o Cofre na hora (volta
+            a pedir o PIN) e só aparece quando há PIN. Botões nas medidas do mockup
             (components/ui/cabecalho). */}
         <div className="flex items-center" style={{ gap: "10px" }}>
           <h1
@@ -475,9 +476,14 @@ export function CofreTab({
           >
             <IconeBusca size={20} />
           </BotaoRedondo>
-          <BotaoRedondo rotulo="Travar o Cofre">
-            <IconeCadeado size={20} />
-          </BotaoRedondo>
+          {podeTravarCofre(pinHash) && (
+            <BotaoRedondo
+              rotulo="Travar o Cofre"
+              onClick={() => setUnlocked(nextUnlockedOnTravar())}
+            >
+              <IconeCadeado size={20} />
+            </BotaoRedondo>
+          )}
         </div>
 
         {/* Busca — o mesmo filtro client-side de antes, sobre o array

@@ -304,7 +304,7 @@ describe("cabeçalhos nas medidas do mockup (Início, Financeiro, Cofre, Agenda)
     ],
     [
       "components/cofre/CofreTab.tsx",
-      /<BotaoRedondo[\s\S]*rotulo="Buscar arquivos"[\s\S]*<BotaoRedondo rotulo="Travar o Cofre">/,
+      /<BotaoRedondo[\s\S]*rotulo="Buscar arquivos"[\s\S]*<BotaoRedondo\s+rotulo="Travar o Cofre"/,
     ],
   ])("%s usa as peças do mockup", (arquivo, padrao) => {
     expect(read(arquivo)).toMatch(padrao);

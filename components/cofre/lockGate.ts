@@ -48,3 +48,14 @@ export function nextUnlockedOnActiveChange(
 export function nextUnlockedOnLoseFocus(): boolean {
   return false;
 }
+
+/** O botão "Travar o Cofre" só existe quando há PIN: sem PIN o Cofre abre
+ * direto e travar não teria efeito. */
+export function podeTravarCofre(pinHash: string | null): boolean {
+  return Boolean(pinHash);
+}
+
+/** Travar pelo botão: volta a pedir o PIN, igual a perder o foco. */
+export function nextUnlockedOnTravar(): boolean {
+  return false;
+}
