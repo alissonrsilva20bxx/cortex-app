@@ -33,6 +33,12 @@ Faz: cria a tabela `guardar_historico` (um registro por depósito guardado em um
 Faz: cria 2 índices em `guardar_historico` (deixa as consultas rápidas). Precisa da 0044 antes.
 - Conferência: o próprio arquivo termina com uma consulta que deve listar os 2 índices (`guardar_historico_user_data_idx` e `guardar_historico_desejo_data_idx`).
 
+### 5. `0046_jobs_trava_status.sql`
+Faz: trava no banco para o status do atendimento. A usuária, mesmo chamando a API direto, só grava o que a tela já deixa (ex.: não conclui atendimento da semana que vem, não confirma depois do horário). Não depende das outras; não muda nenhuma linha que já existe. Tem folga de fuso (até 15 horas), então nunca bloqueia o que a tela faz.
+- Já aplicada? `select tgname from pg_trigger where tgrelid = 'public.jobs'::regclass and tgname = 'jobs_status_no_fluxo';` Se voltar 1 linha, já está.
+- Conferência depois: a mesma consulta devolve 1 linha. Depois, no app, concluir um atendimento que já passou deve funcionar normal.
+- Se der problema: o próprio arquivo tem o `drop trigger` / `drop function` para desfazer.
+
 ### Migrations que vierem depois nesta noite
 Serão acrescentadas aqui, no fim, na ordem do número.
 
