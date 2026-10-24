@@ -669,14 +669,16 @@ html {
      programática (trocar de aba, abrir/voltar tela) é instantânea; só
      anima onde o código pede `behavior: "smooth"` (tocar de novo na aba
      ativa = volta suave pro topo). */
-  /* Sem "elástico" que puxa o fundo preto do html acima do topo ou abaixo
+  /* Sem "elástico" que puxa o fundo do html acima do topo ou abaixo
      da BottomNav (a cara mais óbvia de página web no iOS) e sem
      propagar o overscroll pro navegador (puxar-pra-recarregar do Chrome). */
   overscroll-behavior-y: none;
-  /* Fallback pra qualquer tira que 100vh deixe descoberta no rodapé (ver
-     comentário no body abaixo) -- nunca deve aparecer, mas se aparecer,
-     preto é bem menos visível que o cinza padrão do WKWebView. */
-  background: #000;
+  /* Fundo de qualquer tira que as camadas não cubram (atrás da barra do
+     Safari, área segura de baixo do iPhone, ver comentário no body abaixo):
+     a cor lisa do tema (--bg, a mesma do fim do degradê do body), para não
+     aparecer faixa preta no claro nem num tom diferente no escuro. Preto só
+     se o tema não tiver --bg. */
+  background-color: var(--bg, #000);
 }
 
 html,

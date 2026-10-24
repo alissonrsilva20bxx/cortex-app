@@ -15,6 +15,12 @@
   --rota-ink2: color-mix(in srgb, var(--t-ink) 70%, transparent);
   position: fixed;
   inset: 0;
+  /* No iPhone a caixa do `inset: 0` pode parar antes do fim da tela (Safari
+     com barra, app instalado): o brilho do canto era cortado numa linha e
+     sobrava uma faixa sem fundo embaixo. A altura mínima é a da tela
+     visível (100dvh), com 100vh de reserva para navegador sem dvh. */
+  min-height: 100vh;
+  min-height: 100dvh;
   z-index: 9999;
   overflow: hidden;
   cursor: default;
