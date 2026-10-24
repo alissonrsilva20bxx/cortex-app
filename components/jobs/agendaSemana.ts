@@ -188,6 +188,36 @@ export function paginaAoAssentar(
   return 0;
 }
 
+/**
+ * Giro das setas da Agenda. A seta rola a faixa até a página vizinha com
+ * animação; a semana só troca quando essa rolagem assenta. Toques que
+ * chegam com a rolagem ainda em curso não iniciam outra (uma rolagem
+ * por cima da outra deixava a faixa na página errada e a seta presa):
+ * somam-se ao giro em andamento e valem todos de uma vez no fim.
+ * `semanas` é o saldo (+1 por ">" e -1 por "<").
+ */
+export interface GiroDaSeta {
+  semanas: number;
+}
+
+export function tocarSeta(
+  giro: GiroDaSeta | null,
+  delta: -1 | 1
+): { giro: GiroDaSeta; rolar: boolean } {
+  return giro
+    ? { giro: { semanas: giro.semanas + delta }, rolar: false }
+    : { giro: { semanas: delta }, rolar: true };
+}
+
+/** Quantas semanas andar quando a rolagem da seta assenta (0 = nenhuma). */
+export function semanasDoGiro(giro: GiroDaSeta | null): number {
+  return giro ? giro.semanas : 0;
+}
+
+/** Tempo máximo esperando a rolagem da seta assentar (ms): se o navegador
+ * não avisar o fim, a semana troca mesmo assim e a seta não fica presa. */
+export const LIMITE_DO_GIRO_MS = 700;
+
 /** Quantas semanas inteiras `inicio` (um domingo) está da semana de `hoje`
  * (negativo = passado). Arredonda pra absorver a hora a mais/a menos do
  * horário de verão. */

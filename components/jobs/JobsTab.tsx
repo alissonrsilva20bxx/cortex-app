@@ -37,7 +37,11 @@ import {
   atendimentosProximasSemanas,
   buildWeekStrip,
   formatHora,
+  LIMITE_DO_GIRO_MS,
   paginaAoAssentar,
+  semanasDoGiro,
+  tocarSeta,
+  type GiroDaSeta,
   proximoAtendimento,
   rotuloDaSemana,
   semanasDesdeHoje,
@@ -381,9 +385,26 @@ export function JobsTab({
     centralizarFaixa();
   }, [weekStart, centralizarFaixa]);
 
+  // Giro das setas em andamento (null = parada). Ver `tocarSeta`.
+  const giroRef = useRef<GiroDaSeta | null>(null);
+  const giroTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
+
   function aoAssentarFaixa() {
     const el = faixaRef.current;
     if (!el) return;
+    if (giroRef.current) {
+      // Fim da rolagem das setas: anda o saldo dos toques de uma vez e
+      // recentra a faixa (saldo 0 não muda a semana, então o efeito de
+      // `weekStart` não roda).
+      const semanas = semanasDoGiro(giroRef.current);
+      giroRef.current = null;
+      clearTimeout(giroTimerRef.current);
+      if (semanas !== 0) goToWeek(semanas);
+      centralizarFaixa();
+      return;
+    }
     const pagina =
       el.clientWidth > 0
         ? paginaAoAssentar(el.scrollLeft, passoDaFaixa(el))
@@ -432,6 +453,15 @@ export function JobsTab({
     const reduzir = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
+    const { giro, rolar } = tocarSeta(giroRef.current, delta);
+    giroRef.current = giro;
+    if (!rolar) return;
+    // Rede de segurança: se o navegador não avisar o fim da rolagem, a
+    // semana troca mesmo assim.
+    giroTimerRef.current = setTimeout(
+      () => assentarRef.current(),
+      LIMITE_DO_GIRO_MS
+    );
     el.scrollTo({
       left: passoDaFaixa(el) * (1 + delta),
       behavior: reduzir ? "auto" : "smooth",

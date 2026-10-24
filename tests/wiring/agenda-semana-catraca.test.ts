@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  LIMITE_DO_GIRO_MS,
   paginaAoAssentar,
+  semanasDoGiro,
+  tocarSeta,
+  type GiroDaSeta,
   rotuloDaSemana,
   semanasDesdeHoje,
 } from "../../components/jobs/agendaSemana";
@@ -171,5 +175,50 @@ describe("JobsTab: a faixa é um rolador com catraca por semana", () => {
     expect(jobsTab).toContain("const VAO_ENTRE_SEMANAS = 5;");
     expect(jobsTab).toContain("el.clientWidth + VAO_ENTRE_SEMANAS");
     expect(jobsTab).toContain("gap: `${VAO_ENTRE_SEMANAS}px`,");
+  });
+});
+
+describe("setas da Agenda: toques rápidos não travam a faixa", () => {
+  /** Simula N toques com a rolagem ainda em curso e conta quantas rolagens
+   * foram iniciadas e quantas semanas valem no fim. */
+  function tocar(deltas: Array<-1 | 1>) {
+    let giro: GiroDaSeta | null = null;
+    let rolagens = 0;
+    for (const d of deltas) {
+      const r = tocarSeta(giro, d);
+      giro = r.giro;
+      if (r.rolar) rolagens++;
+    }
+    return { rolagens, semanas: semanasDoGiro(giro) };
+  }
+  it("1 toque: 1 rolagem e 1 semana", () => {
+    expect(tocar([1])).toEqual({ rolagens: 1, semanas: 1 });
+  });
+  it("5 toques rápidos em '>': uma só rolagem, 5 semanas no fim (nenhum toque se perde)", () => {
+    expect(tocar([1, 1, 1, 1, 1])).toEqual({ rolagens: 1, semanas: 5 });
+  });
+  it("toques de ida e volta somam o saldo; saldo 0 não anda", () => {
+    expect(tocar([1, 1, -1])).toEqual({ rolagens: 1, semanas: 1 });
+    expect(tocar([1, -1])).toEqual({ rolagens: 1, semanas: 0 });
+  });
+  it("sem giro em andamento: 0 semanas", () => {
+    expect(semanasDoGiro(null)).toBe(0);
+  });
+  it("depois que o giro assenta, o próximo toque começa outra rolagem", () => {
+    expect(tocarSeta(null, -1)).toEqual({
+      giro: { semanas: -1 },
+      rolar: true,
+    });
+  });
+  it("a fiação: a seta soma ao giro, o fim anda o saldo e SEMPRE recentra, com limite de tempo", () => {
+    expect(LIMITE_DO_GIRO_MS).toBeGreaterThan(300);
+    expect(jobsTab).toContain("tocarSeta(giroRef.current, delta)");
+    expect(jobsTab).toMatch(
+      /if \(!rolar\) return;[\s\S]{0,260}el\.scrollTo\(/
+    );
+    expect(jobsTab).toMatch(
+      /semanasDoGiro\(giroRef\.current\);[\s\S]{0,200}if \(semanas !== 0\) goToWeek\(semanas\);\s*centralizarFaixa\(\);/
+    );
+    expect(jobsTab).toContain("LIMITE_DO_GIRO_MS");
   });
 });
