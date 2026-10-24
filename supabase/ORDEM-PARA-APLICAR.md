@@ -39,6 +39,12 @@ Faz: trava no banco para o status do atendimento. A usuária, mesmo chamando a A
 - Conferência depois: a mesma consulta devolve 1 linha. Depois, no app, concluir um atendimento que já passou deve funcionar normal.
 - Se der problema: o próprio arquivo tem o `drop trigger` / `drop function` para desfazer.
 
+### 6. `0047_jornada_dica_curtida.sql`
+Faz: a curtida numa publicação da categoria Dica passa a contar como "Sua dica ajudou alguém" para a autora (+5 de brilho no Conectar, até 5 por dia). Destrava a missão "Sua dica ajudar 3 vezes" (dezembro, março, junho e setembro) e o selo Mão amiga, que hoje ficam parados em 0. Curtir a própria dica não conta; cada pessoa conta uma vez por dica, mesmo se descurtir e curtir de novo; curtidas antigas não contam. Se o crédito falhar, a curtida grava igual. Precisa só da 0009 e da 0035 (já usadas pelo app). **Muda o que a usuária ganha:** aplique só se concordar que curtida em dica = "ajudou".
+- Já aplicada? `select tgname from pg_trigger where tgrelid = 'public.rede_curtidas'::regclass and tgname = 'rede_curtidas_credita_dica';` Se voltar 1 linha, já está.
+- Conferência depois: a mesma consulta devolve 1 linha, e `select to_regclass('private.jornada_dica_creditos');` devolve o nome.
+- Se der problema: o próprio arquivo tem o `drop trigger` / `drop function` / `drop table` para desfazer.
+
 ### Migrations que vierem depois nesta noite
 Serão acrescentadas aqui, no fim, na ordem do número.
 
