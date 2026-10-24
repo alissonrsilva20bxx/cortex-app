@@ -91,7 +91,6 @@ import type {
   Objetivo,
   ReceitaAvulsa,
   HomeCardConfig,
-  ChartPrefConfig,
 } from "@/lib/types";
 
 /**
@@ -108,7 +107,6 @@ const DEFAULT_HOME_CARDS: HomeCardConfig = {
   objetivos: true,
   agenda: true,
 };
-const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 export default function DevPreviewApp() {
   // Ativa o client mockado uma única vez, síncrono, antes de qualquer aba
@@ -241,8 +239,6 @@ export default function DevPreviewApp() {
   const [cofreRefreshKey, setCofreRefreshKey] = useState(0);
 
   const [homeCards] = useState<HomeCardConfig>(DEFAULT_HOME_CARDS);
-  const [chartPrefs, setChartPrefs] =
-    useState<ChartPrefConfig>(DEFAULT_CHART_PREFS);
 
   // Simula o teclado no chat da Rede — some com a BottomNav, como no
   // preview isolado de /dev-preview/rede.
@@ -723,7 +719,6 @@ export default function DevPreviewApp() {
           <JobsTab
             userId={usuario.id}
             refreshTrigger={jobsRefreshKey}
-            chartType={chartPrefs.jobs}
             profissional={{ nome: usuario.nome, telefone: usuario.telefone }}
             onJobSaved={recarregarAposAtendimento}
             onEditJob={(job) => {
@@ -815,7 +810,6 @@ export default function DevPreviewApp() {
             onPinHashChange={(h) => setPinHash(h)}
             onHomeCardsChange={() => {}}
             onCardStylesChange={() => {}}
-            onChartPrefsChange={setChartPrefs}
             onClose={() => handleTabChange("home")}
             onVerPlanos={() => setAbrirPlanos((n) => n + 1)}
             onOpenTour={() => {

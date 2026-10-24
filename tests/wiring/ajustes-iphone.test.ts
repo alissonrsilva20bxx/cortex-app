@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -123,7 +123,32 @@ describe("outros consertos do mapa", () => {
     expect(src).toMatch(/valor=\{montado \? THEME_LABELS\[theme\] : ""\}/);
   });
 
-  it('"Pizza" com ícone de pizza (era o mesmo das barras)', () => {
-    expect(src).toMatch(/<PieChart size=\{14\} \/> Pizza/);
+  it('a opção "Barras / Pizza" (gráfico do resumo) não existe mais nos Ajustes', () => {
+    expect(src).not.toMatch(/Barras|Pizza|Gráfico do resumo/);
+    expect(src).not.toMatch(/BarChart2|PieChart|chartPrefs|ChartPrefConfig/);
+    expect(src).not.toContain("onChartPrefsChange");
+    expect(src).not.toContain("jobapp-chart-prefs");
+  });
+
+  it("nenhuma página nem o JobsTab ainda recebe ou guarda a preferência de gráfico; a preferência antiga salva no aparelho é ignorada", () => {
+    for (const p of [
+      "app/page.tsx",
+      "app/dev-preview/app/page.tsx",
+      "components/jobs/JobsTab.tsx",
+      "lib/types.ts",
+    ]) {
+      expect(read(p)).not.toMatch(
+        /chartType|chartPrefs|ChartPrefConfig|jobapp-chart-prefs/
+      );
+    }
+  });
+
+  it("os gráficos de barra e pizza, sem uso, foram apagados", () => {
+    expect(existsSync(join(ROOT, "components/charts/MiniBarChart.tsx"))).toBe(
+      false
+    );
+    expect(existsSync(join(ROOT, "components/charts/DonutChart.tsx"))).toBe(
+      false
+    );
   });
 });

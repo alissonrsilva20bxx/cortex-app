@@ -86,6 +86,3 @@ export interface CardStyleConfig {
   financeSummary: CardStyle;
 }
 
-export interface ChartPrefConfig {
-  jobs: "bar" | "donut";
-}

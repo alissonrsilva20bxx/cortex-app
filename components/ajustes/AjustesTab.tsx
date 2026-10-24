@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  Check,
-  Sun,
-  Moon,
-  BarChart2,
-  PieChart,
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-react";
+import { Check, Sun, Moon, ChevronRight, ChevronLeft } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { THEMES, THEME_LABELS, THEME_ACCENTS } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
@@ -37,7 +29,6 @@ import { TEXTOS_DESEJO } from "@/lib/desejo/textos";
 import type {
   HomeCardConfig,
   CardStyleConfig,
-  ChartPrefConfig,
   AssinaturaStatus,
   Job,
 } from "@/lib/types";
@@ -48,7 +39,6 @@ const DEFAULT_HOME_CARDS: HomeCardConfig = {
   objetivos: true,
   agenda: true,
 };
-const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 interface Props {
   userId: string;
@@ -57,7 +47,6 @@ interface Props {
   onPinHashChange: (hash: string | null) => void;
   onHomeCardsChange: (c: HomeCardConfig) => void;
   onCardStylesChange: (c: CardStyleConfig) => void;
-  onChartPrefsChange: (c: ChartPrefConfig) => void;
   /** Ajustes abre pelo avatar da Início (não é aba da barra): a seta do
    * topo volta para a Início. */
   onClose: () => void;
@@ -260,7 +249,6 @@ export function AjustesTab({
   onSignOut,
   onPinHashChange,
   onHomeCardsChange,
-  onChartPrefsChange,
   onClose,
   onOpenTour,
   onVerPlanos,
@@ -274,8 +262,6 @@ export function AjustesTab({
   const [pinSetupOpen, setPinSetupOpen] = useState(false);
   const [homeCards, setHomeCardsState] =
     useState<HomeCardConfig>(DEFAULT_HOME_CARDS);
-  const [chartPrefs, setChartPrefsState] =
-    useState<ChartPrefConfig>(DEFAULT_CHART_PREFS);
   const [exporting, setExporting] = useState(false);
   const [exportAviso, setExportAviso] = useState<{
     ok: boolean;
@@ -319,8 +305,6 @@ export function AjustesTab({
       });
     const hc = localStorage.getItem("jobapp-home-cards");
     if (hc) setHomeCardsState(JSON.parse(hc));
-    const cp = localStorage.getItem("jobapp-chart-prefs");
-    if (cp) setChartPrefsState(JSON.parse(cp));
 
     if (isPushSupported()) {
       setPushSupported(true);
@@ -481,12 +465,6 @@ export function AjustesTab({
     setHomeCardsState(next);
     localStorage.setItem("jobapp-home-cards", JSON.stringify(next));
     onHomeCardsChange(next);
-  }
-
-  function updateChartPrefs(next: ChartPrefConfig) {
-    setChartPrefsState(next);
-    localStorage.setItem("jobapp-chart-prefs", JSON.stringify(next));
-    onChartPrefsChange(next);
   }
 
   // Os cards da Início que têm chave aqui. "Independência Financeira" saiu:
@@ -673,52 +651,6 @@ export function AjustesTab({
                 />
               );
             })}
-            <div
-              className="flex items-center"
-              style={{ minHeight: 56, gap: 10, padding: "8px 12px 8px 16px" }}
-            >
-              <span className="min-w-0 flex-1">
-                <span
-                  className="block"
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: "var(--text)",
-                  }}
-                >
-                  Gráfico do resumo
-                </span>
-                <span
-                  className="mt-0.5 block"
-                  style={{ fontSize: 12.5, color: "var(--text-muted)" }}
-                >
-                  No resumo da Agenda
-                </span>
-              </span>
-              <SegmentedControl<"bar" | "donut">
-                size="sm"
-                value={chartPrefs.jobs}
-                onChange={(id) => updateChartPrefs({ ...chartPrefs, jobs: id })}
-                options={[
-                  {
-                    id: "bar",
-                    label: (
-                      <span className="flex items-center justify-center gap-1.5">
-                        <BarChart2 size={14} /> Barras
-                      </span>
-                    ),
-                  },
-                  {
-                    id: "donut",
-                    label: (
-                      <span className="flex items-center justify-center gap-1.5">
-                        <PieChart size={14} /> Pizza
-                      </span>
-                    ),
-                  },
-                ]}
-              />
-            </div>
           </Grupo>
 
           {/* Notificações — opt-in, nunca spam (§7.3). Só com o navegador

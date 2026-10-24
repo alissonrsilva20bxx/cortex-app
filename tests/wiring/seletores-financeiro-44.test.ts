@@ -106,11 +106,10 @@ describe("#174 — ligada só no seletor do Financeiro", () => {
 
   it("nenhum outro uso do SegmentedControl liga a opção (Ajustes, Agenda, Meu espaço, Amigas ficam iguais)", () => {
     const outros = usos.filter((u) => !FINANCEIRO.includes(u.arquivo));
-    // Os 4 usos conhecidos fora do Financeiro (o "Gráfico — Financeiro"
-    // dos Ajustes saiu junto com os palitos).
+    // Os 3 usos conhecidos fora do Financeiro (o "Gráfico — Financeiro" e
+    // o "Barras / Pizza" dos Ajustes saíram).
     expect(outros.map((u) => u.arquivo).sort()).toEqual(
       [
-        "components/ajustes/AjustesTab.tsx",
         "components/ajustes/AjustesTab.tsx",
         "components/rede/AmigasScreen.tsx",
         "components/rede/MeuEspacoScreen.tsx",

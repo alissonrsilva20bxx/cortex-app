@@ -68,7 +68,7 @@ describe("JobsTab.tsx carries the T3 weekly-calendar composition", () => {
 
   it("preserves the real status filter and notes functionality", () => {
     expect(src).toContain("FILTERS");
-    expect(src).toContain("chartType");
+    expect(src).not.toContain("chartType");
     expect(src).toContain("NotasSection");
   });
 

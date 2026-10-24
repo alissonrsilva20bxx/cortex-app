@@ -183,8 +183,6 @@ interface Props {
    * É o que o botão "Novo" (J03) usa, sem criar um segundo formulário.
    */
   onEditJob: (job: Job | null) => void;
-  /** Preferência de gráfico dos Ajustes: o Resumo não a usa mais (é só tempo). */
-  chartType?: "bar" | "donut";
   /** Nome e telefone dela, para o cartão do "Lembrar cliente". */
   profissional?: Profissional;
   /**

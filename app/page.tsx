@@ -72,7 +72,6 @@ import type {
   ReceitaAvulsa,
   HomeCardConfig,
   CardStyleConfig,
-  ChartPrefConfig,
 } from "@/lib/types";
 
 // Mesmo aparelho já viu o onboarding terminar (com ou sem PIN, mesmo que
@@ -97,7 +96,6 @@ const DEFAULT_CARD_STYLES: CardStyleConfig = {
   nextJob: "standard",
   financeSummary: "standard",
 };
-const DEFAULT_CHART_PREFS: ChartPrefConfig = { jobs: "bar" };
 
 /** Falha de rede (offline / servidor inalcançável), não sessão inválida. */
 function isNetworkError(error: { name?: string; status?: number }): boolean {
@@ -203,8 +201,6 @@ export default function Page() {
     useState<HomeCardConfig>(DEFAULT_HOME_CARDS);
   const [cardStyles, setCardStyles] =
     useState<CardStyleConfig>(DEFAULT_CARD_STYLES);
-  const [chartPrefs, setChartPrefs] =
-    useState<ChartPrefConfig>(DEFAULT_CHART_PREFS);
 
   useEffect(() => {
     try {
@@ -212,8 +208,6 @@ export default function Page() {
       if (hc) setHomeCards(JSON.parse(hc));
       const cs = localStorage.getItem("jobapp-card-styles");
       if (cs) setCardStyles(JSON.parse(cs));
-      const cp = localStorage.getItem("jobapp-chart-prefs");
-      if (cp) setChartPrefs(JSON.parse(cp));
     } catch (_) {}
   }, []);
 
@@ -724,7 +718,6 @@ export default function Page() {
               <JobsTab
                 userId={usuario.id}
                 refreshTrigger={jobsRefreshKey}
-                chartType={chartPrefs.jobs}
                 profissional={{
                   nome: usuario.nome,
                   telefone: usuario.telefone,
@@ -811,7 +804,6 @@ export default function Page() {
                 }}
                 onHomeCardsChange={setHomeCards}
                 onCardStylesChange={setCardStyles}
-                onChartPrefsChange={setChartPrefs}
                 onClose={() => handleTabChange("home")}
                 onVerPlanos={() => setReabrirPlanos((n) => n + 1)}
                 onOpenTour={() => {

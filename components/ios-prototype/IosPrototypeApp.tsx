@@ -1026,10 +1026,6 @@ function PrototypeSheet({
                   <span>Gráfico financeiro</span>
                   <strong>Área</strong>
                 </button>
-                <button>
-                  <span>Gráfico da agenda</span>
-                  <strong>Barras</strong>
-                </button>
               </div>
             )}
             {kind === "config-notificacoes" && (

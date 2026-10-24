@@ -64,24 +64,19 @@ describe("§7-P0-3 — Sair da conta chama supabase.auth.signOut() real (via pro
   });
 });
 
-describe("§7-P1-1 — homeCards/chartPrefs gravam em localStorage e propagam via prop", () => {
-  it("lê homeCards/chartPrefs do localStorage no mount", () => {
+describe("§7-P1-1 — homeCards gravam em localStorage e propagam via prop", () => {
+  it("lê homeCards do localStorage no mount", () => {
     expect(src).toMatch(/localStorage\.getItem\("jobapp-home-cards"\)/);
-    expect(src).toMatch(/localStorage\.getItem\("jobapp-chart-prefs"\)/);
   });
 
   it("toda alteração persiste de volta no localStorage (não fica só em estado local do componente)", () => {
     expect(src).toMatch(
       /localStorage\.setItem\("jobapp-home-cards", JSON\.stringify\(next\)\)/
     );
-    expect(src).toMatch(
-      /localStorage\.setItem\("jobapp-chart-prefs", JSON\.stringify\(next\)\)/
-    );
   });
 
-  it("propaga as mudanças pro componente raiz via onHomeCardsChange/onChartPrefsChange", () => {
+  it("propaga as mudanças pro componente raiz via onHomeCardsChange", () => {
     expect(src).toMatch(/onHomeCardsChange: \(c: HomeCardConfig\) => void;/);
-    expect(src).toMatch(/onChartPrefsChange: \(c: ChartPrefConfig\) => void;/);
   });
 });
 
