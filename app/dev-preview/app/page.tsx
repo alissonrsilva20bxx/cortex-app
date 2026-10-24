@@ -132,13 +132,28 @@ export default function DevPreviewApp() {
       typeof window !== "undefined"
         ? new URLSearchParams(window.location.search).get("financeiro")
         : null;
+    // `?banco=sem-migracoes` — o banco sem a 0042 (`prazo`) e a 0044
+    // (`guardar_historico`), escritas e não aplicadas: o mock responde com o
+    // erro do PostgREST, para ver o Desejo e o Guardar nesse caso.
+    const semMigracoes =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("banco") ===
+        "sem-migracoes";
     __setMockSupabaseClient(
       createMockSupabaseClient(
         aplicarCasoFinanceiro(
           buildMockAppSeed({ objetivosCount }),
           ehCasoFinanceiro(financeiroParam) ? financeiroParam : null
         ),
-        MOCK_APP_USUARIO.id
+        MOCK_APP_USUARIO.id,
+        semMigracoes
+          ? {
+              ausentes: {
+                tabelas: ["guardar_historico"],
+                colunas: { rede_wishlist_items: ["prazo"] },
+              },
+            }
+          : {}
       )
     );
     // "Sua Jornada" (J12): sem servidor, o estado vem de lib/mockJornada.ts.
