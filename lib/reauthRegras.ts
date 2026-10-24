@@ -20,6 +20,30 @@ export function ehMotivoReauth(x: unknown): x is MotivoReauth {
   return MOTIVOS_REAUTH.includes(x as MotivoReauth);
 }
 
+/** Textos da confirmação da conta quando a rede falha. */
+export const TEXTOS_SEM_REDE = {
+  conta:
+    "Sem internet. Para confirmar a conta é preciso estar conectada. Conecte-se e tente de novo.",
+  senha: "Sem internet. Conecte-se e tente de novo.",
+  tentarDeNovo: "Tentar de novo",
+} as const;
+
+/** Falha de rede (offline / servidor inalcançável), não conta ou senha errada. */
+export function ehErroDeRede(
+  erro: { name?: string; status?: number } | null | undefined,
+  online: boolean | undefined = typeof navigator !== "undefined"
+    ? navigator.onLine
+    : undefined
+): boolean {
+  if (online === false) return true;
+  if (!erro) return false;
+  return (
+    erro.name === "AuthRetryableFetchError" ||
+    erro.name === "AuthUnknownError" ||
+    erro.status === 0
+  );
+}
+
 /** O mínimo do usuário do Supabase que estas regras leem. */
 export interface UsuarioReauth {
   id: string;
@@ -101,6 +125,7 @@ export function lerMarca(bruto: string | null): MarcaGoogle | null {
  * o laboratório (/dev-preview/app, sem Supabase) troca por um falso.
  */
 export interface ReauthAdapter {
+  /** Rejeita quando não dá para saber (sem internet): não é "sem métodos". */
   metodos(): Promise<MetodoReauth[]>;
   comSenha(senha: string): Promise<{ ok: true } | { ok: false; erro: string }>;
   /** Vai para o Google (a página sai daqui). */

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
+  TEXTOS_SEM_REDE,
   VALIDADE_DA_MARCA_MS,
+  ehErroDeRede,
   lerMarca,
   metodosDoUsuario,
   retornoDoGoogleValido,
@@ -133,5 +137,36 @@ describe("volta do Google: só vale se a MESMA conta entrou de novo", () => {
       lerMarca(JSON.stringify({ ...marca, motivo: "apagar-tudo" }))
     ).toBeNull();
     expect(lerMarca(JSON.stringify(marca))).toEqual(marca);
+  });
+});
+
+describe("sem internet na confirmação da conta", () => {
+  it("ehErroDeRede: aparelho offline ou erro de busca de rede; senha errada não", () => {
+    expect(ehErroDeRede(null, false)).toBe(true);
+    expect(ehErroDeRede({ name: "AuthRetryableFetchError" }, true)).toBe(true);
+    expect(ehErroDeRede({ status: 0 }, true)).toBe(true);
+    expect(ehErroDeRede({ status: 400, name: "AuthApiError" }, true)).toBe(false);
+    expect(ehErroDeRede(null, true)).toBe(false);
+  });
+  it("a mensagem diz que falta internet e não manda sair da conta", () => {
+    expect(TEXTOS_SEM_REDE.conta).toMatch(/Sem internet/);
+    expect(TEXTOS_SEM_REDE.conta).not.toMatch(/sair|senha nem Google/i);
+  });
+  it("fiação: sem rede o adaptador rejeita e a tela mostra a mensagem com 'Tentar de novo', sem 'Sair'", () => {
+    const root = join(__dirname, "..", "..");
+    const lerArq = (p: string) =>
+      readFileSync(join(root, p), "utf-8").replace(/\r\n/g, "\n");
+    const adapter = lerArq("lib/reauth.ts");
+    expect(adapter).toMatch(
+      /if \(!data\.user && ehErroDeRede\(error\)\) throw/
+    );
+    expect(adapter).toMatch(
+      /ehErroDeRede\(error\)\)\s*return \{ ok: false, erro: TEXTOS_SEM_REDE\.senha \}/
+    );
+    const modal = lerArq("components/pin/ReauthModal.tsx");
+    expect(modal).toMatch(/\.catch\(\(\) => vivo && setSemRede\(true\)\)/);
+    expect(modal).not.toMatch(/\.catch\(\(\) => vivo && setMetodos\(\[\]\)\)/);
+    expect(modal).toContain("{TEXTOS_SEM_REDE.conta}");
+    expect(modal).toContain("{TEXTOS_SEM_REDE.tentarDeNovo}");
   });
 });

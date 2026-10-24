@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { reauthAtual } from "@/lib/reauth";
+import { TEXTOS_SEM_REDE } from "@/lib/reauthRegras";
 import type {
   MetodoReauth,
   MotivoReauth,
@@ -56,6 +57,8 @@ export function ReauthModal({
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [semRede, setSemRede] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     if (!open) return;
@@ -63,14 +66,16 @@ export function ReauthModal({
     setSenha("");
     setErro(null);
     setMetodos(null);
+    setSemRede(false);
     reauth
       .metodos()
       .then((m) => vivo && setMetodos(m))
-      .catch(() => vivo && setMetodos([]));
+      // Falhou ao consultar (sem internet): não afirma nada sobre a conta.
+      .catch(() => vivo && setSemRede(true));
     return () => {
       vivo = false;
     };
-  }, [open, reauth]);
+  }, [open, reauth, tentativa]);
 
   async function confirmarSenha(e: React.FormEvent) {
     e.preventDefault();
@@ -120,7 +125,7 @@ export function ReauthModal({
         {TEXTO[motivo]}
       </p>
 
-      {metodos === null && (
+      {metodos === null && !semRede && (
         <p style={{ margin: 0, fontSize: 13, color: "var(--t-mut)" }}>
           Carregando…
         </p>
@@ -192,6 +197,33 @@ export function ReauthModal({
         >
           Continuar com o Google
         </button>
+      )}
+
+      {semRede && (
+        <>
+          <p
+            role="alert"
+            data-reauth-sem-rede
+            style={{ margin: 0, fontSize: 13.5, color: "var(--t-mut)" }}
+          >
+            {TEXTOS_SEM_REDE.conta}
+          </p>
+          <button
+            type="button"
+            onClick={() => setTentativa((n) => n + 1)}
+            data-reauth-tentar-de-novo
+            style={{
+              minHeight: 52,
+              borderRadius: 16,
+              background: "var(--t-acc)",
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 800,
+            }}
+          >
+            {TEXTOS_SEM_REDE.tentarDeNovo}
+          </button>
+        </>
       )}
 
       {metodos !== null && metodos.length === 0 && (

@@ -11,6 +11,8 @@
  */
 import { supabase } from "@/lib/supabase";
 import {
+  TEXTOS_SEM_REDE,
+  ehErroDeRede,
   lerMarca,
   metodosDoUsuario,
   retornoDoGoogleValido,
@@ -31,7 +33,9 @@ function lerMarcaGuardada(): MarcaGoogle | null {
 
 export const reauthSupabase: ReauthAdapter = {
   async metodos() {
-    const { data } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
+    // Sem internet não se sabe como a conta entra: não é "sem métodos".
+    if (!data.user && ehErroDeRede(error)) throw new Error(TEXTOS_SEM_REDE.conta);
     return data.user ? metodosDoUsuario(data.user) : [];
   },
 
@@ -43,6 +47,8 @@ export const reauthSupabase: ReauthAdapter = {
       email,
       password: senha,
     });
+    if (error && ehErroDeRede(error))
+      return { ok: false, erro: TEXTOS_SEM_REDE.senha };
     return error
       ? { ok: false, erro: "Senha incorreta. Confira e tente de novo." }
       : { ok: true };
