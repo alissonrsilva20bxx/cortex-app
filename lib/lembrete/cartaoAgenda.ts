@@ -88,6 +88,16 @@ const limpo = (s: string | null | undefined) => {
   return t.length > 0 ? t : null;
 };
 
+/** Assinatura do cartão quando a conta não tem nome (a marca, nunca o e-mail). */
+export const ASSINATURA_SEM_NOME = "Arcelle";
+
+/** Nome para assinar: vazio se não houver, ou se for um e-mail (contas
+ * criadas por e-mail não têm nome e o app cai no e-mail). */
+export function nomeParaAssinar(nome: string | null | undefined): string {
+  const t = limpo(nome);
+  return t && !t.includes("@") ? t : "";
+}
+
 /** Junta o agendamento real e a profissional nos dados do cartão. */
 export function dadosDoLembrete(
   job: Job,
@@ -122,7 +132,7 @@ export function dadosDoLembrete(
             `${dois(Math.floor(fimMin / 60) % 24)}:${dois(fimMin % 60)}`
           ),
     local: localDoAtendimento(job),
-    profissional: limpo(profissional.nome) ?? "",
+    profissional: nomeParaAssinar(profissional.nome),
     telefone: limpo(profissional.telefone),
     valor: formatMoeda(job.valor, 2),
     status: STATUS_META[job.status].label,
@@ -266,10 +276,11 @@ export function cartaoAgendaSvg(d: DadosLembrete, modo: ModoCartao): string {
   const pilula = d.confirmado
     ? { cor: t.ok, fundo: t.okS }
     : { cor: t.neutro, fundo: t.neutroS };
+  const assinatura = d.profissional || ASSINATURA_SEM_NOME;
   const cabecalho = d.telefone
-    ? `<text x="100" y="66" ${FONT} font-size="19" font-weight="800" fill="${t.ink}">${esc(corta(d.profissional, 22))}</text>
+    ? `<text x="100" y="66" ${FONT} font-size="19" font-weight="800" fill="${t.ink}">${esc(corta(assinatura, 22))}</text>
     <text x="100" y="86" ${FONT} font-size="14" font-weight="600" fill="${t.mut}" data-telefone="1">${esc(d.telefone)}</text>`
-    : `<text x="100" y="75" ${FONT} font-size="19" font-weight="800" fill="${t.ink}">${esc(corta(d.profissional, 22))}</text>`;
+    : `<text x="100" y="75" ${FONT} font-size="19" font-weight="800" fill="${t.ink}">${esc(corta(assinatura, 22))}</text>`;
   const horario = d.fim ? `${d.hora} – ${d.fim}` : d.hora;
   const local = d.local
     ? `${ic("pin", 48, 614, 22, t.deep)}<text x="80" y="632" ${FONT} font-size="19" font-weight="700" fill="${t.ink}">${esc(corta(d.local, 36))}</text>`

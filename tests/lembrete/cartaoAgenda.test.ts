@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  ASSINATURA_SEM_NOME,
   POLITICA,
   POLITICA_24H,
   cartaoAgendaSvg,
@@ -26,6 +27,38 @@ const job = (extra: Partial<Job> = {}): Job => ({
   ...extra,
 });
 const PRO = { nome: "Miguel", telefone: "(11) 98765-4321" };
+
+describe("conta sem nome: o e-mail nunca aparece no cartão nem na mensagem", () => {
+  const EMAIL = "maria.aparecida.santos1987@gmail.com";
+  it("nome que é e-mail vira vazio; nome vazio também", () => {
+    expect(dadosDoLembrete(job(), { nome: EMAIL }).profissional).toBe("");
+    expect(dadosDoLembrete(job(), { nome: "  " }).profissional).toBe("");
+    expect(dadosDoLembrete(job(), { nome: "Maria" }).profissional).toBe("Maria");
+  });
+  it("a mensagem termina sem assinatura pessoal", () => {
+    const m = mensagemDoLembrete(dadosDoLembrete(job(), { nome: EMAIL }));
+    expect(m).not.toContain("@");
+    expect(m.trim().endsWith("Até lá!")).toBe(true);
+  });
+  it("o cartão (claro e escuro, com e sem telefone) usa a marca no lugar do nome e não tem e-mail", () => {
+    for (const modo of ["claro", "escuro"] as const) {
+      for (const telefone of [null, "(11) 98765-4321"]) {
+        const svg = cartaoAgendaSvg(
+          dadosDoLembrete(job(), { nome: EMAIL, telefone }),
+          modo
+        );
+        expect(svg).not.toContain("@");
+        expect(svg).not.toContain("maria.aparecida");
+        expect(svg).toContain(`>${ASSINATURA_SEM_NOME}</text>`);
+      }
+    }
+  });
+  it("com nome, a assinatura é o nome, não a marca", () => {
+    const svg = cartaoAgendaSvg(dadosDoLembrete(job(), PRO), "claro");
+    expect(svg).toContain(">Miguel</text>");
+    expect(svg).not.toContain(`>${ASSINATURA_SEM_NOME}</text>`);
+  });
+});
 
 describe("dadosDoLembrete: só dado real do agendamento e da profissional", () => {
   it("dia da semana, dia, mês, data, hora, valor e status", () => {
