@@ -129,13 +129,13 @@ describe("The real gate keeps using the real services — nothing swapped for th
     expect(src).toContain('fetch("/api/rede/solicitar-beta"');
   });
 
-  it("o preço da vitrine vem dos planos reais (lib/planos.ts, em euro), não de um valor solto; o resto do texto segue igual", () => {
+  it("o preço da vitrine vem dos planos reais (lib/planos.ts, na moeda escolhida), não de um valor solto; o resto do texto segue igual", () => {
     const src = read("components/rede/RedeTeaserGate.tsx");
     expect(src).toMatch(
       /import \{[^}]*\bPLANOS\b[^}]*\} from "@\/lib\/planos"/
     );
-    expect(src).toContain("{PLANOS_PREVISTOS}");
-    expect(src).toContain("formatarEuro(p.preco)");
+    expect(src).toContain("{planosPrevistos(moeda)}");
+    expect(src).toContain("formatMoeda(precoDoPlano(p, moeda), moeda");
     expect(src).not.toContain("49,90");
     expect(src).not.toContain("R$");
     expect(src).toContain("Em breve");

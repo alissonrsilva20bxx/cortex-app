@@ -12,7 +12,7 @@ export const TEXTOS_DESEJO = {
   formEditar: "Editar Desejo",
   campoNome: "O que você deseja",
   placeholderNome: "Ex.: Cadeira hidráulica",
-  campoAlvo: "Quanto custa (€)",
+  campoAlvo: (simbolo: string) => `Quanto custa (${simbolo})`,
   campoPrazo: "Até quando (opcional)",
   semPrazo: "Sem prazo",
   jaGuardado: (v: string) => `Já guardado: ${v}`,

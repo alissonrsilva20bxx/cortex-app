@@ -2,11 +2,11 @@
 
 import { CalendarCheck, X } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
-import { formatMoeda } from "@/lib/finance";
 import type { Job, JobStatus } from "@/lib/types";
 import { STATUS_META } from "./status";
 import { formatDiaCurto, formatHora, inicialDoNome } from "./agendaSemana";
 import { IconeAgendado, IconeConcluido } from "./agendaIcones";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 /** Ícone de cada status. Cor e rótulo continuam vindo de `STATUS_META`. */
 const STATUS_ICON: Record<JobStatus, ComponentType<{ size?: number }>> = {
@@ -126,6 +126,7 @@ export function EstaSemanaSection({
   jobs: Job[];
   onOpen: (job: Job) => void;
 }) {
+  const formatMoeda = useFormatMoeda();
   return (
     <section className="flex flex-col" style={{ gap: "16px" }}>
       <div className="flex items-center justify-between">
@@ -181,6 +182,7 @@ export function ProximasSemanasSection({
   jobs: Job[];
   onOpen: (job: Job) => void;
 }) {
+  const formatMoeda = useFormatMoeda();
   return (
     <section className="flex flex-col" style={{ gap: "16px" }}>
       <h2 style={PROXIMAS_TITLE_STYLE}>Próximas semanas</h2>

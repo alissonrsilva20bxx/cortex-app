@@ -5,7 +5,9 @@ import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import { useToast } from "@/components/Toast";
-import { localKey, SIMBOLO_MOEDA } from "@/lib/finance";
+import { localKey } from "@/lib/finance";
+import { simboloMoeda } from "@/lib/moeda";
+import { useMoeda } from "@/lib/useMoeda";
 import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 import { useJornada } from "@/components/jornada/useJornada";
 
@@ -25,6 +27,7 @@ interface Props {
 }
 
 export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
+  const moeda = useMoeda();
   const toast = useToast();
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
@@ -163,7 +166,7 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
           <input
             type="number"
             inputMode="decimal"
-            placeholder={`Valor (${SIMBOLO_MOEDA})`}
+            placeholder={`Valor (${simboloMoeda(moeda)})`}
             value={valor}
             onChange={(e) => setValor(e.target.value)}
             className="rounded-xl px-4 py-3 text-sm font-medium outline-none"

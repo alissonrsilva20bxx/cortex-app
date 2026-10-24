@@ -5,6 +5,7 @@
  * servidor (a chave secreta nunca vai ao navegador). O `fetch` é injetável
  * para os testes simularem o Stripe.
  */
+import { lerMoeda, moedaDoStripe, type Moeda } from "@/lib/moeda";
 import type { Plano } from "@/lib/planos";
 import {
   assinaturaAberta,
@@ -236,6 +237,8 @@ export async function prepararAssinatura(
     userId: string;
     cenario: CenarioDaCobranca;
     abertura: string;
+    /** Moeda do pedido; qualquer valor que não seja USD vira euro. */
+    moeda?: Moeda;
   }
 ): Promise<AssinaturaCriada> {
   const subs = await assinaturasDaCliente(stripe, args.cliente);
@@ -247,7 +250,9 @@ export async function prepararAssinatura(
     if (
       segredo &&
       sub.status === statusEsperado &&
-      sub.metadata?.plano === args.plano.id
+      sub.metadata?.plano === args.plano.id &&
+      // Assinaturas antigas não têm `moeda` na metadata: eram em euro.
+      moedaDoStripe(sub.metadata?.moeda) === moedaDoStripe(args.moeda)
     )
       return { ...segredo, assinaturaId: sub.id };
   }
@@ -273,9 +278,12 @@ export async function criarAssinatura(
     userId: string;
     cenario: CenarioDaCobranca;
     abertura?: string;
+    /** Moeda do pedido; qualquer valor que não seja USD vira euro. */
+    moeda?: Moeda;
   }
 ): Promise<AssinaturaCriada> {
   const { cliente, produto, plano, userId, cenario, abertura } = args;
+  const moeda = lerMoeda(args.moeda);
   const noTeste = cenario.tipo === "fimDoTeste";
   const sub = await stripe.chamar<{
     id: string;
@@ -289,9 +297,9 @@ export async function criarAssinatura(
       items: [
         {
           price_data: {
-            currency: "eur",
+            currency: moedaDoStripe(moeda),
             product: produto,
-            unit_amount: centavos(plano),
+            unit_amount: centavos(plano, moeda),
             recurring: { interval: "month", interval_count: plano.meses },
           },
         },
@@ -308,6 +316,7 @@ export async function criarAssinatura(
       metadata: {
         user_id: userId,
         plano: plano.id,
+        moeda: moedaDoStripe(moeda),
         abertura: abertura ?? undefined,
       },
       expand: ["latest_invoice.payment_intent", "pending_setup_intent"],

@@ -4,7 +4,7 @@ import {
   LETRAS_DA_SEMANA,
   ORDEM_DO_PROXIMO_PASSO,
   PROXIMO_PASSO,
-  TEXTO_DO_PROXIMO_PASSO,
+  textoDoProximoPasso,
   ateProximo,
   capituloEmPartes,
   diasFortesDeTres,
@@ -474,7 +474,7 @@ describe("Pixel card da Jornada — semana e próximo passo (ordem do operador)"
         "no seu Desejo"
       );
       expect(
-        TEXTO_DO_PROXIMO_PASSO[DE[k as keyof typeof DE]].replace(/€ /, "€ ")
+        textoDoProximoPasso(DE[k as keyof typeof DE]).replace(/€ /, "€ ")
       ).toBe(esperado);
     }
     for (const k of ordem) {

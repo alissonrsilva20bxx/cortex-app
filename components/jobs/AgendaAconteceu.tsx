@@ -7,11 +7,11 @@ import {
   pendentesVisiveis,
 } from "@/lib/atendimentos/status";
 import { useAgora } from "@/lib/useAgora";
-import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 import { formatDiaCurto, formatHora } from "./agendaSemana";
 import { ACONTECEU } from "./textosAgenda";
 import { useMudarStatus } from "./useMudarStatus";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   userId: string;
@@ -35,6 +35,7 @@ export function AgendaAconteceu({
   onOpen,
   onStatusMudou,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const { mudar, salvando, erro } = useMudarStatus(userId, onStatusMudou);
   const agora = useAgora();
   const [verTodos, setVerTodos] = useState(false);

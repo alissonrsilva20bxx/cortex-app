@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Check, Target } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { calcEarnings, formatMoeda } from "@/lib/finance";
+import { calcEarnings } from "@/lib/finance";
 import { useAgora } from "@/lib/useAgora";
 import { GuardarCard } from "./GuardarCard";
 import { DesejosCard } from "./DesejosCard";
@@ -12,6 +12,7 @@ import { TEXTOS_AFAZERES as TA } from "@/lib/desejo/textos";
 import { progressoMeta } from "./progressoMeta";
 import { PERIODO_LABELS, OBJ_CATS } from "./constants";
 import type { Job, Meta, ReceitaAvulsa, Objetivo } from "@/lib/types";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 /**
  * Título de seção — 13px/semibold/-0.035em, cor plena, mesmo tratamento
@@ -54,6 +55,7 @@ export function MetasTab({
   onObjetivoAdded,
   onToggleObjetivo,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const agora = useAgora();
   const [objTitulo, setObjTitulo] = useState("");
   const [objCat, setObjCat] = useState("afazeres");

@@ -14,7 +14,7 @@
  */
 import { STATUS_META } from "@/components/jobs/status";
 import { formatHora, localDoAtendimento } from "@/components/jobs/agendaSemana";
-import { formatMoeda } from "@/lib/finance";
+import { MOEDA_PADRAO, formatMoeda, type Moeda } from "@/lib/moeda";
 import type { Job } from "@/lib/types";
 import {
   ARCELLE_NOITE,
@@ -102,7 +102,11 @@ export function nomeParaAssinar(nome: string | null | undefined): string {
 export function dadosDoLembrete(
   job: Job,
   profissional: Profissional,
-  extra: { servico?: string | null; duracaoMin?: number | null } = {}
+  extra: {
+    servico?: string | null;
+    duracaoMin?: number | null;
+    moeda?: Moeda;
+  } = {}
 ): DadosLembrete {
   const [ano, mesN, diaN] = job.data.split("-").map(Number);
   const data = new Date(ano, (mesN || 1) - 1, diaN || 1);
@@ -134,7 +138,7 @@ export function dadosDoLembrete(
     local: localDoAtendimento(job),
     profissional: nomeParaAssinar(profissional.nome),
     telefone: limpo(profissional.telefone),
-    valor: formatMoeda(job.valor, 2),
+    valor: formatMoeda(job.valor, extra.moeda ?? MOEDA_PADRAO, 2),
     status: STATUS_META[job.status].label,
     confirmado: job.status === "confirmado",
   };

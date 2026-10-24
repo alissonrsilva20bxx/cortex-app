@@ -3,18 +3,17 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import * as textos from "../../lib/jornada/textos";
 import {
-  CURRENCY,
   LOCALE,
   NOME_PILAR,
   ROTULO_ACAO,
   SELO,
   glowGanho,
-  money,
   nomeEnfeite,
   nomeEstagio,
   nomeMes,
   textoMissao,
 } from "../../lib/jornada/textos";
+import { formatMoeda } from "../../lib/moeda";
 import { ACOES, PILARES, SELOS, TIPOS_MISSAO } from "../../lib/jornada/estado";
 
 /**
@@ -164,11 +163,12 @@ describe("nenhum texto visível nem moeda fora de lib/jornada/textos.ts", () => 
 });
 
 describe("textos.ts cobre tudo o que as telas vão mostrar", () => {
-  it("idioma e moeda num bloco só", () => {
+  it("idioma num bloco só; o dinheiro vem do formatador central, com a moeda", () => {
     expect(LOCALE).toBe("pt-BR");
-    expect(CURRENCY).toBe("EUR");
-    expect(money(1000)).toMatch(/€/);
-    expect(money(1000)).toMatch(/1\.000/);
+    expect(formatMoeda(1000, "EUR")).toMatch(/€/);
+    expect(formatMoeda(1000, "EUR")).toMatch(/1\.000/);
+    expect(textos.textoMarco(1000, "USD")).toMatch(/US\$.*1\.000 guardados/);
+    expect(textos.textoMarco(1000)).toMatch(/€.*1\.000 guardados/);
   });
 
   it("todo pilar, ação, selo e tipo de missão tem texto", () => {

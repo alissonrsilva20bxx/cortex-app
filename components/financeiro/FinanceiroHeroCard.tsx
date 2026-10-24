@@ -2,7 +2,6 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import {
-  formatMoeda,
   calcEarnings,
   monthExpenses,
   monthMeta,
@@ -12,6 +11,7 @@ import {
 import type { Job, Despesa, Meta, ReceitaAvulsa } from "@/lib/types";
 import { useAgora } from "@/lib/useAgora";
 import { progressoMeta } from "./progressoMeta";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   jobs: Job[];
@@ -103,6 +103,7 @@ export function FinanceiroHeroCard({
   saldo,
   metas,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const now = useAgora();
   const prevRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevSaldo =

@@ -7,9 +7,11 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { HeroCard } from "@/components/home/HeroCard";
 import { PinSetup } from "@/components/pin/PinSetup";
 import { hasNoRealGoal } from "@/lib/onboarding";
-import { SIMBOLO_MOEDA } from "@/lib/finance";
 import { AVISO_FALTAM_DIAS, TRIAL_DIAS } from "@/lib/assinatura";
-import { formatarEuro, menorPrecoPorMes } from "@/lib/planos";
+import { SeletorMoeda } from "@/components/moeda/SeletorMoeda";
+import { simboloMoeda } from "@/lib/moeda";
+import { menorPrecoPorMes } from "@/lib/planos";
+import { useFormatMoeda, useMoeda } from "@/lib/useMoeda";
 import {
   ESPELHO,
   ICONE_VIEWBOX,
@@ -71,6 +73,8 @@ function BoasVindasTeste({
   onAvancar: () => void;
   onPular: () => void;
 }) {
+  const moeda = useMoeda();
+  const formatMoeda = useFormatMoeda();
   return (
     <div className={styles.ob} data-onboarding-tela={INTRO[passo]}>
       <section
@@ -207,7 +211,7 @@ function BoasVindasTeste({
                   <b>O teste termina</b>
                   <small>
                     Para continuar, você escolhe um plano, a partir de{" "}
-                    {formatarEuro(menorPrecoPorMes())} por mês.
+                    {formatMoeda(menorPrecoPorMes(moeda), "auto")} por mês.
                   </small>
                 </span>
               </li>
@@ -269,6 +273,7 @@ export function OnboardingFlow({
   onPinSaved,
   onComplete,
 }: Props) {
+  const moeda = useMoeda();
   // 0-2: as 3 telas de boas-vindas; 3: já passou por elas.
   const [introPasso, setIntroPasso] = useState(0);
   const [goalStepDone, setGoalStepDone] = useState(false);
@@ -355,12 +360,15 @@ export function OnboardingFlow({
             Uma reserva, uma viagem, o início do seu patrimônio — o que for,
             começa com uma meta mensal.
           </p>
+          <div className="w-full max-w-xs text-left mb-4">
+            <SeletorMoeda />
+          </div>
           <div className="w-full max-w-xs text-left mb-5">
             <label
               className="text-xs font-semibold uppercase tracking-wider mb-2 block"
               style={{ color: "var(--text-muted)" }}
             >
-              Meta mensal ({SIMBOLO_MOEDA})
+              Meta mensal ({simboloMoeda(moeda)})
             </label>
             <input
               type="number"

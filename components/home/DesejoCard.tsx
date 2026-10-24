@@ -10,7 +10,6 @@ import {
 } from "@/lib/desejo/desejo";
 import { useAoMudarDesejos } from "@/lib/desejo/eventos";
 import { TEXTOS_DESEJO as T } from "@/lib/desejo/textos";
-import { formatEUR } from "@/lib/guardar/valor";
 import { InicioCard } from "./InicioCard";
 import {
   CARD_PEQUENO,
@@ -18,6 +17,7 @@ import {
   ROTULO_CARD,
   VALOR_CARD,
 } from "./pecasMockup";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   userId: string;
@@ -40,6 +40,7 @@ function IconeDesejo() {
  * Metas, onde o Desejo é criado e editado.
  */
 export function DesejoCard({ userId, onGoToMetas }: Props) {
+  const formatMoeda = useFormatMoeda();
   const [itens, setItens] = useState<WishlistItem[] | null>(null);
 
   const carregar = useCallback(async () => {
@@ -75,8 +76,8 @@ export function DesejoCard({ userId, onGoToMetas }: Props) {
   const pct = progressoDesejo(principal.valorAtual, principal.valorAlvo);
   const prazo = textoPrazo(principal.prazo);
   const valores = T.deAte(
-    formatEUR(principal.valorAtual),
-    formatEUR(principal.valorAlvo)
+    formatMoeda(principal.valorAtual),
+    formatMoeda(principal.valorAlvo)
   );
 
   return (

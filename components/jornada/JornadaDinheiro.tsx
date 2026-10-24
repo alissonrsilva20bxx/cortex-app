@@ -10,10 +10,11 @@ import {
   emPorcento,
   marcosDoTotal,
   metaDeAte,
-  money,
   notaDinheiro,
   textoMarco,
 } from "@/lib/jornada/textos";
+import { formatMoeda } from "@/lib/moeda";
+import { useMoeda } from "@/lib/useMoeda";
 import { Ic } from "./IconeJornada";
 import { cx, Secao } from "./JornadaPecas";
 import s from "./jornada.module.css";
@@ -26,6 +27,7 @@ import s from "./jornada.module.css";
  * (protótipo: `moneyHidden`).
  */
 export function JornadaDinheiro({ estado }: { estado: EstadoJornada }) {
+  const moeda = useMoeda();
   const dinheiro = estado.dinheiro;
   const meta = dinheiro?.meta ?? null;
   const escondido = estado.preferencias.modoDiscreto;
@@ -51,8 +53,8 @@ export function JornadaDinheiro({ estado }: { estado: EstadoJornada }) {
             </div>
             <span className={s.n}>
               {escondido
-                ? dinheiroEscondido()
-                : metaDeAte(meta.atual, meta.alvo)}
+                ? dinheiroEscondido(moeda)
+                : metaDeAte(meta.atual, meta.alvo, moeda)}
             </span>
           </div>
           <div className={s.bar8}>
@@ -67,7 +69,9 @@ export function JornadaDinheiro({ estado }: { estado: EstadoJornada }) {
       )}
       <div className={s.lbl} style={{ fontSize: "11px", marginTop: "4px" }}>
         {marcosDoTotal(
-          escondido ? dinheiroEscondido() : money(dinheiro?.totalGuardado ?? 0)
+          escondido
+            ? dinheiroEscondido(moeda)
+            : formatMoeda(dinheiro?.totalGuardado ?? 0, moeda)
         )}
       </div>
       <div className={s.miles}>
@@ -76,7 +80,7 @@ export function JornadaDinheiro({ estado }: { estado: EstadoJornada }) {
           return (
             <div
               key={marco}
-              aria-label={textoMarco(marco)}
+              aria-label={textoMarco(marco, moeda)}
               className={cx(s.mile, batido && s.on)}
             >
               {batido ? (
@@ -84,7 +88,7 @@ export function JornadaDinheiro({ estado }: { estado: EstadoJornada }) {
               ) : (
                 <Ic n="lock" s={13} sw={2.2} />
               )}
-              {escondido ? MARCO_ESCONDIDO : money(marco)}
+              {escondido ? MARCO_ESCONDIDO : formatMoeda(marco, moeda)}
             </div>
           );
         })}

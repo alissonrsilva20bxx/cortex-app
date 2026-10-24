@@ -1,9 +1,10 @@
 "use client";
 
-import { formatMoeda, monthProjection } from "@/lib/finance";
+import { monthProjection } from "@/lib/finance";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 import { useAgora } from "@/lib/useAgora";
 import { InicioCard } from "./InicioCard";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   jobs: Job[];
@@ -21,6 +22,7 @@ interface Props {
  * Financeiro (Visão), o mesmo destino do antigo botão do card (#134).
  */
 export function HeroCard({ jobs, metas, receitas, onGoToFinanceiro }: Props) {
+  const formatMoeda = useFormatMoeda();
   const agora = useAgora();
   const p = monthProjection(jobs, metas, receitas, agora);
 

@@ -13,7 +13,8 @@ import {
   statusPermitidos,
 } from "@/lib/atendimentos/status";
 import { ERRO_FORM_STATUS } from "./textosAgenda";
-import { SIMBOLO_MOEDA } from "@/lib/finance";
+import { simboloMoeda } from "@/lib/moeda";
+import { useMoeda } from "@/lib/useMoeda";
 import type { Job, JobStatus, Modalidade } from "@/lib/types";
 
 interface FormState {
@@ -81,6 +82,7 @@ const labelStyle: React.CSSProperties = {
 };
 
 export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
+  const moeda = useMoeda();
   const [form, setForm] = useState<FormState>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -266,7 +268,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
 
           {/* Valor */}
           <div>
-            <label style={labelStyle}>Valor ({SIMBOLO_MOEDA})</label>
+            <label style={labelStyle}>Valor ({simboloMoeda(moeda)})</label>
             <input
               type="number"
               min="0"

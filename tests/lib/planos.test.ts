@@ -2,23 +2,44 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   PLANOS,
   PLANO_PADRAO,
+  cheioDoPlano,
   economia,
-  formatarEuro,
   guardarPlanoEscolhido,
   menorPrecoPorMes,
   percentualDesconto,
   planoEscolhido,
   planoPorId,
+  precoDoPlano,
   precoPorMes,
 } from "@/lib/planos";
+import { formatMoeda } from "@/lib/moeda";
 
 describe("planos do fim do teste (onboarding Linha do tempo)", () => {
   it("são três, em euro: 1 mês 15, 2 meses 25 (cheio 30), 3 meses 30 (cheio 45)", () => {
-    expect(PLANOS.map((p) => [p.id, p.meses, p.preco, p.cheio])).toEqual([
+    expect(
+      PLANOS.map((p) => [
+        p.id,
+        p.meses,
+        precoDoPlano(p, "EUR"),
+        cheioDoPlano(p, "EUR"),
+      ])
+    ).toEqual([
       ["1m", 1, 15, null],
       ["2m", 2, 25, 30],
       ["3m", 3, 30, 45],
     ]);
+  });
+
+  it("cada plano tem preço em euro e em dólar (dólar PROVISÓRIO: igual ao do euro até o capitão decidir)", () => {
+    for (const p of PLANOS) {
+      expect(Object.keys(p.precos).sort()).toEqual(["EUR", "USD"]);
+      expect(precoDoPlano(p, "USD")).toBe(precoDoPlano(p, "EUR"));
+      expect(cheioDoPlano(p, "USD")).toBe(cheioDoPlano(p, "EUR"));
+    }
+  });
+
+  it("moeda inválida usa o preço em euro", () => {
+    expect(precoDoPlano(planoPorId("1m"), "GBP" as never)).toBe(15);
   });
 
   it("não tem plano Garçom", () => {
@@ -43,9 +64,11 @@ describe("planos do fim do teste (onboarding Linha do tempo)", () => {
     expect(menorPrecoPorMes()).toBe(10);
   });
 
-  it("formata como o desenho: '€ 15' e '€ 12,50'", () => {
-    expect(formatarEuro(15)).toBe("€ 15");
-    expect(formatarEuro(12.5)).toBe("€ 12,50");
+  it("formata como o desenho, pelo formatador central: '€ 15' e '€ 12,50'", () => {
+    const norm = (t: string) => t.replace(/[\s\u00a0\u202f]+/g, " ");
+    expect(norm(formatMoeda(15, "EUR", "auto"))).toBe("€ 15");
+    expect(norm(formatMoeda(12.5, "EUR", "auto"))).toBe("€ 12,50");
+    expect(norm(formatMoeda(15, "USD", "auto"))).toBe("US$ 15");
   });
 
   it("nasce marcado o de 3 meses", () => {

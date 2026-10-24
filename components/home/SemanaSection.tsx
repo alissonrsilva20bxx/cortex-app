@@ -1,7 +1,6 @@
 "use client";
 
 import { Fragment } from "react";
-import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 import { useAgora } from "@/lib/useAgora";
 import { InicioCard } from "./InicioCard";
@@ -11,6 +10,7 @@ import {
   rotuloDiaCurto,
 } from "./inicioAgenda";
 import { LinkSecao } from "@/components/ui/LinkSecao";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   jobs: Job[];
@@ -24,6 +24,7 @@ interface Props {
  * "Agenda ›" leva à aba Agenda.
  */
 export function SemanaSection({ jobs, onGoToAgenda }: Props) {
+  const formatMoeda = useFormatMoeda();
   const agora = useAgora();
   const dias = diasRestantesDaSemana(jobs, agora);
   // Valores do mockup normativo (tela Início, "Esta semana").

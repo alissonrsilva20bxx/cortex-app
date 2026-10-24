@@ -16,6 +16,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { Comemoracao } from "@/lib/jornada/estado";
 import { liberarAudio, tocarSom, vibrar } from "@/lib/jornada/som";
 import { COMEMORACAO, NOME_GLOW, itensDoEstagio } from "@/lib/jornada/textos";
+import { moedaSalva } from "@/lib/moeda";
 
 import { Ic, Icf, type NomeIcone } from "../IconeJornada";
 import { ICONE_DO_ENFEITE } from "../JornadaColecao";
@@ -233,7 +234,7 @@ export function ComemoracaoPalco({
     }
     const amb = ambienteRef.current;
     const plano = planoDaComemoracao(c, amb);
-    const textos = textosDaComemoracao(c, amb.modoDiscreto);
+    const textos = textosDaComemoracao(c, amb.modoDiscreto, moedaSalva());
     const timers: ReturnType<typeof setTimeout>[] = [];
     const depois = (ms: number, f: () => void) =>
       timers.push(setTimeout(f, ms));

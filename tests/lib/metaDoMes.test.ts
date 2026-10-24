@@ -8,10 +8,10 @@ import { FaltaMetaCard } from "@/components/home/FaltaMetaCard";
 import { FinanceiroHeroCard } from "@/components/financeiro/FinanceiroHeroCard";
 import {
   calcEarnings,
-  formatMoeda,
   monthProjection,
   monthTicketMedio,
 } from "@/lib/finance";
+import { formatMoeda } from "@/lib/moeda";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 
 /**
@@ -46,7 +46,7 @@ const avulsa: ReceitaAvulsa = {
   criadoEm: dia(1),
 };
 
-const brl = (v: number) => formatMoeda(v).replace(/[\s\u00a0\u202f]+/g, " ");
+const brl = (v: number) => formatMoeda(v, "EUR").replace(/[\s\u00a0\u202f]+/g, " ");
 
 const texto = (el: Parameters<typeof renderToStaticMarkup>[0]) =>
   renderToStaticMarkup(el)

@@ -116,8 +116,8 @@ describe("euro e textos em constantes", () => {
     "components/rede/WishlistCard.tsx",
     "components/home/DesejoCard.tsx",
     "components/desejo/DesejoForm.tsx",
-  ])("%s mostra dinheiro pelo formatador oficial (formatEUR)", (f) => {
-    expect(read(f)).toContain("formatEUR(");
+  ])("%s mostra dinheiro pelo formatador oficial (formatMoeda)", (f) => {
+    expect(read(f)).toContain("formatMoeda(");
   });
 
   it("o progresso vem de progressoDesejo em todas as telas", () => {

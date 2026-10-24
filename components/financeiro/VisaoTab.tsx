@@ -1,9 +1,9 @@
 "use client";
 
-import { formatMoeda } from "@/lib/finance";
 import { LinkSecao } from "@/components/ui/LinkSecao";
 import type { Job, Despesa, ReceitaAvulsa } from "@/lib/types";
 import { buildMovements, type Movement } from "./movimentos";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   jobs: Job[];
@@ -34,6 +34,7 @@ function rotuloData(data: string, maiusculo: boolean): string {
  * (acessibilidade, regra do J04). Cores do mockup (`--t-green`/`--t-red`).
  */
 function Valor({ m, tamanho }: { m: Movement; tamanho: string }) {
+  const formatMoeda = useFormatMoeda();
   return (
     <span
       style={{

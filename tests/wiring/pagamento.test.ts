@@ -79,7 +79,7 @@ describe("regras do desenho", () => {
     expect(tela).toMatch(
       /`Assinar · cobrança em \$\{formatarDDMM\(inicio\)\}`/
     );
-    expect(tela).toMatch(/`Pagar \$\{formatarEuro\(plano\.preco\)\}`/);
+    expect(tela).toMatch(/`Pagar \$\{formatMoeda\(preco, "auto"\)\}`/);
   });
 
   it("sem teste grátis na tela de pagamento", () => {
@@ -95,7 +95,7 @@ describe("regras do desenho", () => {
 
   it("preços em euro vindos dos planos do onboarding (sem números soltos)", () => {
     expect(tela).toMatch(/from "@\/lib\/planos"/);
-    expect(stripeApi).toMatch(/currency: "eur"/);
+    expect(stripeApi).toMatch(/currency: moedaDoStripe\(moeda\)/);
     expect(tela).not.toMatch(/€ ?(15|25|30|45)\b/);
   });
 });
@@ -119,7 +119,7 @@ describe("o cartão nunca passa pelo nosso servidor", () => {
 
   it("a rota só recebe o plano; nada de cartão no corpo", () => {
     expect(cliente).toMatch(
-      /body: JSON\.stringify\(\{ plano: plano\.id, abertura \}\)/
+      /body: JSON\.stringify\(\{ plano: plano\.id, abertura, moeda \}\)/
     );
     expect(rota).not.toMatch(/card|cartao|cartão|number|cvc/i);
   });
@@ -215,7 +215,7 @@ describe("ajustes da revisão (#221)", () => {
   });
 
   it("uma abertura, um pedido (Strict Mode não pede duas vezes)", () => {
-    expect(tela).toMatch(/adaptador\.iniciar\(plano, abertura\.current\)/);
+    expect(tela).toMatch(/adaptador\.iniciar\(\s*plano,\s*abertura\.current\.id,\s*moeda\s*\)/);
     expect(cliente).toMatch(
       /const ja = pedidos\.get\(chave\);\s*if \(ja\) return ja;/
     );

@@ -8,6 +8,7 @@
  * (/dev-preview/app, sem chaves) usa um Stripe simulado, para a tela poder
  * ser vista e testada de ponta a ponta sem cobrar nada.
  */
+import type { Moeda } from "@/lib/moeda";
 import type { Plano } from "@/lib/planos";
 
 /** A chave publicável (pk_…), embutida no build. Sem ela: "pagamento
@@ -59,7 +60,11 @@ export interface PagamentoAdapter {
   carregarStripe(chave: string): Promise<StripeJs>;
   /** `abertura`: um id por abertura da tela (reaproveita a assinatura e é
    * a chave de idempotência no servidor). */
-  iniciar(plano: Plano, abertura: string): Promise<ResultadoDoInicio>;
+  iniciar(
+    plano: Plano,
+    abertura: string,
+    moeda: Moeda
+  ): Promise<ResultadoDoInicio>;
 }
 
 let carregando: Promise<StripeJs> | null = null;
@@ -96,11 +101,11 @@ const pedidos = new Map<string, Promise<ResultadoDoInicio>>();
 export const pagamentoStripe: PagamentoAdapter = {
   chave: () => CHAVE_PUBLICAVEL,
   carregarStripe: carregarStripeJs,
-  iniciar(plano, abertura) {
-    const chave = `${abertura}:${plano.id}`;
+  iniciar(plano, abertura, moeda) {
+    const chave = `${abertura}:${plano.id}:${moeda}`;
     const ja = pedidos.get(chave);
     if (ja) return ja;
-    const pedido = pedirAssinatura(plano, abertura);
+    const pedido = pedirAssinatura(plano, abertura, moeda);
     pedidos.set(chave, pedido);
     // Falhou: a próxima tentativa pede de novo.
     void pedido.then((r) => {
@@ -112,13 +117,14 @@ export const pagamentoStripe: PagamentoAdapter = {
 
 async function pedirAssinatura(
   plano: Plano,
-  abertura: string
+  abertura: string,
+  moeda: Moeda
 ): Promise<ResultadoDoInicio> {
   try {
     const r = await fetch("/api/pagamento/assinatura", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plano: plano.id, abertura }),
+      body: JSON.stringify({ plano: plano.id, abertura, moeda }),
     });
     const json = (await r.json().catch(() => ({}))) as {
       tipo?: "payment" | "setup";

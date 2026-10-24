@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { simboloMoeda } from "@/lib/moeda";
 import {
+  cheioDoPlano,
   economia,
-  formatarEuro,
   percentualDesconto,
+  precoDoPlano,
   precoPorMes,
   type Plano,
 } from "@/lib/planos";
+import { useFormatMoeda, useMoeda } from "@/lib/useMoeda";
 import {
   cenarioDaCobranca,
   formatarDDMM,
@@ -157,8 +160,16 @@ export function PagamentoTela({
 }: Props) {
   // Uma abertura, um pedido: reaproveita a assinatura aberta no servidor e
   // é a chave de idempotência da criação.
-  const abertura = useRef<string>("");
-  if (!abertura.current) abertura.current = novaAbertura();
+  // Trocar a moeda abre um pedido novo (outro id): o Stripe não aceita o
+  // mesmo id com outra moeda.
+  const moeda = useMoeda();
+  const formatMoeda = useFormatMoeda();
+  const abertura = useRef<{ id: string; moeda: typeof moeda }>({
+    id: "",
+    moeda,
+  });
+  if (!abertura.current.id || abertura.current.moeda !== moeda)
+    abertura.current = { id: novaAbertura(), moeda };
   const [cenario, setCenario] = useState<CenarioDaCobranca | null>(
     cenarioForcado ?? null
   );
@@ -209,7 +220,11 @@ export function PagamentoTela({
     let vivo = true;
     let desmontar: (() => void) | null = null;
     void (async () => {
-      const r = await adaptador.iniciar(plano, abertura.current);
+      const r = await adaptador.iniciar(
+        plano,
+        abertura.current.id,
+        moeda
+      );
       if (!vivo) return;
       if (!r.ok) {
         setEstado(r.indisponivel ? "indisponivel" : "falhou");
@@ -247,7 +262,7 @@ export function PagamentoTela({
       desmontar?.();
       stripeRef.current = null;
     };
-  }, [cenario, plano]);
+  }, [cenario, plano, moeda]);
 
   // Confirmado no Stripe: quem grava "ativa" é o webhook, no servidor. A
   // tela relê `configuracoes` até ver "ativa" (ou desistir) e avisa a
@@ -313,6 +328,8 @@ export function PagamentoTela({
   }
 
   const fimDoTeste = cenario?.tipo === "fimDoTeste";
+  const preco = precoDoPlano(plano, moeda);
+  const cheio = cheioDoPlano(plano, moeda);
   const inicio = cenario ? inicioDaCobranca(cenario) : new Date();
   const renova = renovaEm(inicio, plano.meses);
   const periodo = nomeDoPeriodo(plano.meses);
@@ -351,48 +368,50 @@ export function PagamentoTela({
             <div className={styles.linha}>
               <span>Plano de {periodo}</span>
               <span>
-                {plano.cheio != null && (
+                {cheio != null && (
                   <>
                     <span className={styles.strike}>
-                      {formatarEuro(plano.cheio)}
+                      {formatMoeda(cheio, "auto")}
                     </span>{" "}
                   </>
                 )}
-                {formatarEuro(plano.preco)}
+                {formatMoeda(preco, "auto")}
               </span>
             </div>
-            {plano.cheio != null && (
+            {cheio != null && (
               <div className={styles.linha}>
-                <span>Desconto ({percentualDesconto(plano)}%)</span>
+                <span>Desconto ({percentualDesconto(plano, moeda)}%)</span>
                 <span className={styles.save}>
-                  − {formatarEuro(economia(plano))}
+                  − {formatMoeda(economia(plano, moeda), "auto")}
                 </span>
               </div>
             )}
             <div className={styles.linha}>
               <span>Equivale a</span>
-              <span>{formatarEuro(precoPorMes(plano))}/mês</span>
+              <span>{formatMoeda(precoPorMes(plano, moeda), "auto")}/mês</span>
             </div>
             <div className={`${styles.linha} ${styles.total}`}>
               <span>{fimDoTeste ? "Hoje" : "Total hoje"}</span>
-              <span>{formatarEuro(fimDoTeste ? 0 : plano.preco)}</span>
+              <span>{formatMoeda(fimDoTeste ? 0 : preco, "auto")}</span>
             </div>
             {fimDoTeste && (
               <div className={styles.linha}>
                 <span>Em {formatarDDMM(inicio)}</span>
-                <span>{formatarEuro(plano.preco)}</span>
+                <span>{formatMoeda(preco, "auto")}</span>
               </div>
             )}
             <div className={`${styles.linha} ${styles.mut}`}>
               <span>Renova em {formatarDDMM(renova)}</span>
-              <span>{formatarEuro(plano.preco)}</span>
+              <span>{formatMoeda(preco, "auto")}</span>
             </div>
           </div>
 
           <div className={styles.stripeBloco} data-bloco-stripe>
             <div className={styles.stripeHead}>
               <span>{ICONE.cadeado} Pagamento seguro por Stripe</span>
-              <span className={styles.moeda}>€ · EUR</span>
+              <span className={styles.moeda}>
+                {simboloMoeda(moeda)} · {moeda}
+              </span>
             </div>
             {estado === "indisponivel" ? (
               <p className={styles.indisponivel} data-indisponivel>
@@ -441,7 +460,7 @@ export function PagamentoTela({
               ) : fimDoTeste ? (
                 `Assinar · cobrança em ${formatarDDMM(inicio)}`
               ) : (
-                `Pagar ${formatarEuro(plano.preco)}`
+                `Pagar ${formatMoeda(preco, "auto")}`
               )}
             </button>
           </div>
@@ -461,8 +480,8 @@ export function PagamentoTela({
             </p>
             <p style={{ fontSize: 12, marginTop: 14 }}>
               {fimDoTeste
-                ? `Primeira cobrança em ${formatarDDMM(inicio)}: ${formatarEuro(plano.preco)} · depois a cada ${periodo}.`
-                : `O Stripe enviou o recibo para o seu e-mail · próxima cobrança em ${formatarDDMM(renova)}: ${formatarEuro(plano.preco)}`}
+                ? `Primeira cobrança em ${formatarDDMM(inicio)}: ${formatMoeda(preco, "auto")} · depois a cada ${periodo}.`
+                : `O Stripe enviou o recibo para o seu e-mail · próxima cobrança em ${formatarDDMM(renova)}: ${formatMoeda(preco, "auto")}`}
             </p>
             <div className={styles.pushWin}>
               <button

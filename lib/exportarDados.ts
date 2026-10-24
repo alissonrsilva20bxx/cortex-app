@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { SIMBOLO_MOEDA } from "@/lib/finance";
+import { moedaSalva, simboloMoeda } from "@/lib/moeda";
 
 /**
  * Exportar sempre disponível, mesmo com assinatura vencida (§7.4: confiança
@@ -27,7 +27,7 @@ function buildCSV(rows: LinhaExtrato[]): string {
     "Tipo",
     "Descrição",
     "Detalhe",
-    `Valor (${SIMBOLO_MOEDA})`,
+    `Valor (${simboloMoeda(moedaSalva())})`,
     "Status",
   ];
   const linhas = [...rows]

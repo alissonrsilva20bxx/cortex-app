@@ -12,14 +12,14 @@ import {
   assinaturaAberta,
   assinaturaValendo,
 } from "@/lib/pagamento/regras";
-import { PLANOS, planoPorId } from "@/lib/planos";
+import { PLANOS, planoPorId, precoDoPlano } from "@/lib/planos";
 
 const local = (a: number, m: number, d: number, h = 10) =>
   new Date(a, m - 1, d, h, 0, 0);
 
 describe("planos em euro (os mesmos do onboarding)", () => {
   it("1 mês € 15, 2 meses € 25, 3 meses € 30, em centavos para o Stripe", () => {
-    expect(PLANOS.map((p) => [p.meses, p.preco])).toEqual([
+    expect(PLANOS.map((p) => [p.meses, precoDoPlano(p)])).toEqual([
       [1, 15],
       [2, 25],
       [3, 30],

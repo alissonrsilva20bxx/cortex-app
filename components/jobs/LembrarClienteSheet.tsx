@@ -17,6 +17,7 @@ import {
   svgParaPng,
 } from "@/lib/lembrete/imagem";
 import type { Job } from "@/lib/types";
+import { useMoeda } from "@/lib/useMoeda";
 
 interface Props {
   /** O agendamento a lembrar; `null` fecha a folha. */
@@ -54,9 +55,10 @@ export function LembrarClienteSheet({ job, profissional, onClose }: Props) {
     setCopiado(false);
   }, [job]);
 
+  const moeda = useMoeda();
   const dados = useMemo(
-    () => (job ? dadosDoLembrete(job, profissional) : null),
-    [job, profissional]
+    () => (job ? dadosDoLembrete(job, profissional, { moeda }) : null),
+    [job, profissional, moeda]
   );
   const svg = useMemo(
     () => (dados ? cartaoAgendaSvg(dados, modo) : null),

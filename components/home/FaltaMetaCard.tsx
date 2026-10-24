@@ -1,6 +1,6 @@
 "use client";
 
-import { formatMoeda, monthProjection } from "@/lib/finance";
+import { monthProjection } from "@/lib/finance";
 import type { Job, Meta, ReceitaAvulsa } from "@/lib/types";
 import { useAgora } from "@/lib/useAgora";
 import { InicioCard } from "./InicioCard";
@@ -10,6 +10,7 @@ import {
   ROTULO_CARD,
   VALOR_CARD,
 } from "./pecasMockup";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   jobs: Job[];
@@ -31,6 +32,7 @@ export function FaltaMetaCard({
   receitas,
   onGoToFinanceiro,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const agora = useAgora();
   const p = monthProjection(jobs, metas, receitas, agora);
   if (p.meta === null || p.remaining === null) return null;

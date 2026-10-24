@@ -3,7 +3,8 @@
  * pagamento-transparente-stripe.html), sem DOM e sem rede: testadas em
  * tests/lib/pagamentoRegras.test.ts.
  *
- * - Planos em euro (lib/planos.ts): 1 mês € 15, 2 meses € 25, 3 meses € 30.
+ * - Planos em euro ou dólar (lib/planos.ts): 1 mês 15, 2 meses 25, 3 meses 30
+ *   (o preço em dólar é provisório, igual ao do euro).
  * - Quem assina com o teste ainda correndo não paga hoje: a primeira
  *   cobrança cai no fim do teste ("Seu teste continua até DD/MM; a
  *   primeira cobrança é nessa data"). Quem assina com o teste vencido paga
@@ -11,7 +12,8 @@
  * - Sem teste grátis na tela de pagamento; sem Pix (só cartão).
  */
 import { diasDoTeste } from "@/lib/assinatura";
-import type { Plano } from "@/lib/planos";
+import { MOEDA_PADRAO, type Moeda } from "@/lib/moeda";
+import { precoDoPlano, type Plano } from "@/lib/planos";
 
 /** Quando o teste desta conta termina (a mesma conta de `computeAssinatura`). */
 export function fimDoTeste(trialStartedAt: string): Date {
@@ -69,9 +71,9 @@ export function nomeDoPeriodo(meses: number): string {
   return `${meses} ${meses > 1 ? "meses" : "mês"}`;
 }
 
-/** Valor em centavos de euro, como o Stripe espera (€ 15 → 1500). */
-export function centavos(plano: Plano): number {
-  return Math.round(plano.preco * 100);
+/** Valor em centavos na moeda, como o Stripe espera (15 → 1500). */
+export function centavos(plano: Plano, moeda: Moeda = MOEDA_PADRAO): number {
+  return Math.round(precoDoPlano(plano, moeda) * 100);
 }
 
 /** Segundos desde 1970, como o Stripe espera em `trial_end`. */

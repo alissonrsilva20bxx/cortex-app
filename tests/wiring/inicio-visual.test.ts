@@ -170,14 +170,14 @@ describe("the Início component files carry the #131 visual-review correction (r
   it("Início prices atendimentos with the shared formatMoeda, never a local formatter", () => {
     // Jornada J02 (#152): o preço saiu do card "Próximo" (o mockup não mostra valor ali)
     // e foi pra "Esta semana" (em --accent-deep, como no mockup) e
-    // "Próximos atendimentos". A moeda continua a do app, de lib/finance.
+    // "Próximos atendimentos". A moeda é a escolhida pela pessoa (useFormatMoeda, lib/useMoeda.ts).
     for (const file of [
       "components/home/SemanaSection.tsx",
       "components/home/ProximosAtendimentos.tsx",
     ]) {
       const src = read(file);
       expect(src, file).toMatch(
-        /import \{ formatMoeda \} from "@\/lib\/finance"/
+        /const formatMoeda = useFormatMoeda\(\)/
       );
       expect(src, file).toContain("{formatMoeda(job.valor)}");
       expect(src, file).not.toMatch(/new Intl\.NumberFormat/);

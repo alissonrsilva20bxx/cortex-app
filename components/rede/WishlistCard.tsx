@@ -2,11 +2,11 @@
 
 import { Lock, Users, Globe } from "lucide-react";
 import { MockImage } from "./MockImage";
-import { formatEUR } from "@/lib/guardar/valor";
 import type { Privacidade, WishlistEstado } from "@/lib/mockRede";
 import type { WishlistItem } from "@/lib/rede/wishlist";
 import { progressoDesejo, textoPrazo } from "@/lib/desejo/desejo";
 import { TEXTOS_DESEJO as T } from "@/lib/desejo/textos";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 const ESTADO_META: Record<WishlistEstado, { label: string; rgb: string }> = {
   quero: { label: T.estados.quero, rgb: "var(--info-rgb)" },
@@ -27,6 +27,7 @@ interface Props {
 }
 
 export function WishlistCard({ item, onClick, compact }: Props) {
+  const formatMoeda = useFormatMoeda();
   const pct = progressoDesejo(item.valorAtual, item.valorAlvo);
   const prazo = textoPrazo(item.prazo);
   const estado = ESTADO_META[item.estado];
@@ -69,7 +70,7 @@ export function WishlistCard({ item, onClick, compact }: Props) {
         className="text-[11px] mt-1.5 font-medium"
         style={{ color: "var(--text-muted)" }}
       >
-        {T.deAte(formatEUR(item.valorAtual), formatEUR(item.valorAlvo))}
+        {T.deAte(formatMoeda(item.valorAtual), formatMoeda(item.valorAlvo))}
       </p>
       {prazo && (
         <p

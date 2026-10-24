@@ -5,7 +5,6 @@ import { MapPin, Video } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { StatusBadge } from "./StatusBadge";
 import { formatDayBadge } from "@/components/home/NextJobCard";
-import { formatMoeda } from "@/lib/finance";
 import {
   podeConcluir,
   podeConfirmar,
@@ -15,6 +14,7 @@ import { useAgora } from "@/lib/useAgora";
 import type { Job } from "@/lib/types";
 import { BOTOES_STATUS, CONFIRMA_DESMARCOU } from "./textosAgenda";
 import { useMudarStatus } from "./useMudarStatus";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 /** "15h30" — mesma convenção já usada em NextJobCard/lib/notificacoes.ts. */
 function formatHora(hora: string): string {
@@ -55,6 +55,7 @@ export function JobDetailSheet({
   onEdit,
   onStatusMudou,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const dayBadge = job ? formatDayBadge(job.data) : null;
   const { mudar, salvando, erro, limparErro } = useMudarStatus(
     userId,

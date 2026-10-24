@@ -1,4 +1,4 @@
-import { LOCALE, CURRENCY } from "@/lib/jornada/textos";
+import { LOCALE } from "@/lib/locale";
 import { TEXTOS_GUARDAR } from "./textos";
 
 /** Maior valor aceito pela coluna numeric(10, 2) da migration 0044. */
@@ -9,11 +9,12 @@ export type ValorGuardar =
   | { ok: false; erro: string };
 
 /**
- * Lê o que a pessoa digitou ("25", "25,5", "1.250,00", "25.50") em euro.
+ * Lê o que a pessoa digitou ("25", "25,5", "1.250,00", "25.50"), com ou sem símbolo
+ * da moeda na frente.
  * Devolve centavos inteiros (sem erro de ponto flutuante) e o valor.
  */
 export function lerValorGuardar(texto: string): ValorGuardar {
-  const t = texto.trim().replace(/\s/g, "").replace(/^€/, "");
+  const t = texto.trim().replace(/\s/g, "").replace(/^[^\d.,-]+/, "");
   if (!t) return { ok: false, erro: TEXTOS_GUARDAR.erroValorVazio };
 
   let normal = t;
@@ -34,11 +35,6 @@ export function lerValorGuardar(texto: string): ValorGuardar {
   if (centavos <= 0) return { ok: false, erro: TEXTOS_GUARDAR.erroValorZero };
   return { ok: true, centavos, valor: centavos / 100 };
 }
-
-export const formatEUR = (v: number) =>
-  new Intl.NumberFormat(LOCALE, { style: "currency", currency: CURRENCY }).format(
-    v
-  );
 
 /** "21 de out. · 14:30", no formato do LOCALE. */
 export function quando(iso: string): string {

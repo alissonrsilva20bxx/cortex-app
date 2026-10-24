@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { resolveGateAuth } from "../../../../lib/devPreview/serverAuth";
+import { lerMoeda } from "../../../../lib/moeda";
 import { PLANOS, type PlanoId } from "../../../../lib/planos";
 import { cenarioDaCobranca } from "../../../../lib/pagamento/regras";
 import {
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
   const corpo = (await request.json().catch(() => null)) as {
     plano?: unknown;
     abertura?: unknown;
+    moeda?: unknown;
   } | null;
   // Um id por abertura da tela: reaproveita a assinatura e é a chave de
   // idempotência da criação (toque duplo nunca cria duas).
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
       userId,
       cenario,
       abertura,
+      moeda: lerMoeda(corpo?.moeda),
     });
     return NextResponse.json({
       tipo: criada.tipo,

@@ -5,14 +5,16 @@ import styles from "@/components/onboarding/linhaDoTempo.module.css";
 import {
   PLANOS,
   PLANO_PADRAO,
+  cheioDoPlano,
   economia,
-  formatarEuro,
   percentualDesconto,
   planoPorId,
+  precoDoPlano,
   precoPorMes,
   type OnEscolherPlano,
   type PlanoId,
 } from "@/lib/planos";
+import { useFormatMoeda, useMoeda } from "@/lib/useMoeda";
 
 interface Props {
   /** O que ela já fez no teste (os chips do cartão do topo). Só o que for
@@ -28,7 +30,7 @@ interface Props {
 
 /**
  * Fim do teste grátis (tela 5 do desenho "Linha do tempo"): o cartão do
- * topo com o que ela fez, os 3 planos em euro (2 e 3 meses com o preço
+ * topo com o que ela fez, os 3 planos na moeda escolhida (2 e 3 meses com o preço
  * cheio riscado, quanto economiza, o selo de desconto e "preço por tempo
  * limitado"), "Seus dados continuam aqui", o botão do plano marcado e
  * "Agora não". Nenhum plano Garçom.
@@ -39,6 +41,8 @@ export function PlanosTela({
   onEscolherPlano,
   onAgoraNao,
 }: Props) {
+  const moeda = useMoeda();
+  const formatMoeda = useFormatMoeda();
   const [marcado, setMarcado] = useState<PlanoId>(PLANO_PADRAO);
   const plano = planoPorId(marcado);
   const chips = [
@@ -74,40 +78,45 @@ export function PlanosTela({
         </div>
 
         <div className={styles.plans} role="radiogroup" aria-label="Planos">
-          {PLANOS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={styles.plan}
-              role="radio"
-              aria-checked={p.id === marcado}
-              onClick={() => setMarcado(p.id)}
-              data-plano={p.id}
-            >
-              {p.cheio != null && (
-                <span className={styles.lim}>
-                  <span className={styles.pc}>−{percentualDesconto(p)}%</span>
-                  <span>preço por tempo limitado</span>
-                </span>
-              )}
-              <span className={styles.rd} />
-              <span>
-                <span className={styles.nm}>{p.nome}</span>
-                <span className={styles.pm}>
-                  {formatarEuro(precoPorMes(p))} por mês
-                </span>
-              </span>
-              <span className={styles.pr}>
-                {p.cheio != null && <s>{formatarEuro(p.cheio)}</s>}
-                <b>{formatarEuro(p.preco)}</b>
-                {p.cheio != null && (
-                  <span className={styles.sv}>
-                    economiza {formatarEuro(economia(p))}
+          {PLANOS.map((p) => {
+            const cheio = cheioDoPlano(p, moeda);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={styles.plan}
+                role="radio"
+                aria-checked={p.id === marcado}
+                onClick={() => setMarcado(p.id)}
+                data-plano={p.id}
+              >
+                {cheio != null && (
+                  <span className={styles.lim}>
+                    <span className={styles.pc}>
+                      −{percentualDesconto(p, moeda)}%
+                    </span>
+                    <span>preço por tempo limitado</span>
                   </span>
                 )}
-              </span>
-            </button>
-          ))}
+                <span className={styles.rd} />
+                <span>
+                  <span className={styles.nm}>{p.nome}</span>
+                  <span className={styles.pm}>
+                    {formatMoeda(precoPorMes(p, moeda), "auto")} por mês
+                  </span>
+                </span>
+                <span className={styles.pr}>
+                  {cheio != null && <s>{formatMoeda(cheio, "auto")}</s>}
+                  <b>{formatMoeda(precoDoPlano(p, moeda), "auto")}</b>
+                  {cheio != null && (
+                    <span className={styles.sv}>
+                      economiza {formatMoeda(economia(p, moeda), "auto")}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <div className={styles.keep}>
@@ -125,7 +134,7 @@ export function PlanosTela({
           onClick={() => onEscolherPlano(plano)}
           data-escolher-plano
         >
-          Continuar com {plano.nome} · {formatarEuro(plano.preco)}
+          Continuar com {plano.nome} · {formatMoeda(precoDoPlano(plano, moeda), "auto")}
         </button>
         <button type="button" className={styles.cta2} onClick={onAgoraNao}>
           Agora não

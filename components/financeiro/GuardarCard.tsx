@@ -16,7 +16,8 @@ import {
 import { TEXTOS_GUARDAR as T } from "@/lib/guardar/textos";
 import { progressoDesejo, textoPrazo } from "@/lib/desejo/desejo";
 import { avisarDesejosMudaram, useAoMudarDesejos } from "@/lib/desejo/eventos";
-import { formatEUR, quando } from "@/lib/guardar/valor";
+import { quando } from "@/lib/guardar/valor";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 const sectionTitleStyle = {
   fontSize: "13px",
@@ -32,6 +33,7 @@ interface Props {
 type SomaPendente = { desejoId: string; centavos: number };
 
 export function GuardarCard({ userId }: Props) {
+  const formatMoeda = useFormatMoeda();
   const toast = useToast();
   const { registrar } = useJornada(userId);
   const [desejos, setDesejos] = useState<WishlistItem[]>([]);
@@ -210,8 +212,8 @@ export function GuardarCard({ userId }: Props) {
                       className="text-xs tabular-nums shrink-0 ml-2"
                       style={{ color: "var(--text-muted)" }}
                     >
-                      {formatEUR(escolhido.valorAtual)} /{" "}
-                      {formatEUR(escolhido.valorAlvo)}
+                      {formatMoeda(escolhido.valorAtual)} /{" "}
+                      {formatMoeda(escolhido.valorAlvo)}
                     </span>
                   </div>
                   {prazo && (
@@ -369,7 +371,7 @@ export function GuardarCard({ userId }: Props) {
                         className="text-sm font-bold tabular-nums shrink-0"
                         style={{ color: "var(--accent)" }}
                       >
-                        {formatEUR(h.valor)}
+                        {formatMoeda(h.valor)}
                       </span>
                     </li>
                   ))}

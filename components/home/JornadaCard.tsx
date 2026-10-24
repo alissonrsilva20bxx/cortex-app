@@ -23,13 +23,14 @@ import {
   proximoPasso,
   type Bolinha as TipoDaBolinha,
 } from "@/components/jornada/progresso";
+import { useMoeda } from "@/lib/useMoeda";
 import {
   ABRIR_JORNADA,
   LETRAS_DA_SEMANA,
   NOME_GLOW,
   PROXIMO_PASSO,
   RITMO_COMPLETO,
-  TEXTO_DO_PROXIMO_PASSO,
+  textoDoProximoPasso,
   ateProximo,
   capituloEmPartes,
   diasFortesDeTres,
@@ -211,6 +212,7 @@ export function JornadaCard({
 }: Props) {
   const { estado } = useJornada(userId);
   const agora = useAgora();
+  const moeda = useMoeda();
   if (!estado) return null;
 
   const capitulo = estado.capitulo;
@@ -451,7 +453,7 @@ export function JornadaCard({
           </span>
           <span style={PASSO_TEXTO}>
             <small style={PASSO_ROTULO}>{PROXIMO_PASSO.rotulo}</small>
-            {TEXTO_DO_PROXIMO_PASSO[passo]}
+            {textoDoProximoPasso(passo, moeda)}
           </span>
           <span
             style={{

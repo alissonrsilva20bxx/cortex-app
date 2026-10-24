@@ -48,7 +48,7 @@ describe("OnboardingFlow: as três telas da linha do tempo", () => {
     expect(flow).toMatch(/Começar meus \{TRIAL_DIAS\} dias/);
     expect(flow).toMatch(/Dia \{TRIAL_DIAS \+ 1 - AVISO_FALTAM_DIAS\}/);
     expect(flow).toMatch(/faltam \{AVISO_FALTAM_DIAS\} dias\./);
-    expect(flow).toMatch(/formatarEuro\(menorPrecoPorMes\(\)\)/);
+    expect(flow).toMatch(/formatMoeda\(menorPrecoPorMes\(moeda\), "auto"\)/);
   });
 
   it("a boas-vindas antiga saiu", () => {
@@ -125,7 +125,7 @@ describe("PlanosTela e PilulaTeste", () => {
 
   it("selo 'preço por tempo limitado' só nos planos com preço cheio", () => {
     expect(planos).toMatch(
-      /\{p\.cheio != null && \(\s*<span className=\{styles\.lim\}>[\s\S]*?preço por tempo limitado/
+      /\{cheio != null && \(\s*<span className=\{styles\.lim\}>[\s\S]*?preço por tempo limitado/
     );
   });
 

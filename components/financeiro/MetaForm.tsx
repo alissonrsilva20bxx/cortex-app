@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
-import { SIMBOLO_MOEDA } from "@/lib/finance";
+import { simboloMoeda, type Moeda } from "@/lib/moeda";
+import { useMoeda } from "@/lib/useMoeda";
 import type { PeriodoMeta } from "@/lib/types";
 
 interface MetaValues {
@@ -41,21 +42,28 @@ const labelStyle: React.CSSProperties = {
   marginBottom: "6px",
 };
 
-const ROWS: { periodo: PeriodoMeta; label: string; hint: string }[] = [
-  { periodo: "dia", label: `Meta diária (${SIMBOLO_MOEDA})`, hint: "Ex: 300" },
+const linhasDoForm = (
+  moeda: Moeda
+): { periodo: PeriodoMeta; label: string; hint: string }[] => [
+  {
+    periodo: "dia",
+    label: `Meta diária (${simboloMoeda(moeda)})`,
+    hint: "Ex: 300",
+  },
   {
     periodo: "mes",
-    label: `Meta mensal (${SIMBOLO_MOEDA})`,
+    label: `Meta mensal (${simboloMoeda(moeda)})`,
     hint: "Ex: 3.000",
   },
   {
     periodo: "ano",
-    label: `Meta anual (${SIMBOLO_MOEDA})`,
+    label: `Meta anual (${simboloMoeda(moeda)})`,
     hint: "Ex: 36.000",
   },
 ];
 
 export function MetaForm({ open, userId, onClose, onSaved }: Props) {
+  const moeda = useMoeda();
   const [values, setValues] = useState<MetaValues>({
     dia: "",
     mes: "",
@@ -161,7 +169,7 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
         </div>
 
         <div className="px-5 py-5 space-y-4">
-          {ROWS.map(({ periodo, label, hint }) => (
+          {linhasDoForm(moeda).map(({ periodo, label, hint }) => (
             <div key={periodo}>
               <label style={labelStyle}>{label}</label>
               <input

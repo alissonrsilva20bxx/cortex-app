@@ -2,8 +2,8 @@
 
 import { ChevronRight, MapPin, Video } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 /**
  * Cartão da timeline (issue #135) — composição de `/dev-preview/ios`
@@ -26,6 +26,7 @@ export function JobCard({
   job: Job;
   onClick: (job: Job) => void;
 }) {
+  const formatMoeda = useFormatMoeda();
   return (
     <button
       onClick={() => onClick(job)}

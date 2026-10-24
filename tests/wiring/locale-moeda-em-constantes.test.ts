@@ -4,11 +4,11 @@ import { join, relative, sep } from "node:path";
 import ts from "typescript";
 
 /**
- * Locale e moeda moram em lib/jornada/textos.ts (LOCALE e CURRENCY). Trocar
- * de país é mexer ali, não caçar literais. Teste de fiação, no padrão dos
+ * O idioma mora em lib/locale.ts (LOCALE) e as moedas em lib/moeda.ts
+ * (Moeda, MOEDA_PADRAO). Trocar de país é mexer ali, não caçar literais. Teste de fiação, no padrão dos
  * outros em tests/wiring: lê o código com a API do TypeScript e reprova o
  * literal "pt-BR" ou "EUR" (string, template sem variável, ou texto de JSX)
- * em qualquer arquivo de app, components e lib, menos textos.ts e testes.
+ * em qualquer arquivo de app, components e lib, menos esses dois e testes.
  *
  * Os que já existiam estão em locale-moeda.baseline.json (dívida conhecida),
  * contados por arquivo + literal. Falha quando surge ocorrência NOVA. Ao
@@ -19,7 +19,7 @@ import ts from "typescript";
 const ROOT = join(__dirname, "..", "..");
 const PASTAS = ["app", "components", "lib"];
 const IGNORADAS = ["node_modules"];
-const PERMITIDO = "lib/jornada/textos.ts";
+const PERMITIDOS = ["lib/locale.ts", "lib/moeda.ts"];
 const PROIBIDOS = ["pt-BR", "EUR"];
 
 type Achado = { arquivo: string; literal: string; quantidade: number };
@@ -34,7 +34,7 @@ function fontes(dir: string, saida: string[] = []): string[] {
     else if (
       /\.tsx?$/.test(e.name) &&
       !/\.(test|spec)\.tsx?$/.test(e.name) &&
-      rel !== PERMITIDO
+      !PERMITIDOS.includes(rel)
     ) {
       saida.push(rel);
     }
@@ -86,10 +86,10 @@ const quantidadeNaBaseline = (a: { arquivo: string; literal: string }) =>
   baseline.find((b) => b.arquivo === a.arquivo && b.literal === a.literal)
     ?.quantidade ?? 0;
 
-describe('literal "pt-BR"/"EUR" só em lib/jornada/textos.ts', () => {
+describe('literal "pt-BR"/"EUR" só em lib/locale.ts e lib/moeda.ts', () => {
   const hoje = achados();
 
-  it("não surge ocorrência nova (use LOCALE/CURRENCY de lib/jornada/textos.ts)", () => {
+  it("não surge ocorrência nova (use LOCALE de lib/locale.ts e a moeda de lib/moeda.ts)", () => {
     const novos = hoje.filter((a) => a.quantidade > quantidadeNaBaseline(a));
     expect(
       novos.map((a) => `${a.arquivo}: "${a.literal}" x${a.quantidade}`)

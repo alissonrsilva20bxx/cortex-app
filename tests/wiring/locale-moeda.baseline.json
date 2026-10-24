@@ -73,12 +73,6 @@
   },
   {
     "arquivo": "components/pagamento/PagamentoTela.tsx",
-    "literal": "EUR",
-    "quantidade": 1,
-    "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"
-  },
-  {
-    "arquivo": "components/pagamento/PagamentoTela.tsx",
     "literal": "pt-BR",
     "quantidade": 1,
     "motivo": "divida conhecida: trocar por LOCALE/CURRENCY de lib/jornada/textos.ts"

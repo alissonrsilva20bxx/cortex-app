@@ -9,12 +9,13 @@ import {
   TRIAL_DIAS,
   type EstadoAssinatura,
 } from "@/lib/assinatura";
-import { formatMoeda, totalEarnings } from "@/lib/finance";
+import { totalEarnings } from "@/lib/finance";
 import type { OnEscolherPlano } from "@/lib/planos";
 import type { AssinaturaStatus, Job } from "@/lib/types";
 import { AvisoTeste } from "./AvisoTeste";
 import { PilulaTeste } from "./PilulaTeste";
 import { PlanosTela } from "./PlanosTela";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 /** "Já viu os planos hoje": a tela do fim do teste aparece uma vez por dia. */
 const chavePlanosVistos = (userId: string) => `jobapp-planos-vistos:${userId}`;
@@ -62,6 +63,7 @@ export function AssinaturaNoApp({
   abrirPlanosSinal,
   recarregarSinal,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const [estado, setEstado] = useState<EstadoAssinatura | null>(null);
   const [planosAbertos, setPlanosAbertos] = useState(false);
   const [avisoAberto, setAvisoAberto] = useState(false);

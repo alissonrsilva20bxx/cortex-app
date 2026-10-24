@@ -2,9 +2,10 @@
 
 import { Plus, TrendingUp, Trash2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { formatMoeda, formatShortDate } from "@/lib/finance";
+import { formatShortDate } from "@/lib/finance";
 import { REC_CAT_EMOJIS, REC_CAT_LABELS } from "./constants";
 import type { Job, ReceitaAvulsa } from "@/lib/types";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   jobs: Job[];
@@ -21,6 +22,7 @@ export function EntradasTab({
   onAddReceita,
   onDeleteReceita,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const jobEntradas = jobs
     .filter((j) => j.status === "concluído")
     .map((j) => ({

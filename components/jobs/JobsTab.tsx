@@ -15,7 +15,6 @@ import {
   Clock3,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { formatMoeda } from "@/lib/finance";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { JobCard } from "./JobCard";
@@ -51,6 +50,7 @@ import {
 import { TOTAL_PREVISTO } from "./textosAgenda";
 import { totalPrevistoDoDia } from "@/lib/atendimentos/status";
 import type { Job, JobStatus } from "@/lib/types";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 type Filter = "todos" | JobStatus;
 type RatchetDirection = "forward" | "backward";
@@ -204,6 +204,7 @@ export function JobsTab({
   profissional,
   onJobSaved,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const [jobs, setJobs] = useState<Job[]>([]);
   const descanso = useDescanso(userId, jobs);
   // Relógio de 1 minuto, o mesmo do Início: o card Próximo muda sozinho

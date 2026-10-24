@@ -16,14 +16,16 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useToast } from "@/components/Toast";
 import { Avatar } from "./Avatar";
-import { PLANOS, formatarEuro } from "@/lib/planos";
+import { MOEDA_PADRAO, formatMoeda, type Moeda } from "@/lib/moeda";
+import { PLANOS, precoDoPlano } from "@/lib/planos";
+import { useMoeda } from "@/lib/useMoeda";
 
-/** O preço da vitrine: os mesmos planos da assinatura (lib/planos.ts), em
- * euro. Antes era um valor solto em outra moeda, que não existe em plano
- * nenhum. */
-const PLANOS_PREVISTOS = `Planos previstos: ${PLANOS.map(
-  (p) => `${formatarEuro(p.preco)} (${p.nome})`
-).join(" · ")}`;
+/** O preço da vitrine: os mesmos planos da assinatura (lib/planos.ts), na
+ * moeda escolhida. */
+const planosPrevistos = (moeda: Moeda = MOEDA_PADRAO) =>
+  `Planos previstos: ${PLANOS.map(
+    (p) => `${formatMoeda(precoDoPlano(p, moeda), moeda, "auto")} (${p.nome})`
+  ).join(" · ")}`;
 
 const BENEFICIOS = [
   { Icon: Sparkles, texto: "Trocar experiências com segurança" },
@@ -192,6 +194,7 @@ interface Props {
 }
 
 export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
+  const moeda = useMoeda();
   const toast = useToast();
   const [solicitando, setSolicitando] = useState(false);
   const [jaExistiaSolicitacao, setJaExistiaSolicitacao] = useState(false);
@@ -341,7 +344,7 @@ export function RedeTeaserGate({ sheet, onSheetChange }: Props) {
               className="text-[11px] mt-0.5"
               style={{ color: "var(--text-muted)" }}
             >
-              {PLANOS_PREVISTOS}
+              {planosPrevistos(moeda)}
             </p>
           </div>
         </GlassCard>

@@ -14,10 +14,11 @@ import {
   RECAP,
   RESUMO_ABA,
   dinheiroEscondido,
-  money,
   nomeEnfeite,
   nomeEstagio,
 } from "@/lib/jornada/textos";
+import { MOEDA_PADRAO, formatMoeda, type Moeda } from "@/lib/moeda";
+import { useMoeda } from "@/lib/useMoeda";
 import { Ic, Icf } from "../IconeJornada";
 import { ICONE_DO_ENFEITE } from "../JornadaColecao";
 import { cx } from "../JornadaPecas";
@@ -97,7 +98,8 @@ function Compartilhar(k: string, texto: string) {
 export function storiesDoResumo(
   estado: EstadoJornada,
   tipo: TipoPeriodo,
-  hoje: Date
+  hoje: Date,
+  moeda: Moeda = MOEDA_PADRAO
 ): ReactNode[][] {
   const periodo = estado.periodos.corrente[tipo];
   const fortes = contador(periodo, "dias_fortes");
@@ -113,7 +115,7 @@ export function storiesDoResumo(
   const dinheiro = estado.dinheiro;
   const meta = dinheiro?.meta ?? null;
   const valor = (n: number) =>
-    estado.preferencias.modoDiscreto ? dinheiroEscondido() : money(n);
+    estado.preferencias.modoDiscreto ? dinheiroEscondido(moeda) : formatMoeda(n, moeda);
   const prosperarSemDados = [
     K(RECAP.prosperar),
     Big(guardou),
@@ -291,7 +293,8 @@ export function JornadaRecap({
   hoje: Date;
   onFechar: () => void;
 }) {
-  const stories = storiesDoResumo(estado, tipo, hoje);
+  const moeda = useMoeda();
+  const stories = storiesDoResumo(estado, tipo, hoje, moeda);
   const [atual, setAtual] = useState(0);
   const ir = useCallback(
     (i: number) => setAtual(Math.max(0, Math.min(stories.length - 1, i))),

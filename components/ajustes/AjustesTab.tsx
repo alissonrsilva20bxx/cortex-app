@@ -15,7 +15,10 @@ import { Switch } from "@/components/ui/Switch";
 import { NotificacoesSheet } from "@/components/notificacoes/NotificacoesSheet";
 import { InstallSheet } from "@/components/install/InstallSheet";
 import { computeAssinatura } from "@/lib/assinatura";
-import { formatMoeda, totalEarnings } from "@/lib/finance";
+import { totalEarnings } from "@/lib/finance";
+import { SeletorMoeda } from "@/components/moeda/SeletorMoeda";
+import { TEXTOS_MOEDA } from "@/lib/textosMoeda";
+import { useFormatMoeda } from "@/lib/useMoeda";
 import { exportarDadosCSV } from "@/lib/exportarDados";
 import { isIOS, isStandalone } from "@/lib/platform";
 import {
@@ -253,6 +256,7 @@ export function AjustesTab({
   onOpenTour,
   onVerPlanos,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const { theme, setTheme, mode, setMode } = useTheme();
   // Tema e modo vêm do localStorage: o servidor não os conhece. Até montar,
   // nada que dependa deles é desenhado (sem erro de hidratação).
@@ -633,6 +637,12 @@ export function AjustesTab({
               onClick={() => openSettingsPage("appearance")}
               last
             />
+          </Grupo>
+
+          <Grupo titulo={TEXTOS_MOEDA.titulo}>
+            <div className="p-3">
+              <SeletorMoeda />
+            </div>
           </Grupo>
 
           <Grupo titulo="Tela inicial">

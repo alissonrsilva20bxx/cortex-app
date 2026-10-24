@@ -2,7 +2,8 @@
  * TODO texto visível da "Sua Jornada" e a formatação de moeda, num lugar só
  * (spec, decisão 17 e §9). Nenhum componente nem lógica escreve texto ou
  * símbolo de moeda direto: tudo vem daqui. Trocar idioma/moeda no futuro é
- * trocar este arquivo (e o bloco `LOCALE`/`CURRENCY`), não caçar strings.
+ * trocar este arquivo (e `lib/locale.ts`), não caçar strings. O dinheiro
+ * é escrito só por `formatMoeda` (lib/moeda.ts), com a moeda escolhida.
  *
  * O teste `tests/jornada/textos.test.ts` garante que nenhum outro arquivo
  * de `lib/jornada/` e `components/jornada/` tem texto visível ou moeda.
@@ -11,6 +12,8 @@
  * do servidor e este arquivo só os escreve por extenso.
  */
 
+import { LOCALE } from "@/lib/locale";
+import { MOEDA_PADRAO, formatMoeda, type Moeda } from "@/lib/moeda";
 import type {
   Acao,
   AcaoDaDica,
@@ -22,22 +25,11 @@ import type {
   TipoPeriodo,
 } from "./estado";
 
-// ─────────────────────────── idioma e moeda ───────────────────────────
+// ───────────────────────────── idioma ─────────────────────────────
 
-export const LOCALE = "pt-BR";
-export const CURRENCY = "EUR";
+export { LOCALE };
 
-const formatoMoeda = new Intl.NumberFormat(LOCALE, {
-  style: "currency",
-  currency: CURRENCY,
-  maximumFractionDigits: 0,
-});
 const formatoNumero = new Intl.NumberFormat(LOCALE);
-
-/** Valor em dinheiro por extenso ("€ 500" / "500 €", conforme o LOCALE). */
-export function money(valor: number): string {
-  return formatoMoeda.format(valor);
-}
 
 /** Número com separador de milhar do LOCALE ("1.200"). */
 export function numero(valor: number): string {
@@ -313,8 +305,11 @@ export function progressoMissao(progresso: number, alvo: number): string {
 // ───────────────────────────── dinheiro ──────────────────────────────
 
 /** "€ 1.000 guardados" */
-export function textoMarco(marco: MarcoDinheiro): string {
-  return `${money(marco)} guardados`;
+export function textoMarco(
+  marco: MarcoDinheiro,
+  moeda: Moeda = MOEDA_PADRAO
+): string {
+  return `${formatMoeda(marco, moeda)} guardados`;
 }
 
 // ───────────────────────────── comemorações ──────────────────────────
@@ -338,7 +333,8 @@ export const COMEMORACAO = {
   marcoApoio: "Somando todas as suas metas. Dinheiro de verdade, seu.",
   metaVale: "Meta concluída é o que mais vale",
   /** A linha de apoio da meta (protótipo: `goalUp`). */
-  metaGuardada: (valor: number) => `${money(valor)} guardados de verdade.`,
+  metaGuardada: (valor: number, moeda: Moeda = MOEDA_PADRAO) =>
+    `${formatMoeda(valor, moeda)} guardados de verdade.`,
   proximaMeta: (nome: string) => `Próxima meta: ${nome}`,
   doZero: "Começa do zero, no seu ritmo",
   /** O aviso da meta em modo quieto: "Meta concluída · Fundo Viagem". */
@@ -488,13 +484,25 @@ export const PROXIMO_PASSO = {
   feito: "Hoje você já cuidou de tudo",
 };
 
-export const TEXTO_DO_PROXIMO_PASSO: Record<AcaoDoProximoPasso, string> = {
-  guardar_meta: `Guardar ${money(VALOR_SUGERIDO_PARA_GUARDAR)} no seu Desejo`,
+const TEXTO_FIXO_DO_PROXIMO_PASSO: Record<
+  Exclude<AcaoDoProximoPasso, "guardar_meta">,
+  string
+> = {
   comprovante_cofre: "Guardar um comprovante no Cofre",
   planejar: "Planejar amanhã em 1 minuto",
   descanso: "Garantir um descanso esta semana",
   despesa: "Lançar as despesas de hoje",
 };
+
+/** O texto do próximo passo; o de guardar leva o valor na moeda escolhida. */
+export function textoDoProximoPasso(
+  passo: AcaoDoProximoPasso,
+  moeda: Moeda = MOEDA_PADRAO
+): string {
+  return passo === "guardar_meta"
+    ? `Guardar ${formatMoeda(VALOR_SUGERIDO_PARA_GUARDAR, moeda)} no seu Desejo`
+    : TEXTO_FIXO_DO_PROXIMO_PASSO[passo];
+}
 
 /** "+15" (o Glow do passo; a faísca vem do ícone). */
 export function glowDoPasso(glow: number): string {
@@ -937,16 +945,20 @@ export const LEGENDA_RITMO = {
 /** Seu dinheiro: a meta atual e o total. */
 export const META_ATUAL = "Desejo atual";
 /** "€120 de €300" */
-export function metaDeAte(atual: number, alvo: number): string {
-  return `${money(atual)} de ${money(alvo)}`;
+export function metaDeAte(
+  atual: number,
+  alvo: number,
+  moeda: Moeda = MOEDA_PADRAO
+): string {
+  return `${formatMoeda(atual, moeda)} de ${formatMoeda(alvo, moeda)}`;
 }
 /** "Marcos do total guardado · €120" */
 export function marcosDoTotal(total: string): string {
   return `${MARCOS_DO_TOTAL} · ${total}`;
 }
 /** O valor escondido do Modo discreto (protótipo: `moneyHidden`). */
-export function dinheiroEscondido(): string {
-  return money(0).replace("0", "•••");
+export function dinheiroEscondido(moeda: Moeda = MOEDA_PADRAO): string {
+  return formatMoeda(0, moeda).replace("0", "•••");
 }
 export const MARCO_ESCONDIDO = "•••";
 /** A nota do dinheiro: [antes, +100 Glow, meio, +50, depois]. */

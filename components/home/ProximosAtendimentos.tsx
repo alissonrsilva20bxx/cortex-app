@@ -1,6 +1,5 @@
 "use client";
 
-import { formatMoeda } from "@/lib/finance";
 import type { Job } from "@/lib/types";
 import { useAgora } from "@/lib/useAgora";
 import { InicioCard } from "./InicioCard";
@@ -9,6 +8,7 @@ import {
   formatHora,
   rotuloDiaFrase,
 } from "./inicioAgenda";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   jobs: Job[];
@@ -21,6 +21,7 @@ interface Props {
  * o nome, "<dia> · <hora>" e o valor. Sem nenhum, a seção não aparece.
  */
 export function ProximosAtendimentos({ jobs }: Props) {
+  const formatMoeda = useFormatMoeda();
   const agora = useAgora();
   const proximos = atendimentosDepoisDaSemana(jobs, agora);
   if (proximos.length === 0) return null;

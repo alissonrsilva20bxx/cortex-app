@@ -17,6 +17,7 @@
 
 import type { Comemoracao } from "@/lib/jornada/estado";
 import type { NomeSom } from "@/lib/jornada/som";
+import { MOEDA_PADRAO, type Moeda } from "@/lib/moeda";
 import {
   LIMITE_DO_DIA,
   ROTULO_ACAO,
@@ -213,7 +214,8 @@ export interface TextosComemoracao {
 
 export function textosDaComemoracao(
   c: Comemoracao,
-  discreto: boolean
+  discreto: boolean,
+  moeda: Moeda = MOEDA_PADRAO
 ): TextosComemoracao {
   const glow = c.glow > 0 && !discreto ? glowGanho(c.glow) : "";
   switch (c.tipo) {
@@ -282,7 +284,7 @@ export function textosDaComemoracao(
         chamada: TITULO_COMEMORACAO.marco,
         // Discreto: sem valor de dinheiro na tela.
         titulo:
-          c.marco && !discreto ? textoMarco(c.marco) : TITULO_COMEMORACAO.marco,
+          c.marco && !discreto ? textoMarco(c.marco, moeda) : TITULO_COMEMORACAO.marco,
         apoio: discreto ? "" : COMEMORACAO.marcoApoio,
         glow,
       };
@@ -294,7 +296,7 @@ export function textosDaComemoracao(
         titulo: c.nome ?? "",
         apoio:
           c.valor !== undefined && !discreto
-            ? COMEMORACAO.metaGuardada(c.valor)
+            ? COMEMORACAO.metaGuardada(c.valor, moeda)
             : "",
         glow,
       };

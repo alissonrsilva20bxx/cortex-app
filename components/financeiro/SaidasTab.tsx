@@ -2,9 +2,10 @@
 
 import { Plus, TrendingDown, Trash2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { formatMoeda, formatShortDate } from "@/lib/finance";
+import { formatShortDate } from "@/lib/finance";
 import { CAT_LABELS, CAT_EMOJIS } from "./constants";
 import type { Despesa } from "@/lib/types";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   despesas: Despesa[];
@@ -21,6 +22,7 @@ export function SaidasTab({
   onAddDespesa,
   onDeleteDespesa,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
   const catTotals = despMes.reduce(
     (acc, d) => {
       acc[d.categoria] = (acc[d.categoria] || 0) + d.valor;

@@ -6,7 +6,8 @@ import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { Privacidade, WishlistEstado } from "@/lib/mockRede";
 import type { WishlistItem } from "@/lib/rede/wishlist";
 import { TEXTOS_DESEJO as T } from "@/lib/desejo/textos";
-import { formatEUR } from "@/lib/guardar/valor";
+import { simboloMoeda } from "@/lib/moeda";
+import { useFormatMoeda, useMoeda } from "@/lib/useMoeda";
 
 export interface DesejoFormState {
   nome: string;
@@ -67,6 +68,8 @@ export function DesejoForm({
   onSave,
   onDeleteRequest,
 }: Props) {
+  const formatMoeda = useFormatMoeda();
+  const moeda = useMoeda();
   const [form, setForm] = useState<DesejoFormState>(EMPTY);
 
   useEffect(() => {
@@ -140,7 +143,7 @@ export function DesejoForm({
 
         <div>
           <label htmlFor="desejo-alvo" style={labelStyle}>
-            {T.campoAlvo}
+            {T.campoAlvo(simboloMoeda(moeda))}
           </label>
           <input
             id="desejo-alvo"
@@ -155,7 +158,7 @@ export function DesejoForm({
           />
           {item && (
             <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
-              {T.jaGuardado(formatEUR(item.valorAtual))}. {T.dicaGuardar}
+              {T.jaGuardado(formatMoeda(item.valorAtual))}. {T.dicaGuardar}
             </p>
           )}
         </div>

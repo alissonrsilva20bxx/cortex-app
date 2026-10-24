@@ -1,4 +1,4 @@
-import { CURRENCY, LOCALE } from "@/lib/jornada/textos";
+import { LOCALE } from "@/lib/locale";
 import type {
   Job,
   Meta,
@@ -13,22 +13,6 @@ import type {
  * cada cópia derivando (2 verdes, raios diferentes, cards gêmeos). Aqui é o
  * lugar canônico — telas consomem, não recalculam.
  */
-
-/** Valor em dinheiro na moeda do app (CURRENCY e LOCALE, em
- * lib/jornada/textos.ts): uma moeda só em todas as telas. Só o texto muda;
- * os valores gravados no banco são números e não mudam. */
-export const formatMoeda = (v: number, fractionDigits = 0) =>
-  new Intl.NumberFormat(LOCALE, {
-    style: "currency",
-    currency: CURRENCY,
-    maximumFractionDigits: fractionDigits,
-  }).format(v);
-
-/** O símbolo da moeda do app ("€"), para rótulos de campo: Valor (€). */
-export const SIMBOLO_MOEDA =
-  new Intl.NumberFormat(LOCALE, { style: "currency", currency: CURRENCY })
-    .formatToParts(0)
-    .find((p) => p.type === "currency")?.value ?? CURRENCY;
 
 /** "12 jul" — data curta no fuso local. */
 export const formatShortDate = (data: string) =>

@@ -42,7 +42,7 @@ describe("o botão do card abre o Lembrar cliente", () => {
 describe("a folha: cartão refeito na hora, imagem pronta antes do toque, nada enviado sozinho", () => {
   it("dados, SVG e texto saem do agendamento atual (useMemo com o job)", () => {
     expect(SHEET).toMatch(
-      /dadosDoLembrete\(job, profissional\)[\s\S]{0,40}\[job, profissional\]/
+      /dadosDoLembrete\(job, profissional, \{ moeda \}\)[\s\S]{0,40}\[job, profissional, moeda\]/
     );
     expect(SHEET).toMatch(
       /cartaoAgendaSvg\(dados, modo\)[\s\S]{0,40}\[dados, modo\]/

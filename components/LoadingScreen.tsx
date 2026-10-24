@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SIMBOLO_MOEDA } from "@/lib/finance";
+import { simboloMoeda } from "@/lib/moeda";
+import { useMoeda } from "@/lib/useMoeda";
 import styles from "./LoadingScreen.module.css";
 
 interface Props {
@@ -21,6 +22,7 @@ const CASH = [
 ];
 
 export function LoadingScreen({ isLoading }: Props) {
+  const moeda = useMoeda();
   const [mounted, setMounted] = useState(true);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function LoadingScreen({ isLoading }: Props) {
             } as React.CSSProperties
           }
         >
-          {SIMBOLO_MOEDA}
+          {simboloMoeda(moeda)}
         </span>
       ))}
 

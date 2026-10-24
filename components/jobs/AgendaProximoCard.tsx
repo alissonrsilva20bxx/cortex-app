@@ -1,6 +1,5 @@
 "use client";
 
-import { formatMoeda } from "@/lib/finance";
 import { podeLembrar } from "@/lib/lembrete/cartaoAgenda";
 import { countdownLabel, getDaysUntil } from "@/lib/proximoAtendimento";
 import type { Job } from "@/lib/types";
@@ -9,6 +8,7 @@ import {
   formatHora,
   localDoAtendimento,
 } from "./agendaSemana";
+import { useFormatMoeda } from "@/lib/useMoeda";
 
 interface Props {
   /** Próximo atendimento real (`proximoAtendimento`), ou `null` se não houver. */
@@ -35,6 +35,7 @@ interface Props {
  * desabilitado só quando não faz sentido lembrar (concluído ou cancelado).
  */
 export function AgendaProximoCard({ job, onOpen, onLembrar }: Props) {
+  const formatMoeda = useFormatMoeda();
   const countdown = job ? countdownLabel(getDaysUntil(job.data)) : null;
   const local = job ? localDoAtendimento(job) : null;
 
