@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -15,8 +15,12 @@ import { join } from "node:path";
 const ROOT = join(__dirname, "..", "..");
 const ler = (...p: string[]) =>
   readFileSync(join(ROOT, ...p), "utf-8").replace(/\r\n/g, "\n");
+// Troca o comentário de bloco pelas mesmas quebras de linha, para o número
+// de linha do achado bater com o arquivo.
 const semComentarios = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'])\/\/.*$/gm, "$1");
+  s
+    .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ""))
+    .replace(/(^|[^:"'])\/\/.*$/gm, "$1");
 
 /** Corpo da 1ª regra `seletor { ... }` (sem blocos aninhados). */
 function regra(css: string, seletor: string): string {
@@ -103,5 +107,80 @@ describe("fundo do <html> e do body", () => {
 
   it("body: altura mínima da tela visível (dvh, vh de reserva)", () => {
     vhDepoisDvh(regras(globais, "body"), "min-height");
+  });
+});
+
+describe("casca das telas e a barra de baixo (dock)", () => {
+  const cascas = [
+    ["app", "page.tsx"],
+    ["app", "dev-preview", "app", "page.tsx"],
+    ["app", "dev-preview", "rede", "page.tsx"],
+  ];
+
+  it(".min-h-tela: altura mínima da tela visível (dvh, vh de reserva)", () => {
+    vhDepoisDvh(regra(globais, ".min-h-tela"), "min-height");
+  });
+
+  it.each(cascas)("%s/%s: casca em .min-h-tela, nada de h-screen/min-h-screen", (...p) => {
+    const src = semComentarios(ler(...p));
+    expect(src).toMatch(/className="relative flex flex-col min-h-tela"/);
+    expect(src).not.toMatch(/\b(min-|max-)?h-screen\b/);
+  });
+
+  it.each(cascas)("%s/%s: o topo da casca soma a área segura de cima", (...p) => {
+    expect(semComentarios(ler(...p))).toMatch(
+      /paddingTop:\s*"calc\((var\(--space-shell-top\)|24px) \+ env\(safe-area-inset-top, 0px\)\)"/
+    );
+  });
+
+  it("dock: a barra, o + e a pílula do teste somam a área segura de baixo", () => {
+    const fundo =
+      /bottom: `calc\(\$\{BOTTOM_NAV_OFFSET - navStyle\.translateY\}px \+ env\(safe-area-inset-bottom, 0px\)\)`/;
+    expect(ler("components", "BottomNav.tsx")).toMatch(fundo);
+    expect(ler("components", "FAB.tsx")).toMatch(fundo);
+    expect(
+      regra(
+        semComentarios(ler("components", "onboarding", "linhaDoTempo.module.css")),
+        ".trial"
+      )
+    ).toMatch(
+      /bottom: calc\(\s*var\(--ob-pilula-bottom, 96px\) \+ env\(safe-area-inset-bottom, 0px\)\s*\);/
+    );
+  });
+
+  it("nenhuma altura em vh sem dvh nas telas (app/, components/, styles/)", () => {
+    // Fora da regra, de propósito: as folhas de Despesa e Receita (altura
+    // ligada ao teclado, ver tests/wiring/teclado-sheet-176.test.ts) e o
+    // voo das notas da carga (-130vh só tira a nota da tela).
+    const permitidos = [
+      "components/financeiro/DespesaForm.tsx",
+      "components/financeiro/ReceitaForm.tsx",
+      "components/LoadingScreen.module.css",
+    ];
+    const arquivos: string[] = [];
+    const andar = (rel: string) => {
+      for (const nome of readdirSync(join(ROOT, rel))) {
+        const r = `${rel}/${nome}`;
+        if (statSync(join(ROOT, r)).isDirectory()) andar(r);
+        else if (/\.(tsx?|css)$/.test(nome) && !/\.test\./.test(nome)) arquivos.push(r);
+      }
+    };
+    ["app", "components", "styles"].forEach(andar);
+    const achados: string[] = [];
+    for (const arq of arquivos) {
+      if (permitidos.includes(arq)) continue;
+      const linhas = semComentarios(ler(arq)).split("\n");
+      linhas.forEach((linha, i) => {
+        if (!/\b\d+vh\b|\b(min-|max-)?h-screen\b/.test(linha)) return;
+        // vh de reserva vale só com a mesma propriedade em dvh logo abaixo.
+        const prop = linha.match(/^\s*([\w-]+):/)?.[1];
+        const seguinte = linhas.slice(i + 1, i + 3).join("\n");
+        if (prop && new RegExp(`${prop}:[^;]*\\d+dvh`).test(seguinte)) return;
+        // --u da abertura: a troca para dvh fica no @supports logo abaixo.
+        if (/--u: min\(calc\(100vw \/ 390\), calc\(100vh \/ 844\)\);/.test(linha)) return;
+        achados.push(`${arq}:${i + 1}: ${linha.trim()}`);
+      });
+    }
+    expect(achados).toEqual([]);
   });
 });

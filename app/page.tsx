@@ -559,7 +559,7 @@ export default function Page() {
   const isNewUser = isNewUserSession === true && !onboardingDone;
 
   return (
-    <div className="relative flex flex-col min-h-screen">
+    <div className="relative flex flex-col min-h-tela">
       <main
         className="flex-1 overflow-y-auto no-scrollbar pb-40 px-4"
         ref={mainRef}

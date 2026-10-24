@@ -821,6 +821,16 @@ select:focus-visible,
   line-height: 17px;
 }
 
+/* ── Altura da tela ─────────────────────────────────────────────────
+   A casca das telas (app/page.tsx e os laboratórios) usava `min-h-screen`
+   (só 100vh): no Safari do iPhone 100vh é a altura com a barra escondida, e
+   no app instalado não conta a área segura de baixo. 100dvh é a tela
+   visível de agora; 100vh fica de reserva para navegador sem dvh. */
+.min-h-tela {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 /* ── Scrollbar ──────────────────────────────────────────────────── */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

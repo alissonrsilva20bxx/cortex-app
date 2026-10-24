@@ -311,7 +311,7 @@ export default function DevPreviewRede() {
   // então este laboratório não desenha mais a barra do app.
   return (
     <div
-      className="relative flex flex-col min-h-screen"
+      className="relative flex flex-col min-h-tela"
       style={{ background: "var(--bg)" }}
     >
       <main
