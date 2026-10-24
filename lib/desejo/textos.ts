@@ -37,6 +37,9 @@ export const TEXTOS_DESEJO = {
   cancelar: "Cancelar",
   okCriado: "Desejo adicionado!",
   okSalvo: "Desejo atualizado!",
+  // O banco ainda sem o prazo (migration 0042 não aplicada).
+  okCriadoSemPrazo: "Desejo adicionado! O prazo ainda não pode ser salvo.",
+  okSalvoSemPrazo: "Desejo atualizado! O prazo ainda não pode ser salvo.",
   okExcluido: "Desejo excluído",
   erroSalvar: "Não foi possível salvar o Desejo.",
   erroExcluir: "Não foi possível excluir o Desejo.",

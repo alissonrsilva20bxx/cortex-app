@@ -9,6 +9,33 @@
 type Row = Record<string, unknown>;
 type Store = Record<string, Row[]>;
 
+/** Tabelas e colunas que o banco do laboratório finge não ter, como um banco
+ * real em que a migration ainda não foi aplicada (`?banco=sem-migracoes` em
+ * /dev-preview/app). Responde com os erros do PostgREST. */
+export interface AusentesNoBanco {
+  tabelas?: readonly string[];
+  colunas?: Readonly<Record<string, readonly string[]>>;
+}
+
+/** Os defaults das colunas que o app lê depois de inserir (0021): sem eles o
+ * Desejo novo do laboratório nascia com `valor_atual` vazio. */
+const DEFAULTS_DA_TABELA: Record<string, Row> = {
+  rede_wishlist_items: {
+    valor_atual: 0,
+    estado: "quero",
+    privacidade: "privado",
+    prazo: null,
+  },
+};
+
+/** Como o JSON do supabase-js: chave com `undefined` não vai ao banco, e o
+ * default da coluna vale. */
+function semIndefinidos(row: Row): Row {
+  return Object.fromEntries(
+    Object.entries(row).filter(([, v]) => v !== undefined)
+  );
+}
+
 function delay<T>(value: T, ms = 220 + Math.random() * 180): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }
@@ -19,6 +46,14 @@ function genId(prefix: string) {
 
 function matchesFilters(row: Row, filters: [string, unknown][]) {
   return filters.every(([col, val]) => row[col] === val);
+}
+
+/** A linha sem as colunas que o banco ainda não tem. */
+function semColunas(row: Row, colunas: readonly string[]): Row {
+  if (colunas.length === 0) return row;
+  return Object.fromEntries(
+    Object.entries(row).filter(([c]) => !colunas.includes(c))
+  );
 }
 
 function pick(row: Row, cols: string): Row {
@@ -48,8 +83,35 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
 
   constructor(
     private store: Store,
-    private table: string
+    private table: string,
+    private ausentes: AusentesNoBanco = {}
   ) {}
+
+  /** O erro do PostgREST para tabela ou coluna que não existe, ou null. */
+  private erroDeMigracao(): { code: string; message: string } | null {
+    if (this.ausentes.tabelas?.includes(this.table)) {
+      return {
+        code: "PGRST205",
+        message: `Could not find the table 'public.${this.table}' in the schema cache`,
+      };
+    }
+    const colunas = this.ausentes.colunas?.[this.table] ?? [];
+    const linhas = Array.isArray(this.payload)
+      ? this.payload
+      : this.payload
+        ? [this.payload]
+        : [];
+    const usada = colunas.find((c) =>
+      linhas.some((l) => l[c] !== undefined)
+    );
+    if (usada) {
+      return {
+        code: "PGRST204",
+        message: `Could not find the '${usada}' column of '${this.table}' in the schema cache`,
+      };
+    }
+    return null;
+  }
 
   private matches(row: Row): boolean {
     return (
@@ -154,8 +216,11 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
     data: T | null;
     error: { message: string } | null;
   }> {
+    const erroDeMigracao = this.erroDeMigracao();
+    if (erroDeMigracao) return delay({ data: null, error: erroDeMigracao });
     if (!this.store[this.table]) this.store[this.table] = [];
     const rows = this.store[this.table];
+    const ausentesAqui = this.ausentes.colunas?.[this.table] ?? [];
 
     if (this.op === "select") {
       let result = rows.filter((r) => this.matches(r));
@@ -168,7 +233,9 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
         });
       }
       if (this.limitN !== null) result = result.slice(0, this.limitN);
-      const projected = result.map((r) => pick(r, this.selectCols));
+      const projected = result.map((r) =>
+        semColunas(pick(r, this.selectCols), ausentesAqui)
+      );
       if (this.wantsSingle) {
         const one = projected[0];
         return delay(
@@ -187,11 +254,17 @@ class QueryBuilder<T = unknown> implements PromiseLike<{
       const items = Array.isArray(this.payload)
         ? this.payload
         : [this.payload!];
-      const inserted = items.map((item) => ({
-        id: genId(this.table),
-        criado_em: new Date().toISOString(),
-        ...item,
-      }));
+      const inserted = items.map((item) =>
+        semColunas(
+          {
+            id: genId(this.table),
+            criado_em: new Date().toISOString(),
+            ...DEFAULTS_DA_TABELA[this.table],
+            ...semIndefinidos(item),
+          },
+          ausentesAqui
+        )
+      );
       rows.push(...inserted);
       if (this.wantsSingle) {
         return delay({
@@ -378,7 +451,8 @@ export interface MockSupabaseSeed {
 
 export function createMockSupabaseClient(
   seed: MockSupabaseSeed,
-  authUserId?: string
+  authUserId?: string,
+  opcoes: { ausentes?: AusentesNoBanco } = {}
 ) {
   const store: Store = seed.tables;
   const bucket = new MockStorageBucket(seed.cofreFiles);
@@ -389,7 +463,7 @@ export function createMockSupabaseClient(
      * chamar a rota `/api/rede/foto-upload`, que não existe no harness. */
     __mock: true as const,
     from(table: string) {
-      return new QueryBuilder(store, table);
+      return new QueryBuilder(store, table, opcoes.ausentes);
     },
     storage: {
       from(_bucket: string) {

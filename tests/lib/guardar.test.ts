@@ -174,8 +174,8 @@ describe("guardarNoDesejo (fluxo: grava -> soma -> tela lê)", () => {
     expect(desejos[0].valor_atual).toBe(35.6);
 
     const hist = await listarHistoricoGuardar(client, "u1");
-    expect(hist.map((h) => h.valor)).toEqual([0.1, 25.5]);
-    expect(hist[0].desejoId).toBe("d1");
+    expect(hist?.map((h) => h.valor)).toEqual([0.1, 25.5]);
+    expect(hist?.[0].desejoId).toBe("d1");
   });
 
   it("valor inválido não grava nada", async () => {

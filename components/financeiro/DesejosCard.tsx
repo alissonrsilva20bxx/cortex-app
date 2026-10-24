@@ -91,7 +91,7 @@ export function DesejosCard({
     const prazo = form.prazo || null;
     try {
       if (existente) {
-        await atualizarWishlistItem(supabase, {
+        const salvo = await atualizarWishlistItem(supabase, {
           itemId: existente.id,
           nome: form.nome,
           valorAlvo,
@@ -99,10 +99,10 @@ export function DesejosCard({
           privacidade: form.privacidade,
           prazo,
         });
-        toast.success(T.okSalvo);
+        toast.success(prazo && !salvo.prazo ? T.okSalvoSemPrazo : T.okSalvo);
       } else {
         await garantirPerfil(supabase, userId, nomeUsuaria);
-        await criarWishlistItem(supabase, {
+        const criado = await criarWishlistItem(supabase, {
           nome: form.nome,
           cor: WISHLIST_PALETTE[itens.length % WISHLIST_PALETTE.length],
           valorAlvo,
@@ -110,7 +110,9 @@ export function DesejosCard({
           privacidade: form.privacidade,
           prazo,
         });
-        toast.success(T.okCriado);
+        toast.success(
+          prazo && !criado.prazo ? T.okCriadoSemPrazo : T.okCriado
+        );
       }
       fechar();
       avisarDesejosMudaram();

@@ -35,7 +35,8 @@ export function GuardarCard({ userId }: Props) {
   const toast = useToast();
   const { registrar } = useJornada(userId);
   const [desejos, setDesejos] = useState<WishlistItem[]>([]);
-  const [historico, setHistorico] = useState<DepositoGuardado[]>([]);
+  // null: o banco ainda não tem o histórico (0044), e a seção não aparece.
+  const [historico, setHistorico] = useState<DepositoGuardado[] | null>([]);
   const [carregando, setCarregando] = useState(true);
   const [erroCarregar, setErroCarregar] = useState(false);
   const [erroHistorico, setErroHistorico] = useState(false);
@@ -323,7 +324,7 @@ export function GuardarCard({ userId }: Props) {
             </button>
           )}
 
-          {!semDesejo && (
+          {!semDesejo && historico !== null && (
             <>
               <p
                 className="text-[11px] font-bold mt-5 mb-2"

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { faltaTabela } from "../bancoSemMigracao";
 import type { Database } from "../database.types";
 import { TEXTOS_GUARDAR } from "./textos";
 import { lerValorGuardar } from "./valor";
@@ -31,6 +32,8 @@ export type ResultadoGuardar =
  *  1. grava o depósito em guardar_historico;
  *  2. soma o valor em rede_wishlist_items.valor_atual (o app soma, sem trigger).
  * Se o passo 2 falhar o passo 1 continua gravado, e o resultado diz isso.
+ * Sem a tabela do histórico no banco (0044 não aplicada), pula o passo 1 e
+ * só soma: o Desejo e a meta da Jornada andam igual, só não há histórico.
  * Quem chama registra a ação "guardar_meta" da Jornada quando `ok`.
  */
 export async function guardarNoDesejo(
@@ -52,6 +55,17 @@ export async function guardarNoDesejo(
     })
     .select("id")
     .single();
+  if (faltaTabela(ins.error, "guardar_historico")) {
+    const soma = await somarNoDesejo(client, {
+      userId: input.userId,
+      desejoId: input.desejoId,
+      centavos: lido.centavos,
+    });
+    // Sem histórico, nada ficou gravado se a soma falhar.
+    return soma.ok
+      ? { ok: true, valorAtual: soma.valorAtual }
+      : { ok: false, etapa: "historico", erro: TEXTOS_GUARDAR.erroHistorico };
+  }
   if (ins.error || !ins.data) {
     console.error("[guardar] falha ao gravar histórico:", ins.error?.message);
     return {
@@ -109,17 +123,20 @@ export async function somarNoDesejo(
   return { ok: true, valorAtual: Number(upd.data.valor_atual) };
 }
 
+/** Os últimos depósitos, ou `null` quando o banco ainda não tem a tabela do
+ * histórico (0044 não aplicada): aí não há histórico para mostrar. */
 export async function listarHistoricoGuardar(
   client: Client,
   userId: string,
   limite = 10
-): Promise<DepositoGuardado[]> {
+): Promise<DepositoGuardado[] | null> {
   const { data, error } = await client
     .from("guardar_historico")
     .select("id, desejo_id, valor, criado_em")
     .eq("user_id", userId)
     .order("criado_em", { ascending: false })
     .limit(limite);
+  if (faltaTabela(error, "guardar_historico")) return null;
   if (error) throw error;
   return data.map((r) => ({
     id: r.id,
