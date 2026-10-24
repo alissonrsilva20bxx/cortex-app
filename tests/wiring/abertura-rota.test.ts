@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Abertura "Rota das metas" (proposta 2 aprovada, 4,0 s). Fiação a partir do
+ * Abertura "Rota das metas" (proposta 2 aprovada), terminando no movimento
+ * da marca Arcelle (7,5 s). Fiação a partir do
  * código; o pixel contra o desenho (0, 1, 2, 3 e 3,6 s, claro/escuro, e o
  * quadro parado do movimento reduzido) e a ausência de flash no início
  * ficam em tests/visual/pixel/abertura.mjs; a linha do tempo, em
@@ -54,7 +55,7 @@ describe("a lógica de antes continua: quando mostra, uma vez por aba", () => {
   });
 });
 
-describe("4,0 s, contados da 1ª pintura", () => {
+describe("7,5 s, contados da 1ª pintura", () => {
   it("a saída começa em INICIO_DA_SAIDA_MS menos o que a cena já andou", () => {
     expect(tsx).toMatch(
       /const decorrido = tempoDaCena\(palcoRef\.current\);[\s\S]{0,240}: Math\.max\(0, INICIO_DA_SAIDA_MS - decorrido\);/
@@ -67,7 +68,7 @@ describe("4,0 s, contados da 1ª pintura", () => {
     expect(tsx).toMatch(/palco\?\.getAnimations\?\.\(\)\[0\]\?\.startTime/);
     // não `currentTime`: sem nada mudando na tela ele para de andar
     expect(tsx).toMatch(/const t = performance\.now\(\) - inicio;/);
-    expect(regra(".palco")).toMatch(/animation: relogio 4s linear both;/);
+    expect(regra(".palco")).toMatch(/animation: relogio 7\.5s linear both;/);
     expect(tsx).toMatch(/<div ref=\{palcoRef\} className=\{styles\.palco\}/);
   });
 });
@@ -134,9 +135,17 @@ describe("sem flash branco; tema claro/escuro e os 8 temas", () => {
     expect(regra(".motionLeaving")).toMatch(/transform: scale\(1\.02\);/);
   });
 
-  it("cores só pelos tokens do app; a única cor fixa é o branco do ícone do Início", () => {
+  it("cores só pelos tokens do app; fixas só o branco do ícone do Início e o rosa da marca", () => {
     const hex = css.match(/#[0-9a-f]{3,8}\b/gi) ?? [];
-    expect(new Set(hex.map((h) => h.toLowerCase()))).toEqual(new Set(["#fff"]));
+    expect(new Set(hex.map((h) => h.toLowerCase()))).toEqual(
+      new Set(["#fff", "#ff2d78", "#d6105c"])
+    );
+    // o rosa da marca só na marca: #FF2D78 no escuro, #D6105C (fundo claro) no claro
+    expect(regra(".marca")).toMatch(/--rosa-marca: #ff2d78;/);
+    expect(css).toMatch(
+      /:global\(\[data-mode="light"\]\) \.marca \{\s*--rosa-marca: #d6105c;\s*\}/
+    );
+    expect(css.match(/#ff2d78|#d6105c/gi)).toHaveLength(2);
     expect(css).not.toMatch(/rgba\(255,\s*45,\s*120/);
     expect(css).toMatch(
       /color-mix\(in srgb, var\(--t-acc\) 30%, transparent\)/
@@ -169,6 +178,47 @@ describe("a cena do desenho", () => {
   });
 
   it("a marca e a frase do app no fim", () => {
-    expect(tsx).toMatch(/<b>Arcelle<\/b>\s*<i>feito para a sua realidade<\/i>/);
+    expect(tsx).toMatch(/<MarcaArcelle \/>\s*<\/>/);
+    expect(tsx).toMatch(/<\/svg>\s*<i>feito para a sua realidade<\/i>/);
+    // o fim antigo (nome em texto) saiu
+    expect(tsx).not.toMatch(/<b>Arcelle<\/b>/);
+  });
+
+  it("a marca é a da arte final: a arca, os 5 perfis e o nome em contorno", () => {
+    expect(tsx).toMatch(/from "@\/lib\/marcaArcelle"/);
+    expect(tsx).toMatch(/<path className=\{styles\.arca\} d=\{ARCA\} \/>/);
+    expect(tsx).toMatch(
+      /\{ d: ROSTO_FORA \},\s*\{ d: ROSTO_MEIO \},\s*\{ d: ROSTO_CENTRO \},\s*\{ d: ROSTO_MEIO, espelho: true \},\s*\{ d: ROSTO_FORA, espelho: true \},/
+    );
+    // o perfil espelhado anima num <g> por fora (senão a animação apaga o espelho)
+    expect(tsx).toMatch(
+      /<g key=\{i\} className=\{styles\.perfil\}>\s*<path transform=\{ESPELHO\} d=\{r\.d\} \/>/
+    );
+    expect(tsx).toMatch(/className=\{styles\.rostos\} transform="translate\(10 41\) scale\(\.1\)"/);
+    expect(tsx).toMatch(/NOME_ARC\.map[\s\S]{0,120}styles\.arc\b/);
+    expect(tsx).toMatch(/NOME_ELLE\.map[\s\S]{0,120}styles\.elle\b/);
+    expect(regra(".elle")).toMatch(/fill: var\(--rosa-marca\);/);
+    expect(regra(".arc")).toMatch(/fill: var\(--t-ink\);/);
+  });
+
+  it("a marca fica embaixo, abaixo do rótulo do Início, sem cobrir a rota", () => {
+    expect(regra(".marca")).toMatch(/top: calc\(var\(--u\) \* 744\);/);
+    // rótulo do Início: parada em y 700 (topo 677) + 52 + ~14 de letra
+    const inicio = 700 - 23 + 52 + 14;
+    expect(744).toBeGreaterThan(inicio);
+  });
+
+  it("o símbolo com arca passa dos 64 px da especificação (tela de 390)", () => {
+    const largura = Number(regra(".marca svg").match(/width: calc\(var\(--u\) \* ([\d.]+)\);/)?.[1]);
+    expect(tsx).toMatch(/<svg viewBox="8 14 238 84">/);
+    // arca de y 16,5 a 95,5 (traço de 7) no viewBox de 238 de largura
+    expect(((95.5 - 16.5) * largura) / 238).toBeGreaterThan(64);
+  });
+
+  it("movimento reduzido: a marca aparece inteira e parada (sem animação, a arca já desenhada)", () => {
+    // .palco * { animation: none } vale para a marca; a arca só some pelo
+    // dashoffset da animação, então sem ela fica inteira
+    expect(regra(".arca")).not.toMatch(/stroke-dashoffset/);
+    expect(regra(".perfil")).not.toMatch(/opacity/);
   });
 });

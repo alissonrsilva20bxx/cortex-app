@@ -8,6 +8,15 @@ import {
   PONTOS_DA_ROTA,
   type IconeDaParada,
 } from "@/lib/entry/rotaDasMetas";
+import {
+  ARCA,
+  ESPELHO,
+  NOME_ARC,
+  NOME_ELLE,
+  ROSTO_CENTRO,
+  ROSTO_FORA,
+  ROSTO_MEIO,
+} from "@/lib/marcaArcelle";
 import styles from "./OpeningMotion.module.css";
 
 interface Props {
@@ -28,7 +37,7 @@ const SAIDA_MS = 280;
 /**
  * Quanto da cena já passou (ms), pelo relógio da própria animação do palco:
  * a cena começa na 1ª pintura (HTML do servidor), antes da hidratação, e a
- * saída tem que cair aos 4,0 s dela, não 4,0 s depois da hidratação.
+ * saída tem que cair aos 7,5 s dela, não 7,5 s depois da hidratação.
  * `performance.now() - startTime` (a linha do tempo do documento tem a
  * mesma origem do `performance.now()`), não `currentTime`: com o movimento
  * reduzido nada muda na tela, o navegador para de pintar quadros e o
@@ -69,7 +78,7 @@ export function OpeningMotion({ onDone }: Props) {
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
-    // Rota das metas: 4,0 s no total (a saída começa aos 3,72 s e leva
+    // Rota das metas + marca: 7,5 s no total (a saída começa aos 7,22 s e leva
     // 280 ms). Movimento reduzido: o quadro final parado, curto. Os dois
     // contados da 1ª pintura (o relógio do palco), não da hidratação.
     const decorrido = tempoDaCena(palcoRef.current);
@@ -210,10 +219,55 @@ function RotaDasMetas() {
         <b>PARIS</b>
         <small>48.8566° N · a viagem</small>
       </div>
-      <div className={styles.mark}>
-        <b>Arcelle</b>
-        <i>feito para a sua realidade</i>
-      </div>
+      <MarcaArcelle />
     </>
+  );
+}
+
+/**
+ * Fim da abertura: o movimento da marca aprovado em 20/10 (arte-final,
+ * _gerador/motion.js), na assinatura horizontal (símbolo na caixa de 100,
+ * 20 de espaço, nome em corpo 40 centrado na altura da caixa). A arca se
+ * desenha, os 5 perfis entram um a um, o nome chega. As classes e a
+ * estrutura são as do motion.js: o perfil espelhado ganha um <g> por fora
+ * para a animação não apagar o espelho.
+ */
+function MarcaArcelle() {
+  const rostos = [
+    { d: ROSTO_FORA },
+    { d: ROSTO_MEIO },
+    { d: ROSTO_CENTRO },
+    { d: ROSTO_MEIO, espelho: true },
+    { d: ROSTO_FORA, espelho: true },
+  ];
+  return (
+    <div className={styles.marca} data-marca>
+      <svg viewBox="8 14 238 84">
+        <path className={styles.arca} d={ARCA} />
+        <g className={styles.rostos} transform="translate(10 41) scale(.1)">
+          {rostos.map((r, i) =>
+            r.espelho ? (
+              <g key={i} className={styles.perfil}>
+                <path transform={ESPELHO} d={r.d} />
+              </g>
+            ) : (
+              <path key={i} className={styles.perfil} d={r.d} />
+            )
+          )}
+        </g>
+        <g className={styles.nome}>
+          {/* o nome da assinatura vertical, levado para o lado do símbolo */}
+          <g transform="translate(122.02 -106.37) scale(1.2)">
+            {NOME_ARC.map((d) => (
+              <path key={d} className={styles.arc} d={d} />
+            ))}
+            {NOME_ELLE.map((d) => (
+              <path key={d} className={styles.elle} d={d} />
+            ))}
+          </g>
+        </g>
+      </svg>
+      <i>feito para a sua realidade</i>
+    </div>
   );
 }

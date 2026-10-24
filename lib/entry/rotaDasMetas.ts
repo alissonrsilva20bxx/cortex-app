@@ -5,20 +5,26 @@
  * começar já no HTML do servidor, no mesmo relógio do resto da cena, sem
  * esperar a hidratação. Coordenadas no quadro do desenho (390×844).
  *
- * Linha do tempo (4,0 s): os pontos da rota acendem de 0,25 s a 2,75 s com o
+ * Linha do tempo (7,5 s): os pontos da rota acendem de 0,25 s a 2,75 s com o
  * ✦ viajando por ela; cada parada aparece quando a rota chega nela; o pin
- * de PARIS cai aos 2,75 s; a marca entra aos 3,2 s; a saída começa aos
- * 3,72 s e termina aos 4,0 s.
+ * de PARIS cai aos 2,75 s. Aos 3,0 s começa o movimento da marca aprovado
+ * (motion.js da arte-final, 4,5 s): a arca se desenha (3,0 a 4,1 s), os 5
+ * perfis entram um a um (3,9 a 5,4 s), o nome chega (5,2 a 6,0 s) e tudo
+ * fica parado; a saída começa aos 7,22 s e termina aos 7,5 s.
  */
 
 /** O traçado da rota (viewBox 0 0 390 844). */
 export const CAMINHO_DA_ROTA =
   "M60 700 C 70 640, 90 590, 120 560 C 170 510, 240 505, 285 470 C 330 432, 180 392, 110 352 C 60 324, 170 272, 272 250 C 340 236, 270 160, 200 120";
 
+/** Quando o movimento da marca começa (ms), logo depois da rota chegar em PARIS. */
+export const INICIO_DA_MARCA_MS = 3000;
+/** Duração do movimento da marca (ms): 3 s animando + 1,5 s parado, como no motion.js. */
+export const DURACAO_DA_MARCA_MS = 4500;
 /** Duração total da abertura, em ms (até o fim da saída). */
-export const DURACAO_DA_ABERTURA_MS = 4000;
-/** Quando a saída começa (ms): 4,0 s menos os 280 ms da transição. */
-export const INICIO_DA_SAIDA_MS = 3720;
+export const DURACAO_DA_ABERTURA_MS = INICIO_DA_MARCA_MS + DURACAO_DA_MARCA_MS;
+/** Quando a saída começa (ms): 7,5 s menos os 280 ms da transição. */
+export const INICIO_DA_SAIDA_MS = 7220;
 /** Movimento reduzido: só o quadro final, parado, por pouco tempo (ms). */
 export const ABERTURA_ESTATICA_MS = 900;
 

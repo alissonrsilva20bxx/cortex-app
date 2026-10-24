@@ -4,6 +4,8 @@ import { join } from "node:path";
 import {
   ABERTURA_ESTATICA_MS,
   DURACAO_DA_ABERTURA_MS,
+  DURACAO_DA_MARCA_MS,
+  INICIO_DA_MARCA_MS,
   INICIO_DA_SAIDA_MS,
   PARADAS,
   PONTOS_DA_ROTA,
@@ -22,10 +24,39 @@ const css = readFileSync(
   "utf-8"
 ).replace(/\r\n/g, "\n");
 
-describe("Rota das metas: a linha do tempo de 4,0 s do desenho", () => {
-  it("a abertura inteira dura 4,0 s: a saída começa aos 3,72 s e leva 280 ms", () => {
-    expect(DURACAO_DA_ABERTURA_MS).toBe(4000);
+describe("Rota das metas: a linha do tempo do desenho, terminando na marca", () => {
+  it("a abertura inteira dura 7,5 s: a saída começa aos 7,22 s e leva 280 ms", () => {
+    expect(DURACAO_DA_ABERTURA_MS).toBe(7500);
     expect(INICIO_DA_SAIDA_MS + 280).toBe(DURACAO_DA_ABERTURA_MS);
+  });
+
+  it("a marca começa aos 3,0 s, depois da rota chegar em PARIS, e dura os 4,5 s do motion.js", () => {
+    expect(INICIO_DA_MARCA_MS).toBe(3000);
+    expect(DURACAO_DA_MARCA_MS).toBe(4500);
+    expect(INICIO_DA_MARCA_MS / 1000).toBeGreaterThan(PONTOS_DA_ROTA[64][3]);
+    expect(INICIO_DA_MARCA_MS + DURACAO_DA_MARCA_MS).toBe(DURACAO_DA_ABERTURA_MS);
+  });
+
+  it("o movimento da marca: os tempos do motion.js (arca 1,1 s; perfis 0,9 a 2,4 s; nome 2,2 a 3 s) somados ao início da marca", () => {
+    const t0 = INICIO_DA_MARCA_MS / 1000;
+    const s = (n: number) => String(+(t0 + n).toFixed(2)).replace(".", "\\.");
+    expect(css).toMatch(new RegExp(`animation: marcaArca 1\\.1s ease-out ${s(0)}s both;`));
+    expect(css).toMatch(/animation: marcaPerfil 0\.7s ease-out both;/);
+    [0.9, 1.1, 1.3, 1.5, 1.7].forEach((d, i) =>
+      expect(css).toMatch(
+        new RegExp(`\\.perfil:nth-child\\(${i + 1}\\) \\{\\s*animation-delay: ${s(d)}s;`)
+      )
+    );
+    expect(css).toMatch(new RegExp(`animation: marcaNome 0\\.8s ease-out ${s(2.2)}s both;`));
+    expect(css).toMatch(
+      /@keyframes marcaArca \{\s*from \{\s*stroke-dashoffset: 200;\s*\}\s*to \{\s*stroke-dashoffset: 0;/
+    );
+    expect(css).toMatch(
+      /@keyframes marcaPerfil \{\s*from \{\s*opacity: 0;\s*transform: translateY\(14px\);/
+    );
+    expect(css).toMatch(
+      /@keyframes marcaNome \{\s*from \{\s*opacity: 0;\s*transform: translateX\(-4%\);/
+    );
   });
 
   it("movimento reduzido: o quadro parado é curto (menos de 1 s)", () => {
@@ -81,10 +112,11 @@ describe("Rota das metas: a linha do tempo de 4,0 s do desenho", () => {
     );
   });
 
-  it("os momentos do desenho: pin aos 2,75 s, PARIS aos 3,0 s, anel aos 3,1 s, marca aos 3,2 s", () => {
+  it("os momentos do desenho: pin aos 2,75 s, PARIS aos 3,0 s, anel aos 3,1 s", () => {
     expect(css).toMatch(/animation: drop 0\.5s 2\.75s/);
     expect(css).toMatch(/animation: up 0\.45s 3s both/);
     expect(css).toMatch(/animation: ring 1s 3\.1s ease-out forwards/);
-    expect(css).toMatch(/animation: fade 0\.45s 3\.2s both/);
+    // o fim antigo (o nome em texto entrando aos 3,2 s) saiu
+    expect(css).not.toMatch(/animation: fade 0\.45s 3\.2s both/);
   });
 });

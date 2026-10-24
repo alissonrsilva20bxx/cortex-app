@@ -1,6 +1,6 @@
 /*
- * Abertura "Rota das metas" (proposta 2, aprovada em motion-atlas.html,
- * 4,0 s). A cena é a do desenho, no quadro dele (390×844): cada medida é
+ * Abertura "Rota das metas" (proposta 2, aprovada em motion-atlas.html),
+ * terminando no movimento da marca Arcelle (7,5 s no total). A cena é a do desenho, no quadro dele (390×844): cada medida é
  * `calc(var(--u) * N)`, com `--u` = 1px do desenho na tela de agora. Em
  * 390×844 dá 1px exato; em outras telas a cena inteira cresce ou encolhe
  * junto, sem distorcer, e o fundo cobre a tela toda. Funciona já no HTML do
@@ -74,8 +74,8 @@
   height: calc(var(--u) * 844);
   transform: translate(-50%, -50%);
   /* Relógio da cena: o componente lê o tempo desta animação para sair aos
-     4,0 s contados da 1ª pintura, não da hidratação. */
-  animation: relogio 4s linear both;
+     7,5 s contados da 1ª pintura, não da hidratação. */
+  animation: relogio 7.5s linear both;
 }
 
 .palco * {
@@ -229,28 +229,81 @@
   letter-spacing: 0.08em;
 }
 
-/* ── A marca ─────────────────────────────────────────────────────────── */
-.mark {
+/* ── A marca: o movimento aprovado (motion.js da arte-final) ─────────── */
+/* Assinatura horizontal centrada embaixo, abaixo do rótulo do Início e à
+   direita dele, sem cobrir a rota. Começa aos 3,0 s (INICIO_DA_MARCA_MS);
+   os tempos de dentro são os do motion.js somados a 3,0 s. Cores da marca:
+   rosa #FF2D78 no escuro e #D6105C no claro (versão para fundo claro);
+   "Arc" na cor do texto do tema. */
+.marca {
+  --rosa-marca: #ff2d78;
   left: 0;
   right: 0;
-  top: calc(var(--u) * 770);
-  text-align: center;
-  animation: fade 0.45s 3.2s both;
+  top: calc(var(--u) * 744);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.mark * {
+:global([data-mode="light"]) .marca {
+  --rosa-marca: #d6105c;
+}
+.marca * {
   position: static;
 }
-.mark b {
+.marca svg {
   display: block;
-  font-size: calc(var(--u) * 24);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--t-ink);
+  /* a arca (79 de altura no viewBox de 84) com mais de 64 px, o mínimo da
+     especificação para o símbolo com arca, numa tela de 390 */
+  width: calc(var(--u) * 194);
+  height: calc(var(--u) * 68.5);
+  overflow: visible;
 }
-.mark i {
+.arca {
+  fill: none;
+  stroke: var(--rosa-marca);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 200;
+  animation: marcaArca 1.1s ease-out 3s both;
+}
+.rostos {
+  fill: var(--rosa-marca);
+}
+.perfil {
+  transform-box: fill-box;
+  animation: marcaPerfil 0.7s ease-out both;
+}
+.perfil:nth-child(1) {
+  animation-delay: 3.9s;
+}
+.perfil:nth-child(2) {
+  animation-delay: 4.1s;
+}
+.perfil:nth-child(3) {
+  animation-delay: 4.3s;
+}
+.perfil:nth-child(4) {
+  animation-delay: 4.5s;
+}
+.perfil:nth-child(5) {
+  animation-delay: 4.7s;
+}
+.nome,
+.marca i {
+  transform-box: fill-box;
+  animation: marcaNome 0.8s ease-out 5.2s both;
+}
+.arc {
+  fill: var(--t-ink);
+}
+.elle {
+  fill: var(--rosa-marca);
+}
+/* A frase do app, mantida embaixo do nome até o dono decidir sobre ela. */
+.marca i {
   display: block;
   font-size: calc(var(--u) * 9);
-  margin-top: calc(var(--u) * 6);
+  margin-top: calc(var(--u) * 4);
   font-weight: 600;
   letter-spacing: 0.26em;
   text-transform: uppercase;
@@ -294,6 +347,34 @@
   from,
   to {
     visibility: visible;
+  }
+}
+@keyframes marcaArca {
+  from {
+    stroke-dashoffset: 200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes marcaPerfil {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes marcaNome {
+  from {
+    opacity: 0;
+    transform: translateX(-4%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 @keyframes fade {
