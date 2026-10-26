@@ -87,7 +87,7 @@ describe("Regra 1: 'Esqueci o PIN' pede a conta e cria um PIN novo", () => {
   });
 
   it("grava o hash novo na conta (nunca o PIN), zera o limite e avisa o pai", () => {
-    expect(pin).toMatch(/const hash = await hashPin\(novo\);/);
+    expect(pin).toMatch(/hash = await hashPin\(novo\);/);
     expect(pin).toMatch(
       /const gravou = await reauth\.gravarPin\(usuarioId, hash\);/
     );

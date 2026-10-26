@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Delete } from "lucide-react";
-import { hashPin } from "@/lib/pin";
+import { hashPin, TEXTOS_PIN } from "@/lib/pin";
 import { supabase } from "@/lib/supabase";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useJornada } from "@/components/jornada/useJornada";
@@ -69,7 +69,17 @@ export function PinSetup({ open, userId, onClose, onSaved }: Props) {
   async function savePin(pin: string) {
     setSaving(true);
     setError(null);
-    const h = await hashPin(pin);
+    let h: string;
+    try {
+      h = await hashPin(pin);
+    } catch {
+      setSaving(false);
+      setError(TEXTOS_PIN.semConexaoSegura);
+      setDigits([]);
+      setFirst([]);
+      setStep("enter");
+      return;
+    }
     const { error: upsertError } = await supabase
       .from("configuracoes")
       .upsert({ user_id: userId, pin_hash: h }, { onConflict: "user_id" });

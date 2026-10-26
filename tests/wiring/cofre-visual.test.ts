@@ -180,7 +180,7 @@ describe("CofreTab.tsx has its OWN PIN gate, independent of the app session (bug
   it("the real PinScreen only calls onUnlock after verifyPin resolves true (control check on the reused component)", () => {
     const pinScreenSrc = read("components/pin/PinScreen.tsx");
     expect(pinScreenSrc).toMatch(
-      /verifyPin\([\s\S]*?\)\.then\(\(ok\)\s*=>\s*{\s*\r?\n\s*if\s*\(ok\)\s*{\s*\r?\n\s*onUnlock\(\);/
+      /verifyPin\([\s\S]*?\)\.then\(\s*\(ok\)\s*=>\s*{\s*\r?\n\s*if\s*\(ok\)\s*{\s*\r?\n\s*onUnlock\(\);/
     );
   });
 

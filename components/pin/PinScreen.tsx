@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { hashPin, verifyPin } from "@/lib/pin";
+import { hashPin, TEXTOS_PIN, verifyPin } from "@/lib/pin";
 import {
   formatarEspera,
   gravarTentativas,
@@ -111,6 +111,7 @@ export function PinScreen({
   const [etapa, setEtapa] = useState<Etapa>("teclado");
   const [primeiro, setPrimeiro] = useState<string | null>(null);
   const [falhaAoGravar, setFalhaAoGravar] = useState(false);
+  const [semConexaoSegura, setSemConexaoSegura] = useState(false);
   const vault = context === "vault";
 
   // Limite de tentativas: o contador mora no aparelho (por conta), então
@@ -172,7 +173,18 @@ export function PinScreen({
       }
       setVerifying(true);
       void (async () => {
-        const hash = await hashPin(novo);
+        let hash: string;
+        try {
+          hash = await hashPin(novo);
+        } catch {
+          if (cancelled) return;
+          setSemConexaoSegura(true);
+          setDigits([]);
+          setPrimeiro(null);
+          setVerifying(false);
+          setEtapa("novo");
+          return;
+        }
         const gravou = await reauth.gravarPin(usuarioId, hash);
         if (cancelled) return;
         if (!gravou) {
@@ -200,31 +212,40 @@ export function PinScreen({
 
     setVerifying(true);
 
-    verifyPin(digits.join(""), pinHash).then((ok) => {
-      if (ok) {
-        onUnlock();
-        zerarTentativas(usuarioId);
-        return;
-      }
-      // O erro conta ANTES do `cancelled`: sair da tela logo depois do 4º
-      // dígito não escapa do contador. Lido de novo do aparelho: a trava do
-      // app e a do Cofre dividem o mesmo contador.
-      const depois = registrarErro(lerTentativas(usuarioId), Date.now());
-      gravarTentativas(usuarioId, depois);
-      if (cancelled) return;
-      setTentativas(depois);
-      setAgora(Date.now());
-
-      setShake(true);
-      setError(true);
-      window.setTimeout(() => {
+    verifyPin(digits.join(""), pinHash).then(
+      (ok) => {
+        if (ok) {
+          onUnlock();
+          zerarTentativas(usuarioId);
+          return;
+        }
+        // O erro conta ANTES do `cancelled`: sair da tela logo depois do 4º
+        // dígito não escapa do contador. Lido de novo do aparelho: a trava do
+        // app e a do Cofre dividem o mesmo contador.
+        const depois = registrarErro(lerTentativas(usuarioId), Date.now());
+        gravarTentativas(usuarioId, depois);
         if (cancelled) return;
-        setShake(false);
-        setError(false);
+        setTentativas(depois);
+        setAgora(Date.now());
+
+        setShake(true);
+        setError(true);
+        window.setTimeout(() => {
+          if (cancelled) return;
+          setShake(false);
+          setError(false);
+          setDigits([]);
+          setVerifying(false);
+        }, 700);
+      },
+      // Sem https não dá para conferir: não conta como erro de PIN.
+      () => {
+        if (cancelled) return;
+        setSemConexaoSegura(true);
         setDigits([]);
         setVerifying(false);
-      }, 700);
-    });
+      }
+    );
 
     return () => {
       cancelled = true;
@@ -247,6 +268,7 @@ export function PinScreen({
       setDigits((current) => current.slice(0, -1));
     } else if (key) {
       setFalhaAoGravar(false);
+      setSemConexaoSegura(false);
       setDigits((current) =>
         current.length < 4 ? [...current, key] : current
       );
@@ -257,6 +279,7 @@ export function PinScreen({
     setDigits([]);
     setPrimeiro(null);
     setFalhaAoGravar(false);
+    setSemConexaoSegura(false);
     setEtapa("teclado");
   }
 
@@ -341,15 +364,17 @@ export function PinScreen({
           : "Verificando…"
         : emEspera
           ? `Muitas tentativas. Tente de novo em ${formatarEspera(espera)}.`
-          : falhaAoGravar
-            ? "Não foi possível salvar o PIN. Tente de novo."
-            : etapa === "novo"
-              ? "Digite 4 números para o PIN novo."
-              : etapa === "confirmar"
-                ? "Digite o PIN novo mais uma vez."
-                : vault
-                  ? "Digite seu PIN para ver seus arquivos protegidos."
-                  : "Confirme que é você para entrar na Arcelle.";
+          : semConexaoSegura
+            ? TEXTOS_PIN.semConexaoSegura
+            : falhaAoGravar
+              ? "Não foi possível salvar o PIN. Tente de novo."
+              : etapa === "novo"
+                ? "Digite 4 números para o PIN novo."
+                : etapa === "confirmar"
+                  ? "Digite o PIN novo mais uma vez."
+                  : vault
+                    ? "Digite seu PIN para ver seus arquivos protegidos."
+                    : "Confirme que é você para entrar na Arcelle.";
   const titulo = unlocked
     ? pinNovo
       ? "PIN novo salvo"

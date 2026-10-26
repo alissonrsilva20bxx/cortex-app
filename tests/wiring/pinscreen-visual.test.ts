@@ -172,7 +172,7 @@ describe("PinScreen — 'Esqueci o PIN' (link discreto; o fluxo seguro está em 
 
 describe("PinScreen — segurança e estados preservados 1:1 (só visual muda)", () => {
   it("continua usando o mesmo verifyPin/hash real, sem verificação paralela", () => {
-    expect(codigo).toContain('import { hashPin, verifyPin } from "@/lib/pin"');
+    expect(codigo).toContain('import { hashPin, TEXTOS_PIN, verifyPin } from "@/lib/pin"');
     expect(codigo).toMatch(/verifyPin\(digits\.join\(""\), pinHash\)/);
     expect(codigo).toMatch(/if \(digits\.length !== 4\) return;/);
     expect(codigo).toMatch(
