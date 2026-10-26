@@ -92,10 +92,11 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
         style={{
           // #176: com o teclado aberto, o sheet sobe acima dele e cabe na
           // área que sobrou (variáveis do useCampoVisivelComTeclado). Sem
-          // teclado valem os valores de sempre: bottom 0 e 90vh (era a
-          // classe max-h-[90vh]).
+          // teclado valem os valores de sempre: bottom 0 e 90dvh (dvh, como
+          // o JobForm: no Safari com barra, 90vh passa da tela visível).
           bottom: "var(--teclado-inset, 0px)",
-          maxHeight: "min(90vh, calc(var(--teclado-altura-util, 100vh) * 0.9))",
+          maxHeight:
+            "min(90dvh, calc(var(--teclado-altura-util, 100dvh) * 0.9))",
           transform: open ? "translateY(0)" : "translateY(105%)",
           background: "var(--bg)",
           border: "1px solid var(--card-border)",

@@ -406,14 +406,14 @@ const FORMULARIOS = [
   {
     arquivo: "components/financeiro/DespesaForm.tsx",
     nome: "Nova Despesa",
-    alturaBase: "90vh",
-    alturaUtilBase: "100vh",
+    alturaBase: "90dvh",
+    alturaUtilBase: "100dvh",
   },
   {
     arquivo: "components/financeiro/ReceitaForm.tsx",
     nome: "Nova Entrada",
-    alturaBase: "90vh",
-    alturaUtilBase: "100vh",
+    alturaBase: "90dvh",
+    alturaUtilBase: "100dvh",
   },
 ];
 
