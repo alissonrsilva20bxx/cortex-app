@@ -220,9 +220,15 @@ describe("acesso: teto de confiança de 24h, oculta só em resposta decisiva (T1
     );
 
     const gated = read("components/rede/RedeGatedTab.tsx");
-    // hidrata ANTES de decidir o estado inicial (useState lazy init)
+    // O 1º render lê só a memória (o servidor não tem localStorage: ler o
+    // carimbo ali dava erro de hidratação ao recarregar, #50 -- ver
+    // tests/wiring/rede-acesso-hidratacao.test.ts). O carimbo persistido
+    // hidrata a memória no efeito de layout, antes da 1ª pintura, e libera.
     expect(gated).toMatch(
-      /useState<EstadoGate>\(\(\) => \{[\s\S]*?redeCachePersist\.carregarAcesso\(usuario\.id\)[\s\S]*?redeCache\.hidratarAcesso\(usuario\.id, persistido\)[\s\S]*?redeCache\.acessoConfirmadoValido\(usuario\.id\)[\s\S]*?\}\);/
+      /useState<EstadoGate>\(\(\) =>\s*redeCache\.acessoConfirmadoValido\(usuario\.id\) \? "liberado" : "verificando"\s*\);/
+    );
+    expect(gated).toMatch(
+      /useEfeitoDeLayout\(\(\) => \{\s*const persistido = redeCachePersist\.carregarAcesso\(usuario\.id\);\s*redeCache\.hidratarAcesso\(usuario\.id, persistido\);\s*if \(redeCache\.acessoConfirmadoValido\(usuario\.id\)\) \{\s*setEstado\(\(atual\) => \(atual === "verificando" \? "liberado" : atual\)\);/
     );
     // grava nos dois lugares com o MESMO carimbo, não dois Date.now() soltos
     expect(gated).toMatch(

@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { RedeTeaserGate, type GateSheet } from "./RedeTeaserGate";
 import { SerialKeySheet } from "./SerialKeySheet";
 import { RedeTab } from "./RedeTab";
@@ -35,6 +41,10 @@ interface Props {
   /** Modelo Doca: mostra a barra própria da Rede (só com acesso). */
   barraDoca?: boolean;
 }
+
+/** Layout effect no navegador; no servidor, um effect comum (não roda). */
+const useEfeitoDeLayout =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /** Enquanto `estado === "semRede"`, tenta de novo nesse intervalo mesmo sem
  * nenhum `visibilitychange`/`online` disparar -- não há "prazo exato" pra
@@ -129,16 +139,25 @@ export function RedeGatedTab({
   // offline já os veria de um jeito ou de outro. O que esta política decide
   // é só se a INTERFACE oculta ou não enquanto não há confirmação -- dado
   // já existir em disco não torna essa proteção irrelevante.
-  const [estado, setEstado] = useState<EstadoGate>(() => {
-    // Hidrata a memória com o carimbo persistido ANTES de checar o teto --
-    // só tem efeito no 1º render desta conta nesta sessão de JS (documento
-    // novo); se já há algo em memória (mesma sessão), hidratarAcesso é nulo.
+  //
+  // Só a memória no 1º render (mesma sessão de JS: o remount do PIN já nasce
+  // `liberado`). O carimbo do localStorage NÃO é lido aqui: o servidor não o
+  // tem e desenha `verificando`; ler no 1º render da hidratação fazia o
+  // navegador desenhar o Feed no lugar (erro de hidratação ao recarregar a
+  // página, o "1 error" do preview, #50). Ele entra no efeito de layout logo
+  // abaixo, depois da hidratação e antes da 1ª pintura, como no RedeTab.
+  const [estado, setEstado] = useState<EstadoGate>(() =>
+    redeCache.acessoConfirmadoValido(usuario.id) ? "liberado" : "verificando"
+  );
+  // Documento novo: hidrata a memória com o carimbo persistido (se já há
+  // algo em memória, hidratarAcesso é nulo) e, dentro do teto, libera.
+  useEfeitoDeLayout(() => {
     const persistido = redeCachePersist.carregarAcesso(usuario.id);
     redeCache.hidratarAcesso(usuario.id, persistido);
-    return redeCache.acessoConfirmadoValido(usuario.id)
-      ? "liberado"
-      : "verificando";
-  });
+    if (redeCache.acessoConfirmadoValido(usuario.id)) {
+      setEstado((atual) => (atual === "verificando" ? "liberado" : atual));
+    }
+  }, [usuario.id]);
   const [sheet, setSheet] = useState<GateSheet>(null);
   // Bump manual (botão "Tentar novamente" no estado `semRede`) força o
   // efeito abaixo a rodar de novo e disparar uma tentativa na hora -- mesmo
