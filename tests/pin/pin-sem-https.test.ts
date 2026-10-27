@@ -351,6 +351,26 @@ describe("PinSetup sem conexão segura", () => {
     expect(t.teclas().every((el) => el.props.disabled === false)).toBe(true);
     expect(t.onSaved).not.toHaveBeenCalled();
   });
+
+  it("o aviso some no próximo dígito", async () => {
+    semConexaoSegura();
+    const t = abrirCriacao();
+    await t.digitar("1234");
+    await t.digitar("1234");
+    await t.digitar("1");
+    expect(t.mensagem()).toBe("Digite um PIN de 4 dígitos");
+  });
+
+  it("o aviso some no apagar", async () => {
+    semConexaoSegura();
+    const t = abrirCriacao();
+    await t.digitar("1234");
+    await t.digitar("1234");
+    const apagar = t.teclas().find((el) => texto(el) === "");
+    (apagar!.props.onClick as () => void)();
+    await esperar();
+    expect(t.mensagem()).toBe("Digite um PIN de 4 dígitos");
+  });
 });
 
 describe("PinSetup com https (comportamento de antes)", () => {
@@ -361,5 +381,15 @@ describe("PinSetup com https (comportamento de antes)", () => {
     expect(t.onSaved).toHaveBeenCalledWith(await hashPin("1234"));
     expect(t.onClose).toHaveBeenCalled();
     expect(rejeicoes).toEqual([]);
+  });
+
+  it("PINs diferentes: o aviso aparece e some no próximo dígito", async () => {
+    const t = abrirCriacao();
+    await t.digitar("1234");
+    await t.digitar("9999");
+    expect(t.mensagem()).toBe("PINs não coincidem. Tente novamente.");
+    await t.digitar("1");
+    expect(t.mensagem()).toBe("Digite um PIN de 4 dígitos");
+    expect(t.onSaved).not.toHaveBeenCalled();
   });
 });

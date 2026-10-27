@@ -40,6 +40,8 @@ export function PinSetup({ open, userId, onClose, onSaved }: Props) {
   }
 
   function press(key: string) {
+    // O aviso (ex.: sem https) some no próximo toque, como no PinScreen.
+    setError(null);
     if (key === "del") {
       setDigits((d) => d.slice(0, -1));
       return;
