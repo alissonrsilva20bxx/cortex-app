@@ -672,6 +672,54 @@ describe("Descanso: o que já estava salvo", () => {
   });
 });
 
+// ───────────── comemoração de estágio ao marcar, desfazer, marcar ───────────
+
+describe("Descanso: a comemoração de estágio não repete no mesmo dia", () => {
+  it("Glow 95: marcar comemora o estágio; desfazer e marcar de novo não comemora outra vez", async () => {
+    // Como a 0039 responde (provado no PGlite, caminho 4 de
+    // desfazer-descanso-0048-pglite.mjs): ao cruzar 100 de novo, o estágio
+    // volta na resposta, com a mesma id e sem item novo.
+    const srv = servidor();
+    srv.s.glow = 95;
+    const destravados = new Set<string>();
+    const registrar = srv.transporte.registrar;
+    srv.transporte.registrar = async (p) => {
+      const antes = srv.s.glow;
+      const r = await registrar(p);
+      if (antes < 100 && srv.s.glow >= 100) {
+        const itens = ["icone_estagio_1", "moldura_estagio_1", "tema_estagio_1"]
+          .filter((i) => !destravados.has(i));
+        itens.forEach((i) => destravados.add(i));
+        r.comemoracoes = [
+          { id: `${p.chave}:2`, tipo: "estagio", estagio: 1, de: 0, glow: 0, ganhou: true, itens },
+        ];
+      }
+      return r;
+    };
+    const loja = criarLojaJornada({
+      userId: conta(),
+      transporte: srv.transporte,
+      hoje: () => HOJE,
+    });
+    await loja.carregar();
+
+    loja.marcarDescanso(HOJE, true);
+    await esperar();
+    expect(srv.s.glow).toBe(105);
+    const fila = loja.retrato().fila;
+    expect(fila.map((c) => c.tipo)).toEqual(["estagio"]);
+    loja.consumir(fila[0].id); // a tela mostrou
+
+    loja.marcarDescanso(HOJE, false);
+    await esperar();
+    expect(srv.s.glow).toBe(95);
+    loja.marcarDescanso(HOJE, true);
+    await esperar();
+    expect(srv.s.glow).toBe(105);
+    expect(loja.retrato().fila).toEqual([]);
+  });
+});
+
 // ─────────────────── a luazinha na fileira de dias ───────────────────────
 
 /**

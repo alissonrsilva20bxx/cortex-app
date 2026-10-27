@@ -11,7 +11,9 @@
 //      uma vez só (mesma chave e outra chave não somam); desfazer de novo
 //      não muda nada; dia forte continua forte; sem sessão é recusado; a
 //      outra conta não é afetada;
-//   3. com a 0048: o descanso de ontem não é desfeito (só o de hoje).
+//   3. com a 0048: o descanso de ontem não é desfeito (só o de hoje);
+//   4. com a 0048: o que a comemoração de estágio traz ao marcar, desfazer
+//      e marcar de novo (a 2ª vem sem item novo; o app não a mostra).
 // NÃO aplica nada em lugar nenhum: é um Postgres em memória.
 // Uso (o mesmo do motor):
 //   npx -y -p @electric-sql/pglite@0.2 node tests/jornada/desfazer-descanso-0048-pglite.mjs supabase/migrations
@@ -240,6 +242,42 @@ console.log("-- caminho 3: descanso de ontem");
     [g0, await glow(db), await diasDescanso(db)]
   );
 
+  await db.close();
+}
+
+// ── 4. Com a 0048: a comemoração de estágio ao marcar, desfazer, marcar ──
+console.log("-- caminho 4: comemoração de estágio");
+{
+  const db = await banco(todos);
+  const d = await hoje(db);
+  const chave = `descanso-${d}`;
+  // O primeiro descanso (ontem) já deu o selo; hoje só conta a ação.
+  await registrar(db, ELA, "descanso", "descanso-ontem");
+  await db.exec(`
+    update public.jornada_acoes set dia = dia - 1
+    where user_id = '${ELA}' and acao = 'descanso';
+    update public.jornada_saldo set glow_total = 95 where user_id = '${ELA}';`);
+
+  const estagio = (r) =>
+    (r?.linha?.r?.comemoracoes ?? []).find((c) => c.tipo === "estagio");
+  const m1 = await registrar(db, ELA, "descanso", chave);
+  ok(
+    "Glow 95, marcar hoje: comemora o estágio 1 com os itens que destravou",
+    estagio(m1)?.estagio === 1 && estagio(m1).itens.length === 3 && (await glow(db)) === 105,
+    estagio(m1)
+  );
+  await desfazer(db, ELA);
+  ok("desfazer volta o Glow para 95", (await glow(db)) === 95, await glow(db));
+  const m2 = await registrar(db, ELA, "descanso", chave);
+  // A 0039 (já aplicada) manda o estágio de novo ao cruzar 100 outra vez,
+  // com a mesma id, mas sem item novo: os itens já estavam destravados. É
+  // por essa lista vazia que o app não repete a comemoração
+  // (comemoracaoNova em lib/jornada/cliente.ts).
+  ok(
+    "marcar de novo: o estágio volta na resposta, com a lista de itens vazia",
+    estagio(m2)?.estagio === 1 && estagio(m2).itens.length === 0 && (await glow(db)) === 105,
+    estagio(m2)
+  );
   await db.close();
 }
 

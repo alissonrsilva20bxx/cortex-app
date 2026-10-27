@@ -157,6 +157,17 @@ function juntarFila(fila: Comemoracao[], novas: unknown[]): Comemoracao[] {
   return somar.length ? [...fila, ...somar] : fila;
 }
 
+/**
+ * Estágio que volta sem item novo não é comemorado de novo. Os itens de cada
+ * estágio são destravados uma vez só (0039, `on conflict do nothing`), então
+ * a lista vazia quer dizer que ela já tinha chegado nele: desfez o descanso
+ * de hoje (0048), o Glow voltou para baixo do corte e marcar de novo cruzou
+ * o corte outra vez. Sem `itens` (formato antigo), comemora como sempre.
+ */
+function comemoracaoNova(c: Comemoracao): boolean {
+  return !(c.tipo === "estagio" && Array.isArray(c.itens) && c.itens.length === 0);
+}
+
 /** Chave fixa do descanso de um dia: marcar de novo nunca conta duas vezes. */
 function chaveDoDescanso(dia: string): string {
   return `descanso-${dia}`;
@@ -221,7 +232,7 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
     ep: number
   ): Comemoracao[] {
     const novas = Array.isArray(resposta?.comemoracoes)
-      ? resposta.comemoracoes.filter(ehComemoracao)
+      ? resposta.comemoracoes.filter(ehComemoracao).filter(comemoracaoNova)
       : [];
     cache.atualizar(
       userId,
