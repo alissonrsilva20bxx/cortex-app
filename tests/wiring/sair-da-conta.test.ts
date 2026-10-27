@@ -8,7 +8,9 @@ import { join } from "node:path";
  * ANTES de sair. Aqui o fluxo roda de verdade, com um localStorage falso:
  * o que a Jornada grava (cache `jobapp-jornada:<id>` e dias de descanso
  * `jobapp-descansos:<id>`) some junto com o resto, e só depois o Supabase
- * sai e a tela vai para o login.
+ * sai e a tela vai para o login. O resto (Rede, Cofre, PIN e tentativas do
+ * PIN) também é gravado aqui e conferido: tirar qualquer limpeza da lista
+ * do `sairDaConta` derruba o teste (R15rev, BAIXA 2).
  */
 
 // O transporte de produção (Supabase) não é usado.
@@ -20,6 +22,11 @@ import * as cache from "@/lib/jornada/cache";
 import { lerDescansos } from "@/lib/jornada/descansos";
 import { diaDoRelogio } from "@/lib/relogio";
 import type { TransporteJornada } from "@/lib/jornada/estado";
+import * as redeCache from "@/lib/rede/redeCache";
+import * as redeCachePersist from "@/lib/rede/redeCachePersist";
+import * as cofreCache from "@/lib/cofre/cofreCache";
+import * as pinHashCache from "@/lib/pinHashCache";
+import { gravarTentativas, lerTentativas, SEM_TENTATIVAS } from "@/lib/pinTentativas";
 
 function disco() {
   const m = new Map<string, string>();
@@ -52,6 +59,8 @@ beforeEach(() => {
   vi.stubGlobal("localStorage", s);
   cache._usarArmazenamentoParaTeste(undefined as never);
   cache._resetParaTeste();
+  redeCache._resetParaTeste();
+  cofreCache._resetParaTeste();
   usarTransporteDeLaboratorio(parado);
 });
 
@@ -89,6 +98,46 @@ describe("Sair da conta apaga a Jornada do aparelho", () => {
     expect(s.getItem("jobapp-jornada:u-sai")).toBeNull();
     // E em memória: a loja da conta foi esquecida.
     expect(lojaDaUsuaria("u-sai").retrato().descansos).toEqual({});
+  });
+
+  it("o resto da conta também some antes do signOut: Rede, Cofre, PIN e tentativas (aparelho e memória)", async () => {
+    // Gravado pelos próprios módulos, como o app grava.
+    redeCache.vincularUsuario("u-sai");
+    redeCache.escrever("u-sai", "perfil", { nome: "x" });
+    redeCache.lembrarAcesso("u-sai", true);
+    redeCachePersist.salvarAcesso("u-sai", true, Date.now());
+    s.setItem("jobapp-rede-cache:u-sai", "{}");
+    cofreCache.vincularUsuario("u-sai");
+    cofreCache.escrever("u-sai", []);
+    pinHashCache.gravar("u-sai", "hash-falso");
+    gravarTentativas("u-sai", { erros: 3, esperaAte: null });
+    s.setItem("tema", "escuro"); // o que não é da conta fica
+    expect(s.chaves()).toEqual([
+      "jobapp-cofre-cache:u-sai",
+      "jobapp-pin:u-sai",
+      "jobapp-rede-acesso:u-sai",
+      "jobapp-rede-cache:u-sai",
+      "pin:tentativas:u-sai",
+      "tema",
+    ]);
+    expect(pinHashCache.ler("u-sai")).toBe("hash-falso");
+    expect(lerTentativas("u-sai").erros).toBe(3);
+
+    let chavesNoSignOut: string[] = [];
+    await sairDaConta({
+      signOut: async () => {
+        chavesNoSignOut = s.chaves();
+      },
+      irPara: () => {},
+    });
+
+    expect(chavesNoSignOut).toEqual(["tema"]);
+    expect(redeCache.ler("u-sai", "perfil")).toBeNull();
+    expect(redeCache.acessoLembrado("u-sai")).toBeUndefined();
+    expect(redeCachePersist.carregarAcesso("u-sai")).toBeNull();
+    expect(cofreCache.ler("u-sai")).toBeNull();
+    expect(pinHashCache.ler("u-sai")).toBeUndefined();
+    expect(lerTentativas("u-sai")).toEqual(SEM_TENTATIVAS);
   });
 
   it("app/page.tsx: o botão Sair (handleSignOut) é o sairDaConta com o signOut do Supabase e o login", () => {
