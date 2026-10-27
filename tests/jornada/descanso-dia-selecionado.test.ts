@@ -622,6 +622,41 @@ describe("Descanso: o que já estava salvo", () => {
     expect(srv.s.recebidas).toHaveLength(1);
   });
 
+  it("desfazer tira do aparelho o pedido de descanso ainda não enviado: quando a rede volta, nada vai ao servidor", async () => {
+    // Sem a 0048 o servidor não sabe desfazer: se o pedido ficasse na fila,
+    // daria Glow que a tela não mostra (R14rev, mutação M8).
+    const srv = servidor({ com0048: false });
+    const registrar = srv.transporte.registrar;
+    let semRede = true;
+    srv.transporte.registrar = (p) =>
+      semRede ? Promise.reject(new Error("sem rede")) : registrar(p);
+    const userId = conta();
+    const loja = criarLojaJornada({
+      userId,
+      transporte: srv.transporte,
+      hoje: () => HOJE,
+    });
+    await loja.carregar();
+
+    loja.marcarDescanso(HOJE, true);
+    await esperar();
+    expect(cache.ler(userId).pendentes.map((p) => p.chave)).toEqual([
+      `descanso-${HOJE}`,
+    ]);
+
+    loja.marcarDescanso(HOJE, false);
+    await esperar();
+    expect(cache.ler(userId).pendentes).toEqual([]);
+    expect(loja.retrato().pendentes).toBe(0);
+
+    semRede = false;
+    await loja.enviarPendentes();
+    await loja.carregar();
+    await esperar();
+    expect(srv.s.recebidas).toEqual([]);
+    expect(srv.s.glow).toBe(0);
+  });
+
   it("logout apaga os descansos do aparelho", async () => {
     const s = disco();
     cache._usarArmazenamentoParaTeste(s);
