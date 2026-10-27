@@ -10,7 +10,8 @@
 //      contadores e a marca do ritmo; marcar de novo hoje conta outra vez,
 //      uma vez só (mesma chave e outra chave não somam); desfazer de novo
 //      não muda nada; dia forte continua forte; sem sessão é recusado; a
-//      outra conta não é afetada.
+//      outra conta não é afetada;
+//   3. com a 0048: o descanso de ontem não é desfeito (só o de hoje).
 // NÃO aplica nada em lugar nenhum: é um Postgres em memória.
 // Uso (o mesmo do motor):
 //   npx -y -p @electric-sql/pglite@0.2 node tests/jornada/desfazer-descanso-0048-pglite.mjs supabase/migrations
@@ -213,6 +214,32 @@ console.log("-- caminho 2: com a 0048");
 
   const direto = await como(db, ELA, `select private.jornada_somar_glow('${ELA}', 'proteger', 1)`);
   ok("a sessão não chama as funções internas", !!direto.erro, direto.erro);
+  await db.close();
+}
+
+// ── 3. Com a 0048: só o descanso de HOJE ───────────────────────
+console.log("-- caminho 3: descanso de ontem");
+{
+  const db = await banco(todos);
+  const d = await hoje(db);
+  const chave = `descanso-${d}`;
+
+  // O descanso contou ONTEM (como o servidor guarda: dia e ganhos_no_dia),
+  // com a chave daquele dia.
+  await registrar(db, ELA, "descanso", "descanso-ontem");
+  await db.exec(`
+    update public.jornada_acoes set dia = dia - 1
+    where user_id = '${ELA}' and acao = 'descanso';
+    update public.jornada_semana_dias set dia = dia - 1
+    where user_id = '${ELA}' and marca = 'descanso';`);
+  const g0 = await glow(db);
+  const x = await desfazer(db, ELA);
+  ok(
+    "descanso de ontem: desfazer hoje não tira nada (só o de hoje desfaz)",
+    !x.erro && (await glow(db)) === g0 && (await diasDescanso(db)) === 1 && (await periodo(db, "descanso")) === 1,
+    [g0, await glow(db), await diasDescanso(db)]
+  );
+
   await db.close();
 }
 
