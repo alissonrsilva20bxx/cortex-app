@@ -286,10 +286,11 @@ describe("proteção por época barra setState tardio da conta anterior (req 2)"
 });
 
 describe("logout limpa o cache da Rede (req 4/6)", () => {
-  it("handleSignOut zera memória e localStorage antes de sair", () => {
-    const page = read("app/page.tsx");
-    expect(page).toMatch(
-      /handleSignOut[\s\S]*?redeCache\.limparTudo\(\);\s*redeCachePersist\.limpar\(\);[\s\S]*?supabase\.auth\.signOut\(\)/
+  it("handleSignOut (sairDaConta) zera memória e localStorage antes de sair", () => {
+    // O botão Sair é o sairDaConta (tests/wiring/sair-da-conta.test.ts).
+    const sair = read("lib/sairDaConta.ts");
+    expect(sair).toMatch(
+      /LIMPEZAS[\s\S]*?redeCache\.limparTudo,\s*redeCachePersist\.limpar,[\s\S]*?await signOut\(\)/
     );
   });
 });

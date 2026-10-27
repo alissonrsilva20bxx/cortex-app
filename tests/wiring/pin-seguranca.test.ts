@@ -199,8 +199,10 @@ describe("Regra 3: limite de tentativas", () => {
   });
 
   it("sair da conta zera o contador (para voltar é preciso a senha ou o Google)", () => {
-    expect(page).toMatch(
-      /async function handleSignOut\(\) \{[\s\S]{0,600}zerarTodasAsTentativas\(\);/
+    // O botão Sair é o sairDaConta (tests/wiring/sair-da-conta.test.ts).
+    expect(page).toMatch(/function handleSignOut\(\) \{\s*return sairDaConta\(/);
+    expect(ler("lib", "sairDaConta.ts")).toMatch(
+      /LIMPEZAS[\s\S]{0,300}zerarTodasAsTentativas,/
     );
   });
 

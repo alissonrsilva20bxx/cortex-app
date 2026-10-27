@@ -108,11 +108,12 @@ describe("gate de PIN continua intacto (o cache não pode furar a trava)", () =>
 });
 
 describe("logout limpa o cache do Cofre (req 4/6)", () => {
-  it("handleSignOut em app/page.tsx zera o cache do Cofre antes de sair", () => {
-    const page = read("app/page.tsx");
-    expect(page).toMatch(/from "@\/lib\/cofre\/cofreCache"/);
-    expect(page).toMatch(
-      /handleSignOut[\s\S]*?cofreCache\.limparTudo\(\);[\s\S]*?supabase\.auth\.signOut\(\)/
+  it("handleSignOut (sairDaConta) zera o cache do Cofre antes de sair", () => {
+    // O botão Sair é o sairDaConta (tests/wiring/sair-da-conta.test.ts).
+    const sair = read("lib/sairDaConta.ts");
+    expect(sair).toMatch(/from "@\/lib\/cofre\/cofreCache"/);
+    expect(sair).toMatch(
+      /LIMPEZAS[\s\S]*?cofreCache\.limparTudo,[\s\S]*?await signOut\(\)/
     );
   });
 });

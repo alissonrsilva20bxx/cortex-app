@@ -54,11 +54,8 @@ import {
 } from "@/lib/planos";
 import { PagamentoTela } from "@/components/pagamento/PagamentoTela";
 import { supabase } from "@/lib/supabase";
-import * as redeCache from "@/lib/rede/redeCache";
-import * as redeCachePersist from "@/lib/rede/redeCachePersist";
-import * as cofreCache from "@/lib/cofre/cofreCache";
 import * as pinHashCache from "@/lib/pinHashCache";
-import { zerarTodasAsTentativas } from "@/lib/pinTentativas";
+import { sairDaConta } from "@/lib/sairDaConta";
 import { reauthAtual } from "@/lib/reauth";
 import { useTabSwipe } from "@/lib/useTabSwipe";
 import { isFreshAccount } from "@/lib/onboarding";
@@ -422,21 +419,15 @@ export default function Page() {
       setActiveTab("ajustes");
   }, [locked, usuario]);
 
-  async function handleSignOut() {
-    // Zera o cache da Rede, do Cofre e do PIN ANTES de sair -- em memória
-    // (a próxima conta nesta aba não herda nada) e no localStorage (req
-    // 4/6; `cofreCache.limparTudo` apaga as duas camadas do Cofre).
-    try {
-      redeCache.limparTudo();
-      redeCachePersist.limpar();
-      cofreCache.limparTudo();
-      pinHashCache.limparTudo();
-      // Sair da conta zera o limite de tentativas do PIN: para voltar é
-      // preciso a senha (ou o Google) da conta.
-      zerarTodasAsTentativas();
-    } catch (_) {}
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+  // Sair: apaga do aparelho o que é da conta (Rede, Cofre, PIN, Jornada)
+  // ANTES de sair do Supabase, e vai para o login (lib/sairDaConta.ts).
+  function handleSignOut() {
+    return sairDaConta({
+      signOut: () => supabase.auth.signOut(),
+      irPara: (rota) => {
+        window.location.href = rota;
+      },
+    });
   }
 
   // Ponto de entrada do Pagamento (onboarding "Linha do tempo"): a tela de
