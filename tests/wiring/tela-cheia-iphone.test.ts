@@ -148,14 +148,20 @@ describe("casca das telas e a barra de baixo (dock)", () => {
     );
   });
 
-  it("nenhuma altura em vh sem dvh nas telas (app/, components/, styles/)", () => {
-    // Fora da regra, de propósito: as folhas de Despesa e Receita (altura
-    // ligada ao teclado, ver tests/wiring/teclado-sheet-176.test.ts) e o
-    // voo das notas da carga (-130vh só tira a nota da tela).
+  it("nenhuma altura em vh sem dvh nas telas (app/, components/, styles/, lib/)", () => {
+    // Fora da regra, de propósito, só estas linhas (o resto do arquivo
+    // continua varrido): o voo das notas da carga (-130vh só tira a nota da
+    // tela) e o --u da abertura (a troca para dvh fica no @supports logo
+    // abaixo).
     const permitidos = [
-      "components/financeiro/DespesaForm.tsx",
-      "components/financeiro/ReceitaForm.tsx",
-      "components/LoadingScreen.module.css",
+      {
+        arquivo: "components/LoadingScreen.module.css",
+        padrao: /transform: translate\(var\(--cash-drift, 14px\), -130vh\);/,
+      },
+      {
+        arquivo: "components/entry/OpeningMotion.module.css",
+        padrao: /--u: min\(calc\(100vw \/ 390\), calc\(100vh \/ 844\)\);/,
+      },
     ];
     const arquivos: string[] = [];
     const andar = (rel: string) => {
@@ -165,10 +171,9 @@ describe("casca das telas e a barra de baixo (dock)", () => {
         else if (/\.(tsx?|css)$/.test(nome) && !/\.test\./.test(nome)) arquivos.push(r);
       }
     };
-    ["app", "components", "styles"].forEach(andar);
+    ["app", "components", "styles", "lib"].forEach(andar);
     const achados: string[] = [];
     for (const arq of arquivos) {
-      if (permitidos.includes(arq)) continue;
       const linhas = semComentarios(ler(arq)).split("\n");
       linhas.forEach((linha, i) => {
         if (!/\b\d+vh\b|\b(min-|max-)?h-screen\b/.test(linha)) return;
@@ -176,8 +181,7 @@ describe("casca das telas e a barra de baixo (dock)", () => {
         const prop = linha.match(/^\s*([\w-]+):/)?.[1];
         const seguinte = linhas.slice(i + 1, i + 3).join("\n");
         if (prop && new RegExp(`${prop}:[^;]*\\d+dvh`).test(seguinte)) return;
-        // --u da abertura: a troca para dvh fica no @supports logo abaixo.
-        if (/--u: min\(calc\(100vw \/ 390\), calc\(100vh \/ 844\)\);/.test(linha)) return;
+        if (permitidos.some((p) => p.arquivo === arq && p.padrao.test(linha))) return;
         achados.push(`${arq}:${i + 1}: ${linha.trim()}`);
       });
     }
