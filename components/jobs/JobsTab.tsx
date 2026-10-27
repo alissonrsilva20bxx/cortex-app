@@ -47,7 +47,8 @@ import {
   startOfWeek,
   toISODate,
 } from "./agendaSemana";
-import { TOTAL_PREVISTO } from "./textosAgenda";
+import { DESCANSO, TOTAL_PREVISTO } from "./textosAgenda";
+import { IconeDescanso } from "./agendaIcones";
 import { totalPrevistoDoDia } from "@/lib/atendimentos/status";
 import type { Job, JobStatus } from "@/lib/types";
 import { useFormatMoeda } from "@/lib/useMoeda";
@@ -662,12 +663,13 @@ export function JobsTab({
               {weekStrip.map(({ iso, letter, day, hasJobs }) => {
                 const selected = iso === selectedDate;
                 const isToday = iso === today;
+                const lua = descanso.luaNoDia(iso);
                 return (
                   <button
                     key={iso}
                     onClick={() => selectDay(iso)}
                     tabIndex={offset === 0 ? undefined : -1}
-                    aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}`}
+                    aria-label={`Dia ${day}${isToday ? " (hoje)" : ""}${lua ? `, ${DESCANSO.marcadoNoDia}` : ""}`}
                     aria-pressed={selected}
                     data-selected={selected}
                     // Pixel do mockup: o dia escolhido não sobe nem brilha, e
@@ -701,6 +703,26 @@ export function JobsTab({
                     >
                       {day}
                     </strong>
+                    {/* Dia marcado como descanso (hoje ou futuro, sem
+                          atendimento): a luazinha do botão Descanso, pequena,
+                          no lugar do ponto e fora do fluxo, pra a pílula não
+                          mudar de tamanho. Some ao desfazer. */}
+                    {lua && (
+                      <span
+                        data-lua-descanso=""
+                        role="img"
+                        aria-label={DESCANSO.marcadoNoDia}
+                        className="absolute flex"
+                        style={{
+                          bottom: "3px",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          color: selected ? "var(--text)" : "var(--accent)",
+                        }}
+                      >
+                        <IconeDescanso size={10} />
+                      </span>
+                    )}
                     {/* Ponto de dia com atendimento (J03), só fora da semana
                           corrente (ver `naSemanaCorrente`). Fora do fluxo, pra
                           letra e número ficarem onde o mockup põe. */}
@@ -714,7 +736,7 @@ export function JobsTab({
                         width: "4px",
                         height: "4px",
                         background:
-                          hasJobs && !naSemanaCorrente
+                          hasJobs && !naSemanaCorrente && !lua
                             ? selected
                               ? "var(--text)"
                               : "var(--accent)"

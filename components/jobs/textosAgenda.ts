@@ -63,6 +63,8 @@ export const DESCANSO = {
   motivoComAtendimento: "Dia com atendimento",
   /** Por que está desabilitado num dia que já passou. */
   motivoPassou: "Esse dia já passou",
+  /** A luazinha do dia marcado, na fileira de dias (leitor de tela). */
+  marcadoNoDia: "Descanso marcado",
 } as const;
 
 /** Resumo da semana (sheet do botão "Resumo" da Agenda): só tempo, sem dinheiro. */

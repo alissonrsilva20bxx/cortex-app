@@ -179,18 +179,33 @@ vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useState: ganchos.useState,
   useEffect: ganchos.useEffect,
+  // Sem DOM, o efeito de layout roda como um efeito comum (JobsTab).
+  useLayoutEffect: ganchos.useEffect,
   useRef: ganchos.useRef,
   useMemo: ganchos.useMemo,
   useCallback: ganchos.useCallback,
   useSyncExternalStore: ganchos.useSyncExternalStore,
 }));
 // O transporte de produção (Supabase) não é usado: o servidor aqui é falso.
-vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+// Só a lista de atendimentos do JobsTab vem daqui (`linhasDaAgenda`).
+const agendaFalsa = vi.hoisted(() => ({ linhas: [] as unknown[] }));
+vi.mock("@/lib/supabase", () => {
+  const consulta = {
+    select: () => consulta,
+    order: () => consulta,
+    then: (pronto: (r: { data: unknown[]; error: null }) => void) =>
+      void Promise.resolve().then(() =>
+        pronto({ data: agendaFalsa.linhas, error: null })
+      ),
+  };
+  return { supabase: { from: () => consulta } };
+});
 
 import * as cache from "@/lib/jornada/cache";
 import {
   criarLojaJornada,
   limparTudo,
+  lojaDaUsuaria,
   usarTransporteDeLaboratorio,
 } from "@/lib/jornada/cliente";
 import type {
@@ -206,6 +221,7 @@ import type { Job } from "@/lib/types";
 import { useDescanso } from "@/components/jobs/useDescanso";
 import { useJornada } from "@/components/jornada/useJornada";
 import { AgendaAcoes } from "@/components/jobs/AgendaAcoes";
+import { JobsTab } from "@/components/jobs/JobsTab";
 import { DESCANSO } from "@/components/jobs/textosAgenda";
 import {
   bolinhasDaSemana,
@@ -618,5 +634,125 @@ describe("Descanso: o que já estava salvo", () => {
     expect(s.getItem("jobapp-descansos:u-sai")).toContain(AMANHA);
     limparTudo();
     expect(s.getItem("jobapp-descansos:u-sai")).toBeNull();
+  });
+});
+
+// ─────────────────── a luazinha na fileira de dias ───────────────────────
+
+/**
+ * A Agenda inteira (o JobsTab de verdade): o toque vai pelo
+ * `descanso.onAlternar` que o JobsTab passa ao AgendaAcoes, e a lua é lida
+ * nas pílulas da fileira de dias que o próprio JobsTab desenha.
+ */
+async function agendaInteira(
+  srv: ReturnType<typeof servidor>,
+  linhas: unknown[] = []
+) {
+  agendaFalsa.linhas = linhas;
+  usarTransporteDeLaboratorio(srv.transporte);
+  const userId = conta();
+  const tela = ganchos.montar(JobsTab, {
+    userId,
+    refreshTrigger: 0,
+    onEditJob: () => {},
+  });
+  telas.push(tela);
+  await esperar();
+  const arvore = () => elementos(tela.arvore());
+  const acoes = () => {
+    const a = arvore().find((e) => e.type === AgendaAcoes);
+    if (!a) throw new Error("AgendaAcoes fora da Agenda");
+    return a.props.descanso as { situacao: string; onAlternar: () => void };
+  };
+  const pilula = (iso: string) => {
+    const p = arvore().find((e) => e.type === "button" && e.key === iso);
+    if (!p) throw new Error(`sem pílula para ${iso}`);
+    const luas = elementos(p.props.children as ReactNode).filter(
+      (e) => "data-lua-descanso" in e.props
+    );
+    return {
+      lua: luas.length === 1,
+      luaRotulo: luas[0]?.props["aria-label"],
+      rotulo: p.props["aria-label"] as string,
+      altura: (p.props.style as { height: string }).height,
+      escolher: () => (p.props.onClick as () => void)(),
+    };
+  };
+  const tocar = async () => {
+    acoes().onAlternar();
+    await esperar();
+  };
+  return { userId, acoes, pilula, tocar };
+}
+
+const linha = (data: string, status = "agendado") => ({
+  id: `l-${data}-${status}`,
+  cliente_nome: "Cliente",
+  data,
+  hora: "10:00",
+  valor: 50,
+  modalidade: "presencial",
+  local: null,
+  status,
+  observacoes: null,
+  criado_em: `${data}T00:00:00Z`,
+});
+
+describe("Descanso: luazinha no dia marcado, na fileira de dias", () => {
+  afterEach(() => {
+    agendaFalsa.linhas = [];
+  });
+
+  it("marcar hoje põe a lua em hoje (e só nele); desfazer tira", async () => {
+    const a = await agendaInteira(servidor());
+    expect(a.pilula(HOJE).lua).toBe(false);
+    expect(a.pilula(HOJE).rotulo).not.toContain(DESCANSO.marcadoNoDia);
+
+    await a.tocar();
+    expect(a.acoes().situacao).toBe("feito");
+    expect(a.pilula(HOJE).lua).toBe(true);
+    expect(a.pilula(HOJE).luaRotulo).toBe(DESCANSO.marcadoNoDia);
+    expect(a.pilula(HOJE).rotulo).toContain(DESCANSO.marcadoNoDia);
+    expect(a.pilula(AMANHA).lua).toBe(false);
+    expect(a.pilula(ONTEM).lua).toBe(false);
+    // A pílula não muda de tamanho.
+    expect(a.pilula(HOJE).altura).toBe("58px");
+
+    await a.tocar();
+    expect(a.acoes().situacao).toBe("normal");
+    expect(a.pilula(HOJE).lua).toBe(false);
+    expect(a.pilula(HOJE).rotulo).not.toContain(DESCANSO.marcadoNoDia);
+  });
+
+  it("outro dia: escolher amanhã e marcar põe a lua em amanhã; hoje continua com a dele; desfazer amanhã tira só a de amanhã", async () => {
+    const a = await agendaInteira(servidor());
+    await a.tocar(); // hoje
+    a.pilula(AMANHA).escolher();
+    await esperar();
+    expect(a.acoes().situacao).toBe("normal");
+    expect(a.pilula(AMANHA).lua).toBe(false);
+
+    await a.tocar(); // amanhã
+    expect(a.acoes().situacao).toBe("planejado");
+    expect(a.pilula(AMANHA).lua).toBe(true);
+    expect(a.pilula(HOJE).lua).toBe(true);
+    expect(a.pilula(DEPOIS).lua).toBe(false);
+
+    await a.tocar(); // desfaz amanhã
+    expect(a.pilula(AMANHA).lua).toBe(false);
+    expect(a.pilula(HOJE).lua).toBe(true);
+  });
+
+  it("dia com atendimento mostra o que já mostrava, sem lua, mesmo marcado; atendimento que não aconteceu não conta", async () => {
+    const a = await agendaInteira(servidor(), [
+      linha(AMANHA),
+      linha(DEPOIS, "cancelado"),
+    ]);
+    lojaDaUsuaria(a.userId).marcarDescanso(AMANHA, true);
+    lojaDaUsuaria(a.userId).marcarDescanso(DEPOIS, true);
+    await esperar();
+    expect(a.pilula(AMANHA).lua).toBe(false);
+    expect(a.pilula(AMANHA).rotulo).not.toContain(DESCANSO.marcadoNoDia);
+    expect(a.pilula(DEPOIS).lua).toBe(true);
   });
 });

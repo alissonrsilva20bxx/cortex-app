@@ -112,8 +112,9 @@ describe("JobsTab monta a composição do mockup com os componentes novos", () =
     // Ordem do operador (pixel da Agenda): o ponto só fora da semana
     // corrente -- a faixa do mockup não tem ponto. Com a catraca, cada
     // página da faixa sabe se é a semana corrente (a vizinha da semana
-    // visível pode ser).
-    expect(jobsTab).toMatch(/hasJobs && !naSemanaCorrente\s*\?/);
+    // visível pode ser). No dia com a luazinha do descanso, a lua fica no
+    // lugar do ponto.
+    expect(jobsTab).toMatch(/hasJobs && !naSemanaCorrente && !lua\s*\?/);
     expect(jobsTab).toMatch(
       /naSemanaCorrente: semanasDesdeHoje\(inicio, now\) === 0,/
     );

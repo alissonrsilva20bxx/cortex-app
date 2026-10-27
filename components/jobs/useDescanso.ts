@@ -4,6 +4,7 @@ import { useJornada } from "@/components/jornada/useJornada";
 import { descansoNoDia } from "@/components/jornada/progresso";
 import {
   estadoDoDescanso,
+  luaNoDia,
   type EstadoDescanso,
 } from "@/lib/atendimentos/status";
 import { diaDoRelogio } from "@/lib/relogio";
@@ -16,7 +17,8 @@ import type { Job } from "@/lib/types";
  * marca o dia; tocar num dia já marcado desfaz. Os dias ficam no aparelho
  * e só o de hoje conta na Jornada, uma vez (ver `marcarDescanso` em
  * `lib/jornada/cliente.ts`). É para onde o "Próximo passo" da Jornada leva
- * quando pede um descanso.
+ * quando pede um descanso. `luaNoDia(iso)` diz se a fileira de dias mostra
+ * a luazinha naquele dia.
  */
 export function useDescanso(userId: string, jobs: readonly Job[], dia: string) {
   const { estado, descansos, marcarDescanso } = useJornada(userId);
@@ -26,5 +28,7 @@ export function useDescanso(userId: string, jobs: readonly Job[], dia: string) {
   return {
     situacao,
     alternar: () => marcarDescanso(dia, !marcado),
+    luaNoDia: (iso: string) =>
+      luaNoDia(jobs, descansoNoDia(estado, descansos, iso), iso, hoje),
   };
 }

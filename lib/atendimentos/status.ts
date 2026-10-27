@@ -225,10 +225,29 @@ export function estadoDoDescanso(
   const h = typeof hoje === "string" ? hoje : diaLocal(hoje);
   if (d < h) return "passou";
   if (marcado) return d === h ? "feito" : "planejado";
-  const temAtendimento = jobs.some(
-    (j) => j.data === d && j.status !== "cancelado"
-  );
-  return temAtendimento ? "comAtendimento" : "normal";
+  return temAtendimentoNoDia(jobs, d) ? "comAtendimento" : "normal";
+}
+
+/** Atendimento agendado, confirmado ou concluído no dia; "não aconteceu"
+ * (cancelado) não conta. */
+function temAtendimentoNoDia(
+  jobs: readonly Pick<Job, "status" | "data">[],
+  dia: string
+): boolean {
+  return jobs.some((j) => j.data === dia && j.status !== "cancelado");
+}
+
+/** A luazinha da fileira de dias da Agenda: o dia (hoje ou futuro) está
+ * marcado como descanso. Dia com atendimento mostra só o que já mostrava,
+ * sem lua, mesmo marcado; dia que já passou também não tem lua. */
+export function luaNoDia(
+  jobs: readonly Pick<Job, "status" | "data">[],
+  marcado: boolean,
+  dia: string,
+  hoje: string
+): boolean {
+  const e = estadoDoDescanso(jobs, marcado, dia, hoje);
+  return (e === "feito" || e === "planejado") && !temAtendimentoNoDia(jobs, dia);
 }
 
 /** Criar um atendimento para um dia DEPOIS de hoje é planejar: a Jornada
