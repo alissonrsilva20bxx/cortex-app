@@ -81,6 +81,12 @@ const STALE_MS = 60_000;
  */
 const ACESSO_CONFIRMADO_TTL_MS = 24 * 60 * 60 * 1000;
 
+/** Quanto um carimbo de acesso pode estar no futuro e ainda valer: só a
+ * diferença de relógio. Um carimbo mais à frente que isso (forjado no
+ * aparelho, ou o relógio voltou) não vale: sem ele, a Rede ficaria
+ * "liberada" sem prazo enquanto offline. */
+const FOLGA_DO_RELOGIO_MS = 5 * 60 * 1000;
+
 const SLIDE_CAP = 120;
 const TOMBSTONE_CAP = 300;
 
@@ -372,7 +378,10 @@ export function acessoLembrado(
 export function acessoConfirmadoValido(userId: string): boolean {
   const a = acessoLembrado(userId);
   return (
-    !!a && a.unlocked && Date.now() - a.confirmadoEm < ACESSO_CONFIRMADO_TTL_MS
+    !!a &&
+    a.unlocked &&
+    Date.now() - a.confirmadoEm < ACESSO_CONFIRMADO_TTL_MS &&
+    a.confirmadoEm - Date.now() <= FOLGA_DO_RELOGIO_MS
   );
 }
 
@@ -425,4 +434,5 @@ export const _internos = {
   SLIDE_CAP,
   TOMBSTONE_CAP,
   ACESSO_CONFIRMADO_TTL_MS,
+  FOLGA_DO_RELOGIO_MS,
 };

@@ -358,6 +358,31 @@ describe("hidratarAcesso -- repõe o carimbo persistido num documento novo", () 
     expect(redeCache.acessoLembrado("A")?.confirmadoEm).toBe(1000);
   });
 
+  // Achado da revisão R15rev: um carimbo forjado no aparelho com data no
+  // futuro deixava a Rede "liberada" sem prazo enquanto offline.
+  it("carimbo no futuro é recusado; só uma folga pequena de relógio (5 min) passa", () => {
+    const CINCO_MIN = 5 * 60 * 1000;
+    vi.useFakeTimers({ now: 1_000_000_000 });
+    try {
+      const comCarimbo = (confirmadoEm: number) => {
+        redeCache._resetParaTeste();
+        redeCache.vincularUsuario("A");
+        redeCache.hidratarAcesso("A", { unlocked: true, confirmadoEm });
+        return redeCache.acessoConfirmadoValido("A");
+      };
+      const agora = Date.now();
+      expect(comCarimbo(agora + 10 * 365 * 24 * 60 * 60 * 1000)).toBe(false);
+      expect(comCarimbo(agora + CINCO_MIN + 1)).toBe(false);
+      expect(comCarimbo(agora + CINCO_MIN)).toBe(true);
+      expect(comCarimbo(agora + 60_000)).toBe(true);
+      expect(comCarimbo(agora)).toBe(true);
+      expect(comCarimbo(agora - 60_000)).toBe(true);
+      expect(redeCache._internos.FOLGA_DO_RELOGIO_MS).toBe(CINCO_MIN);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("não estende o TTL -- um carimbo hidratado velho ainda é inválido", () => {
     vi.useFakeTimers({ now: 1_000_000 });
     try {
