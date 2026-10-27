@@ -35,7 +35,8 @@ interface Props {
 
 /**
  * Fileira de 4 ações da Agenda (J03): botões iguais, ícone num círculo
- * de 56px sobre `--card-solid`, rótulo embaixo, como o mockup.
+ * de 56px sobre `--card-solid`, rótulo embaixo, como o mockup. O Descanso
+ * marcado acende o círculo (`--accent`, o mesmo do dia selecionado).
  *
  * Cada botão liga numa ação que já existe no app. "Descanso" marca o dia
  * selecionado como descanso (o de hoje conta na Jornada). Marcado, vira
@@ -100,13 +101,17 @@ export function AgendaAcoes({
               color: "var(--text)",
             }}
           >
+            {/* Dia marcado: o círculo acende como a pílula do dia
+                selecionado na fileira de dias (JobsTab). */}
             <span
               className="flex items-center justify-center rounded-full"
               style={{
                 width: "56px",
                 height: "56px",
-                background: "var(--card-solid)",
-                color: "var(--accent-deep)",
+                background: pressionado
+                  ? "var(--accent)"
+                  : "var(--card-solid)",
+                color: pressionado ? "var(--text)" : "var(--accent-deep)",
               }}
             >
               <Icon size={22} />

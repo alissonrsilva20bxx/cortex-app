@@ -123,3 +123,74 @@ describe("AgendaAcoes: o botão Descanso", () => {
     expect(html("passou")).toContain("Esse dia já passou");
   });
 });
+
+describe("AgendaAcoes: o círculo do Descanso acende quando o dia está marcado", () => {
+  const html = (situacao: EstadoDescanso) =>
+    renderToStaticMarkup(
+      createElement(AgendaAcoes, {
+        onNovo: () => {},
+        onResumo: () => {},
+        onAnotacoes: () => {},
+        descanso: { situacao, onAlternar: () => {} },
+      })
+    );
+  /** Cada botão: rótulo, `aria-pressed`, `disabled` e o estilo do círculo. */
+  const botoes = (situacao: EstadoDescanso) =>
+    [...html(situacao).matchAll(/<button([^>]*)><span[^>]*style="([^"]*)"[^>]*>.*?<\/span>([^<]*)<\/button>/g)].map(
+      ([, atributos, estilo, rotulo]) => ({
+        rotulo,
+        pressionado: /aria-pressed="true"/.test(atributos),
+        desabilitado: /\sdisabled(=|\s|$)/.test(atributos),
+        esmaece: atributos.includes("disabled:opacity-50"),
+        fundo: estilo.match(/background:([^;]+)/)?.[1],
+        cor: estilo.match(/(?:^|;)color:([^;]+)/)?.[1],
+      })
+    );
+  const descanso = (situacao: EstadoDescanso) => botoes(situacao)[1];
+  // O círculo de sempre (o dos outros botões da fileira).
+  const APAGADO = { fundo: "var(--card-solid)", cor: "var(--accent-deep)" };
+  // O "selecionado" do app: a pílula do dia escolhido na fileira de dias
+  // (JobsTab) usa fundo `--accent` com o texto em `--text`.
+  const ACESO = { fundo: "var(--accent)", cor: "var(--text)" };
+
+  it.each([
+    ["feito", "Descansou"],
+    ["planejado", "Vai descansar"],
+  ] as const)("marcado (%s): o círculo fica aceso, como o dia selecionado, e aria-pressed=true", (situacao, rotulo) => {
+    const b = descanso(situacao);
+    expect(b.rotulo).toBe(rotulo);
+    expect(b.pressionado).toBe(true);
+    expect(b.desabilitado).toBe(false);
+    expect({ fundo: b.fundo, cor: b.cor }).toEqual(ACESO);
+  });
+
+  it("desmarcado: o círculo volta ao normal, igual aos outros, e aria-pressed=false", () => {
+    const b = descanso("normal");
+    expect(b.rotulo).toBe("Descanso");
+    expect(b.pressionado).toBe(false);
+    expect(b.desabilitado).toBe(false);
+    expect({ fundo: b.fundo, cor: b.cor }).toEqual(APAGADO);
+  });
+
+  it.each(["comAtendimento", "passou"] as const)(
+    "desabilitado (%s): apagado e esmaecido, nunca aceso",
+    (situacao) => {
+      const b = descanso(situacao);
+      expect(b.desabilitado).toBe(true);
+      expect(b.esmaece).toBe(true);
+      expect(b.pressionado).toBe(false);
+      expect({ fundo: b.fundo, cor: b.cor }).toEqual(APAGADO);
+    }
+  );
+
+  it("só o Descanso acende: Novo, Resumo e Anotações ficam com o círculo normal", () => {
+    for (const situacao of ["feito", "planejado"] as const) {
+      const outros = botoes(situacao).filter((_, i) => i !== 1);
+      expect(outros.map((b) => b.rotulo)).toEqual(["Novo", "Resumo", "Anotações"]);
+      for (const b of outros) {
+        expect({ fundo: b.fundo, cor: b.cor }).toEqual(APAGADO);
+        expect(b.pressionado).toBe(false);
+      }
+    }
+  });
+});

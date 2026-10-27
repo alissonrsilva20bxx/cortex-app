@@ -796,6 +796,7 @@ async function agendaInteira(
       luaRotulo: luas[0]?.props["aria-label"],
       rotulo: p.props["aria-label"] as string,
       altura: (p.props.style as { height: string }).height,
+      estilo: p.props.style as { background: string; color: string },
       escolher: () => (p.props.onClick as () => void)(),
     };
   };
@@ -803,7 +804,20 @@ async function agendaInteira(
     acoes().onAlternar();
     await esperar();
   };
-  return { userId, acoes, pilula, tocar };
+  /** O círculo do botão Descanso, desenhado com o que o JobsTab passa. */
+  const circuloDoDescanso = () => {
+    const raiz = AgendaAcoes({
+      onNovo: () => {},
+      onAnotacoes: () => {},
+      descanso: acoes() as { situacao: EstadoDescanso; onAlternar: () => void },
+    });
+    const botao = elementos(raiz).filter((e) => e.type === "button")[1];
+    const circulo = elementos(botao.props.children as ReactNode).find(
+      (e) => e.type === "span"
+    );
+    return circulo?.props.style as { background: string; color: string };
+  };
+  return { userId, acoes, pilula, tocar, circuloDoDescanso };
 }
 
 const linha = (data: string, status = "agendado") => ({
@@ -843,6 +857,26 @@ describe("Descanso: luazinha no dia marcado, na fileira de dias", () => {
     expect(a.acoes().situacao).toBe("normal");
     expect(a.pilula(HOJE).lua).toBe(false);
     expect(a.pilula(HOJE).rotulo).not.toContain(DESCANSO.marcadoNoDia);
+  });
+
+  it("marcado, o círculo do Descanso acende com o mesmo fundo e a mesma cor da pílula do dia selecionado; desfazer apaga", async () => {
+    const a = await agendaInteira(servidor());
+    const selecionada = a.pilula(HOJE).estilo;
+    expect(a.circuloDoDescanso().background).not.toBe(selecionada.background);
+
+    await a.tocar();
+    expect(a.circuloDoDescanso().background).toBe(selecionada.background);
+    expect(a.circuloDoDescanso().color).toBe(selecionada.color);
+
+    a.pilula(AMANHA).escolher();
+    await esperar();
+    expect(a.circuloDoDescanso().background).not.toBe(selecionada.background);
+    await a.tocar(); // amanhã
+    expect(a.acoes().situacao).toBe("planejado");
+    expect(a.circuloDoDescanso().background).toBe(a.pilula(AMANHA).estilo.background);
+
+    await a.tocar(); // desfaz amanhã
+    expect(a.circuloDoDescanso().background).not.toBe(selecionada.background);
   });
 
   it("outro dia: escolher amanhã e marcar põe a lua em amanhã; hoje continua com a dele; desfazer amanhã tira só a de amanhã", async () => {
