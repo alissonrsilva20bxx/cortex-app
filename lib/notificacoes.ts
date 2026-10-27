@@ -1,4 +1,5 @@
 import type { Job } from "@/lib/types";
+import { TEXTOS_LEMBRETE } from "@/lib/textosNotificacoes";
 
 /**
  * Motor de conteúdo das notificações (§7.3): opt-in e valiosas, nunca spam.
@@ -39,8 +40,11 @@ function atendimentoProximo(jobs: Job[], ref: Date): Lembrete | null {
 
   const amanha = proximo.quando.toDateString() !== ref.toDateString();
   return {
-    title: "Lembrete de atendimento",
-    body: `${proximo.job.clienteNome}, ${amanha ? "amanhã" : "hoje"} às ${formatHora(proximo.job.hora)}.`,
+    title: TEXTOS_LEMBRETE.atendimento.titulo,
+    body: TEXTOS_LEMBRETE.atendimento.corpo(
+      amanha,
+      formatHora(proximo.job.hora)
+    ),
     tag: "atendimento-proximo",
   };
 }
@@ -80,8 +84,8 @@ function clienteRecorrente(jobs: Job[], ref: Date): Lembrete | null {
 
     if (diasAteFrente >= 0 && diasAteFrente <= 7) {
       return {
-        title: "Cliente recorrente",
-        body: `${nome} costuma voltar por essa época — quer confirmar um atendimento?`,
+        title: TEXTOS_LEMBRETE.recorrente.titulo,
+        body: TEXTOS_LEMBRETE.recorrente.corpo,
         tag: "cliente-recorrente",
       };
     }
