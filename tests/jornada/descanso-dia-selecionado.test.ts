@@ -767,11 +767,21 @@ describe("Descanso: a comemoração de estágio não repete no mesmo dia", () =>
  */
 async function agendaInteira(
   srv: ReturnType<typeof servidor>,
-  linhas: unknown[] = []
+  linhas: unknown[] = [],
+  /** Dias já guardados no aparelho antes de abrir (de outra abertura). */
+  aparelho?: Record<string, boolean>
 ) {
   agendaFalsa.linhas = linhas;
   usarTransporteDeLaboratorio(srv.transporte);
   const userId = conta();
+  if (aparelho) {
+    const s = disco();
+    s.setItem(
+      `jobapp-descansos:${userId}`,
+      JSON.stringify({ v: 1, dias: aparelho })
+    );
+    cache._usarArmazenamentoParaTeste(s);
+  }
   const tela = ganchos.montar(JobsTab, {
     userId,
     refreshTrigger: 0,
@@ -896,6 +906,18 @@ describe("Descanso: luazinha no dia marcado, na fileira de dias", () => {
     await a.tocar(); // desfaz amanhã
     expect(a.pilula(AMANHA).lua).toBe(false);
     expect(a.pilula(HOJE).lua).toBe(true);
+  });
+
+  it("dia que já passou não tem lua, mesmo marcado: ontem continua guardado no aparelho hoje", async () => {
+    // Marcado ontem (o aparelho só limpa os dias velhos na próxima marca).
+    const a = await agendaInteira(servidor(), [], {
+      [ONTEM]: true,
+      [AMANHA]: true,
+    });
+    expect(a.pilula(ONTEM).lua).toBe(false);
+    expect(a.pilula(ONTEM).rotulo).not.toContain(DESCANSO.marcadoNoDia);
+    // O aparelho foi lido: o dia que ainda vem continua com a lua.
+    expect(a.pilula(AMANHA).lua).toBe(true);
   });
 
   it("dia com atendimento mostra o que já mostrava, sem lua, mesmo marcado; atendimento que não aconteceu não conta", async () => {
