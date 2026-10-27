@@ -223,6 +223,7 @@ import { useJornada } from "@/components/jornada/useJornada";
 import { AgendaAcoes } from "@/components/jobs/AgendaAcoes";
 import { JobsTab } from "@/components/jobs/JobsTab";
 import { DESCANSO } from "@/components/jobs/textosAgenda";
+import type { EstadoDescanso } from "@/lib/atendimentos/status";
 import {
   bolinhasDaSemana,
   descansoDeHoje,
@@ -669,6 +670,43 @@ describe("Descanso: o que já estava salvo", () => {
     expect(s.getItem("jobapp-descansos:u-sai")).toContain(AMANHA);
     limparTudo();
     expect(s.getItem("jobapp-descansos:u-sai")).toBeNull();
+  });
+});
+
+// ───────────── a fileira de dias não pula com a linha de motivo ─────────────
+
+describe("Descanso: a linha de motivo tem a altura reservada", () => {
+  /** O espaço do motivo (o filho de baixo da fileira de ações) e a linha. */
+  function espacoDoMotivo(situacao: EstadoDescanso) {
+    const raiz = AgendaAcoes({
+      onNovo: () => {},
+      onAnotacoes: () => {},
+      descanso: { situacao, onAlternar: () => {} },
+    }) as Elemento;
+    const filhos = elementos(raiz.props.children as ReactNode);
+    const espaco = (raiz.props.children as Elemento[])[1];
+    const linha = filhos.find(
+      (e) => e.type === "p" && "data-descanso-motivo" in e.props
+    );
+    return {
+      altura: (espaco.props.style as { minHeight?: string } | undefined)
+        ?.minHeight,
+      linha: (linha?.props.style as { lineHeight?: string } | undefined)
+        ?.lineHeight,
+      texto: linha ? textoDe(linha.props.children as ReactNode) : null,
+    };
+  }
+
+  it("com e sem motivo, o mesmo espaço embaixo das ações (a faixa de dias fica no lugar)", () => {
+    const sem = espacoDoMotivo("normal");
+    expect(sem.texto).toBeNull();
+    expect(sem.altura).toBe("18px");
+    for (const situacao of ["feito", "planejado", "comAtendimento", "passou"] as const) {
+      const com = espacoDoMotivo(situacao);
+      expect(com.texto).not.toBeNull();
+      expect(com.altura).toBe(sem.altura);
+      expect(com.linha).toBe(sem.altura);
+    }
   });
 });
 

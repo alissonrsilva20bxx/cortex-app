@@ -10,6 +10,9 @@ import {
 } from "./agendaIcones";
 import { DESCANSO } from "./textosAgenda";
 
+/** Uma linha de texto de 12px: o espaço do motivo do Descanso. */
+const ALTURA_DO_MOTIVO = "18px";
+
 interface Acao {
   label: string;
   Icon: ComponentType<{ size?: number }>;
@@ -112,15 +115,23 @@ export function AgendaAcoes({
           </button>
         ))}
       </div>
-      {motivo && (
-        <p
-          data-descanso-motivo
-          className="text-center"
-          style={{ fontSize: "12px", color: "var(--text-muted)" }}
-        >
-          {motivo}
-        </p>
-      )}
+      {/* A linha do motivo tem a altura reservada: quando ela aparece ou
+          some, a fileira de dias logo abaixo não pula. */}
+      <div style={{ minHeight: ALTURA_DO_MOTIVO }}>
+        {motivo && (
+          <p
+            data-descanso-motivo
+            className="text-center"
+            style={{
+              fontSize: "12px",
+              lineHeight: ALTURA_DO_MOTIVO,
+              color: "var(--text-muted)",
+            }}
+          >
+            {motivo}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
