@@ -108,9 +108,14 @@ describe("§1-P0-5 — a abertura cinematográfica não se repete depois do PIN"
 
 describe("§1-P0-6 — handleSignOut é real (supabase.auth.signOut + redirect), não decorativo", () => {
   it("chama supabase.auth.signOut() e redireciona para /login", () => {
-    expect(page).toMatch(/async function handleSignOut\(\) \{/);
-    expect(page).toMatch(/await supabase\.auth\.signOut\(\);/);
-    expect(page).toMatch(/window\.location\.href = "\/login";/);
+    // O fluxo mora em lib/sairDaConta.ts (tests/wiring/sair-da-conta.test.ts
+    // roda ele de verdade); a página passa o signOut do Supabase e a troca
+    // de endereço.
+    expect(page).toMatch(/function handleSignOut\(\) \{\s*return sairDaConta\(/);
+    expect(page).toMatch(/signOut: \(\) => supabase\.auth\.signOut\(\),/);
+    expect(page).toMatch(/window\.location\.href = rota;/);
+    const sair = read("lib/sairDaConta.ts");
+    expect(sair).toMatch(/await signOut\(\);\s*irPara\("\/login"\);/);
   });
 
   it("AjustesTab recebe handleSignOut real via prop onSignOut, não um handler decorativo local", () => {
