@@ -153,14 +153,14 @@ describe("Jornada: planejar e descanso têm botão", () => {
     );
   });
 
-  it("a Agenda tem o botão 'Descanso', que registra descanso", () => {
+  it("a Agenda tem o botão 'Descanso', que marca ou desfaz o descanso do dia selecionado", () => {
     expect(read("components/jobs/JobsTab.tsx")).toContain(
-      "const descanso = useDescanso(userId, jobs);"
+      "const descanso = useDescanso(userId, jobs, selectedDate);"
     );
     const hook = read("components/jobs/useDescanso.ts");
-    expect(hook).toMatch(/descansar: \(\) => void registrar\("descanso"\)/);
+    expect(hook).toMatch(/alternar: \(\) => marcarDescanso\(dia, !marcado\)/);
     expect(read("components/jobs/AgendaAcoes.tsx")).toContain(
-      "onClick: feito || comAtendimento ? undefined : descanso.onDescansar"
+      "onClick: podeTocar ? descanso.onAlternar : undefined"
     );
   });
 });

@@ -1,7 +1,10 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { estadoDoDescanso } from "@/lib/atendimentos/status";
+import {
+  estadoDoDescanso,
+  type EstadoDescanso,
+} from "@/lib/atendimentos/status";
 import { AgendaAcoes } from "@/components/jobs/AgendaAcoes";
 import type { Job, JobStatus } from "@/lib/types";
 
@@ -43,16 +46,31 @@ describe("estadoDoDescanso", () => {
       estadoDoDescanso([job("2026-10-21", "cancelado")], false, HOJE)
     ).toBe("normal");
   });
+
+  it("outro dia: futuro marcado é planejado; o atendimento conta no dia escolhido, não em hoje", () => {
+    expect(estadoDoDescanso([], true, "2026-10-23", HOJE)).toBe("planejado");
+    expect(
+      estadoDoDescanso([job("2026-10-23", "agendado")], false, "2026-10-23", HOJE)
+    ).toBe("comAtendimento");
+    expect(
+      estadoDoDescanso([job("2026-10-21", "agendado")], false, "2026-10-23", HOJE)
+    ).toBe("normal");
+  });
+
+  it("dia que já passou: só leitura", () => {
+    expect(estadoDoDescanso([], false, "2026-10-20", HOJE)).toBe("passou");
+    expect(estadoDoDescanso([], true, "2026-10-20", HOJE)).toBe("passou");
+  });
 });
 
 describe("AgendaAcoes: o botão Descanso", () => {
-  const html = (situacao: "normal" | "feito" | "comAtendimento") =>
+  const html = (situacao: EstadoDescanso) =>
     renderToStaticMarkup(
       createElement(AgendaAcoes, {
         onNovo: () => {},
         onResumo: () => {},
         onAnotacoes: () => {},
-        descanso: { situacao, onDescansar: () => {} },
+        descanso: { situacao, onAlternar: () => {} },
       })
     );
   const botaoDescanso = (marcacao: string, rotulo: string) =>
@@ -71,26 +89,37 @@ describe("AgendaAcoes: o botão Descanso", () => {
     expect(h).not.toContain("Hoje é descanso");
   });
 
-  it("já registrado: rótulo Descansou, desabilitado, com o motivo", () => {
+  it("já marcado hoje: rótulo Descansou, habilitado (tocar desfaz), pressionado e com a dica", () => {
     const h = html("feito");
-    expect(desabilitado(botaoDescanso(h, "Descansou"))).toBe(true);
-    expect(h).toContain("Um descanso por dia");
+    const b = botaoDescanso(h, "Descansou");
+    expect(desabilitado(b)).toBe(false);
+    expect(b).toContain('aria-pressed="true"');
+    expect(h).toContain("Toque de novo para desfazer");
+  });
+
+  it("dia futuro marcado: Vai descansar, habilitado (tocar desfaz)", () => {
+    const h = html("planejado");
+    expect(desabilitado(botaoDescanso(h, "Vai descansar"))).toBe(false);
+    expect(h).toContain("Toque de novo para desfazer");
   });
 
   it("o círculo desabilitado esmaece (opacity-50) e o habilitado não", () => {
     expect(botaoDescanso(html("comAtendimento"), "Descanso")).toContain(
       "disabled:opacity-50"
     );
-    expect(botaoDescanso(html("feito"), "Descansou")).toContain(
-      "disabled:opacity-50"
-    );
     // A classe só age com o atributo disabled: o habilitado não leva o atributo.
     expect(desabilitado(botaoDescanso(html("normal"), "Descanso"))).toBe(false);
+    expect(desabilitado(botaoDescanso(html("feito"), "Descansou"))).toBe(false);
   });
 
   it("dia com atendimento: continua Descanso, desabilitado e com o motivo visível", () => {
     const h = html("comAtendimento");
     expect(desabilitado(botaoDescanso(h, "Descanso"))).toBe(true);
-    expect(h).toContain("Hoje você tem atendimento");
+    expect(h).toContain("Dia com atendimento");
+  });
+
+  it("dia que já passou: desabilitado e diz por quê", () => {
+    expect(desabilitado(botaoDescanso(html("passou"), "Descanso"))).toBe(true);
+    expect(html("passou")).toContain("Esse dia já passou");
   });
 });

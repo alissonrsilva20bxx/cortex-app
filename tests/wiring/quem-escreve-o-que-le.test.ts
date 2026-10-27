@@ -76,7 +76,9 @@ const PARES: Par[] = [
   acao("abrir_jornada", /registrarAbertura\(/),
   // Missões do capítulo e passos do Começo que leem estas duas ações:
   acao("planejar"),
-  acao("descanso"),
+  // O botão Descanso marca o dia (marcarDescanso); a loja registra o de
+  // hoje com a chave fixa do dia.
+  acao("descanso", /registrarComChave\("descanso", chave\)/),
 ];
 
 const baseline: { id: string; motivo: string }[] = JSON.parse(

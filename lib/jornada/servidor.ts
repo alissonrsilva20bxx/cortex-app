@@ -21,6 +21,8 @@ import type {
  *  - `jornada_registrar(p_acao, p_chave, p_fuso, p_deslocamento_min)`
  *      -> RespostaRegistro ({ estado, comemoracoes, duplicada })
  *  - `jornada_estado(p_fuso, p_deslocamento_min)` -> EstadoJornada
+ *  - `jornada_desfazer_descanso(p_fuso, p_deslocamento_min)` -> EstadoJornada
+ *      (migration 0048, ESCRITA, NÃO APLICADA: até lá a chamada falha)
  *  - preferências: a linha dela em `jornada_preferencias` (J09). Não há RPC:
  *    a RLS deixa a dona ler, criar e alterar a própria linha, e só ela.
  *
@@ -70,6 +72,17 @@ export async function lerEstadoDoServidor(
   deslocamentoMin: number
 ): Promise<EstadoJornada> {
   return (await chamar(client, "jornada_estado", {
+    p_fuso: fuso,
+    p_deslocamento_min: deslocamentoMin,
+  })) as EstadoJornada;
+}
+
+export async function desfazerDescansoNoServidor(
+  client: JornadaClient,
+  fuso: string,
+  deslocamentoMin: number
+): Promise<EstadoJornada> {
+  return (await chamar(client, "jornada_desfazer_descanso", {
     p_fuso: fuso,
     p_deslocamento_min: deslocamentoMin,
   })) as EstadoJornada;

@@ -20,8 +20,16 @@
  */
 
 import { supabase } from "@/lib/supabase";
+import { diaDoRelogio } from "@/lib/relogio";
 import * as cache from "./cache";
 import {
+  apagarDescansos,
+  gravarDescanso,
+  lerDescansos,
+  type Descansos,
+} from "./descansos";
+import {
+  desfazerDescansoNoServidor,
   lerEstadoDoServidor,
   registrarNoServidor,
   salvarPreferenciasNoServidor,
@@ -71,6 +79,8 @@ export const transporteSupabase: TransporteJornada = {
   registrar: (pedido) => registrarNoServidor(supabase, pedido),
   salvarPreferencias: (parcial) =>
     salvarPreferenciasNoServidor(supabase, parcial),
+  desfazerDescanso: (fuso, deslocamentoMin) =>
+    desfazerDescansoNoServidor(supabase, fuso, deslocamentoMin),
 };
 
 // ─────────────────────────────── a loja ──────────────────────────────────
@@ -84,6 +94,9 @@ export interface RetratoJornada {
   fila: Comemoracao[];
   /** Quantos registros ainda esperam pra ser entregues ao servidor. */
   pendentes: number;
+  /** Os dias de descanso marcados no aparelho (`descansos.ts`). As telas
+   * leem o estado já com eles (`estadoComDescansos`, no `useJornada`). */
+  descansos: Descansos;
 }
 
 export interface LojaJornada {
@@ -105,6 +118,14 @@ export interface LojaJornada {
   /** Grava preferências. Muda na tela na hora; se o servidor recusar, volta. */
   salvarPreferencias(parcial: Partial<Preferencias>): Promise<boolean>;
   enviarPendentes(): Promise<void>;
+  /**
+   * Marca (ou desfaz) o descanso de um dia (botão Descanso da Agenda). Grava
+   * no aparelho na hora. Só o de HOJE vai ao servidor, e conta uma vez por
+   * dia: marcar manda a ação `descanso` com a chave fixa do dia; desfazer
+   * tira o pedido ainda não enviado e chama `desfazerDescanso` (0048).
+   * Dia marcado antes que chega a ser hoje conta quando a Jornada carrega.
+   */
+  marcarDescanso(dia: string, marcado: boolean): void;
 }
 
 export interface OpcoesLoja {
@@ -114,6 +135,8 @@ export interface OpcoesLoja {
   gerarChave?: () => string;
   /** Fuso (injetável no teste). */
   fuso?: () => { fuso: string; deslocamentoMin: number };
+  /** "AAAA-MM-DD" de hoje no aparelho (injetável no teste). */
+  hoje?: () => string;
 }
 
 function chaveAleatoria(): string {
@@ -134,11 +157,17 @@ function juntarFila(fila: Comemoracao[], novas: unknown[]): Comemoracao[] {
   return somar.length ? [...fila, ...somar] : fila;
 }
 
+/** Chave fixa do descanso de um dia: marcar de novo nunca conta duas vezes. */
+function chaveDoDescanso(dia: string): string {
+  return `descanso-${dia}`;
+}
+
 export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
   const { userId } = opcoes;
   const transporte = opcoes.transporte ?? transporteSupabase;
   const gerarChave = opcoes.gerarChave ?? chaveAleatoria;
   const fuso = opcoes.fuso ?? (() => fusoDaUsuaria());
+  const hoje = opcoes.hoje ?? (() => diaDoRelogio(new Date()));
 
   const ouvintes = new Set<() => void>();
   let carregando = false;
@@ -150,6 +179,9 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
   const emVoo = new Set<string>();
   /** Chave da abertura desta sessão; null até a 1ª `registrarAbertura`. */
   let chaveAbertura: string | null = null;
+  let descansos = lerDescansos(userId);
+  /** Dias cujo descanso de hoje já foi levado ao servidor nesta abertura. */
+  const descansoSincronizado = new Set<string>();
   let ultimo: RetratoJornada | null = null;
 
   function montarRetrato(): RetratoJornada {
@@ -157,6 +189,7 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
     if (
       ultimo &&
       ultimo.estado === r.estado &&
+      ultimo.descansos === descansos &&
       ultimo.fila === r.fila &&
       ultimo.pendentes === r.pendentes.length &&
       ultimo.carregando === carregando &&
@@ -170,6 +203,7 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
       erro,
       fila: r.fila,
       pendentes: r.pendentes.length,
+      descansos,
     };
     return ultimo;
   }
@@ -216,6 +250,7 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
     } finally {
       emVoo.delete(pedido.chave);
       avisar();
+      if (pedido.acao === "descanso") sincronizarDescanso();
     }
   }
 
@@ -226,13 +261,54 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
     const { fuso: f, deslocamentoMin } = fuso();
     const pedido: PedidoRegistro = { acao, chave, fuso: f, deslocamentoMin };
     // Guarda ANTES de mandar: se o app fechar no meio, o pedido não se perde.
-    cache.atualizar(userId, (r) => ({
-      ...r,
-      pendentes: [...r.pendentes, pedido],
-    }));
+    // A mesma chave já guardada (descanso do dia) não entra de novo.
+    cache.atualizar(userId, (r) =>
+      r.pendentes.some((p) => p.chave === chave)
+        ? r
+        : { ...r, pendentes: [...r.pendentes, pedido] }
+    );
     avisar();
     const novas = await enviar(pedido);
     return novas ?? [];
+  }
+
+  async function desfazerDescansoNoServidor(
+    desfazer: NonNullable<TransporteJornada["desfazerDescanso"]>
+  ): Promise<void> {
+    const ep = cache.epocaAtual();
+    const { fuso: f, deslocamentoMin } = fuso();
+    try {
+      const estado = await desfazer(f, deslocamentoMin);
+      if (ehEstadoJornada(estado)) {
+        cache.atualizar(userId, (r) => ({ ...r, estado }), ep);
+      }
+    } catch {
+      /* sem a 0048 (ou sem rede): o desfazer fica só no aparelho */
+    } finally {
+      avisar();
+    }
+  }
+
+  /**
+   * Leva o descanso de HOJE marcado no aparelho ao servidor, uma vez por
+   * abertura: marcado e o servidor ainda não conta, registra (chave fixa
+   * do dia); desfeito e o servidor ainda conta, pede pra desfazer.
+   */
+  function sincronizarDescanso(): void {
+    const dia = hoje();
+    const quer = descansos[dia];
+    if (quer === undefined || descansoSincronizado.has(dia)) return;
+    const r = cache.ler(userId);
+    const noServidor =
+      r.estado?.hoje === dia && (r.estado.feitasHoje?.descanso ?? 0) >= 1;
+    const chave = chaveDoDescanso(dia);
+    if (quer && !noServidor && !r.pendentes.some((p) => p.chave === chave)) {
+      descansoSincronizado.add(dia);
+      void registrarComChave("descanso", chave);
+    } else if (!quer && noServidor && transporte.desfazerDescanso) {
+      descansoSincronizado.add(dia);
+      void desfazerDescansoNoServidor(transporte.desfazerDescanso);
+    }
   }
 
   const loja: LojaJornada = {
@@ -258,6 +334,7 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
           }
           cache.atualizar(userId, (r) => ({ ...r, estado }), ep);
           erro = null;
+          sincronizarDescanso();
         })
         .catch(() => {
           erro = "sem-conexao"; // o estado em cache, se houver, continua na tela
@@ -335,6 +412,20 @@ export function criarLojaJornada(opcoes: OpcoesLoja): LojaJornada {
       });
       return envio;
     },
+
+    marcarDescanso(dia, marcado) {
+      descansos = gravarDescanso(userId, dia, marcado, hoje());
+      if (!marcado) {
+        const chave = chaveDoDescanso(dia);
+        cache.atualizar(userId, (r) => ({
+          ...r,
+          pendentes: r.pendentes.filter((p) => p.chave !== chave),
+        }));
+      }
+      descansoSincronizado.delete(dia);
+      avisar();
+      sincronizarDescanso();
+    },
   };
 
   return loja;
@@ -382,4 +473,5 @@ export function lojaDaUsuaria(userId: string): LojaJornada {
 export function limparTudo(): void {
   lojas.clear();
   cache.limparTudo();
+  apagarDescansos();
 }

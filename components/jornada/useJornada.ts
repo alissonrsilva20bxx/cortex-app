@@ -9,6 +9,8 @@ import {
 } from "react";
 import { assinarRelogio, diaDoRelogio } from "@/lib/relogio";
 import { lojaDaUsuaria, type RetratoJornada } from "@/lib/jornada/cliente";
+import { SEM_DESCANSOS, type Descansos } from "@/lib/jornada/descansos";
+import { estadoComDescansos } from "./progresso";
 import type {
   Acao,
   Comemoracao,
@@ -21,7 +23,8 @@ import type {
  * O hook que as telas da Jornada usam (J12 em diante). Nenhuma tela precisa
  * saber que existe Supabase: tudo passa por aqui (J11, #161).
  *
- * - `estado`: o estado atual (ou `null` antes da 1ª carga sem cache).
+ * - `estado`: o estado atual (ou `null` antes da 1ª carga sem cache), já
+ *   com o descanso de hoje que ela desfez no aparelho (`estadoComDescansos`).
  * - `carregando`: só `true` quando não há nada pra mostrar ainda.
  * - `erro`: código do último problema (texto em `lib/jornada/textos.ts`).
  * - `registrar(acao)`: registra uma ação e devolve as comemorações que o
@@ -34,6 +37,8 @@ import type {
  * - `consumirComemoracao(id)`: tira uma da fila depois de tocada.
  * - `salvarPreferencias(parcial)`: grava som, Modo discreto ou perfil. A
  *   chave muda na hora; se o servidor recusar, volta e devolve `false`.
+ * - `descansos` / `marcarDescanso(dia, marcado)`: os dias de descanso que
+ *   ela marcou na Agenda (no aparelho); só o de hoje conta na Jornada.
  *
  * Seguro a montar duas vezes (StrictMode): o efeito só CARREGA e reenvia
  * pendentes, e a loja reaproveita a chamada em andamento. Registrar nunca
@@ -50,6 +55,8 @@ export interface UsoJornada {
   consumirComemoracao: (id: string) => void;
   salvarPreferencias: (parcial: Partial<Preferencias>) => Promise<boolean>;
   recarregar: () => Promise<void>;
+  descansos: Descansos;
+  marcarDescanso: (dia: string, marcado: boolean) => void;
 }
 
 /** No servidor e na hidratação: nada do cache (evita diferença servidor × cliente). */
@@ -59,6 +66,7 @@ const RETRATO_SERVIDOR: RetratoJornada = {
   erro: null,
   fila: [],
   pendentes: 0,
+  descansos: SEM_DESCANSOS,
 };
 
 export function useJornada(userId: string): UsoJornada {
@@ -98,9 +106,18 @@ export function useJornada(userId: string): UsoJornada {
     [loja]
   );
   const recarregar = useCallback(() => loja.carregar(), [loja]);
+  const estado = useMemo(
+    () =>
+      retrato.estado && estadoComDescansos(retrato.estado, retrato.descansos),
+    [retrato.estado, retrato.descansos]
+  );
+  const marcarDescanso = useCallback(
+    (dia: string, marcado: boolean) => loja.marcarDescanso(dia, marcado),
+    [loja]
+  );
 
   return {
-    estado: retrato.estado,
+    estado,
     carregando: retrato.carregando,
     erro: retrato.erro,
     fila: retrato.fila,
@@ -110,5 +127,7 @@ export function useJornada(userId: string): UsoJornada {
     consumirComemoracao,
     salvarPreferencias,
     recarregar,
+    descansos: retrato.descansos,
+    marcarDescanso,
   };
 }

@@ -56,7 +56,8 @@ let armazenamentoInjetado: Armazenamento | null | undefined;
 let usuarioVinculado: string | null = null;
 let epoca = 0;
 
-function armazenamento(): Armazenamento | null {
+/** O `localStorage` (ou o do teste); `null` sem storage. `descansos.ts` usa o mesmo. */
+export function armazenamento(): Armazenamento | null {
   if (armazenamentoInjetado !== undefined) return armazenamentoInjetado;
   try {
     return typeof localStorage === "undefined" ? null : localStorage;

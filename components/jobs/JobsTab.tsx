@@ -206,7 +206,6 @@ export function JobsTab({
 }: Props) {
   const formatMoeda = useFormatMoeda();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const descanso = useDescanso(userId, jobs);
   // Relógio de 1 minuto, o mesmo do Início: o card Próximo muda sozinho
   // quando o horário passa, sem esperar outro render.
   const now = useAgora();
@@ -232,6 +231,7 @@ export function JobsTab({
   // GreetingHeader (useState lazy initializer, calculado uma vez).
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [selectedDate, setSelectedDate] = useState(() => toISODate(new Date()));
+  const descanso = useDescanso(userId, jobs, selectedDate);
   const [ratchetDirection, setRatchetDirection] =
     useState<RatchetDirection>("forward");
 
@@ -601,8 +601,8 @@ export function JobsTab({
 
       {/* As 4 ações do mockup. "Novo" abre o mesmo JobForm do "+";
           "Resumo" e "Anotações" abrem os sheets que já existiam (antes eram
-          os dois botões do fim da página); "Descanso" registra o descanso do
-          dia na Jornada (ver AgendaAcoes.tsx). */}
+          os dois botões do fim da página); "Descanso" marca ou desfaz o
+          descanso do dia selecionado (ver AgendaAcoes.tsx). */}
       <AgendaAcoes
         onNovo={() => onEditJob(null)}
         onResumo={
@@ -613,7 +613,7 @@ export function JobsTab({
         onAnotacoes={() => setAnotacoesOpen(true)}
         descanso={{
           situacao: descanso.situacao,
-          onDescansar: descanso.descansar,
+          onAlternar: descanso.alternar,
         }}
       />
 

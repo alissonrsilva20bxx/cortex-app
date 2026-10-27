@@ -4,6 +4,7 @@ import type {
   MarcaDoDia,
   MesDaColecao,
 } from "@/lib/jornada/estado";
+import type { Descansos } from "@/lib/jornada/descansos";
 import {
   ORDEM_DO_PROXIMO_PASSO,
   type AcaoDoProximoPasso,
@@ -155,11 +156,49 @@ export function descansoDeHoje(estado: EstadoJornada): boolean {
   return (estado.feitasHoje?.descanso ?? 0) >= 1;
 }
 
+/** O dia está marcado como descanso? O que ela marcou no aparelho vence;
+ * sem marca, vale o que o servidor conta para hoje (quem descansou antes
+ * dos descansos irem para o aparelho continua com "Descansou"). */
+export function descansoNoDia(
+  estado: EstadoJornada | null,
+  descansos: Descansos,
+  dia: string
+): boolean {
+  const marcado = descansos[dia];
+  if (marcado !== undefined) return marcado;
+  return estado?.hoje === dia && descansoDeHoje(estado);
+}
+
 /** Índice de hoje na semana do card (0 = segunda ... 6 = domingo). */
 export function indiceDeHojeNaSemana(estado: EstadoJornada): number {
   const d = new Date(`${estado.hoje ?? ""}T00:00:00`);
   const dia = Number.isNaN(d.getTime()) ? new Date().getDay() : d.getDay();
   return (dia + 6) % 7;
+}
+
+/**
+ * O estado como as telas devem ver (o `useJornada` aplica): se ela desfez
+ * o descanso de hoje e o servidor ainda o conta (sem a migration 0048),
+ * hoje sai de `feitasHoje` (botão, "Próximo passo") e a marca "descanso" de
+ * hoje sai do ritmo da semana. O Glow que o servidor já deu não muda aqui:
+ * só a 0048 tira.
+ */
+export function estadoComDescansos(
+  estado: EstadoJornada,
+  descansos: Descansos
+): EstadoJornada {
+  const hoje = estado.hoje;
+  if (!hoje || descansos[hoje] !== false) return estado;
+  const feitasHoje = estado.feitasHoje && { ...estado.feitasHoje };
+  if (feitasHoje) delete feitasHoje.descanso;
+  let semana = estado.semana;
+  if (semana?.dias.length === 7) {
+    const i = indiceDeHojeNaSemana(estado);
+    if (semana.dias[i] === "descanso") {
+      semana = { dias: semana.dias.map((m, j) => (j === i ? null : m)) };
+    }
+  }
+  return { ...estado, feitasHoje, semana };
 }
 
 /** Para onde o "Próximo passo" leva: a aba (e a sub-aba do Financeiro)

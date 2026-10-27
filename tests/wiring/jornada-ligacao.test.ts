@@ -78,12 +78,15 @@ const LIGACOES = [
     vezes: 1,
   },
   {
-    // "Descanso" na Agenda: uma vez por dia (o servidor limita).
+    // "Descanso" na Agenda, no dia selecionado: marca ou desfaz. A loja
+    // registra a ação `descanso` só para hoje, uma vez por dia (chave fixa
+    // do dia; ver tests/jornada/descanso-dia-selecionado.test.ts).
     acao: "descanso",
     arquivo: "components/jobs/useDescanso.ts",
-    hook: "const { estado, registrar } = useJornada(userId);",
-    depoisDe: "const { estado, registrar } = useJornada(userId);",
-    chamada: 'void registrar("descanso")',
+    hook: "const { estado, descansos, marcarDescanso } = useJornada(userId);",
+    depoisDe: "const { estado, descansos, marcarDescanso } = useJornada(userId);",
+    chamada: "alternar: () => marcarDescanso(dia, !marcado)",
+    registro: "marcarDescanso\\(dia",
     vezes: 1,
   },
   {
@@ -179,9 +182,11 @@ describe("cada ação da spec chama o registro certo, depois da ação principal
       const chamada = src.indexOf(l.chamada, prova);
       expect(chamada, "a chamada vem depois do sucesso").toBeGreaterThan(prova);
       // Uma ação, uma chamada (por caminho de sucesso).
-      expect(
-        soCodigo(src).match(new RegExp(`registrar\\("${l.acao}"\\)`, "g"))
-      ).toHaveLength(l.vezes);
+      const registro =
+        "registro" in l ? l.registro : `registrar\\("${l.acao}"\\)`;
+      expect(soCodigo(src).match(new RegExp(registro, "g"))).toHaveLength(
+        l.vezes
+      );
     }
   );
 
@@ -235,7 +240,9 @@ describe("cada ação da spec chama o registro certo, depois da ação principal
   it("o registro só acontece nos componentes de ação listados", () => {
     const comRegistro = [...arquivos("components"), ...arquivos("app")]
       .filter((f) => !f.startsWith("components/jornada/"))
-      .filter((f) => /\bregistrar\(\s*"/.test(soCodigo(read(f))))
+      .filter((f) =>
+        /\bregistrar\(\s*"|\bmarcarDescanso\(/.test(soCodigo(read(f)))
+      )
       .sort();
     expect(comRegistro).toEqual(
       [...new Set(LIGACOES.map((l) => l.arquivo))].sort()
@@ -254,7 +261,7 @@ describe("os componentes de ação só ganharam import, hook e chamada", () => {
       // Só o import, o hook e as chamadas mencionam a Jornada.
       const linhas = codigo
         .split("\n")
-        .filter((l) => /useJornada|registrar/.test(l));
+        .filter((l) => /useJornada|registrar|marcarDescanso/.test(l));
       const esperadas =
         2 + LIGACOES.filter((l) => l.arquivo === arquivo).length;
       expect(linhas).toHaveLength(esperadas);

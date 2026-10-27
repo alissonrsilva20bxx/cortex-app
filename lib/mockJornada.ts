@@ -593,5 +593,20 @@ export function criarTransporteJornadaLaboratorio(
       };
       return estado.preferencias;
     },
+    async desfazerDescanso() {
+      // O que a 0048 faz no servidor: hoje sai de feitasHoje e do ritmo.
+      const feitasHoje = { ...estado.feitasHoje };
+      delete feitasHoje.descanso;
+      const i = (new Date(`${estado.hoje}T12:00:00`).getDay() + 6) % 7;
+      const dias = estado.semana?.dias;
+      estado = {
+        ...estado,
+        feitasHoje,
+        semana: dias && {
+          dias: dias.map((m, j) => (j === i && m === "descanso" ? null : m)),
+        },
+      };
+      return estado;
+    },
   };
 }

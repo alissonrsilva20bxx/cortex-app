@@ -298,6 +298,12 @@ export interface TransporteJornada {
   registrar(pedido: PedidoRegistro): Promise<RespostaRegistro>;
   /** Grava só as preferências mandadas; devolve as preferências como ficaram. */
   salvarPreferencias(parcial: Partial<Preferencias>): Promise<Preferencias>;
+  /**
+   * Tira o descanso de HOJE (o Glow, os contadores e a marca do dia que ele
+   * deu) e devolve o estado. RPC da migration 0048: antes dela aplicada, a
+   * chamada falha e o desfazer fica só no aparelho (`descansos.ts`).
+   */
+  desfazerDescanso?(fuso: string, deslocamentoMin: number): Promise<EstadoJornada>;
 }
 
 /** Códigos de erro (o texto de cada um está em `textos.ts`). */

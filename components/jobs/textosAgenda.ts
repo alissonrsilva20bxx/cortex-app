@@ -53,11 +53,16 @@ export const ACONTECEU = {
 /** O botão "Descanso" da Agenda: o descanso de propósito que a Jornada pede. */
 export const DESCANSO = {
   botao: "Descanso",
+  /** Hoje marcado como descanso. */
   feito: "Descansou",
-  /** Por que o botão está desabilitado depois de registrado. */
-  motivoDesabilitado: "Um descanso por dia",
+  /** Dia futuro marcado como descanso. */
+  planejado: "Vai descansar",
+  /** Dia marcado: tocar de novo desfaz. */
+  motivoDesfazer: "Toque de novo para desfazer",
   /** Por que está desabilitado num dia com atendimento. */
-  motivoComAtendimento: "Hoje você tem atendimento",
+  motivoComAtendimento: "Dia com atendimento",
+  /** Por que está desabilitado num dia que já passou. */
+  motivoPassou: "Esse dia já passou",
 } as const;
 
 /** Resumo da semana (sheet do botão "Resumo" da Agenda): só tempo, sem dinheiro. */

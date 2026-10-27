@@ -15,6 +15,8 @@ interface Acao {
   Icon: ComponentType<{ size?: number }>;
   /** `undefined` = o botão fica desabilitado (e a tela diz o motivo). */
   onClick?: () => void;
+  /** Só no Descanso: o dia está marcado (`aria-pressed`). */
+  pressionado?: boolean;
 }
 
 interface Props {
@@ -24,19 +26,19 @@ interface Props {
   onResumo?: () => void;
   /** Abre o bloco de notas (NotasSection). */
   onAnotacoes: () => void;
-  /** O descanso de hoje: como o botão está e o que ele registra. */
-  descanso: { situacao: EstadoDescanso; onDescansar: () => void };
+  /** O descanso do dia selecionado: como o botão está; tocar marca ou desfaz. */
+  descanso: { situacao: EstadoDescanso; onAlternar: () => void };
 }
 
 /**
  * Fileira de 4 ações da Agenda (J03): botões iguais, ícone num círculo
  * de 56px sobre `--card-solid`, rótulo embaixo, como o mockup.
  *
- * Cada botão liga numa ação que já existe no app. "Descanso" ocupa o lugar
- * do "Bloquear" (que volta com o bloqueio de horário, migration 0043): ele
- * registra o descanso do dia na Jornada. Já registrado, vira "Descansou";
- * em dia com atendimento fica desabilitado e a tela diz por quê. "Resumo"
- * só abre quando há pelo menos um atendimento.
+ * Cada botão liga numa ação que já existe no app. "Descanso" marca o dia
+ * selecionado como descanso (o de hoje conta na Jornada). Marcado, vira
+ * "Descansou" (hoje) ou "Vai descansar" (dia futuro) e tocar de novo
+ * desfaz; em dia com atendimento ou que já passou fica desabilitado e a
+ * tela diz por quê. "Resumo" só abre quando há pelo menos um atendimento.
  */
 export function AgendaAcoes({
   onNovo,
@@ -44,23 +46,33 @@ export function AgendaAcoes({
   onAnotacoes,
   descanso,
 }: Props) {
-  const feito = descanso.situacao === "feito";
-  const comAtendimento = descanso.situacao === "comAtendimento";
+  const { situacao } = descanso;
+  const marcado = situacao === "feito" || situacao === "planejado";
+  const podeTocar = marcado || situacao === "normal";
   const acoes: Acao[] = [
     { label: "Novo", Icon: IconeMais, onClick: onNovo },
     {
-      label: feito ? DESCANSO.feito : DESCANSO.botao,
+      label:
+        situacao === "planejado"
+          ? DESCANSO.planejado
+          : marcado
+            ? DESCANSO.feito
+            : DESCANSO.botao,
       Icon: IconeDescanso,
-      onClick: feito || comAtendimento ? undefined : descanso.onDescansar,
+      onClick: podeTocar ? descanso.onAlternar : undefined,
+      pressionado: marcado,
     },
     { label: "Resumo", Icon: IconeResumo, onClick: onResumo },
     { label: "Anotações", Icon: IconeAnotacoes, onClick: onAnotacoes },
   ];
-  const motivo = feito
-    ? DESCANSO.motivoDesabilitado
-    : comAtendimento
-      ? DESCANSO.motivoComAtendimento
-      : null;
+  const motivo =
+    situacao === "feito" || situacao === "planejado"
+      ? DESCANSO.motivoDesfazer
+      : situacao === "comAtendimento"
+        ? DESCANSO.motivoComAtendimento
+        : situacao === "passou"
+          ? DESCANSO.motivoPassou
+          : null;
 
   return (
     <div className="flex flex-col" style={{ gap: "8px" }}>
@@ -68,12 +80,13 @@ export function AgendaAcoes({
         className="grid"
         style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "8px" }}
       >
-        {acoes.map(({ label, Icon, onClick }) => (
+        {acoes.map(({ label, Icon, onClick, pressionado }, i) => (
           <button
-            key={label}
+            key={i}
             type="button"
             onClick={onClick}
             disabled={!onClick}
+            aria-pressed={pressionado}
             // Desabilitado esmaece (opacity-50, como os outros botões do app);
             // o motivo vem na linha de baixo.
             className="flex flex-col items-center active:opacity-70 disabled:opacity-50"

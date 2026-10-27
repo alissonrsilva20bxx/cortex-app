@@ -152,7 +152,7 @@ describe("As 4 ações ligam no que já existe", () => {
     expect(acoes).toContain("IconeDescanso");
     expect(acoes).toContain("disabled={!onClick}");
     expect(acoes).toContain("DESCANSO.motivoComAtendimento");
-    expect(acoes).toContain("DESCANSO.motivoDesabilitado");
+    expect(acoes).toContain("DESCANSO.motivoPassou");
     expect(jsxTag(jobsTab, "AgendaAcoes")).toMatch(/descanso=\{\{/);
   });
 

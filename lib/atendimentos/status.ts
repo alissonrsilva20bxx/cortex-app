@@ -198,21 +198,35 @@ export function pendentesVisiveis(
     : pendentes.slice(0, LIMITE_ACONTECEU_AGENDA);
 }
 
-/** Como o botão "Descanso" da Agenda se comporta hoje. */
-export type EstadoDescanso = "normal" | "feito" | "comAtendimento";
+/** Como o botão "Descanso" da Agenda se comporta no dia selecionado:
+ * - `normal`: dá pra marcar;
+ * - `feito` (hoje) / `planejado` (dia futuro): marcado, tocar desfaz;
+ * - `comAtendimento`: não é dia de descanso;
+ * - `passou`: dia que já passou; só leitura (o aparelho não guarda o
+ *   passado, sem diário). */
+export type EstadoDescanso =
+  | "normal"
+  | "feito"
+  | "planejado"
+  | "comAtendimento"
+  | "passou";
 
-/** "Já registrado hoje" vence: o descanso é um por dia. Depois, o dia com
+/** Dia que já passou não muda. Depois, "marcado" vence (dá pra desfazer
+ * mesmo que um atendimento tenha entrado no dia). Por fim, o dia com
  * atendimento (agendado, confirmado ou concluído) não é dia de descanso;
- * "não aconteceu" (cancelado) não conta. */
+ * "não aconteceu" (cancelado) não conta. Sem `hoje`, o dia é hoje. */
 export function estadoDoDescanso(
   jobs: readonly Pick<Job, "status" | "data">[],
-  descansoFeito: boolean,
-  hoje: Date = new Date()
+  marcado: boolean,
+  dia: Date | string = new Date(),
+  hoje: Date | string = dia
 ): EstadoDescanso {
-  if (descansoFeito) return "feito";
-  const dia = diaLocal(hoje);
+  const d = typeof dia === "string" ? dia : diaLocal(dia);
+  const h = typeof hoje === "string" ? hoje : diaLocal(hoje);
+  if (d < h) return "passou";
+  if (marcado) return d === h ? "feito" : "planejado";
   const temAtendimento = jobs.some(
-    (j) => j.data === dia && j.status !== "cancelado"
+    (j) => j.data === d && j.status !== "cancelado"
   );
   return temAtendimento ? "comAtendimento" : "normal";
 }
