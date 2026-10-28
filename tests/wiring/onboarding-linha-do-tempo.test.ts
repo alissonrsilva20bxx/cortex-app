@@ -209,7 +209,9 @@ describe("o teste da conta (14 antes do corte, 7 depois) na pílula e nos planos
     expect(noApp).toMatch(
       /diasDoTeste=\{efetivo\?\.diasDoTeste \?\? TRIAL_DIAS\}/
     );
-    expect(planos).toMatch(/Seus \{diasDoTeste\} dias terminaram/);
+    // O texto foi para lib/textosPlanos.ts (R18, M4): a tela usa os dias
+    // da conta ao chamar o título do fim do teste.
+    expect(planos).toMatch(/TEXTOS_PLANOS\.fim\.titulo\(diasDoTeste\)/);
     expect(planos).not.toMatch(/TRIAL_DIAS/);
   });
 });

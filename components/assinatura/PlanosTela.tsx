@@ -14,6 +14,7 @@ import {
   type OnEscolherPlano,
   type PlanoId,
 } from "@/lib/planos";
+import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
 import { useFormatMoeda, useMoeda } from "@/lib/useMoeda";
 
 interface Props {
@@ -22,6 +23,9 @@ interface Props {
   resumo: { atendimentos: number; registrado: string | null };
   /** Quantos dias o teste desta conta teve (7, ou 14 antes do corte). */
   diasDoTeste: number;
+  /** Dias que faltam do teste, quando aberta pelo "Ver planos" no meio dele
+   * (Ajustes, aviso, pílula); `null` = o teste acabou. */
+  faltam: number | null;
   /** Ponto de entrada do Pagamento: chamado com o plano marcado. */
   onEscolherPlano: OnEscolherPlano;
   /** "Agora não": fecha e continua no app. */
@@ -29,7 +33,8 @@ interface Props {
 }
 
 /**
- * Fim do teste grátis (tela 5 do desenho "Linha do tempo"): o cartão do
+ * Fim do teste grátis (tela 5 do desenho "Linha do tempo"), ou "Ver planos"
+ * no meio dele (aí o topo diz quantos dias faltam): o cartão do
  * topo com o que ela fez, os 3 planos na moeda escolhida (2 e 3 meses com o preço
  * cheio riscado, quanto economiza, o selo de desconto e "preço por tempo
  * limitado"), "Seus dados continuam aqui", o botão do plano marcado e
@@ -38,6 +43,7 @@ interface Props {
 export function PlanosTela({
   resumo,
   diasDoTeste,
+  faltam,
   onEscolherPlano,
   onAgoraNao,
 }: Props) {
@@ -51,6 +57,16 @@ export function PlanosTela({
       : null,
     resumo.registrado ? `${resumo.registrado} registrados` : null,
   ].filter(Boolean) as string[];
+  const topo =
+    faltam != null
+      ? {
+          titulo: TEXTOS_PLANOS.noTeste.titulo(faltam),
+          texto: TEXTOS_PLANOS.noTeste.texto,
+        }
+      : {
+          titulo: TEXTOS_PLANOS.fim.titulo(diasDoTeste),
+          texto: TEXTOS_PLANOS.fim.texto,
+        };
 
   return (
     <div
@@ -63,11 +79,9 @@ export function PlanosTela({
       <div className={styles.tela}>
         <div className={styles.endhero}>
           <div className={styles.t} id="planos-titulo">
-            Seus {diasDoTeste} dias terminaram
+            {topo.titulo}
           </div>
-          <div className={styles.s}>
-            Foi uma boa semana. Para seguir usando, escolha um plano.
-          </div>
+          <div className={styles.s}>{topo.texto}</div>
           {chips.length > 0 && (
             <div className={styles.stats}>
               {chips.map((c) => (

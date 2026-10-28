@@ -148,6 +148,7 @@ export function AssinaturaNoApp({
       {planosAbertos && podeMostrarPlanos && (
         <PlanosTela
           diasDoTeste={efetivo?.diasDoTeste ?? TRIAL_DIAS}
+          faltam={pilula?.faltam ?? null}
           resumo={{
             atendimentos: jobs.filter((j) => j.status === "concluído").length,
             registrado:
