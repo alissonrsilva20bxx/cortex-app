@@ -130,12 +130,34 @@ export function FinanceiroTab({
     onInnerTabChange?.(t);
   }
 
+  // Vindo de outra tela para Metas ou Saídas (Desejo do Início, Próximo
+  // passo da Jornada, Desejos da Rede), a tela rola até as sub-abas: sem
+  // isso ela via só o Saldo e os Recentes, com "Seus Desejos" bem abaixo
+  // da dobra (R17 M3). Fica pendente até a lista existir (carga inicial).
+  const [rolarAteSubAbas, setRolarAteSubAbas] = useState(false);
+
   useEffect(() => {
     if (!focusTab) return;
     changeTab(focusTab);
     onFocusTabHandled?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusTab]);
+
+  useEffect(() => {
+    if (focusTab && focusTab !== "visao") setRolarAteSubAbas(true);
+  }, [focusTab]);
+
+  useEffect(() => {
+    if (!rolarAteSubAbas || !detalhesRef.current) return;
+    const quadro = requestAnimationFrame(() => {
+      detalhesRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      setRolarAteSubAbas(false);
+    });
+    return () => cancelAnimationFrame(quadro);
+  });
 
   useEffect(() => {
     let ativo = true;
@@ -463,6 +485,9 @@ export function FinanceiroTab({
               flexDirection: "column",
               gap: "12px",
               marginTop: "6px",
+              // Folga sob a barra de status do iPhone quando a tela rola
+              // até aqui (Extrato e vinda de outra tela).
+              scrollMarginTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
             }}
           >
             <SegmentedControl

@@ -171,3 +171,20 @@ describe("FinanceiroTab — depois de consumido, o pulso não interfere em naveg
     expect(financeiroTabSrc).toMatch(/useState<InnerTab>\("visao"\)/);
   });
 });
+
+// R17 M3: o pulso trocava a sub-aba, mas a tela ficava no topo (Saldo e
+// Recentes) e "Seus Desejos" ficava abaixo da dobra. A prova na tela é o
+// print R18-M3 (Playwright no lab); aqui trava o contrato no código.
+describe("FinanceiroTab — vindo de outra tela para Metas ou Saídas, rola até as sub-abas", () => {
+  it('o pulso pede a rolagem para tudo que não é "visao"', () => {
+    expect(financeiroTabSrc).toMatch(
+      /if \(focusTab && focusTab !== "visao"\) setRolarAteSubAbas\(true\);\s*\r?\n\s*\}, \[focusTab\]\);/
+    );
+  });
+
+  it("a rolagem vai até o bloco das sub-abas (onde \"Seus Desejos\" é o primeiro card de Metas) e é consumida", () => {
+    expect(financeiroTabSrc).toMatch(
+      /if \(!rolarAteSubAbas \|\| !detalhesRef\.current\) return;[\s\S]{0,200}detalhesRef\.current\?\.scrollIntoView\([\s\S]{0,120}setRolarAteSubAbas\(false\);/
+    );
+  });
+});
