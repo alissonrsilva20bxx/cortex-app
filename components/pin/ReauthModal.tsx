@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { reauthAtual } from "@/lib/reauth";
-import { TEXTOS_SEM_REDE } from "@/lib/reauthRegras";
+import { TEXTOS_SEM_REDE, textoDaConfirmacao } from "@/lib/reauthRegras";
 import type {
   MetodoReauth,
   MotivoReauth,
@@ -20,15 +20,6 @@ import type {
  * conta Google, os dois para quem tem os dois. O Google sai do app e volta
  * pelo /auth/callback; quem pediu confere a volta (`retornoDoGoogle`).
  */
-
-const TEXTO: Record<MotivoReauth, string> = {
-  "esqueci-pin":
-    "Para criar um PIN novo, confirme que é você com a senha da sua conta ou com o Google. O PIN antigo não aparece em lugar nenhum.",
-  "desligar-pin":
-    "Para desligar o PIN, confirme que é você com a senha da sua conta ou com o Google.",
-  "trocar-pin":
-    "Para trocar o PIN, confirme que é você com a senha da sua conta ou com o Google.",
-};
 
 interface Props {
   open: boolean;
@@ -122,7 +113,7 @@ export function ReauthModal({
           color: "var(--t-mut)",
         }}
       >
-        {TEXTO[motivo]}
+        {textoDaConfirmacao(motivo, metodos)}
       </p>
 
       {metodos === null && !semRede && (

@@ -20,6 +20,45 @@ export function ehMotivoReauth(x: unknown): x is MotivoReauth {
   return MOTIVOS_REAUTH.includes(x as MotivoReauth);
 }
 
+/** Texto de "Confirme que é você": cada frase recebe o "como" (a senha, o
+ * Google, os dois ou nada enquanto não se sabe). */
+export const TEXTOS_CONFIRMACAO = {
+  frase: {
+    "esqueci-pin": (como: string) =>
+      `Para criar um PIN novo, confirme que é você${como}. O PIN antigo não aparece em lugar nenhum.`,
+    "desligar-pin": (como: string) =>
+      `Para desligar o PIN, confirme que é você${como}.`,
+    "trocar-pin": (como: string) =>
+      `Para trocar o PIN, confirme que é você${como}.`,
+  } satisfies Record<MotivoReauth, (como: string) => string>,
+  como: {
+    senha: " com a senha da sua conta",
+    google: " com o Google",
+    ambos: " com a senha da sua conta ou com o Google",
+    nenhum: "",
+  },
+} as const;
+
+/** Só cita o que a conta tem (R17 B5): conta de e-mail não ouve falar do
+ * Google. Antes de carregar os métodos (`null`), não promete nenhum. */
+export function textoDaConfirmacao(
+  motivo: MotivoReauth,
+  metodos: readonly MetodoReauth[] | null
+): string {
+  const senha = !!metodos?.includes("senha");
+  const google = !!metodos?.includes("google");
+  const { como } = TEXTOS_CONFIRMACAO;
+  return TEXTOS_CONFIRMACAO.frase[motivo](
+    senha && google
+      ? como.ambos
+      : senha
+        ? como.senha
+        : google
+          ? como.google
+          : como.nenhum
+  );
+}
+
 /** Textos da confirmação da conta quando a rede falha. */
 export const TEXTOS_SEM_REDE = {
   conta:
