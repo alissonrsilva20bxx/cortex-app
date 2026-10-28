@@ -62,6 +62,68 @@ describe("mapAuthErrorMessage", () => {
     ).toBe("Senha muito curta — use pelo menos 6 caracteres.");
   });
 
+  it("usa o mínimo que o servidor pediu, não um 6 fixo", () => {
+    expect(
+      mapAuthErrorMessage("Password should be at least 8 characters.", [
+        "length",
+      ])
+    ).toBe("Senha muito curta — use pelo menos 8 caracteres.");
+  });
+
+  // R17 M1: "senhasenha" e "password123" apareciam como "muito curta".
+  it("senha sem variedade não diz 'muito curta' e lista o que falta", () => {
+    const msg = mapAuthErrorMessage(
+      "Password should contain at least one character of each: abcdefghijklmnopqrstuvwxyz, ABCDEFGHIJKLMNOPQRSTUVWXYZ, 0123456789",
+      ["characters"]
+    );
+    expect(msg).not.toContain("curta");
+    expect(msg).toBe(
+      "A senha precisa ter pelo menos uma letra minúscula, uma letra maiúscula e um número."
+    );
+  });
+
+  it("senha sem variedade, com símbolos exigidos", () => {
+    expect(
+      mapAuthErrorMessage(
+        "Password should contain at least one character of each: abcdefghijklmnopqrstuvwxyz, 0123456789"
+      )
+    ).toBe("A senha precisa ter pelo menos uma letra minúscula e um número.");
+  });
+
+  it("senha vazada tem mensagem própria", () => {
+    const msg = mapAuthErrorMessage(
+      "Password is known to be weak and easy to guess, please choose a different one.",
+      ["pwned"]
+    );
+    expect(msg).not.toContain("curta");
+    expect(msg).toBe(
+      "Essa senha é conhecida e fácil de adivinhar. Escolha outra."
+    );
+  });
+
+  it("senha vazada é reconhecida só pelo texto, sem os motivos", () => {
+    expect(
+      mapAuthErrorMessage(
+        "Password is known to be weak and easy to guess, please choose a different one."
+      )
+    ).toBe("Essa senha é conhecida e fácil de adivinhar. Escolha outra.");
+  });
+
+  it("vários motivos: o tamanho vem primeiro", () => {
+    expect(
+      mapAuthErrorMessage(
+        "Password should be at least 8 characters. Password is known to be weak and easy to guess, please choose a different one.",
+        ["length", "pwned"]
+      )
+    ).toBe("Senha muito curta — use pelo menos 8 caracteres.");
+  });
+
+  it("senha fraca sem motivo conhecido", () => {
+    expect(mapAuthErrorMessage("Password is too weak")).toBe(
+      "Senha fraca. Escolha uma mais difícil de adivinhar."
+    );
+  });
+
   it("traduz rate limit", () => {
     expect(mapAuthErrorMessage("Email rate limit exceeded")).toBe(
       "Muitas tentativas. Aguarde um momento e tente de novo."
@@ -77,6 +139,38 @@ describe("mapAuthErrorMessage", () => {
   it("é case-insensitive", () => {
     expect(mapAuthErrorMessage("INVALID LOGIN CREDENTIALS")).toBe(
       "E-mail ou senha incorretos."
+    );
+  });
+});
+
+describe("senha recusada pelo servidor", () => {
+  it("signUpWithEmail repassa os motivos do erro (pwned)", async () => {
+    mocks.signUp.mockResolvedValue({
+      data: { user: null, session: null },
+      error: {
+        message:
+          "Password is known to be weak and easy to guess, please choose a different one.",
+        reasons: ["pwned"],
+      },
+    });
+    const result = await signUpWithEmail("a@b.com", "password123", "x");
+    expect(result.error).toBe(
+      "Essa senha é conhecida e fácil de adivinhar. Escolha outra."
+    );
+  });
+
+  it("updatePassword repassa os motivos do erro (characters)", async () => {
+    mocks.updateUser.mockResolvedValue({
+      data: {},
+      error: {
+        message:
+          "Password should contain at least one character of each: abcdefghijklmnopqrstuvwxyz, ABCDEFGHIJKLMNOPQRSTUVWXYZ, 0123456789, !@#$%^&*()_+-=[]{};'\\:\"|<>?,./`~",
+        reasons: ["characters"],
+      },
+    });
+    const result = await updatePassword("senhasenha");
+    expect(result.error).toBe(
+      "A senha precisa ter pelo menos uma letra minúscula, uma letra maiúscula, um número e um símbolo."
     );
   });
 });

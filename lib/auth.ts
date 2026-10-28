@@ -1,30 +1,64 @@
 import { supabase } from "./supabase";
+import { TEXTOS_AUTH } from "./textosAuth";
 
 /**
  * Traduz mensagens de erro do Supabase Auth (sempre em inglês) pra
  * português. Fallback genérico nunca vaza a mensagem crua do provedor.
+ *
+ * `reasons` vem do erro de senha fraca (`AuthWeakPasswordError`): "length",
+ * "characters" ou "pwned". Sem ele, o texto da mensagem decide.
  */
-export function mapAuthErrorMessage(message: string): string {
+export function mapAuthErrorMessage(
+  message: string,
+  reasons: readonly string[] = []
+): string {
+  const erro = TEXTOS_AUTH.erro;
   const m = message.toLowerCase();
-  if (m.includes("invalid login credentials")) {
-    return "E-mail ou senha incorretos.";
+  if (m.includes("invalid login credentials")) return erro.credenciais;
+  if (m.includes("email not confirmed")) return erro.emailNaoConfirmado;
+  if (m.includes("already registered")) return erro.jaCadastrado;
+  const minimo = m.match(/at least (\d+) characters?/);
+  if (reasons.includes("length") || minimo) {
+    return erro.senhaCurta(minimo ? Number(minimo[1]) : null);
   }
-  if (m.includes("email not confirmed")) {
-    return "Confirme seu e-mail antes de entrar.";
+  if (
+    reasons.includes("characters") ||
+    m.includes("should contain at least one character")
+  ) {
+    return erro.senhaSemVariedade(oQueFaltaNaSenha(message));
   }
-  if (m.includes("already registered")) {
-    return "Já existe uma conta com este e-mail. Tente entrar.";
+  if (
+    reasons.includes("pwned") ||
+    m.includes("known to be weak") ||
+    m.includes("pwned")
+  ) {
+    return erro.senhaVazada;
   }
-  if (m.includes("password") && (m.includes("least") || m.includes("weak"))) {
-    return "Senha muito curta — use pelo menos 6 caracteres.";
-  }
+  if (m.includes("password") && m.includes("weak")) return erro.senhaFraca;
   if (m.includes("rate limit") || m.includes("too many requests")) {
-    return "Muitas tentativas. Aguarde um momento e tente de novo.";
+    return erro.muitasTentativas;
   }
-  if (m.includes("email") && m.includes("invalid")) {
-    return "E-mail inválido.";
-  }
-  return "Não foi possível concluir. Tente novamente.";
+  if (m.includes("email") && m.includes("invalid")) return erro.emailInvalido;
+  return erro.generico;
+}
+
+/** Lê os grupos de caracteres que o Supabase exige ("…of each: abc…, 012…"). */
+function oQueFaltaNaSenha(message: string): string[] {
+  const v = TEXTOS_AUTH.variedade;
+  const itens: string[] = [];
+  if (message.includes("abcdefghijklmnopqrstuvwxyz")) itens.push(v.minuscula);
+  if (message.includes("ABCDEFGHIJKLMNOPQRSTUVWXYZ")) itens.push(v.maiuscula);
+  if (message.includes("0123456789")) itens.push(v.numero);
+  if (message.includes("!@#")) itens.push(v.simbolo);
+  return itens;
+}
+
+function traduzirErro(error: { message: string }): string {
+  const reasons = (error as { reasons?: unknown }).reasons;
+  return mapAuthErrorMessage(
+    error.message,
+    Array.isArray(reasons) ? reasons.map(String) : []
+  );
 }
 
 export async function signInWithEmail(
@@ -35,7 +69,7 @@ export async function signInWithEmail(
     email,
     password,
   });
-  return { error: error ? mapAuthErrorMessage(error.message) : null };
+  return { error: error ? traduzirErro(error) : null };
 }
 
 export async function signUpWithEmail(
@@ -50,7 +84,7 @@ export async function signUpWithEmail(
   });
   if (error) {
     return {
-      error: mapAuthErrorMessage(error.message),
+      error: traduzirErro(error),
       needsConfirmation: false,
     };
   }
@@ -72,12 +106,12 @@ export async function requestPasswordReset(
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo,
   });
-  return { error: error ? mapAuthErrorMessage(error.message) : null };
+  return { error: error ? traduzirErro(error) : null };
 }
 
 export async function updatePassword(
   newPassword: string
 ): Promise<{ error: string | null }> {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
-  return { error: error ? mapAuthErrorMessage(error.message) : null };
+  return { error: error ? traduzirErro(error) : null };
 }
