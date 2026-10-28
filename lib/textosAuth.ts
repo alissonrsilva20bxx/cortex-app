@@ -18,6 +18,14 @@ export const TEXTOS_AUTH = {
     emailInvalido: "E-mail inválido.",
     generico: "Não foi possível concluir. Tente novamente.",
   },
+  /** "Reenviar e-mail" de confirmação do cadastro (R17 M5). */
+  reenvio: {
+    pergunta: "Não chegou o e-mail?",
+    botao: "Reenviar e-mail",
+    enviando: "Reenviando…",
+    aguarde: (segundos: number) => `Reenviar em ${segundos} s`,
+    ok: "Mandamos de novo. Confira também o spam.",
+  },
   /** O que falta na senha, na ordem em que o Supabase lista. */
   variedade: {
     minuscula: "uma letra minúscula",

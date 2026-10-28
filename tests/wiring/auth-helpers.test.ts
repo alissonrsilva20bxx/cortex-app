@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   signUp: vi.fn(),
   resetPasswordForEmail: vi.fn(),
   updateUser: vi.fn(),
+  resend: vi.fn(),
 }));
 
 vi.mock("../../lib/supabase", () => ({
@@ -21,13 +22,17 @@ vi.mock("../../lib/supabase", () => ({
       signUp: mocks.signUp,
       resetPasswordForEmail: mocks.resetPasswordForEmail,
       updateUser: mocks.updateUser,
+      resend: mocks.resend,
     },
   },
 }));
 
 import {
+  ESPERA_REENVIO_MS,
   mapAuthErrorMessage,
+  resendSignupEmail,
   requestPasswordReset,
+  segundosParaReenviar,
   signInWithEmail,
   signUpWithEmail,
   updatePassword,
@@ -179,7 +184,7 @@ describe("signInWithEmail", () => {
   it("retorna error: null no sucesso", async () => {
     mocks.signInWithPassword.mockResolvedValue({ data: {}, error: null });
     const result = await signInWithEmail("a@b.com", "senha123");
-    expect(result).toEqual({ error: null });
+    expect(result).toEqual({ error: null, emailNaoConfirmado: false });
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
       email: "a@b.com",
       password: "senha123",
@@ -192,7 +197,23 @@ describe("signInWithEmail", () => {
       error: { message: "Invalid login credentials" },
     });
     const result = await signInWithEmail("a@b.com", "errada");
-    expect(result).toEqual({ error: "E-mail ou senha incorretos." });
+    expect(result).toEqual({
+      error: "E-mail ou senha incorretos.",
+      emailNaoConfirmado: false,
+    });
+  });
+
+  // R17 M5: a tela oferece "Reenviar e-mail" só quando o motivo é este.
+  it("avisa quando o e-mail ainda não foi confirmado", async () => {
+    mocks.signInWithPassword.mockResolvedValue({
+      data: {},
+      error: { message: "Email not confirmed", code: "email_not_confirmed" },
+    });
+    const result = await signInWithEmail("a@b.com", "Senha123");
+    expect(result).toEqual({
+      error: "Confirme seu e-mail antes de entrar.",
+      emailNaoConfirmado: true,
+    });
   });
 });
 
@@ -311,5 +332,51 @@ describe("updatePassword", () => {
     expect(result).toEqual({
       error: "Senha muito curta — use pelo menos 6 caracteres.",
     });
+  });
+});
+
+// R17 M5: quem não recebeu a confirmação ficava esperando um e-mail que não
+// vinha, sem jeito de pedir outro.
+describe("resendSignupEmail", () => {
+  it("pede ao Supabase um novo e-mail de cadastro, com o mesmo link de volta", async () => {
+    mocks.resend.mockResolvedValue({ data: {}, error: null });
+    const result = await resendSignupEmail(
+      "a@b.com",
+      "http://localhost:3000/auth/callback"
+    );
+    expect(result).toEqual({ error: null });
+    expect(mocks.resend).toHaveBeenCalledWith({
+      type: "signup",
+      email: "a@b.com",
+      options: { emailRedirectTo: "http://localhost:3000/auth/callback" },
+    });
+  });
+
+  it("limite do Supabase (60 s) vira 'Muitas tentativas' em português", async () => {
+    mocks.resend.mockResolvedValue({
+      data: {},
+      error: {
+        message:
+          "For security purposes, you can only request this after 42 seconds.",
+      },
+    });
+    const result = await resendSignupEmail("a@b.com", "x");
+    expect(result).toEqual({
+      error: "Muitas tentativas. Aguarde um momento e tente de novo.",
+    });
+  });
+});
+
+describe("segundosParaReenviar", () => {
+  it("espera 60 s entre envios", () => {
+    expect(ESPERA_REENVIO_MS).toBe(60_000);
+    expect(segundosParaReenviar(1_000_000, 1_000_000)).toBe(60);
+    expect(segundosParaReenviar(1_000_000, 1_000_000 + 18_200)).toBe(42);
+    expect(segundosParaReenviar(1_000_000, 1_000_000 + 59_001)).toBe(1);
+    expect(segundosParaReenviar(1_000_000, 1_000_000 + 60_000)).toBe(0);
+  });
+
+  it("sem envio anterior, pode reenviar já", () => {
+    expect(segundosParaReenviar(null, 5)).toBe(0);
   });
 });

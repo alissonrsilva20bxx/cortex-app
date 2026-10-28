@@ -35,7 +35,13 @@ export function mapAuthErrorMessage(
     return erro.senhaVazada;
   }
   if (m.includes("password") && m.includes("weak")) return erro.senhaFraca;
-  if (m.includes("rate limit") || m.includes("too many requests")) {
+  if (
+    m.includes("rate limit") ||
+    m.includes("too many requests") ||
+    // Pedido repetido antes do intervalo do Supabase ("For security
+    // purposes, you can only request this after N seconds").
+    m.includes("for security purposes")
+  ) {
     return erro.muitasTentativas;
   }
   if (m.includes("email") && m.includes("invalid")) return erro.emailInvalido;
@@ -61,15 +67,20 @@ function traduzirErro(error: { message: string }): string {
   );
 }
 
+/** `emailNaoConfirmado`: a tela oferece "Reenviar e-mail" (R17 M5). */
 export async function signInWithEmail(
   email: string,
   password: string
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; emailNaoConfirmado: boolean }> {
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
-  return { error: error ? traduzirErro(error) : null };
+  return {
+    error: error ? traduzirErro(error) : null,
+    emailNaoConfirmado:
+      !!error && error.message.toLowerCase().includes("email not confirmed"),
+  };
 }
 
 export async function signUpWithEmail(
@@ -97,6 +108,32 @@ export async function signUpWithEmail(
   }
   const needsConfirmation = !!data.user && !data.session;
   return { error: null, needsConfirmation };
+}
+
+/** Intervalo entre dois envios do e-mail de confirmação (o Supabase também
+ * recusa pedidos repetidos antes de 60 s). */
+export const ESPERA_REENVIO_MS = 60_000;
+
+/** Quantos segundos faltam para poder reenviar; 0 = já pode. */
+export function segundosParaReenviar(
+  ultimoEnvio: number | null,
+  agora: number
+): number {
+  if (ultimoEnvio == null) return 0;
+  return Math.max(0, Math.ceil((ultimoEnvio + ESPERA_REENVIO_MS - agora) / 1000));
+}
+
+/** Manda de novo o e-mail de confirmação do cadastro. */
+export async function resendSignupEmail(
+  email: string,
+  emailRedirectTo: string
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo },
+  });
+  return { error: error ? traduzirErro(error) : null };
 }
 
 export async function requestPasswordReset(

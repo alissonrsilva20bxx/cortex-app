@@ -13,9 +13,12 @@ import {
 import { supabase } from "@/lib/supabase";
 import {
   requestPasswordReset,
+  resendSignupEmail,
+  segundosParaReenviar,
   signInWithEmail,
   signUpWithEmail,
 } from "@/lib/auth";
+import { TEXTOS_AUTH } from "@/lib/textosAuth";
 import { useToast } from "@/components/Toast";
 import { OpeningMotion } from "@/components/entry/OpeningMotion";
 import { MarcaNome } from "@/components/MarcaNome";
@@ -23,6 +26,13 @@ import styles from "./entry.module.css";
 
 type Stage = "motion" | "login" | "signup" | "forgot" | "check-email";
 type CheckEmailContext = "signup" | "reset";
+/** Para quem dá para reenviar a confirmação: quem acabou de criar a conta
+ * ("cadastro") ou quem tentou entrar sem confirmar ("login"). */
+type Reenvio = {
+  email: string;
+  ultimoEnvio: number | null;
+  origem: "cadastro" | "login";
+};
 
 /**
  * `/auth/callback` redireciona pra cá com `?error=...` quando o login por
@@ -62,6 +72,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [reenvio, setReenvio] = useState<Reenvio | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -87,10 +98,24 @@ export default function LoginPage() {
     const email = readField(event.currentTarget, "email");
     const password = readField(event.currentTarget, "password");
     setSubmitting(true);
-    const { error } = await signInWithEmail(email, password);
+    const { error, emailNaoConfirmado } = await signInWithEmail(
+      email,
+      password
+    );
     setSubmitting(false);
     if (error) {
       toast.error(error);
+      // Mantém a espera de um reenvio recente para o mesmo e-mail.
+      setReenvio((anterior) =>
+        emailNaoConfirmado
+          ? {
+              email,
+              ultimoEnvio:
+                anterior?.email === email ? anterior.ultimoEnvio : null,
+              origem: "login",
+            }
+          : null
+      );
       return;
     }
     // replace, não push: o /login sai do histórico e o voltar do celular
@@ -115,6 +140,7 @@ export default function LoginPage() {
       return;
     }
     if (needsConfirmation) {
+      setReenvio({ email, ultimoEnvio: Date.now(), origem: "cadastro" });
       setCheckEmailContext("signup");
       setStage("check-email");
       return;
@@ -261,6 +287,14 @@ export default function LoginPage() {
           >
             Voltar para entrar
           </button>
+          {checkEmailContext === "signup" && reenvio && (
+            <ReenviarEmail
+              reenvio={reenvio}
+              onEnviado={(ultimoEnvio) =>
+                setReenvio({ ...reenvio, ultimoEnvio })
+              }
+            />
+          )}
         </div>
       </div>
     );
@@ -357,6 +391,14 @@ export default function LoginPage() {
           >
             {submitting ? "Entrando…" : "Entrar"} <ArrowRight />
           </button>
+          {reenvio?.origem === "login" && (
+            <ReenviarEmail
+              reenvio={reenvio}
+              onEnviado={(ultimoEnvio) =>
+                setReenvio({ ...reenvio, ultimoEnvio })
+              }
+            />
+          )}
         </form>
 
         <section
@@ -399,6 +441,64 @@ export default function LoginPage() {
         </footer>
       </div>
     </div>
+  );
+}
+
+/**
+ * "Não chegou o e-mail? Reenviar e-mail": manda de novo a confirmação do
+ * cadastro, com 60 s de espera entre um envio e outro (R17 M5). Sem tela
+ * nova: aparece em "Verifique seu e-mail" e no login depois de "Confirme
+ * seu e-mail antes de entrar".
+ */
+function ReenviarEmail({
+  reenvio,
+  onEnviado,
+}: {
+  reenvio: Reenvio;
+  onEnviado: (quando: number) => void;
+}) {
+  const toast = useToast();
+  const T = TEXTOS_AUTH.reenvio;
+  const [agora, setAgora] = useState(() => Date.now());
+  const [enviando, setEnviando] = useState(false);
+  const faltam = segundosParaReenviar(reenvio.ultimoEnvio, agora);
+  const esperando = faltam > 0;
+
+  useEffect(() => {
+    if (!esperando) return;
+    const id = window.setInterval(() => setAgora(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [esperando]);
+
+  async function reenviar() {
+    setEnviando(true);
+    const { error } = await resendSignupEmail(
+      reenvio.email,
+      `${window.location.origin}/auth/callback`
+    );
+    setEnviando(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    const quando = Date.now();
+    setAgora(quando);
+    onEnviado(quando);
+    toast.success(T.ok);
+  }
+
+  return (
+    <p className={styles.reenviar}>
+      {T.pergunta}{" "}
+      <button
+        type="button"
+        className={styles.linkButton}
+        onClick={reenviar}
+        disabled={enviando || esperando}
+      >
+        {enviando ? T.enviando : esperando ? T.aguarde(faltam) : T.botao}
+      </button>
+    </p>
   );
 }
 
