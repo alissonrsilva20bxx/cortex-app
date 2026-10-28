@@ -93,7 +93,9 @@ export default function LoginPage() {
       toast.error(error);
       return;
     }
-    router.push("/");
+    // replace, não push: o /login sai do histórico e o voltar do celular
+    // não cai de novo em "Bom ter você de volta" (R17 M2).
+    router.replace("/");
     router.refresh();
   }
 
@@ -117,7 +119,7 @@ export default function LoginPage() {
       setStage("check-email");
       return;
     }
-    router.push("/");
+    router.replace("/");
     router.refresh();
   }
 

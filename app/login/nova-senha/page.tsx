@@ -26,7 +26,7 @@ export default function NovaSenhaPage() {
       return;
     }
     toast.success("Senha atualizada!");
-    router.push("/");
+    router.replace("/");
     router.refresh();
   }
 

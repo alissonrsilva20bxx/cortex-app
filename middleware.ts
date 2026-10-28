@@ -106,6 +106,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Quem já está logada e abre /login (voltar do celular, favorito, app
+  // instalado) ia para "Bom ter você de volta" e parecia ter saído da conta
+  // (R17 M2). Leva os cookies renovados junto com o redirect.
+  if (user && path === "/login") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    const redirect = NextResponse.redirect(url);
+    supabaseResponse.cookies
+      .getAll()
+      .forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
+  }
+
   return supabaseResponse;
 }
 
