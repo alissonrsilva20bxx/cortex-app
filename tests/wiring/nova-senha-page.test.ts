@@ -24,7 +24,10 @@ describe("app/login/nova-senha/page.tsx", () => {
     expect(src).toMatch(/"use client"/);
   });
 
-  it("redireciona pra / após sucesso", () => {
-    expect(src).toMatch(/router\.push\(\s*"\/"\s*\)/);
+  // replace, não push (R17 M2): a página da nova senha sai do histórico e
+  // o voltar do celular a partir de "/" não volta para ela.
+  it("redireciona pra / após sucesso, sem deixar a página no histórico", () => {
+    expect(src).toMatch(/router\.replace\(\s*"\/"\s*\)/);
+    expect(src).not.toMatch(/router\.push\(/);
   });
 });
