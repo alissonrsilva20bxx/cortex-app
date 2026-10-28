@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -33,6 +35,7 @@ import {
   resendSignupEmail,
   requestPasswordReset,
   segundosParaReenviar,
+  senhaComEspacoNasPontas,
   signInWithEmail,
   signUpWithEmail,
   updatePassword,
@@ -378,5 +381,39 @@ describe("segundosParaReenviar", () => {
 
   it("sem envio anterior, pode reenviar já", () => {
     expect(segundosParaReenviar(null, 5)).toBe(0);
+  });
+});
+
+// R17 B1: "  abc123  " virava "abc123" sem aviso no cadastro e na nova senha.
+describe("senhaComEspacoNasPontas", () => {
+  it("acusa espaço no começo ou no fim", () => {
+    expect(senhaComEspacoNasPontas(" Senha123")).toBe(true);
+    expect(senhaComEspacoNasPontas("Senha123 ")).toBe(true);
+    expect(senhaComEspacoNasPontas("\tSenha123")).toBe(true);
+  });
+
+  it("espaço no meio não é problema", () => {
+    expect(senhaComEspacoNasPontas("minha senha 1")).toBe(false);
+    expect(senhaComEspacoNasPontas("Senha123")).toBe(false);
+  });
+});
+
+describe("cadastro e nova senha avisam em vez de cortar o espaço", () => {
+  const ler = (p: string) =>
+    readFileSync(join(process.cwd(), p), "utf8").replace(/\r\n/g, "\n");
+
+  it("o cadastro confere a senha crua e para com o aviso", () => {
+    const src = ler("app/login/page.tsx");
+    expect(src).toMatch(
+      /handleSignupSubmit[\s\S]{0,400}senhaComEspacoNasPontas\(password\)[\s\S]{0,120}toast\.error\(TEXTOS_AUTH\.erro\.senhaComEspaco\)/
+    );
+  });
+
+  it("a nova senha também", () => {
+    const src = ler("app/login/nova-senha/page.tsx");
+    expect(src).toMatch(
+      /senhaComEspacoNasPontas\(password\)[\s\S]{0,120}toast\.error\(TEXTOS_AUTH\.erro\.senhaComEspaco\)/
+    );
+    expect(src).not.toMatch(/get\("password"\) \?\? ""\s*\)\.trim\(\)/);
   });
 });

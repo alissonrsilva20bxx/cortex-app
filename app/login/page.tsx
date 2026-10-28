@@ -15,6 +15,7 @@ import {
   requestPasswordReset,
   resendSignupEmail,
   segundosParaReenviar,
+  senhaComEspacoNasPontas,
   signInWithEmail,
   signUpWithEmail,
 } from "@/lib/auth";
@@ -127,7 +128,13 @@ export default function LoginPage() {
   async function handleSignupSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const email = readField(event.currentTarget, "email");
-    const password = readField(event.currentTarget, "password");
+    const password = String(
+      new FormData(event.currentTarget).get("password") ?? ""
+    );
+    if (senhaComEspacoNasPontas(password)) {
+      toast.error(TEXTOS_AUTH.erro.senhaComEspaco);
+      return;
+    }
     setSubmitting(true);
     const { error, needsConfirmation } = await signUpWithEmail(
       email,

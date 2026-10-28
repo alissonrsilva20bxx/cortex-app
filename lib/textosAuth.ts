@@ -14,6 +14,7 @@ export const TEXTOS_AUTH = {
         : "A senha precisa misturar letras e números.",
     senhaVazada: "Essa senha é conhecida e fácil de adivinhar. Escolha outra.",
     senhaFraca: "Senha fraca. Escolha uma mais difícil de adivinhar.",
+    senhaComEspaco: "A senha não pode começar nem terminar com espaço.",
     muitasTentativas: "Muitas tentativas. Aguarde um momento e tente de novo.",
     emailInvalido: "E-mail inválido.",
     generico: "Não foi possível concluir. Tente novamente.",

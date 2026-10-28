@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
-import { updatePassword } from "@/lib/auth";
+import { senhaComEspacoNasPontas, updatePassword } from "@/lib/auth";
+import { TEXTOS_AUTH } from "@/lib/textosAuth";
 import { useToast } from "@/components/Toast";
 import styles from "../entry.module.css";
 
@@ -17,7 +18,11 @@ export default function NovaSenhaPage() {
     event.preventDefault();
     const password = String(
       new FormData(event.currentTarget).get("password") ?? ""
-    ).trim();
+    );
+    if (senhaComEspacoNasPontas(password)) {
+      toast.error(TEXTOS_AUTH.erro.senhaComEspaco);
+      return;
+    }
     setSubmitting(true);
     const { error } = await updatePassword(password);
     setSubmitting(false);

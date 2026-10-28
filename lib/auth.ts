@@ -110,6 +110,13 @@ export async function signUpWithEmail(
   return { error: null, needsConfirmation };
 }
 
+/** Senha nova com espaço no começo ou no fim: o cadastro e a nova senha
+ * avisam em vez de cortar em silêncio (R17 B1). O login continua cortando,
+ * para quem já criou a senha quando o corte era calado. */
+export function senhaComEspacoNasPontas(senha: string): boolean {
+  return senha !== senha.trim();
+}
+
 /** Intervalo entre dois envios do e-mail de confirmação (o Supabase também
  * recusa pedidos repetidos antes de 60 s). */
 export const ESPERA_REENVIO_MS = 60_000;
