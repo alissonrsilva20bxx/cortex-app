@@ -80,10 +80,6 @@ interface Props {
   focusTab?: InnerTab | null;
   onFocusTabHandled?: () => void;
   nomeUsuaria: string;
-  /** Falso só quando já se sabe que não há acesso à Rede (teste acabou). */
-  podeCriarDesejo: boolean;
-  /** Sem acesso à Rede: leva até a Rede, onde está a renovação. */
-  onAbrirRede: () => void;
 }
 
 export function FinanceiroTab({
@@ -100,8 +96,6 @@ export function FinanceiroTab({
   focusTab,
   onFocusTabHandled,
   nomeUsuaria,
-  podeCriarDesejo,
-  onAbrirRede,
 }: Props) {
   const toast = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -524,8 +518,6 @@ export function FinanceiroTab({
                 objetivos={objetivos}
                 userId={userId}
                 nomeUsuaria={nomeUsuaria}
-                podeCriarDesejo={podeCriarDesejo}
-                onAbrirRede={onAbrirRede}
                 onObjetivoAdded={onObjetivoAdded}
                 onToggleObjetivo={onToggleObjetivo}
               />

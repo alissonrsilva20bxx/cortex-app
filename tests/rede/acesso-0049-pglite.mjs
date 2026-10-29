@@ -279,6 +279,90 @@ ok(
   r.erro
 );
 
+// Desejos são de Finanças, não da Rede: com o teste acabado (V, sem perfil
+// na Rede), a dona cria, lê, edita e apaga os próprios Desejos. Ninguém lê
+// nem mexe no Desejo de outra. Criar Desejo não cria perfil na Rede, e
+// publicar no feed segue exigindo a Rede.
+const desejo = (uid, sql) => como("authenticated", uid, sql);
+r = await desejo(
+  V,
+  `insert into public.rede_wishlist_items (user_id, nome, cor, valor_alvo) values ('${V}', 'Cadeira', '#000', 500) returning id`
+);
+ok("Desejo: teste acabou, sem perfil, cria o próprio", !r.erro, r.erro);
+const DV = r.linhas[0]?.id;
+r = await desejo(
+  V,
+  "select count(*)::int as n from public.rede_wishlist_items"
+);
+ok("Desejo: teste acabou, lê o próprio", r.linhas[0]?.n === 1, r);
+r = await desejo(
+  V,
+  `update public.rede_wishlist_items set nome = 'Cadeira nova', valor_alvo = 600 where id = '${DV}' returning nome`
+);
+ok(
+  "Desejo: teste acabou, edita o próprio",
+  r.linhas[0]?.nome === "Cadeira nova",
+  r
+);
+r = await desejo(
+  V,
+  `insert into public.guardar_historico (user_id, desejo_id, valor) values ('${V}', '${DV}', 50)`
+);
+ok("Desejo: teste acabou, guarda dinheiro no próprio", !r.erro, r.erro);
+r = await desejo(
+  T1,
+  "select count(*)::int as n from public.rede_wishlist_items"
+);
+ok("Desejo: outra (na Rede) não lê o Desejo de V", r.linhas[0]?.n === 0, r);
+r = await desejo(
+  T1,
+  `update public.rede_wishlist_items set nome = 'x' where id = '${DV}' returning id`
+);
+ok("Desejo: outra não edita o Desejo de V", r.linhas.length === 0, r);
+r = await desejo(
+  T1,
+  `delete from public.rede_wishlist_items where id = '${DV}' returning id`
+);
+ok("Desejo: outra não apaga o Desejo de V", r.linhas.length === 0, r);
+r = await desejo(
+  T1,
+  `insert into public.rede_wishlist_items (user_id, nome, cor, valor_alvo) values ('${V}', 'Forjado', '#000', 1)`
+);
+ok("Desejo: outra não cria Desejo em nome de V", Boolean(r.erro), r.erro);
+r = await desejo(
+  V,
+  `insert into public.rede_wishlist_items (user_id, nome, cor, valor_alvo) values ('${T1}', 'Forjado', '#000', 1)`
+);
+ok("Desejo: V não cria Desejo em nome de outra", Boolean(r.erro), r.erro);
+r = await semJwt(
+  `select (select count(*)::int from public.rede_perfis where user_id = '${V}') as perfis`
+);
+ok(
+  "Desejo: criar Desejo não põe V na Rede (sem perfil, fora)",
+  r.rows[0].perfis === 0 && (await membro(V)) === false,
+  r.rows[0]
+);
+r = await desejo(
+  V,
+  `insert into public.rede_posts (autor_id, categoria, texto) values ('${V}', 'dica', 'Compartilhando meu Desejo')`
+);
+ok("Desejo: teste acabou, não compartilha no feed", Boolean(r.erro), r.erro);
+r = await desejo(
+  T1,
+  `insert into public.rede_wishlist_items (user_id, nome, cor, valor_alvo) values ('${T1}', 'Viagem', '#000', 900)`
+);
+ok("Desejo: no teste, sem perfil, também cria", !r.erro, r.erro);
+r = await desejo(
+  V,
+  `delete from public.rede_wishlist_items where id = '${DV}' returning id`
+);
+ok("Desejo: teste acabou, apaga o próprio", r.linhas.length === 1, r);
+r = await desejo(
+  V,
+  `insert into public.rede_wishlist_items (user_id, nome, cor, valor_alvo) values ('${V}', 'Fica', '#000', 100)`
+);
+ok("Desejo: V cria outro (para o rollback)", !r.erro, r.erro);
+
 // Código e beta somem; a regra não fica exposta na API.
 r = await como(
   "authenticated",
@@ -337,6 +421,22 @@ ok(
 ok("rollback: convite antigo segue dentro", (await membro(C)) === true);
 r = await como(
   "authenticated",
+  V,
+  "select count(*)::int as n from public.rede_wishlist_items"
+);
+ok(
+  "rollback: o Desejo de V continua lá (nada apagado)",
+  r.linhas[0]?.n === 1,
+  r
+);
+r = await como(
+  "authenticated",
+  V,
+  `insert into public.rede_wishlist_items (user_id, nome, cor, valor_alvo) values ('${V}', 'Novo', '#000', 1)`
+);
+ok("rollback: criar Desejo volta a exigir a Rede", Boolean(r.erro), r.erro);
+r = await como(
+  "authenticated",
   T1,
   `select public.rede_criar_conversa_1a1('${T2}') as id`
 );
@@ -354,6 +454,12 @@ try {
     readFileSync(join(DIR, "0049_rede_acesso_por_teste.sql"), "utf-8")
   );
   ok("0049 aplica de novo depois do rollback", (await membro(T1)) === true);
+  r = await como(
+    "authenticated",
+    V,
+    `insert into public.rede_wishlist_items (user_id, nome, cor, valor_alvo) values ('${V}', 'De novo', '#000', 1)`
+  );
+  ok("0049 de novo: teste acabou cria Desejo", !r.erro, r.erro);
 } catch (e) {
   ok("0049 aplica de novo depois do rollback", false, e.message);
 }

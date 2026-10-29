@@ -13,12 +13,11 @@ import { OptionsSheet } from "@/components/rede/OptionsSheet";
 import { WishlistCard } from "@/components/rede/WishlistCard";
 import {
   atualizarWishlistItem,
-  criarWishlistItem,
   excluirWishlistItem,
   listarWishlistItems,
   type WishlistItem,
 } from "@/lib/rede/wishlist";
-import { garantirPerfil } from "@/lib/rede/perfis";
+import { criarDesejo } from "@/lib/desejo/criarDesejo";
 import { WISHLIST_PALETTE } from "@/lib/desejo/desejo";
 import { avisarDesejosMudaram, useAoMudarDesejos } from "@/lib/desejo/eventos";
 import { TEXTOS_DESEJO as T } from "@/lib/desejo/textos";
@@ -32,23 +31,9 @@ const sectionTitleStyle = {
 interface Props {
   userId: string;
   nomeUsuaria: string;
-  /** false só quando já se sabe que não há acesso à Rede (teste acabou). */
-  podeCriar: boolean;
-  onAbrirRede: () => void;
 }
 
-/** Erro de RLS/FK ao criar sem ser membro da Rede. */
-function semAcessoRede(e: unknown): boolean {
-  const code = (e as { code?: string } | null)?.code;
-  return code === "42501" || code === "23503";
-}
-
-export function DesejosCard({
-  userId,
-  nomeUsuaria,
-  podeCriar,
-  onAbrirRede,
-}: Props) {
+export function DesejosCard({ userId, nomeUsuaria }: Props) {
   const toast = useToast();
   const [itens, setItens] = useState<WishlistItem[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -56,7 +41,6 @@ export function DesejosCard({
   const [formAberto, setFormAberto] = useState(false);
   const [editando, setEditando] = useState<WishlistItem | null>(null);
   const [excluindo, setExcluindo] = useState<WishlistItem | null>(null);
-  const [semAcesso, setSemAcesso] = useState(false);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -101,28 +85,24 @@ export function DesejosCard({
         });
         toast.success(prazo && !salvo.prazo ? T.okSalvoSemPrazo : T.okSalvo);
       } else {
-        await garantirPerfil(supabase, userId, nomeUsuaria);
-        const criado = await criarWishlistItem(supabase, {
-          nome: form.nome,
-          cor: WISHLIST_PALETTE[itens.length % WISHLIST_PALETTE.length],
-          valorAlvo,
-          estado: form.estado,
-          privacidade: form.privacidade,
-          prazo,
-        });
-        toast.success(
-          prazo && !criado.prazo ? T.okCriadoSemPrazo : T.okCriado
+        const criado = await criarDesejo(
+          supabase,
+          {
+            nome: form.nome,
+            cor: WISHLIST_PALETTE[itens.length % WISHLIST_PALETTE.length],
+            valorAlvo,
+            estado: form.estado,
+            privacidade: form.privacidade,
+            prazo,
+          },
+          { userId, nome: nomeUsuaria }
         );
+        toast.success(prazo && !criado.prazo ? T.okCriadoSemPrazo : T.okCriado);
       }
       fechar();
       avisarDesejosMudaram();
     } catch (e) {
       console.error("[DesejosCard] salvar:", e);
-      if (!existente && semAcessoRede(e)) {
-        setSemAcesso(true);
-        fechar();
-        return;
-      }
       toast.error(T.erroSalvar);
     }
   }
@@ -140,8 +120,6 @@ export function DesejosCard({
     }
   }
 
-  const bloqueado = !podeCriar || semAcesso;
-
   return (
     <GlassCard radius="md" className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -151,7 +129,7 @@ export function DesejosCard({
             {T.cardTitulo}
           </h2>
         </div>
-        {!bloqueado && itens.length > 0 && (
+        {itens.length > 0 && (
           <button
             onClick={abrirNovo}
             className="flex items-center gap-1 px-3 rounded-xl text-xs font-bold transition-all active:scale-95"
@@ -198,47 +176,22 @@ export function DesejosCard({
           </button>
         </div>
       ) : itens.length === 0 ? (
-        bloqueado ? (
-          <div className="flex flex-col items-center text-center py-4">
-            <p
-              className="font-semibold text-sm"
-              style={{ color: "var(--text)" }}
-            >
-              {T.semRedeTitulo}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
-              {T.semRedeTexto}
-            </p>
-            <button
-              onClick={onAbrirRede}
-              className="mt-3 px-4 rounded-xl text-xs font-bold transition-all active:scale-95"
-              style={{
-                minHeight: "44px",
-                background: "var(--accent)",
-                color: "#fff",
-              }}
-            >
-              {T.semRedeBotao}
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center text-center py-4">
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              {T.vazio}
-            </p>
-            <button
-              onClick={abrirNovo}
-              className="mt-3 px-4 rounded-xl text-xs font-bold transition-all active:scale-95"
-              style={{
-                minHeight: "44px",
-                background: "var(--accent)",
-                color: "#fff",
-              }}
-            >
-              {T.criar}
-            </button>
-          </div>
-        )
+        <div className="flex flex-col items-center text-center py-4">
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {T.vazio}
+          </p>
+          <button
+            onClick={abrirNovo}
+            className="mt-3 px-4 rounded-xl text-xs font-bold transition-all active:scale-95"
+            style={{
+              minHeight: "44px",
+              background: "var(--accent)",
+              color: "#fff",
+            }}
+          >
+            {T.criar}
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {itens.map((item) => (

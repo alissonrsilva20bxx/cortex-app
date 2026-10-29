@@ -34,7 +34,7 @@
 --     conferida com a mesma tabela de casos (tests/rede/casos-acesso-rede.json).
 --   - public.rede_is_member(): passa a chamar a regra com auth.uid(). Todas
 --     as policies que exigiam convite (feed, perfis, amizades, mensagens,
---     denúncias, fotos, Desejo, selos) usam esta função e mudam junto, sem
+--     denúncias, fotos, selos) usam esta função e mudam junto, sem
 --     tocar nelas.
 --   - N1: public.rede_criar_conversa_1a1 e private.rede_denuncia_alvo_valido
 --     olhavam o convite da OUTRA pessoa direto na tabela. Agora usam a regra
@@ -45,13 +45,18 @@
 --     usuária (anon/authenticated). Sem isso, um código não usado ainda
 --     criaria um "convite antigo" e daria a Rede para sempre. O service role
 --     continua podendo. Nenhuma tabela nem linha é apagada.
+--   - Desejos (rede_wishlist_items) são de Finanças, não da Rede: criar o
+--     próprio Desejo deixa de exigir a Rede e o perfil da Rede (a dona passa
+--     a ser a conta). Ler, editar e apagar seguem só da dona. Compartilhar
+--     no feed segue exigindo a Rede.
 --
 -- COMO REVERTER: rodar supabase/migrations-rollback/0049_rede_acesso_por_teste.rollback.sql
 -- (fora desta pasta de propósito: a CLI do Supabase aplicaria qualquer
 -- 00NN_*.sql daqui como migration). Ele volta as 4 funções ao texto da
--- 0006/0010/0011, apaga as 2 funções novas e devolve os grants da 0015 e da
--- 0020. Depois de reverter, o app novo mostra a Rede a quem está no teste,
--- mas o banco volta a exigir convite (a tela fica vazia para quem não tem):
+-- 0006/0010/0011, apaga as 2 funções novas, devolve os grants da 0015 e da
+-- 0020 e volta o insert de Desejos ao "só na Rede" (os Desejos ficam).
+-- Depois de reverter, o app novo mostra a Rede a quem está no teste, mas o
+-- banco volta a exigir convite (a tela fica vazia para quem não tem):
 -- reverter o app junto.
 --
 -- Conferência (depois de aplicar):
@@ -63,6 +68,9 @@
 --   -- false
 --   select count(*) from public.rede_convites where usado_por is not null;
 --   -- quantas pessoas entram pelo convite antigo (N4)
+--   select pg_get_constraintdef(oid) from pg_constraint
+--    where conname = 'rede_wishlist_items_user_id_fkey';
+--   -- FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 -- Comportamento num Postgres em memória (com a tabela de casos, a RLS, o
 -- N1, a 0040 e o rollback): tests/rede/acesso-0049-pglite.mjs.
 
@@ -294,3 +302,53 @@ revoke execute on function public.rede_gerar_convite(text)
   from public, anon, authenticated;
 revoke execute on function public.rede_aprovar_solicitacao_beta(uuid)
   from public, anon, authenticated;
+
+-- 7. Desejos são de Finanças, não da Rede (revisão R19rev #1). Com o teste
+-- acabado e sem assinatura, a dona continua criando, lendo, editando e
+-- apagando os próprios Desejos (Finanças > Metas, Guardar, Início).
+--   - A dona do Desejo passa a ser a conta (auth.users), não o perfil da
+--     Rede: criar Desejo não cria perfil nem põe ninguém na Rede. Apagar a
+--     conta apaga os Desejos, como antes.
+--   - O insert deixa de exigir rede_is_member(); select, update e delete já
+--     eram só da dona (0021) e não mudam. Ninguém lê o Desejo de outra.
+--   - Publicar ou compartilhar no feed é rede_posts, que segue exigindo a
+--     Rede (rede_is_member, acima).
+do $$
+declare
+  fk record;
+begin
+  for fk in
+    select con.conname
+    from pg_catalog.pg_constraint con
+    where con.conrelid = 'public.rede_wishlist_items'::regclass
+      and con.contype = 'f'
+      and con.confrelid = 'public.rede_perfis'::regclass
+  loop
+    execute pg_catalog.format(
+      'alter table public.rede_wishlist_items drop constraint %I',
+      fk.conname
+    );
+  end loop;
+
+  if not exists (
+    select 1
+    from pg_catalog.pg_constraint con
+    where con.conrelid = 'public.rede_wishlist_items'::regclass
+      and con.conname = 'rede_wishlist_items_user_id_fkey'
+  ) then
+    alter table public.rede_wishlist_items
+      add constraint rede_wishlist_items_user_id_fkey
+      foreign key (user_id) references auth.users(id) on delete cascade;
+  end if;
+end;
+$$;
+
+drop policy if exists "rede_wishlist_items: owner insert requires invite"
+  on public.rede_wishlist_items;
+drop policy if exists "rede_wishlist_items: owner insert"
+  on public.rede_wishlist_items;
+create policy "rede_wishlist_items: owner insert"
+  on public.rede_wishlist_items
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);

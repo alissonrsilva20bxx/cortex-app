@@ -21,19 +21,18 @@ describe("DesejosCard (Financas > Metas) escreve de verdade e avisa", () => {
     expect(card).toContain("open={formAberto}");
   });
 
-  it("salvar cria/atualiza no banco, garante o perfil e avisa as outras telas", () => {
-    expect(card).toContain("criarWishlistItem(supabase");
+  it("salvar cria/atualiza no banco e avisa as outras telas", () => {
+    expect(card).toMatch(/criarDesejo\(\s*supabase,/);
     expect(card).toContain("atualizarWishlistItem(supabase");
-    expect(card).toContain("garantirPerfil(supabase");
     expect(card).toContain("excluirWishlistItem(supabase");
     expect(
       card.match(/avisarDesejosMudaram\(\)/g)?.length
     ).toBeGreaterThanOrEqual(2);
   });
 
-  it("sem acesso a Rede mostra a explicacao e o botao para a Rede", () => {
-    expect(card).toContain("T.semRedeTitulo");
-    expect(card).toContain("onClick={onAbrirRede}");
+  it("Desejo e de Financas: o card nao depende da Rede (R19rev #1)", () => {
+    expect(card).not.toContain("T.semRedeTitulo");
+    expect(card).not.toContain("onAbrirRede");
   });
 
   it("o Desejo nunca e gravado direto em tela: so lib/ fala com a tabela", () => {

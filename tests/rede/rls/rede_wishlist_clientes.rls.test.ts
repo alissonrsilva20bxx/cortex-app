@@ -69,8 +69,9 @@ describe("RLS: rede_wishlist_items / rede_clientes", () => {
         throw new Error(`Failed to seed profile: ${profileError.message}`);
       }
     }
-    // nonMember nunca resgata convite nem tem perfil -- usado só pra provar
-    // que a policy de insert exige rede_is_member(), não só auth.uid() = user_id.
+    // nonMember nunca resgata convite nem tem perfil (e nasce com o teste
+    // acabado) -- prova que Clientes exige rede_is_member(), e que o Desejo
+    // (Finanças, 0049) não exige.
   });
 
   afterAll(async () => {
@@ -155,7 +156,7 @@ describe("RLS: rede_wishlist_items / rede_clientes", () => {
       expect(data).toHaveLength(0);
     });
 
-    it("rejects insert for another user's id, and insert without Rede membership", async () => {
+    it("rejects insert for another user's id; without the Rede the owner still creates (0049)", async () => {
       const forOther = await redeClient(outsider.client)
         .from("rede_wishlist_items")
         .insert({
@@ -174,9 +175,16 @@ describe("RLS: rede_wishlist_items / rede_clientes", () => {
           nome: "Sem convite",
           cor: "#FF7AB6",
           valor_alvo: 100,
-        });
-      expect(withoutMembership.error).not.toBeNull();
-      expect(withoutMembership.error?.code).toBe("42501");
+        })
+        .select("id")
+        .single();
+      expect(withoutMembership.error).toBeNull();
+
+      const lidoPorOutra = await redeClient(owner.client)
+        .from("rede_wishlist_items")
+        .select("id")
+        .eq("id", withoutMembership.data?.id ?? "");
+      expect(lidoPorOutra.data ?? []).toHaveLength(0);
     });
 
     it("denies anon entirely", async () => {

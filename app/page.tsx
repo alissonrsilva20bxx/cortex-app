@@ -742,8 +742,6 @@ export default function Page() {
                 focusTab={financeiroFocusTab}
                 onFocusTabHandled={() => setFinanceiroFocusTab(null)}
                 nomeUsuaria={usuario.nome}
-                podeCriarDesejo={redeAcesso !== "bloqueado"}
-                onAbrirRede={() => handleTabChange("rede")}
               />
             </TabPanel>
 

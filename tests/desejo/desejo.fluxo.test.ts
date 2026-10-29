@@ -13,6 +13,7 @@ import {
   listarWishlistItems,
 } from "@/lib/rede/wishlist";
 import { garantirPerfil } from "@/lib/rede/perfis";
+import { criarDesejo } from "@/lib/desejo/criarDesejo";
 import { guardarNoDesejo } from "@/lib/guardar/guardar";
 import { desejoPrincipal, progressoDesejo } from "@/lib/desejo/desejo";
 import { lerEstadoDoServidor } from "@/lib/jornada/servidor";
@@ -154,25 +155,38 @@ describe("Desejo: fluxo de ponta a ponta no banco real", () => {
     expect(depois).toEqual({ titulo: "Ligar pra Ana", concluido: false });
   });
 
-  it("sem convite da Rede nao cria Desejo (documenta a decisao 2A)", async () => {
+  // Desejo e de Financas, nao da Rede (0049, R19rev #1): com o teste
+  // acabado, sem convite e sem perfil, a dona cria, le, edita e apaga o
+  // proprio Desejo; outra pessoa nao le. Substitui a antiga decisao 2A
+  // ("sem convite nao cria"), que a decisao do capitao de 27/10 (fim do
+  // teste bloqueia so a Rede) deixou para tras.
+  it("teste acabado, sem convite e sem perfil: CRUD do proprio Desejo (0049)", async () => {
     const c = semConvite.client;
-    let falhou = false;
-    try {
-      await garantirPerfil(c, semConvite.id, "Sem Convite");
-      await criarWishlistItem(c, {
-        nome: "Nao deveria",
-        cor: "#FF7AB6",
-        valorAlvo: 100,
-      });
-    } catch (e) {
-      falhou = true;
-      expect(["42501", "23503"]).toContain((e as { code?: string }).code);
-    }
-    expect(falhou).toBe(true);
-    const { data } = await (adminClient() as SupabaseClient)
-      .from("rede_wishlist_items")
-      .select("id")
+    const d = await criarDesejo(
+      c,
+      { nome: "Maleta", cor: "#FF7AB6", valorAlvo: 100 },
+      { userId: semConvite.id, nome: "Sem Convite" }
+    );
+    expect(
+      (await listarWishlistItems(c, semConvite.id)).map((i) => i.id)
+    ).toEqual([d.id]);
+    await atualizarWishlistItem(c, {
+      itemId: d.id,
+      nome: "Maleta nova",
+      valorAlvo: 120,
+      estado: "quero",
+      privacidade: "privado",
+    });
+    expect((await listarWishlistItems(c, semConvite.id))[0]?.nome).toBe(
+      "Maleta nova"
+    );
+    const { data: perfil } = await (adminClient() as SupabaseClient)
+      .from("rede_perfis")
+      .select("user_id")
       .eq("user_id", semConvite.id);
-    expect(data ?? []).toEqual([]);
+    expect(perfil ?? []).toEqual([]);
+    expect(await listarWishlistItems(membro.client, semConvite.id)).toEqual([]);
+    await excluirWishlistItem(c, { itemId: d.id });
+    expect(await listarWishlistItems(c, semConvite.id)).toEqual([]);
   });
 });

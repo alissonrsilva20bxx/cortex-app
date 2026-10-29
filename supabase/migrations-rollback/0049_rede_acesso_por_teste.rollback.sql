@@ -9,7 +9,9 @@
 -- private.rede_denuncia_alvo_valido (0011) ao texto original (só convite
 -- conta); as funções da regra por pessoa são apagadas; resgatar, gerar e
 -- aprovar convite voltam a ser chamáveis por authenticated (grants da 0015
--- e da 0020; anon não volta). Nenhuma tabela nem linha é tocada.
+-- e da 0020; anon não volta); o insert de Desejos volta a exigir a Rede e
+-- a chave da dona volta para o perfil da Rede (sem validar as linhas que já
+-- existem). Nenhuma linha é apagada.
 --
 -- Depois de reverter: o banco volta a exigir convite. Reverter o app junto
 -- (o app novo mostra a Rede a quem está no teste e a RLS não mostraria nada).
@@ -178,3 +180,27 @@ grant execute on function public.rede_gerar_convite(text)
   to authenticated, service_role;
 grant execute on function public.rede_aprovar_solicitacao_beta(uuid)
   to authenticated, service_role;
+
+-- 6. Desejos como na 0021: o insert volta a exigir a Rede e a dona volta a
+-- ser o perfil da Rede. A chave volta "not valid": os Desejos criados sem
+-- perfil enquanto a 0049 valia ficam (nada é apagado); só os novos precisam
+-- de perfil.
+drop policy if exists "rede_wishlist_items: owner insert"
+  on public.rede_wishlist_items;
+drop policy if exists "rede_wishlist_items: owner insert requires invite"
+  on public.rede_wishlist_items;
+create policy "rede_wishlist_items: owner insert requires invite"
+  on public.rede_wishlist_items
+  for insert
+  to authenticated
+  with check (
+    auth.uid() = user_id
+    and public.rede_is_member()
+  );
+
+alter table public.rede_wishlist_items
+  drop constraint if exists rede_wishlist_items_user_id_fkey;
+alter table public.rede_wishlist_items
+  add constraint rede_wishlist_items_user_id_fkey
+  foreign key (user_id) references public.rede_perfis(user_id)
+  on delete cascade not valid;

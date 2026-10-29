@@ -35,8 +35,6 @@ interface Props {
   objetivos: Objetivo[];
   userId: string;
   nomeUsuaria: string;
-  podeCriarDesejo: boolean;
-  onAbrirRede: () => void;
   onObjetivoAdded: () => void;
   onToggleObjetivo: (id: string, done: boolean) => Promise<void>;
 }
@@ -50,8 +48,6 @@ export function MetasTab({
   objetivos,
   userId,
   nomeUsuaria,
-  podeCriarDesejo,
-  onAbrirRede,
   onObjetivoAdded,
   onToggleObjetivo,
 }: Props) {
@@ -79,12 +75,7 @@ export function MetasTab({
 
   return (
     <div className="space-y-4">
-      <DesejosCard
-        userId={userId}
-        nomeUsuaria={nomeUsuaria}
-        podeCriar={podeCriarDesejo}
-        onAbrirRede={onAbrirRede}
-      />
+      <DesejosCard userId={userId} nomeUsuaria={nomeUsuaria} />
 
       <GuardarCard userId={userId} />
 

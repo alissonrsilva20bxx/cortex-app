@@ -47,10 +47,6 @@ export const TEXTOS_DESEJO = {
   tentarNovamente: "Tentar novamente",
   carregando: "Carregando seus Desejos…",
   vazio: "Você ainda não tem um Desejo. Crie o primeiro e comece a guardar.",
-  semRedeTitulo: "Desejos fazem parte da Rede",
-  semRedeTexto:
-    "Seu teste da Rede acabou. Para criar Desejos, renove a Rede.",
-  semRedeBotao: "Ir para a Rede",
   deAte: (atual: string, alvo: string) => `${atual} de ${alvo}`,
   prazo: (data: string) => `Até ${data}`,
   todosConquistados: "Todos conquistados!",

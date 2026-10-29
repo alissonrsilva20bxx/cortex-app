@@ -742,8 +742,6 @@ export default function DevPreviewApp() {
             focusTab={financeiroFocusTab}
             onFocusTabHandled={() => setFinanceiroFocusTab(null)}
             nomeUsuaria={usuario.nome}
-            podeCriarDesejo
-            onAbrirRede={() => handleTabChange("rede")}
           />
         </TabPanel>
 
