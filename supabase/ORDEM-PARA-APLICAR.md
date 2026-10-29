@@ -1,6 +1,6 @@
 # Ordem para aplicar as migrations ainda não aplicadas
 
-Atualizado em 23/10/2026 (madrugada).
+Atualizado em 29/10/2026 (madrugada).
 
 ## Primeiro: conferir o que já está no banco
 
@@ -44,6 +44,13 @@ Faz: a curtida numa publicação da categoria Dica passa a contar como "Sua dica
 - Já aplicada? `select tgname from pg_trigger where tgrelid = 'public.rede_curtidas'::regclass and tgname = 'rede_curtidas_credita_dica';` Se voltar 1 linha, já está.
 - Conferência depois: a mesma consulta devolve 1 linha, e `select to_regclass('private.jornada_dica_creditos');` devolve o nome.
 - Se der problema: o próprio arquivo tem o `drop trigger` / `drop function` / `drop table` para desfazer.
+
+### 7. `0049_rede_acesso_por_teste.sql`
+Faz: a Rede passa a abrir para quem está no teste grátis (7 dias; 14 para quem começou antes de 09/10/2026), para quem assina e para quem já usou um convite. Sem código e sem beta: resgatar, gerar e aprovar convite deixam de ser chamados pela sessão da usuária. Corrige o N1 (conversa e denúncia olhavam o convite da outra pessoa). **Precisa da 0040 antes** (item 1): sem ela, o arquivo para com erro e não aplica nada. Aplicar antes de publicar o app sem beta; o app de hoje segue funcionando com ela.
+- Já aplicada? `select proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'private' and proname like 'rede_usuario_e_membro%';` Se voltar 2 linhas, já está.
+- Conferência depois: a mesma consulta devolve 2 linhas, e `select has_function_privilege('authenticated', 'public.rede_resgatar_convite(text, text)', 'execute');` devolve `false`.
+- Para desfazer: rodar `supabase/migrations-rollback/0049_rede_acesso_por_teste.rollback.sql` e voltar o app junto (o banco volta a exigir convite).
+- Antes da produção: aplicar no homolog e rodar os testes de `tests/rede` com `SUPABASE_TEST_URL` (o novo é `tests/rede/rls/rede-acesso-0049.rls.test.ts`).
 
 ### Migrations que vierem depois nesta noite
 Serão acrescentadas aqui, no fim, na ordem do número.

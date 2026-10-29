@@ -16,8 +16,15 @@ export type TestUser = {
  * test harness needs a way to obtain a real, RLS-subject session without a
  * browser — email/password via the admin API is that way. This never
  * touches the app's login flow.
+ *
+ * Desde a 0049 quem está no teste grátis está na Rede. Por padrão a conta
+ * nasce com o teste já acabado, para que só o convite (semeado pelo teste)
+ * diga quem está na Rede, antes e depois da 0049. `{ teste: "ativo" }`
+ * deixa o teste correndo, como uma conta nova de verdade.
  */
-export async function createTestUser(): Promise<TestUser> {
+export async function createTestUser(
+  opcoes: { teste?: "ativo" | "acabou" } = {}
+): Promise<TestUser> {
   const admin = adminClient();
   const email = `rede-test-${randomUUID()}@example.test`;
   const password = randomUUID();
@@ -34,11 +41,31 @@ export async function createTestUser(): Promise<TestUser> {
   }
 
   try {
+    if (opcoes.teste !== "ativo") {
+      await acabarTesteGratis(data.user.id);
+    }
     const client = await authenticatedClient(email, password);
     return { id: data.user.id, email, password, client };
   } catch (error) {
     await admin.auth.admin.deleteUser(data.user.id);
     throw error;
+  }
+}
+
+/** Põe o teste grátis da conta como acabado há 30 dias (service role). */
+export async function acabarTesteGratis(userId: string): Promise<void> {
+  const inicio = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const { error } = await adminClient()
+    .from("configuracoes")
+    .update({
+      trial_started_at: inicio.toISOString(),
+      assinatura_status: "vencida",
+    })
+    .eq("user_id", userId);
+  if (error) {
+    throw new Error(
+      `[tests/rede] Failed to end the free trial of ${userId}: ${error.message}`
+    );
   }
 }
 
