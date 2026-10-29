@@ -781,6 +781,8 @@ export default function Page() {
                   setFinanceiroFocusTab("metas");
                 }}
                 barraDoca={!tourOpen}
+                onVerPlanos={() => setReabrirPlanos((n) => n + 1)}
+                recarregarSinal={releituraAssinatura}
               />
             </TabPanel>
 

@@ -19,8 +19,8 @@ interface Props {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   onClose: () => void;
-  /** Sem convite resgatado, os passos da Rede falam da vitrine/convite em
-   * vez do feed e do perfil (que a usuária ainda não tem). */
+  /** Teste acabou sem assinatura: os passos da Rede falam da renovação em
+   * vez do feed e do perfil (que ela não vê sem acesso). */
   redeAcesso?: RedeAcessoTour;
 }
 
@@ -28,7 +28,7 @@ interface Props {
 const PAD = 6;
 /** Quanto esperar o alvo aparecer (troca de aba) antes de cair no cartão central. */
 const ESPERA_ALVO_MS = 700;
-/** Quanto esperar a Rede dizer se há convite antes de seguir com o texto padrão. */
+/** Quanto esperar a Rede dizer se há acesso antes de seguir com o texto padrão. */
 const ESPERA_ACESSO_REDE_MS = 2500;
 
 function isIOSNaoInstalado(): boolean {
@@ -61,8 +61,8 @@ export function AppTour({
   const step = steps[i];
   const last = i === steps.length - 1;
 
-  // Num passo da Rede, enquanto ela ainda confere o convite, segura o
-  // cartão um instante (senão o texto do feed pisca antes da vitrine).
+  // Num passo da Rede, enquanto ela ainda confere o acesso, segura o
+  // cartão um instante (senão o texto do feed pisca antes da renovação).
   const [desistiuDeEsperarRede, setDesistiuDeEsperarRede] = useState(false);
   const aguardandoRede =
     step.tab === "rede" && redeAcesso === "pendente" && !desistiuDeEsperarRede;

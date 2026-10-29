@@ -21,6 +21,12 @@ vi.mock("../../../lib/supabase-server", () => ({
 vi.mock("../../../lib/supabaseAdmin", () => ({
   getSupabaseAdmin: mocks.getSupabaseAdmin,
 }));
+// A porta do acesso à Rede (teste/assinatura/convite antigo) tem teste
+// próprio em acesso-rede-rotas.test.ts; aqui a chamadora está na Rede.
+vi.mock("../../../lib/rede/acessoRede", async (original) => ({
+  ...(await original<typeof import("../../../lib/rede/acessoRede")>()),
+  verificarAcessoRede: vi.fn().mockResolvedValue({ unlocked: true }),
+}));
 vi.mock("web-push", () => ({
   default: {
     setVapidDetails: mocks.setVapidDetails,

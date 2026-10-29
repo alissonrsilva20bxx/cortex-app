@@ -112,10 +112,10 @@ describe("acesso: teto de confiança de 24h, oculta só em resposta decisiva (T1
 
   it("só monta o Feed na hora se o acesso confirmado ainda está dentro do teto de 24h", () => {
     expect(src).toMatch(/redeCache\.acessoConfirmadoValido\(usuario\.id\)/);
-    expect(src).toContain("verificarAcessoConvite(supabase, usuario.id)");
+    expect(src).toContain("verificarAcessoRede(supabase, usuario.id)");
   });
 
-  it("'indisponivel' NUNCA deriva pro gate de convite -- alterna só entre liberado e semRede", () => {
+  it("'indisponivel' NUNCA deriva pra tela de renovação -- alterna só entre liberado e semRede", () => {
     const bloco = src.match(
       /if \(resultado\.motivo === "indisponivel"\) \{[\s\S]*?\n {6}\}/
     )?.[0];
@@ -123,17 +123,15 @@ describe("acesso: teto de confiança de 24h, oculta só em resposta decisiva (T1
     expect(bloco).toMatch(/acessoConfirmadoValido\(usuario\.id\)/);
     expect(bloco).toMatch(/"liberado"/);
     expect(bloco).toMatch(/"semRede"/);
-    // falha de rede não pode virar "sem convite": nenhuma menção a
+    // falha de rede não pode virar "teste acabou": nenhuma menção a
     // semAcesso/derrubar dentro deste bloco.
     expect(bloco).not.toMatch(/semAcesso|derrubar\(\)/);
   });
 
-  it("estado 'semRede' nunca renderiza o RedeTeaserGate (peça-seu-convite)", () => {
-    // só duas ramificações retornam RedeTeaserGate/SerialKeySheet: nenhuma
-    // delas pode ser alcançável a partir de estado === "semRede".
-    const ramoGate = src.match(
-      /return \(\s*<>\s*<RedeTeaserGate[\s\S]*?<\/>\s*\);/
-    )?.[0];
+  it("estado 'semRede' nunca renderiza a RedeRenovacao (teste acabou)", () => {
+    // só uma ramificação retorna a RedeRenovacao: ela não pode ser
+    // alcançável a partir de estado === "semRede".
+    const ramoGate = src.match(/return <RedeRenovacao [^;]*;/)?.[0];
     expect(ramoGate).toBeTruthy();
     const antes = src.slice(0, src.indexOf(ramoGate!));
     // a única guarda que precede esse retorno já tratou verificando/semRede
@@ -144,7 +142,7 @@ describe("acesso: teto de confiança de 24h, oculta só em resposta decisiva (T1
     expect(antes).toMatch(/if \(estado === "liberado"\)/);
   });
 
-  it("'sem_convite' | 'sessao' | 'negado' derrubam: some da tela + zera memória e localStorage", () => {
+  it("'vencido' | 'sessao' | 'negado' derrubam: some da tela + zera memória e localStorage", () => {
     expect(src).toMatch(
       /const derrubar = \(\) => \{[\s\S]*?setEstado\("semAcesso"\);[\s\S]*?redeCache\.limparTudo\(\);\s*redeCachePersist\.limpar\(usuario\.id\)/
     );
@@ -181,26 +179,24 @@ describe("acesso: teto de confiança de 24h, oculta só em resposta decisiva (T1
 
   it("lembrarAcessoConfirmado (única fonte do carimbo) só é chamado em resposta positiva -- nunca em 'indisponivel'", () => {
     const chamadas = src.match(/lembrarAcessoConfirmado\(\)/g) ?? [];
-    // useEffect (resultado.unlocked) + SerialKeySheet.onConfirm
-    expect(chamadas.length).toBe(2);
+    // só o useEffect (resultado.unlocked): não há mais campo de código
+    expect(chamadas.length).toBe(1);
     expect(src).toMatch(
       /if \(resultado\.unlocked\) \{\s*lembrarAcessoConfirmado\(\);/
     );
   });
 
-  it("acesso.ts: 401 tenta refreshSession; 403/4xx é 'negado'; status 0/5xx é 'indisponivel'", () => {
-    const ac = read("lib/rede/acesso.ts");
+  it("acessoRede.ts: 401 tenta refreshSession; 403/4xx é 'negado'; status 0/5xx é 'indisponivel'", () => {
+    const ac = read("lib/rede/acessoRede.ts");
     expect(ac).toMatch(
       /status === 0 \|\| status >= 500\) return "indisponivel"/
     );
     expect(ac).toMatch(/status === 401\) return "sessao"/);
     expect(ac).toMatch(/return "negado"/);
-    expect(ac).toMatch(/r\.error && r\.status === 401/);
-    expect(ac).toMatch(/client\.auth\s*\.refreshSession\(\)/);
-    // só 200 + linha libera
-    expect(ac).toMatch(
-      /r\.data && r\.data\.length > 0\s*\?\s*\{ unlocked: true \}/
-    );
+    expect(ac).toMatch(/erroDaConsulta\(c\)\?\.status === 401/);
+    expect(ac).toMatch(/client\.auth\.refreshSession\(\)/);
+    // só a regra (teste, assinatura ou convite antigo) libera
+    expect(ac).toMatch(/if \(!regra\.liberado\) return \{ unlocked: false, motivo: "vencido" \}/);
   });
 
   it("redeCache: teto de 24h explícito (não 90s) + carimbo de tempo", () => {

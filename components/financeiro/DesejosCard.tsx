@@ -32,7 +32,7 @@ const sectionTitleStyle = {
 interface Props {
   userId: string;
   nomeUsuaria: string;
-  /** false só quando já se sabe que não há acesso à Rede (convite). */
+  /** false só quando já se sabe que não há acesso à Rede (teste acabou). */
   podeCriar: boolean;
   onAbrirRede: () => void;
 }

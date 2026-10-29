@@ -122,14 +122,14 @@ export const TOUR_STEPS: TourStep[] = [
   },
 ];
 
-/** Situação do convite da Rede, como o `RedeGatedTab` informa. */
+/** Situação do acesso à Rede, como o `RedeGatedTab` informa. */
 export type RedeAcessoTour = "pendente" | "liberado" | "bloqueado";
 
 /**
- * Quem ainda não resgatou convite vê a vitrine da Rede, não o feed nem o
- * próprio perfil -- os passos da Rede trocam por estes (mesma quantidade,
- * pra contagem "x de N" não pular). Cada um substitui o passo de mesmo
- * índice da lista padrão.
+ * Teste acabou sem assinatura: a Rede mostra a tela de renovação, não o
+ * feed nem o próprio perfil -- os passos da Rede trocam por estes (mesma
+ * quantidade, pra contagem "x de N" não pular). Cada um substitui o passo
+ * de mesmo índice da lista padrão.
  */
 const PASSOS_REDE_BLOQUEADA: Record<string, TourStep> = {
   "go-rede": {
@@ -142,18 +142,18 @@ const PASSOS_REDE_BLOQUEADA: Record<string, TourStep> = {
     cta: "Abrir Rede",
   },
   "rede-feed": {
-    id: "rede-vitrine",
+    id: "rede-renovacao",
     tab: "rede",
     target: null,
     title: "A Rede",
-    body: "É a comunidade da Arcelle: feed, amigas e mensagens entre profissionais. A entrada é só por convite, então ela fica liberada quando você usar o seu.",
+    body: "É a comunidade da Arcelle: feed, amigas e mensagens entre profissionais. Seu teste acabou, então ela volta quando você renovar.",
   },
   "rede-perfil": {
-    id: "rede-convite",
+    id: "rede-renovar",
     tab: "rede",
-    target: "rede-convite",
-    title: "Tem um convite?",
-    body: "Toque aqui pra digitar o código que você recebeu. Ainda não tem? Peça pra participar da beta pelo botão acima.",
+    target: "rede-renovar",
+    title: "Ver planos",
+    body: "Toque aqui pra escolher um plano e seguir com a Rede. O resto do app continua liberado.",
   },
 };
 

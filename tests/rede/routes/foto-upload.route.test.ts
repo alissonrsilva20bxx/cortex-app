@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * Ordem de guarda de `app/api/rede/foto-upload` -- TUDO antes de qualquer
  * escrita com service_role:
  *   (1) autenticação      -> 401 JSON (nunca 307, nunca HTML de /login)
- *   (2) membership na Rede -> 403
+ *   (2) acesso à Rede      -> 403 (regra única, lib/rede/acessoRede.ts)
  *   (3) posse do post      -> 404
  * Só um membro autenticado e autor do post prossegue para a validação das
  * imagens. Este teste prova cada porta e prova que `getSupabaseAdmin()`
@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
   }),
   // dimensões controladas -- `lib/rede/jpeg` real é coberto por jpeg.test.ts
   lerDimensoesJpeg: vi.fn(),
+  // a regra de acesso real é coberta por tests/rede/services/acessoRede.test.ts
+  verificarAcessoRede: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -28,6 +30,10 @@ vi.mock("../../../lib/devPreview/serverAuth", () => ({
 }));
 vi.mock("../../../lib/supabaseAdmin", () => ({
   getSupabaseAdmin: mocks.getSupabaseAdmin,
+}));
+vi.mock("../../../lib/rede/acessoRede", async (original) => ({
+  ...(await original<typeof import("../../../lib/rede/acessoRede")>()),
+  verificarAcessoRede: mocks.verificarAcessoRede,
 }));
 vi.mock("../../../lib/rede/jpeg", () => ({
   ehJpeg: () => true,
@@ -64,10 +70,14 @@ function fakeSupabase(opts: {
   const eq = vi.fn().mockReturnValue({ maybeSingle });
   const select = vi.fn().mockReturnValue({ eq });
   const from = vi.fn().mockReturnValue({ select });
-  const rpc = vi
-    .fn()
-    .mockResolvedValue({ data: opts.member, error: opts.memberErr ?? null });
-  return { from, rpc, select, eq, maybeSingle };
+  mocks.verificarAcessoRede.mockResolvedValue(
+    opts.memberErr
+      ? { unlocked: false, motivo: "indisponivel" }
+      : opts.member === true
+        ? { unlocked: true }
+        : { unlocked: false, motivo: "vencido" }
+  );
+  return { from, select, eq, maybeSingle };
 }
 
 function authenticated(supabase: ReturnType<typeof fakeSupabase>) {
@@ -146,7 +156,7 @@ describe("POST /api/rede/foto-upload — portas de autorização", () => {
 
     expect(response.status).toBe(403);
     expect(body).toEqual({ error: "Sem acesso à Rede" });
-    expect(supabase.rpc).toHaveBeenCalledWith("rede_is_member");
+    expect(mocks.verificarAcessoRede).toHaveBeenCalledWith(supabase, AUTHOR_ID);
     expect(supabase.from).not.toHaveBeenCalled();
     expect(mocks.getSupabaseAdmin).not.toHaveBeenCalled();
   });
@@ -194,7 +204,7 @@ describe("POST /api/rede/foto-upload — portas de autorização", () => {
 
     expect(response.status).toBe(422);
     expect(String(body.error)).toContain("principal");
-    expect(supabase.rpc).toHaveBeenCalledWith("rede_is_member");
+    expect(mocks.verificarAcessoRede).toHaveBeenCalledWith(supabase, AUTHOR_ID);
     expect(supabase.from).toHaveBeenCalledWith("rede_posts");
     expect(mocks.getSupabaseAdmin).not.toHaveBeenCalled();
   });
@@ -231,7 +241,7 @@ describe("POST /api/rede/foto-upload — cliente service_role indisponível", ()
     );
 
     // chegou até o service_role (passou pelas 3 portas + validação da imagem)
-    expect(supabase.rpc).toHaveBeenCalledWith("rede_is_member");
+    expect(mocks.verificarAcessoRede).toHaveBeenCalledWith(supabase, AUTHOR_ID);
     expect(supabase.from).toHaveBeenCalledWith("rede_posts");
     expect(mocks.getSupabaseAdmin).toHaveBeenCalled();
   });

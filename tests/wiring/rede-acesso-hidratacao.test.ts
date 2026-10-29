@@ -16,8 +16,8 @@ import { renderToString } from "react-dom/server";
 
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 // A consulta de acesso não responde: só o 1º render importa aqui.
-vi.mock("@/lib/rede/acesso", () => ({
-  verificarAcessoConvite: () => new Promise(() => {}),
+vi.mock("@/lib/rede/acessoRede", () => ({
+  verificarAcessoRede: () => new Promise(() => {}),
 }));
 // O Feed de verdade não precisa ser desenhado: basta saber se apareceu.
 vi.mock("@/components/rede/RedeTab", () => ({

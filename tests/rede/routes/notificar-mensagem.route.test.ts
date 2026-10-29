@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * T11 (issue #38) — item §6.9-P1-3 do checklist de paridade funcional:
  * push notification (fire-and-forget após envio, erro real de banco não
  * mascarado, VAPID ausente retorna 500). Rota sem nenhum teste até então
- * (diferente de convites/solicitar-beta, que já tinham `*.route.test.ts`).
- * Mesmo padrão de mock usado em `solicitar-beta.route.test.ts`.
+ * (as outras rotas da Rede já tinham `*.route.test.ts`).
+ * Mesmo padrão de mock das outras rotas da Rede.
  */
 
 const mocks = vi.hoisted(() => ({
@@ -21,6 +21,12 @@ vi.mock("../../../lib/supabase-server", () => ({
 }));
 vi.mock("../../../lib/supabaseAdmin", () => ({
   getSupabaseAdmin: mocks.getSupabaseAdmin,
+}));
+// A porta do acesso à Rede (teste/assinatura/convite antigo) tem teste
+// próprio em acesso-rede-rotas.test.ts; aqui a chamadora está na Rede.
+vi.mock("../../../lib/rede/acessoRede", async (original) => ({
+  ...(await original<typeof import("../../../lib/rede/acessoRede")>()),
+  verificarAcessoRede: vi.fn().mockResolvedValue({ unlocked: true }),
 }));
 vi.mock("web-push", () => ({
   default: {

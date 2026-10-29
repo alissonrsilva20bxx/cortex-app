@@ -3,6 +3,10 @@ import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { resolveGateAuth } from "../../../../lib/devPreview/serverAuth";
+import {
+  recusaDaRota,
+  verificarAcessoRede,
+} from "../../../../lib/rede/acessoRede";
 import { getSupabaseAdmin } from "../../../../lib/supabaseAdmin";
 import {
   ehJpeg,
@@ -138,12 +142,11 @@ export async function POST(request: NextRequest) {
     return erro("postId/ordem inválidos", 400);
   }
 
-  // (2) membership na Rede -- mesma condição que as policies de 0028
-  // (rede_is_member) exigiam antes da 0033 tirar o INSERT do cliente
-  const { data: ehMembro, error: membroErr } =
-    await supabase.rpc("rede_is_member");
-  if (membroErr) return erro("Não foi possível verificar o acesso à Rede", 500);
-  if (ehMembro !== true) return erro("Sem acesso à Rede", 403);
+  // (2) acesso à Rede -- a regra única do app (lib/rede/acessoRede.ts),
+  // a mesma de rede_is_member() no banco (0049), que as policies de 0028
+  // exigiam antes da 0033 tirar o INSERT do cliente
+  const recusa = recusaDaRota(await verificarAcessoRede(supabase, userId));
+  if (recusa) return erro(recusa.error, recusa.status);
 
   // (3) posse do post -- o select roda sob o JWT do usuário (RLS), então
   // um post que não é dele (ou que ele não pode ver) volta null

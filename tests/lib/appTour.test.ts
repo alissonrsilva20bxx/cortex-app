@@ -75,7 +75,7 @@ describe("tourPlacement", () => {
   });
 });
 
-describe("stepsDoTour (sem convite da Rede)", () => {
+describe("stepsDoTour (Rede sem acesso: teste acabou)", () => {
   // 2026-10-01: "quando chega no social que é feed, buga, pq o cliente
   // ainda não usou o convite para entrar".
   const bloqueado = stepsDoTour("bloqueado");
@@ -85,19 +85,25 @@ describe("stepsDoTour (sem convite da Rede)", () => {
     expect(stepsDoTour("pendente")).toBe(TOUR_STEPS);
   });
 
-  it("troca feed/perfil pela vitrine e pelo campo de convite, mesma contagem", () => {
+  it("troca feed/perfil pela renovação e pelo Ver planos, mesma contagem", () => {
     expect(bloqueado).toHaveLength(TOUR_STEPS.length);
     const ids = bloqueado.map((s) => s.id);
     expect(ids).not.toContain("rede-feed");
     expect(ids).not.toContain("rede-perfil");
-    expect(ids.indexOf("rede-vitrine")).toBe(ids.indexOf("go-rede") + 1);
-    expect(bloqueado.find((s) => s.id === "rede-convite")?.target).toBe(
-      "rede-convite"
+    expect(ids.indexOf("rede-renovacao")).toBe(ids.indexOf("go-rede") + 1);
+    expect(bloqueado.find((s) => s.id === "rede-renovar")?.target).toBe(
+      "rede-renovar"
     );
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("nada fala de feed/perfil próprio enquanto não há convite", () => {
+  it("nada fala de convite, código ou beta", () => {
+    for (const s of bloqueado) {
+      expect(s.body).not.toMatch(/convite|código|beta/i);
+    }
+  });
+
+  it("nada fala de feed/perfil próprio enquanto não há acesso", () => {
     for (const s of bloqueado.filter((s) => s.tab === "rede")) {
       expect(s.body).not.toMatch(
         /sua foto|seu perfil|Publicações das suas amigas/
@@ -126,7 +132,7 @@ describe("wiring: tour e foto do Início seguem a Rede", () => {
     expect(tour).toContain("!esperando && !aguardandoRede &&");
   });
 
-  it("RedeGatedTab avisa o acesso (vitrine = bloqueado)", () => {
+  it("RedeGatedTab avisa o acesso (renovação = bloqueado)", () => {
     expect(gate).toMatch(/estado === "semAcesso"\s*\? "bloqueado"/);
     expect(gate).toContain("onFotoPerfilChange={onFotoPerfilChange}");
   });
@@ -161,7 +167,7 @@ describe("wiring: todo alvo do tour existe no código", () => {
     // Modelo Doca: a foto da usuária (alvo "rede-perfil") mora no topo de
     // toda tela da Rede, em RedeTopo.tsx.
     "components/rede/RedeTopo.tsx",
-    "components/rede/RedeTeaserGate.tsx",
+    "components/rede/RedeRenovacao.tsx",
   ]
     .map(read)
     .join("\n");

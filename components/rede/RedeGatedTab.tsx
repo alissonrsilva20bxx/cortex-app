@@ -7,11 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { RedeTeaserGate, type GateSheet } from "./RedeTeaserGate";
-import { SerialKeySheet } from "./SerialKeySheet";
+import { RedeRenovacao } from "./RedeRenovacao";
 import { RedeTab } from "./RedeTab";
 import { supabase } from "@/lib/supabase";
-import { verificarAcessoConvite, type AcessoConvite } from "@/lib/rede/acesso";
+import { verificarAcessoRede, type AcessoRede } from "@/lib/rede/acessoRede";
 import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import type { Usuario } from "@/lib/types";
@@ -29,8 +28,8 @@ interface Props {
   /** Incrementa a cada toque no "+" da Rede (Postar): abre o compositor. */
   postarSignal?: number;
   onChatFocusChange?: (focused: boolean) => void;
-  /** Avisa o pai se a Rede está liberada ou na vitrine de convite -- o tour
-   * do app troca os passos do feed/perfil pelos da vitrine. */
+  /** Avisa o pai se a Rede está liberada ou na tela de renovação -- o tour
+   * do app troca os passos do feed/perfil pelos da renovação. */
   onAcessoChange?: (acesso: RedeAcessoTour) => void;
   /** Foto do perfil da Rede (null = sem foto ou sem acesso). */
   onFotoPerfilChange?: (url: string | null) => void;
@@ -40,6 +39,10 @@ interface Props {
   onAbrirDesejos?: () => void;
   /** Modelo Doca: mostra a barra própria da Rede (só com acesso). */
   barraDoca?: boolean;
+  /** Tela de renovação: abre a escolha de plano (a mesma dos Ajustes). */
+  onVerPlanos?: () => void;
+  /** Incrementa depois do Pagamento: confere o acesso de novo na hora. */
+  recarregarSinal?: number;
 }
 
 /** Layout effect no navegador; no servidor, um effect comum (não roda). */
@@ -56,20 +59,16 @@ type EstadoGate =
   //   nenhuma há mais de 24h) -- aguardando a 1ª resposta decisiva.
   | "liberado" // conteúdo confiado: confirmação positiva dentro do teto.
   | "semRede" // tentativa(s) resultaram "indisponivel" e não há carimbo
-  //   válido pra confiar -- continua tentando, NUNCA mostra o gate de
-  //   convite (falha de rede não é "sem convite").
-  | "semAcesso"; // resposta decisiva negativa (ou vitrine forçada/logout
-//   simulado): vitrine + campo de código.
+  //   válido pra confiar -- continua tentando, NUNCA mostra a tela de
+  //   renovação (falha de rede não é "teste acabou").
+  | "semAcesso"; // resposta decisiva negativa (teste acabou sem
+//   assinatura, sessão perdida ou vitrine forçada): tela de renovação.
 
-/** Vitrine → código de acesso → Feed completo. Usado tanto na rota real (/)
- * quanto no shell mockado de /dev-preview/app.
- *
- * `sheet` é o único estado que decide qual dos três sheets do gate (prévia,
- * confirmação de solicitação, campo de código) está visível — centralizado
- * aqui, no pai comum, pra garantir no máximo um aberto por vez. Cada
- * BottomSheet renderiza no mesmo z-index de forma independente, então dois
- * booleanos separados (um em cada componente) já deixaram os três
- * empilharem visualmente ao mesmo tempo. */
+/** Teste em dia ou assinatura ativa → Feed completo; teste acabou sem
+ * assinatura → tela de renovação (só a Rede para; o resto do app segue).
+ * Sem código e sem fila (capitão, 27/10). A regra é a de
+ * `lib/rede/acessoRede.ts`. Usado tanto na rota real (/) quanto no shell
+ * mockado de /dev-preview/app. */
 export function RedeGatedTab({
   usuario,
   active = true,
@@ -81,9 +80,11 @@ export function RedeGatedTab({
   onSairDaRede,
   onAbrirDesejos,
   barraDoca,
+  onVerPlanos,
+  recarregarSinal,
 }: Props) {
   // ── Política do acesso lembrado (teto de confiança, não "validade curta") ──
-  // `verificarAcessoConvite` classifica cada resposta em `unlocked` +
+  // `verificarAcessoRede` classifica cada resposta em `unlocked` +
   // `motivo`. `redeCache` guarda só o resultado CONCLUSIVO (`200`) com um
   // carimbo de tempo; `acessoConfirmadoValido` diz se esse carimbo ainda
   // está dentro do teto `ACESSO_CONFIRMADO_TTL_MS` (24h -- ver o porquê no
@@ -112,14 +113,18 @@ export function RedeGatedTab({
   //    não existe mais).
   //  - **`semRede`:** tentativa(s) de revalidar voltaram `indisponivel`
   //    (offline/5xx) e não há carimbo válido pra confiar. Continua tentando
-  //    (mount, volta de 2º plano, reconexão, timer de 60s) -- NUNCA mostra o
-  //    gate de "peça seu convite" nesse estado: falha de rede não é "sem
-  //    convite", e dado já existente no localStorage não isenta a interface
-  //    de proteger o que mostra enquanto não há confirmação nenhuma.
+  //    (mount, volta de 2º plano, reconexão, timer de 60s) -- NUNCA mostra a
+  //    tela de renovação nesse estado: falha de rede não é "teste acabou",
+  //    e dado já existente no localStorage não isenta a interface de
+  //    proteger o que mostra enquanto não há confirmação nenhuma.
   //  - **`semAcesso`:** resposta DECISIVA -- `sessao` (401 sem refresh
-  //    possível), `negado` (403/4xx) ou `sem_convite` (200 sem convite) --
-  //    ou vitrine forçada (`?vitrine=1`). Zera memória + localStorage na
-  //    hora; perda de autorização tira o conteúdo privado da tela.
+  //    possível), `negado` (403/4xx) ou `vencido` (200, teste acabou sem
+  //    assinatura) -- ou vitrine forçada (`?vitrine=1`). Zera memória +
+  //    localStorage na hora; perda de autorização tira o conteúdo privado
+  //    da tela.
+  //  - **Fim do teste com o app aberto:** liberado pelo teste, a resposta
+  //    traz o instante em que ele acaba (`validoAte`); um timer confere de
+  //    novo nessa hora, sem esperar a próxima volta do 2º plano.
   //  - **Revalidação extra:** ao a aba voltar a ficar visível
   //    (`visibilitychange`, que já confere o teto na hora antes de disparar
   //    a consulta), ao reconectar (`online`), num timer exato agendado pro
@@ -158,7 +163,8 @@ export function RedeGatedTab({
       setEstado((atual) => (atual === "verificando" ? "liberado" : atual));
     }
   }, [usuario.id]);
-  const [sheet, setSheet] = useState<GateSheet>(null);
+  /** Liberado pelo teste: quando ele acaba (ms); null = sem prazo. */
+  const [validoAte, setValidoAte] = useState<number | null>(null);
   // Bump manual (botão "Tentar novamente" no estado `semRede`) força o
   // efeito abaixo a rodar de novo e disparar uma tentativa na hora -- mesmo
   // padrão de `conversationsReloadKey` no `RedeTab`.
@@ -169,16 +175,13 @@ export function RedeGatedTab({
   // listeners de visibilitychange/online toda hora à toa).
   const revalidarAgoraRef = useRef<() => void>(() => {});
 
-  // Um convite já resgatado por esse usuário é a única fonte de verdade pra
-  // acesso liberado — sem isso, quem já desbloqueou via SerialKeySheet numa
-  // sessão anterior cai na tela de gate de novo a cada recarregamento, já
-  // que `estado` acima é só estado local.
+  // O banco (configuracoes + convite antigo, pela regra de
+  // `lib/rede/acessoRede.ts`) é a única fonte de verdade pra acesso
+  // liberado -- `estado` acima é só estado local.
   //
-  // ?vitrine=1 na URL força a vitrine a aparecer mesmo numa conta já
-  // desbloqueada -- só pra quem está testando/mexendo no fluxo do gate
-  // repetidamente sem precisar revogar o convite no banco toda hora. Não é
-  // UI (ninguém digita isso sem saber que existe), então não conflita com a
-  // decisão de "sem UI de admin" da ticket 03.
+  // ?vitrine=1 na URL força a tela de renovação mesmo numa conta liberada
+  // -- só pra quem está testando o fluxo sem mexer no banco. Não é UI
+  // (ninguém digita isso sem saber que existe).
   // Carimba `unlocked=true` em memória E em localStorage com o MESMO
   // instante -- as duas cópias precisam concordar sobre "há quanto tempo"
   // pra um documento novo (hidratarAcesso) recalcular o teto certo depois.
@@ -218,39 +221,40 @@ export function RedeGatedTab({
       redeCachePersist.limpar(usuario.id);
     };
 
-    /** Aplica um resultado de `verificarAcessoConvite`. */
-    const aplicar = (resultado: AcessoConvite) => {
+    /** Aplica um resultado de `verificarAcessoRede`. */
+    const aplicar = (resultado: AcessoRede) => {
       if (!ativo) return;
       if (resultado.unlocked) {
         lembrarAcessoConfirmado();
+        setValidoAte(resultado.validoAte ?? null);
         setEstado("liberado");
         return;
       }
       if (resultado.motivo === "indisponivel") {
-        // Não conclui nada -- nunca é "sem convite". Se ainda há um acesso
+        // Não conclui nada -- nunca é "teste acabou". Se ainda há um acesso
         // confirmado dentro do teto de 24h, segue mostrando o conteúdo
-        // cacheado; senão, fica tentando de novo (`semRede`), SEM cair no
-        // gate de convite -- falha de rede não é motivo pra pedir convite
-        // de novo pra quem já tem um.
+        // cacheado; senão, fica tentando de novo (`semRede`), SEM cair na
+        // tela de renovação -- falha de rede não é motivo pra cobrar de
+        // quem está em dia.
         setEstado(
           redeCache.acessoConfirmadoValido(usuario.id) ? "liberado" : "semRede"
         );
         return;
       }
-      // "sem_convite" | "sessao" | "negado" -> derruba.
+      // "vencido" | "sessao" | "negado" -> derruba.
       derrubar();
     };
 
     const revalidarAgora = () => {
-      verificarAcessoConvite(supabase, usuario.id).then(aplicar);
+      verificarAcessoRede(supabase, usuario.id).then(aplicar);
     };
     revalidarAgoraRef.current = revalidarAgora;
 
     revalidarAgora();
 
     // Revalida quando a aba volta a ficar visível (PWA saiu do 2º plano,
-    // troca de app no celular) e quando a conexão volta -- cobre "convite
-    // revogado enquanto esteve fora" sem depender de um remount do PIN.
+    // troca de app no celular) e quando a conexão volta -- cobre "teste
+    // acabou enquanto esteve fora" sem depender de um remount do PIN.
     // Confere o teto ANTES de disparar a consulta: se já cruzou (o timer
     // abaixo não dispara enquanto a aba está em 2º plano -- `setTimeout` de
     // página oculta é jogado pra trás pelo navegador), reflete isso na hora
@@ -270,7 +274,19 @@ export function RedeGatedTab({
       document.removeEventListener("visibilitychange", aoFicarVisivel);
       window.removeEventListener("online", revalidarAgora);
     };
-  }, [usuario.id, lembrarAcessoConfirmado, tentativaManual]);
+  }, [usuario.id, lembrarAcessoConfirmado, tentativaManual, recarregarSinal]);
+
+  // Liberado pelo teste: confere de novo no instante em que ele acaba (o
+  // banco para de liberar nessa hora; a tela acompanha). Teto do
+  // `setTimeout` (~24,8 dias) folgado: o teste dura no máximo 14.
+  useEffect(() => {
+    if (estado !== "liberado" || validoAte === null) return;
+    const t = setTimeout(
+      () => revalidarAgoraRef.current(),
+      Math.min(Math.max(0, validoAte - Date.now()) + 1000, 2_000_000_000)
+    );
+    return () => clearTimeout(t);
+  }, [estado, validoAte]);
 
   // Timer exato pro instante em que o teto de 24h vence -- reagendado toda
   // vez que `estado` volta a `liberado` (ou seja, toda vez que há um
@@ -361,18 +377,5 @@ export function RedeGatedTab({
     );
   }
 
-  return (
-    <>
-      <RedeTeaserGate sheet={sheet} onSheetChange={setSheet} />
-      <SerialKeySheet
-        open={sheet === "chave"}
-        onClose={() => setSheet(null)}
-        onConfirm={() => {
-          setSheet(null);
-          setEstado("liberado");
-          lembrarAcessoConfirmado();
-        }}
-      />
-    </>
-  );
+  return <RedeRenovacao onVerPlanos={onVerPlanos} />;
 }

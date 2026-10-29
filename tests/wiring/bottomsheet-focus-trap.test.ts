@@ -82,62 +82,22 @@ describe("BottomSheet.tsx implements the real focus trap (not just the pure help
   });
 });
 
-describe("Rede's 3 gate sheets meet the 44px close-button target (P1-1)", () => {
-  it("RedeTeaserGate's confirmação and preview sheets both pass largeCloseTarget", () => {
-    const src = read("components/rede/RedeTeaserGate.tsx");
-    const sheetBlocks = src.split("<BottomSheet").slice(1);
-    expect(sheetBlocks.length).toBe(2);
-    for (const block of sheetBlocks) {
-      expect(block.slice(0, 200)).toMatch(/largeCloseTarget/);
-    }
-  });
-
-  it("SerialKeySheet's internal BottomSheet passes largeCloseTarget", () => {
-    const src = read("components/rede/SerialKeySheet.tsx");
-    expect(src).toMatch(/<BottomSheet[\s\S]*?largeCloseTarget/);
-  });
-});
-
-describe("'Já tem um código de convite?' button meets the 44px target (P1-2)", () => {
-  it("RedeTeaserGate's code-entry link button has an explicit 44px minimum height", () => {
-    const src = read("components/rede/RedeTeaserGate.tsx");
-    const btnIdx = src.indexOf("Já tem um código de convite?");
-    expect(btnIdx).toBeGreaterThan(-1);
-    const nearby = src.slice(Math.max(0, btnIdx - 400), btnIdx);
-    expect(nearby).toMatch(/minHeight:\s*"44px"/);
-  });
-});
-
-describe("The real gate keeps using the real services — nothing swapped for the lab's demo logic", () => {
-  it("SerialKeySheet still calls the real /api/rede/convites resgatar route, never a local/hardcoded comparison", () => {
-    const src = read("components/rede/SerialKeySheet.tsx");
-    expect(src).toContain('fetch("/api/rede/convites"');
-    expect(src).toContain('acao: "resgatar"');
-    expect(src).not.toMatch(/DEMO_ACCESS_CODE|REDE-BETA-DEMO/);
-  });
-
-  it("RedeGatedTab still uses verificarAcessoConvite (the real DB-backed source of truth), not a client-only flag", () => {
+describe("A Rede sem acesso usa os serviços reais e os planos reais", () => {
+  it("RedeGatedTab decide pela regra única (lib/rede/acessoRede, lida do banco), não por uma flag só do cliente", () => {
     const src = read("components/rede/RedeGatedTab.tsx");
     expect(src).toMatch(
-      /import\s*{[^}]*\bverificarAcessoConvite\b[^}]*}\s*from\s*"@\/lib\/rede\/acesso"/
+      /import\s*{[^}]*\bverificarAcessoRede\b[^}]*}\s*from\s*"@\/lib\/rede\/acessoRede"/
     );
-    expect(src).toContain("verificarAcessoConvite(supabase, usuario.id)");
+    expect(src).toContain("verificarAcessoRede(supabase, usuario.id)");
   });
 
-  it("RedeTeaserGate still calls the real /api/rede/solicitar-beta route for the primary CTA", () => {
-    const src = read("components/rede/RedeTeaserGate.tsx");
-    expect(src).toContain('fetch("/api/rede/solicitar-beta"');
-  });
-
-  it("o preço da vitrine vem dos planos reais (lib/planos.ts, na moeda escolhida), não de um valor solto; o resto do texto segue igual", () => {
-    const src = read("components/rede/RedeTeaserGate.tsx");
+  it("o preço da renovação vem dos planos reais (lib/planos.ts, na moeda escolhida), não de um valor solto", () => {
+    const src = read("components/rede/RedeRenovacao.tsx");
     expect(src).toMatch(
       /import \{[^}]*\bPLANOS\b[^}]*\} from "@\/lib\/planos"/
     );
-    expect(src).toContain("{planosPrevistos(moeda)}");
     expect(src).toContain("formatMoeda(precoDoPlano(p, moeda), moeda");
     expect(src).not.toContain("49,90");
     expect(src).not.toContain("R$");
-    expect(src).toContain("Em breve");
   });
 });

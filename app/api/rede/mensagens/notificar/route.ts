@@ -3,6 +3,10 @@ import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 
+import {
+  recusaDaRota,
+  verificarAcessoRede,
+} from "../../../../../lib/rede/acessoRede";
 import { createClient } from "../../../../../lib/supabase-server";
 import { getSupabaseAdmin } from "../../../../../lib/supabaseAdmin";
 import {
@@ -57,6 +61,16 @@ export async function POST(request: NextRequest) {
 
   if (authError || !user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  // Só quem está na Rede (teste em dia, assinatura ou convite antigo)
+  // dispara aviso: a mesma regra da tela (lib/rede/acessoRede.ts).
+  const recusa = recusaDaRota(await verificarAcessoRede(supabase, user.id));
+  if (recusa) {
+    return NextResponse.json(
+      { error: recusa.error },
+      { status: recusa.status }
+    );
   }
 
   // RLS de rede_conversas_participantes só deixa ver linhas de conversas

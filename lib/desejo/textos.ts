@@ -49,7 +49,7 @@ export const TEXTOS_DESEJO = {
   vazio: "Você ainda não tem um Desejo. Crie o primeiro e comece a guardar.",
   semRedeTitulo: "Desejos fazem parte da Rede",
   semRedeTexto:
-    "Entre na Rede com seu convite para criar Desejos e guardar dinheiro neles.",
+    "Seu teste da Rede acabou. Para criar Desejos, renove a Rede.",
   semRedeBotao: "Ir para a Rede",
   deAte: (atual: string, alvo: string) => `${atual} de ${alvo}`,
   prazo: (data: string) => `Até ${data}`,

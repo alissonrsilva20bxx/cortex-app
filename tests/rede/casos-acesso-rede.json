@@ -1,0 +1,17 @@
+{
+  "_sobre": "Mesma tabela de casos para a regra do app (lib/rede/acessoRede.ts, tests/rede/services/acessoRede.test.ts) e a do banco (private.rede_usuario_e_membro da 0049, tests/rede/acesso-0049-pglite.mjs). 'agora' é o relógio dos dois lados. 'espera' null = sem acesso.",
+  "agora": "2026-10-20T12:00:00Z",
+  "casos": [
+    { "nome": "assinatura ativa, teste vencido há muito", "assinatura_status": "ativa", "trial_started_at": "2026-09-01T00:00:00Z", "convite": false, "espera": "assinatura" },
+    { "nome": "teste começou há 3 dias", "assinatura_status": "trial", "trial_started_at": "2026-10-17T12:00:00Z", "convite": false, "espera": "teste" },
+    { "nome": "teste de 7 dias acaba exatamente agora", "assinatura_status": "trial", "trial_started_at": "2026-10-13T12:00:00Z", "convite": false, "espera": null },
+    { "nome": "teste de 7 dias com 1 segundo ainda", "assinatura_status": "trial", "trial_started_at": "2026-10-13T12:00:01Z", "convite": false, "espera": "teste" },
+    { "nome": "teste antigo (antes do corte de 09/10) tem 14 dias", "assinatura_status": "trial", "trial_started_at": "2026-10-08T12:00:00Z", "convite": false, "espera": "teste" },
+    { "nome": "teste antigo de 14 dias já acabou", "assinatura_status": "trial", "trial_started_at": "2026-10-06T00:00:00Z", "convite": false, "espera": null },
+    { "nome": "status vencida mas o teste ainda corre (como a pílula)", "assinatura_status": "vencida", "trial_started_at": "2026-10-18T00:00:00Z", "convite": false, "espera": "teste" },
+    { "nome": "teste acabou, sem assinatura, com convite antigo", "assinatura_status": "trial", "trial_started_at": "2026-09-01T00:00:00Z", "convite": true, "espera": "convite" },
+    { "nome": "teste acabou, sem assinatura, sem convite", "assinatura_status": "vencida", "trial_started_at": "2026-09-01T00:00:00Z", "convite": false, "espera": null },
+    { "nome": "sem linha de configuracoes, sem convite", "assinatura_status": null, "trial_started_at": null, "convite": false, "espera": null },
+    { "nome": "sem linha de configuracoes, com convite antigo", "assinatura_status": null, "trial_started_at": null, "convite": true, "espera": "convite" }
+  ]
+}

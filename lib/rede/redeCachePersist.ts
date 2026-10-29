@@ -27,7 +27,7 @@
  * Chave separada (`jobapp-rede-acesso:<userId>`), guarda só
  * `{ unlocked, confirmadoEm }`. Existe pra sobreviver ao MESMO descarte de
  * documento que zera o cache em memória (`redeCache.ts`): sem isto, todo
- * cold start pagava o round-trip inteiro de `verificarAcessoConvite` antes
+ * cold start pagava o round-trip inteiro de `verificarAcessoRede` antes
  * de mostrar qualquer coisa, mesmo com uma confirmação de poucos segundos
  * atrás -- a aba inteira esperava, não só o feed.
  *
@@ -38,7 +38,7 @@
  * aqui lido; persistir o carimbo não estende esse teto em um milissegundo --
  * só deixa ele sobreviver ao documento, igual ao cache do feed já sobrevive.
  * `RedeGatedTab` é o único chamador (hidrata a memória no mount, grava só
- * quando `verificarAcessoConvite` confirma `200` -- nunca em resposta a
+ * quando `verificarAcessoRede` confirma `200` -- nunca em resposta a
  * leitura de cache, abertura do app ou erro/indisponibilidade).
  */
 
@@ -237,7 +237,7 @@ interface AcessoPayload {
 }
 
 /** Grava o carimbo de acesso confirmado. Só chame com um resultado
- * CONCLUSIVO (`200`) de `verificarAcessoConvite` -- ver o cabeçalho do
+ * CONCLUSIVO (`200`) de `verificarAcessoRede` -- ver o cabeçalho do
  * arquivo. Silencioso em qualquer falha (cota, storage indisponível): sem
  * carimbo persistido, o próximo cold start volta a esperar o round-trip. */
 export function salvarAcesso(

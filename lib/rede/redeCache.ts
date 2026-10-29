@@ -29,7 +29,7 @@
  *  - **Apagado não ressuscita** (req 6). `marcarExcluido(postId)` tomba o
  *    id: todo `escreverFeed` filtra tombstones, então um `listarFeed` lento
  *    que já estava em voo quando o post foi apagado não o traz de volta.
- *  - Apresentação só. O resultado cacheado de `verificarAcessoConvite`
+ *  - Apresentação só. O resultado cacheado de `verificarAcessoRede`
  *    (`acessoLembrado`) serve pra decidir se renderiza `<RedeTab>` na hora
  *    enquanto revalida -- NUNCA é autorização (o servidor/RLS é quem
  *    autoriza cada query de fato). Ver `RedeGatedTab`.
@@ -47,8 +47,8 @@ export type RedeRecurso = "perfil" | "amigas" | "conversas" | "notificacoes";
 const STALE_MS = 60_000;
 
 /**
- * Teto de confiança de um acesso CONFIRMADO (`verificarAcessoConvite`
- * devolveu um `200` com convite). Dentro dele o `RedeGatedTab` mostra o Feed
+ * Teto de confiança de um acesso CONFIRMADO (`verificarAcessoRede`
+ * devolveu um `200` liberado). Dentro dele o `RedeGatedTab` mostra o Feed
  * cacheado na hora ao destravar o PIN, revalidando em 2º plano -- NUNCA é
  * autorização (RLS decide cada query de verdade), só decide se a interface
  * confia no que já mostrou antes de saber a resposta de novo.
@@ -65,7 +65,7 @@ const STALE_MS = 60_000;
  *  - MOMENTO de revalidar o acesso -- sempre, incondicional, todo mount +
  *    volta de 2º plano + reconexão (não depende deste teto);
  *  - quando OCULTAR o conteúdo privado -- só em resposta negativa decisiva
- *    (`sem_convite`/`sessao`/`negado`), logout ou troca de conta. Este teto
+ *    (`vencido`/`sessao`/`negado`), logout ou troca de conta. Este teto
  *    de 24h é só uma rede de segurança de última instância pro caso
  *    degenerado de nunca mais conseguir uma confirmação positiva (sempre
  *    offline, ou o app nunca mais reaberto em primeiro plano) -- não é o
@@ -105,7 +105,7 @@ const mem = new Map<string, Snapshot>(); // `${userId}::${recurso}` -> snapshot
 const feedPorUsuario = new Map<string, FeedSnapshot>(); // userId -> feed
 const slideMemoria = new Map<string, number>(); // postId -> slide ativo do carrossel
 // userId -> acesso confirmado + quando (pra aplicar o TTL). Só entra aqui
-// resultado CONCLUSIVO de `verificarAcessoConvite` (200); indeterminado
+// resultado CONCLUSIVO de `verificarAcessoRede` (200); indeterminado
 // nunca renova.
 const acessoMemoria = new Map<
   string,
@@ -360,7 +360,7 @@ export function scrollLembrado(): number | null {
 
 // ─────────────────────────── acesso (apresentação) ──────────────────────
 
-/** Último resultado CONCLUSIVO (`200`) de `verificarAcessoConvite` +
+/** Último resultado CONCLUSIVO (`200`) de `verificarAcessoRede` +
  * quando. `undefined` = nunca confirmado nesta sessão de JS. Apresentação
  * só (nunca autorização) -- ver o cabeçalho do arquivo e o `RedeGatedTab`,
  * que aplica o TTL antes de confiar nisto. */

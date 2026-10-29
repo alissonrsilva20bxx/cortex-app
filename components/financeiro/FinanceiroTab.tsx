@@ -80,9 +80,9 @@ interface Props {
   focusTab?: InnerTab | null;
   onFocusTabHandled?: () => void;
   nomeUsuaria: string;
-  /** Falso só quando já se sabe que não há acesso à Rede (convite). */
+  /** Falso só quando já se sabe que não há acesso à Rede (teste acabou). */
   podeCriarDesejo: boolean;
-  /** Sem acesso à Rede: leva até a Rede, onde está o convite. */
+  /** Sem acesso à Rede: leva até a Rede, onde está a renovação. */
   onAbrirRede: () => void;
 }
 
