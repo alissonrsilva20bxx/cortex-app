@@ -140,7 +140,9 @@ function classificarErro(status: number): AcessoMotivo {
 }
 
 /** A resposta com erro que decide (a mais grave das duas), ou null. */
-function erroDaConsulta(c: Consulta): { status: number; error: unknown } | null {
+function erroDaConsulta(
+  c: Consulta
+): { status: number; error: unknown } | null {
   const comErro = [c.config, c.convite].filter((r) => r.error);
   if (comErro.length === 0) return null;
   // indisponível pesa menos que uma negativa decisiva: se uma das duas

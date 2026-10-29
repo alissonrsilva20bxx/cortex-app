@@ -41,7 +41,8 @@ function sessao(config: unknown) {
   const resposta = (tabela: string) => {
     if (tabela === "configuracoes")
       return { data: config, error: null, status: 200 };
-    if (tabela === "rede_convites") return { data: [], error: null, status: 200 };
+    if (tabela === "rede_convites")
+      return { data: [], error: null, status: 200 };
     outras.push(tabela);
     return { data: null, error: null, status: 200 };
   };
@@ -92,11 +93,17 @@ const noTeste = { assinatura_status: "trial", trial_started_at: haDias(2) };
 const rotas: [string, (s: ReturnType<typeof sessao>) => Promise<Response>][] = [
   [
     "posts/notificar",
-    () => notificarPost(json("/api/rede/posts/notificar", { tipo: "curtida", postId: "p1" })),
+    () =>
+      notificarPost(
+        json("/api/rede/posts/notificar", { tipo: "curtida", postId: "p1" })
+      ),
   ],
   [
     "amizades/notificar",
-    () => notificarAmizade(json("/api/rede/amizades/notificar", { amizadeId: "a1" })),
+    () =>
+      notificarAmizade(
+        json("/api/rede/amizades/notificar", { amizadeId: "a1" })
+      ),
   ],
   [
     "mensagens/notificar",

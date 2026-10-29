@@ -196,7 +196,9 @@ describe("acesso: teto de confiança de 24h, oculta só em resposta decisiva (T1
     expect(ac).toMatch(/erroDaConsulta\(c\)\?\.status === 401/);
     expect(ac).toMatch(/client\.auth\.refreshSession\(\)/);
     // só a regra (teste, assinatura ou convite antigo) libera
-    expect(ac).toMatch(/if \(!regra\.liberado\) return \{ unlocked: false, motivo: "vencido" \}/);
+    expect(ac).toMatch(
+      /if \(!regra\.liberado\) return \{ unlocked: false, motivo: "vencido" \}/
+    );
   });
 
   it("redeCache: teto de 24h explícito (não 90s) + carimbo de tempo", () => {
