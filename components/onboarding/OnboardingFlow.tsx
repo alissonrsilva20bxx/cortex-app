@@ -11,6 +11,7 @@ import { AVISO_FALTAM_DIAS, TRIAL_DIAS } from "@/lib/assinatura";
 import { SeletorMoeda } from "@/components/moeda/SeletorMoeda";
 import { simboloMoeda } from "@/lib/moeda";
 import { menorPrecoPorMes } from "@/lib/planos";
+import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
 import { useFormatMoeda, useMoeda } from "@/lib/useMoeda";
 import {
   ESPELHO,
@@ -210,8 +211,9 @@ function BoasVindasTeste({
                   <span className={styles.d}>Dia {TRIAL_DIAS}</span>
                   <b>O teste termina</b>
                   <small>
-                    Para continuar, você escolhe um plano, a partir de{" "}
-                    {formatMoeda(menorPrecoPorMes(moeda), "auto")} por mês.
+                    {TEXTOS_PLANOS.onboardingFim(
+                      formatMoeda(menorPrecoPorMes(moeda), "auto")
+                    )}
                   </small>
                 </span>
               </li>

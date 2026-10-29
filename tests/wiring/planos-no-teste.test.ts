@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PlanosTela } from "@/components/assinatura/PlanosTela";
+import { AvisoTeste } from "@/components/assinatura/AvisoTeste";
+import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
 
 /**
  * R17 M4 + R17rev N6: "Ver planos" no meio do teste (Ajustes, aviso dos 2
@@ -38,10 +40,41 @@ describe("PlanosTela durante o teste", () => {
     expect(html).not.toContain("Para seguir usando");
   });
 
-  it("teste acabado mantém o texto de antes, com os dias da conta", () => {
+  it("teste acabado fala da Rede (só ela para; capitão, 27/10), com os dias da conta", () => {
     const html = tela(null, 14);
     expect(html).toContain("Seus 14 dias terminaram");
-    expect(html).toContain("Foi uma boa semana. Para seguir usando, escolha um plano.");
+    expect(html).toContain("Para seguir com a Rede, renove");
+    expect(html).toContain("O resto do app continua liberado.");
+    expect(html).not.toContain("Para seguir usando");
+  });
+});
+
+describe("Depois do teste só a Rede para: nenhum texto diz que o app inteiro para", () => {
+  it("o aviso dos 2 dias fala da Rede", () => {
+    const html = renderToStaticMarkup(
+      createElement(AvisoTeste, {
+        faltam: 2,
+        onVerPlanos: () => {},
+        onFechar: () => {},
+      })
+    );
+    expect(html).toContain("Rede");
+    expect(html).toContain("O resto do app continua liberado.");
+    expect(html).not.toContain("plano para continuar");
+  });
+
+  it("as boas-vindas (O teste termina) falam da Rede, com o menor preço por mês", () => {
+    const fluxo = readFileSync(
+      join(process.cwd(), "components/onboarding/OnboardingFlow.tsx"),
+      "utf8"
+    );
+    expect(fluxo).not.toContain("Para continuar, você escolhe um plano");
+    expect(fluxo).toMatch(
+      /TEXTOS_PLANOS\.onboardingFim\(\s*formatMoeda\(menorPrecoPorMes\(moeda\), "auto"\)\s*\)/
+    );
+    expect(TEXTOS_PLANOS.onboardingFim("15 €")).toBe(
+      "Para seguir com a Rede, você escolhe um plano, a partir de 15 € por mês."
+    );
   });
 });
 

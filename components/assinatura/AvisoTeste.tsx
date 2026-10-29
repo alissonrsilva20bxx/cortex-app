@@ -6,6 +6,7 @@ import {
   BOTTOM_NAV_FAB_SIZE,
   BOTTOM_NAV_OFFSET,
 } from "@/lib/bottomNavCompactStyle";
+import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
 
 /** No lugar da pílula, acima da barra de abas. */
 const BOTTOM = BOTTOM_NAV_OFFSET + BOTTOM_NAV_FAB_SIZE + 14;
@@ -38,7 +39,7 @@ export function AvisoTeste({ faltam, onVerPlanos, onFechar }: Props) {
       </span>
       <span className={styles.avisoTx}>
         <b>Faltam {faltam} dias do seu teste</b>
-        <small>Depois, é só escolher um plano para continuar.</small>
+        <small>{TEXTOS_PLANOS.aviso}</small>
       </span>
       <span className={styles.avisoAcoes}>
         <button
