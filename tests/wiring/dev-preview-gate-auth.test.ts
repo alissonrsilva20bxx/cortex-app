@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * T6 follow-up — resolveGateAuth() is the single place both Gate routes
- * (solicitar-beta, convites) ask "who is calling, and can we even reach
- * the backend". It folds the real cookie session (production, any real
+ * T6 follow-up — resolveGateAuth() is the single place the routes that
+ * authenticate themselves (foto-upload, pagamento/assinatura) ask "who is
+ * calling, and can we even reach the backend". It folds the real cookie session (production, any real
  * login) and the /dev-preview/** bearer-token session (lib/devPreview/
  * session.ts) into one discriminated result, so routes never special-case
  * dev-preview and never confuse "no session" with "backend unreachable".
@@ -26,7 +26,7 @@ import { resolveGateAuth } from "../../lib/devPreview/serverAuth";
 import { DEV_PREVIEW_SESSION_HEADER } from "../../lib/devPreview/session";
 
 function request(headers?: Record<string, string>) {
-  return new Request("http://localhost/api/rede/convites", {
+  return new Request("http://localhost/api/rede/foto-upload", {
     method: "POST",
     headers,
   }) as never;

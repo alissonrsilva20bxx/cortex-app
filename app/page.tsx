@@ -820,8 +820,8 @@ export default function Page() {
             holdOpen={fabOpen || tourOpen}
             pilulaDaJornada={jornadaAberta}
             renderFab={
-              // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
-              // de convite a pílula ocupa a linha toda.
+              // A Rede só tem "+" (Postar) com acesso liberado; na tela
+              // de renovação a pílula ocupa a linha toda.
               activeTab === "rede" && redeAcesso !== "liberado"
                 ? undefined
                 : (compact) => (

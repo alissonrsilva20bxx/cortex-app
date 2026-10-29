@@ -203,7 +203,7 @@ describe("barra entrou x saiu do Saldo do mês: sempre desenhada", () => {
   it("o laboratório monta os 3 casos pelo ?financeiro=", () => {
     const lab = read("app/dev-preview/app/page.tsx");
     expect(lab).toMatch(
-      /aplicarCasoFinanceiro\(\s*buildMockAppSeed\(\{ objetivosCount \}\),\s*ehCasoFinanceiro\(financeiroParam\) \? financeiroParam : null\s*\)/
+      /aplicarCasoFinanceiro\(\s*buildMockAppSeed\(\{ objetivosCount(, testeAcabou)? \}\),\s*ehCasoFinanceiro\(financeiroParam\) \? financeiroParam : null\s*\)/
     );
   });
 });

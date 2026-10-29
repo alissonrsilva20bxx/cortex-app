@@ -1,36 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  DEV_PREVIEW_SESSION_HEADER,
-  isDevPreviewEnvironment,
-  isDevPreviewGatePath,
-  isDevPreviewSessionBootstrapPath,
-} from "./lib/devPreview/session";
+import { isDevPreviewEnvironment } from "./lib/devPreview/session";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // /dev-preview/app has no real Supabase Auth cookie, so the Gate's two
-  // real endpoints (solicitar-beta, convites) always hit the redirect
-  // below and fetch() silently followed it to /login, breaking res.json()
-  // client-side (T6 follow-up). Narrowly let those two exact paths
-  // through — never a prefix match, never any other route — so the route
-  // handler can authenticate the request itself via the dev-preview
-  // bearer token (lib/devPreview/serverAuth.ts) instead. Inert whenever
-  // NODE_ENV === "production", regardless of path or header, so this can
-  // never affect a real deployment.
-  if (
-    isDevPreviewEnvironment() &&
-    isDevPreviewGatePath(path) &&
-    request.headers.get(DEV_PREVIEW_SESSION_HEADER)
-  ) {
-    return NextResponse.next({ request });
-  }
-
   // /dev-preview/** serves a fully mocked Rede (fictional profiles, no real
   // Supabase) and used to be public unconditionally, regardless of
-  // NODE_ENV. Same isDevPreviewEnvironment() signal already used for the
-  // session-bootstrap endpoint below -- inert whenever NODE_ENV ===
+  // NODE_ENV. isDevPreviewEnvironment() is inert whenever NODE_ENV ===
   // "production", so this never affects local dev or preview deployments,
   // but blocks the mock surface entirely in production, before any auth
   // check runs.
@@ -77,7 +54,7 @@ export async function middleware(request: NextRequest) {
     // testar app/api/cron/rede-midia-limpeza contra o build de produção
     // local (mesmo problema já afetava silenciosamente
     // /api/cron/notificacoes). Precisa valer em produção (é onde o cron
-    // roda de verdade), diferente dos bypasses de dev-preview acima.
+    // roda de verdade), diferente do /dev-preview acima.
     path.startsWith("/api/cron") ||
     // app/api/rede/foto-upload faz o próprio gate de sessão
     // (`resolveGateAuth` -> 401 JSON limpo) e ainda re-checa
@@ -97,8 +74,7 @@ export async function middleware(request: NextRequest) {
     // gate de sessão (`resolveGateAuth` -> 401 JSON), como a foto-upload.
     // Sem estas linhas, as duas caíam no 307 -> /login acima.
     path === "/api/pagamento/webhook" ||
-    path === "/api/pagamento/assinatura" ||
-    (isDevPreviewEnvironment() && isDevPreviewSessionBootstrapPath(path));
+    path === "/api/pagamento/assinatura";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

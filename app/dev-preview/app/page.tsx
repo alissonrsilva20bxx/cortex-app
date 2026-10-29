@@ -79,11 +79,6 @@ import {
   aplicarCasoFinanceiro,
   ehCasoFinanceiro,
 } from "@/lib/mockAppData";
-import {
-  enableDevPreviewGateSession,
-  disableDevPreviewGateSession,
-  type DevPreviewSessionStatus,
-} from "@/lib/devPreview/clientSession";
 import type {
   TabId,
   Job,
@@ -97,8 +92,8 @@ import type {
  * Cópia completa da casca do app (pílula flutuante, todas as 6 abas),
  * 100% mockada — sem Supabase de verdade, sem login. Existe só pra ver o
  * frontend inteiro navegável (transições, abas) antes de fechar como isso
- * se conecta ao backend real. A aba Rede usa o mesmo RedeGatedTab (vitrine
- * → código de acesso → Feed completo) da rota real.
+ * se conecta ao backend real. A aba Rede usa o mesmo RedeGatedTab da rota
+ * real (Feed no teste grátis; renovação com `?teste=acabou`).
  */
 
 const DEFAULT_HOME_CARDS: HomeCardConfig = {
@@ -139,10 +134,15 @@ export default function DevPreviewApp() {
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("banco") ===
         "sem-migracoes";
+    // `?teste=acabou` — o teste grátis acabou e não há assinatura: a Rede
+    // mostra a renovação e o resto do app segue liberado.
+    const testeAcabou =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("teste") === "acabou";
     __setMockSupabaseClient(
       createMockSupabaseClient(
         aplicarCasoFinanceiro(
-          buildMockAppSeed({ objetivosCount }),
+          buildMockAppSeed({ objetivosCount, testeAcabou }),
           ehCasoFinanceiro(financeiroParam) ? financeiroParam : null
         ),
         MOCK_APP_USUARIO.id,
@@ -187,26 +187,6 @@ export default function DevPreviewApp() {
       : MOCK_APP_USUARIO;
   });
   const temDesejo = useTemDesejoAtivo(usuario.id);
-
-  // Só afeta as duas chamadas reais do Gate da Rede (solicitar-beta,
-  // convites) — anexa um bearer token de uma conta de teste local
-  // descartável via window.fetch, sem RedeTeaserGate/SerialKeySheet
-  // saberem que isso existe (mesmo princípio do __setMockSupabaseClient
-  // acima: mock só no harness, nunca no componente real). Sem Supabase
-  // local rodando, o status fica "unavailable" com o motivo exato — ver
-  // banner na aba Rede logo abaixo.
-  const [devPreviewSession, setDevPreviewSession] =
-    useState<DevPreviewSessionStatus>({ kind: "loading" });
-  useEffect(() => {
-    let ativo = true;
-    enableDevPreviewGateSession().then((status) => {
-      if (ativo) setDevPreviewSession(status);
-    });
-    return () => {
-      ativo = false;
-      disableDevPreviewGateSession();
-    };
-  }, []);
 
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [redeReselect, setRedeReselect] = useState(0);
@@ -784,24 +764,6 @@ export default function DevPreviewApp() {
         </TabPanel>
 
         <TabPanel tab="rede" activeTab={activeTab}>
-          {devPreviewSession.kind === "unavailable" && (
-            <div
-              className="mb-4 p-3 rounded-xl text-xs leading-relaxed"
-              style={{
-                background: "rgb(255 180 60 / 0.12)",
-                border: "1px solid rgb(255 180 60 / 0.3)",
-                color: "var(--text-2)",
-              }}
-            >
-              <strong style={{ color: "var(--text)" }}>
-                Sessão de teste local indisponível.
-              </strong>{" "}
-              {devPreviewSession.message} Solicitar beta e resgatar código vão
-              mostrar esse mesmo estado até o Supabase local estar de pé — o
-              resto do fluxo (abrir o sheet de código, validações de campo
-              vazio, foco, 44px) continua testável normalmente.
-            </div>
-          )}
           <RedeGatedTab
             usuario={usuario}
             // Espelha app/page.tsx: sem isto a Rede do laboratório se achava
@@ -814,6 +776,8 @@ export default function DevPreviewApp() {
             onFotoPerfilChange={setFotoRede}
             onSairDaRede={() => handleTabChange("home")}
             barraDoca={!tourOpen}
+            onVerPlanos={() => setAbrirPlanos((n) => n + 1)}
+            recarregarSinal={releituraAssinatura}
           />
         </TabPanel>
 
@@ -845,8 +809,8 @@ export default function DevPreviewApp() {
             holdOpen={fabOpen || tourOpen}
             pilulaDaJornada={jornadaAberta}
             renderFab={
-              // A Rede só tem "+" (Postar) com acesso liberado; na vitrine
-              // de convite a pílula ocupa a linha toda.
+              // A Rede só tem "+" (Postar) com acesso liberado; na tela
+              // de renovação a pílula ocupa a linha toda.
               activeTab === "rede" && redeAcesso !== "liberado"
                 ? undefined
                 : (compact) => (

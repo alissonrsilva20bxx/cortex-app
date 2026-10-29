@@ -40,6 +40,8 @@ const hoursAgoIso = (h: number) =>
  * comportamento de sempre (todos os 4). */
 export function buildMockAppSeed(opts?: {
   objetivosCount?: number;
+  /** O teste grátis acabou há tempo e não há assinatura: a Rede pede renovação. */
+  testeAcabou?: boolean;
 }): MockSupabaseSeed {
   const uid = MOCK_APP_USER_ID;
 
@@ -413,22 +415,11 @@ export function buildMockAppSeed(opts?: {
     },
   ];
 
-  // ── Rede: semente mínima pra a aba abrir no Feed (não no gate) em
-  // /dev-preview/app -- convite já resgatado + perfil + alguns posts. Sem
-  // isso o RedeGatedTab cai sempre na vitrine e o Feed fica intestável no
-  // shell mockado. Fotos ficam de fora (exigiriam blobs no bucket).
+  // ── Rede: semente mínima pra a aba abrir no Feed em /dev-preview/app --
+  // perfil + alguns posts. A conta está no teste grátis (`configuracoes`
+  // abaixo), que já dá a Rede; sem convite, como uma conta nova. Fotos
+  // ficam de fora (exigiriam blobs no bucket).
   const FRIEND_ID = "mock-friend-marina";
-  const rede_convites = [
-    {
-      id: "convite-mock-1",
-      codigo_hash: "mock-hash",
-      criado_em: daysFromNow(-20),
-      expira_em: daysFromNow(60),
-      solicitacao_id: null,
-      usado_em: daysFromNow(-18),
-      usado_por: uid,
-    },
-  ];
   const rede_perfis = [
     {
       user_id: uid,
@@ -738,8 +729,8 @@ export function buildMockAppSeed(opts?: {
       user_id: uid,
       tema: "grafite",
       pin_hash: null,
-      trial_started_at: daysFromNow(-3),
-      assinatura_status: "trial",
+      trial_started_at: daysFromNow(opts?.testeAcabou ? -30 : -3),
+      assinatura_status: opts?.testeAcabou ? "vencida" : "trial",
     },
   ];
 
@@ -806,7 +797,7 @@ export function buildMockAppSeed(opts?: {
       notas,
       configuracoes,
       push_subscriptions: [],
-      rede_convites,
+      rede_convites: [],
       rede_perfis,
       rede_posts,
       rede_curtidas,

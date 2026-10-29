@@ -263,8 +263,6 @@ tempo (vários prints em instantes diferentes). Um print só não mostra transi�
   `TabPanel` e o resultado engana.
 - O `<main>` de `app/page.tsx` **nunca** transborda sozinho; quem rola é sempre
   `document`/`window`. Se você está medindo scroll no `main`, está medindo a coisa errada.
-- `/dev-preview/session` dá 503 no local porque falta `SUPABASE_SERVICE_ROLE_KEY` no
-  `.env.local`. É pré-existente e não afeta produção — **não tente consertar**.
 - Muitas chamadas `evaluate()` pesadas seguidas na mesma página deixam a leitura/escrita
   lenta. Isso é o Playwright, não o app.
 

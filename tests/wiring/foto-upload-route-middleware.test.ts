@@ -58,8 +58,8 @@ describe("middleware — /api/rede/foto-upload fica pública (autenticação é 
     const { middleware } = await import("../../middleware");
     for (const path of [
       "/api/rede/foto-upload/extra",
-      "/api/rede/solicitar-beta",
-      "/api/rede/convites",
+      "/api/rede/posts/notificar",
+      "/api/rede/mensagens/notificar",
     ]) {
       const response = await middleware(requestTo(path));
       expect(response.status).toBe(307);

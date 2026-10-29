@@ -147,7 +147,9 @@ describe("webhook e middleware", () => {
 
   it("o Stripe chega ao webhook sem sessão (fora do redirect para /login)", () => {
     expect(middleware).toMatch(/path === "\/api\/pagamento\/webhook" \|\|/);
-    expect(middleware).toMatch(/path === "\/api\/pagamento\/assinatura" \|\|/);
+    expect(middleware).toMatch(
+      /path === "\/api\/pagamento\/assinatura"( \|\||;)/
+    );
   });
 
   it("a migration que tira assinatura_status do alcance da usuária está escrita (não aplicada)", () => {

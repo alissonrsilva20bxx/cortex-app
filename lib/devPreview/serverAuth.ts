@@ -19,13 +19,12 @@ const SERVICO_INDISPONIVEL =
   "Serviço indisponível — não foi possível contatar o Supabase.";
 
 /**
- * Single entry point the Gate routes (solicitar-beta, convites) use to
- * resolve "who is calling, and can we even reach the backend". Folds the
- * real cookie-based session (production, any real login) and the
- * /dev-preview/** bearer-token session (see ./session.ts — T6 follow-up:
- * dev-preview had no real Auth cookie, so both routes always hit
- * middleware's redirect-to-/login and choked parsing the login page as
- * JSON) into one discriminated result, so route handlers never
+ * Single entry point the routes that authenticate themselves
+ * (app/api/rede/foto-upload, app/api/pagamento/assinatura) use to resolve
+ * "who is calling, and can we even reach the backend". Folds the real
+ * cookie-based session (production, any real login) and, outside
+ * production, a local-Supabase bearer token in the dev-preview header (see
+ * ./session.ts) into one discriminated result, so route handlers never
  * special-case dev-preview and never confuse "no session" with "backend
  * unreachable" — messages differ on purpose (requirement: differentiate
  * "sessão ausente" from "serviço indisponível").
