@@ -44,5 +44,8 @@ describe("o erro do pagamento não mostra a mensagem crua do Stripe", () => {
 
   it("não sobra estilo para o código que saiu", () => {
     expect(css).not.toMatch(/\.stripeMsg code/);
+    // R23: o último <b> de dentro da caixa saiu junto (o motivo da recusa
+    // agora é texto do parágrafo), então o estilo dele também sai.
+    expect(css).not.toMatch(/\.stripeMsg b/);
   });
 });
