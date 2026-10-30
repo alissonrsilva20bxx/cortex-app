@@ -459,13 +459,7 @@ describe.each(FORMULARIOS)(
   }
 );
 
-// O BottomSheet compartilhado passou a ligar o hook na R21 (o teclado cobria
-// a data do Novo Desejo e a bio do Editar perfil): ver
-// tests/wiring/bottomsheet-teclado.test.ts.
-describe("Escopo: os três formulários em sheet e o BottomSheet", () => {
-  it("o MetaForm não usa o hook", () => {
-    expect(read("components/financeiro/MetaForm.tsx")).not.toContain(
-      "useCampoVisivelComTeclado"
-    );
-  });
-});
+// Escopo ampliado na R21: o BottomSheet compartilhado (Novo Desejo, Editar
+// perfil...) e o Editar Metas também ligam o hook; ver
+// tests/wiring/bottomsheet-teclado.test.ts e
+// tests/wiring/metaform-teclado.test.ts.

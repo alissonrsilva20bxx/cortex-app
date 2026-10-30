@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
@@ -8,6 +8,7 @@ import { simboloMoeda, type Moeda } from "@/lib/moeda";
 import { useMoeda } from "@/lib/useMoeda";
 import type { PeriodoMeta } from "@/lib/types";
 import { TEXTOS_ERRO } from "@/lib/textosErro";
+import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 
 interface MetaValues {
   dia: string;
@@ -72,6 +73,9 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // R21: mantém o campo focado visível com o teclado aberto (como o #176).
+  const painelRef = useRef<HTMLDivElement>(null);
+  useCampoVisivelComTeclado(painelRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -126,13 +130,19 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
       <SheetBackdrop open={open} onClose={onClose} className="z-50" />
 
       <div
+        ref={painelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Editar Metas"
         aria-hidden={!open || undefined}
         className="fixed left-0 right-0 z-50 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
-          bottom: 0,
+          // R21: com o teclado aberto, o sheet sobe acima dele e cabe na
+          // área que sobrou, como o Novo atendimento (#176). Sem teclado:
+          // bottom 0 e 90dvh, que este sheet nunca alcança.
+          bottom: "var(--teclado-inset, 0px)",
+          maxHeight:
+            "min(90dvh, calc(var(--teclado-altura-util, 100dvh) * 0.9))",
           transform: open ? "translateY(0)" : "translateY(105%)",
           background: `linear-gradient(180deg, rgb(var(--bg-rgb) / 0.97), rgb(var(--bg-rgb) / 0.995) 70%)`,
           border: "1px solid var(--card-border)",
@@ -169,7 +179,7 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-4">
+        <div className="overflow-y-auto flex-1 px-5 py-5 space-y-4">
           {linhasDoForm(moeda).map(({ periodo, label, hint }) => (
             <div key={periodo}>
               <label style={labelStyle}>{label}</label>
