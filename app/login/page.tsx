@@ -479,13 +479,21 @@ function ReenviarEmail({
 
   async function reenviar() {
     setEnviando(true);
-    const { error } = await resendSignupEmail(
+    const { error, limite } = await resendSignupEmail(
       reenvio.email,
       `${window.location.origin}/auth/callback`
     );
     setEnviando(false);
     if (error) {
       toast.error(error);
+      // "Muitas tentativas": o Supabase só aceita de novo depois do
+      // intervalo; a espera começa agora, como num envio, e o botão mostra
+      // "Reenviar em N s" em vez de ficar ativo voltando o mesmo erro.
+      if (limite) {
+        const quando = Date.now();
+        setAgora(quando);
+        onEnviado(quando);
+      }
       return;
     }
     const quando = Date.now();

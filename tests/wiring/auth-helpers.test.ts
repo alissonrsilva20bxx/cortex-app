@@ -347,7 +347,7 @@ describe("resendSignupEmail", () => {
       "a@b.com",
       "http://localhost:3000/auth/callback"
     );
-    expect(result).toEqual({ error: null });
+    expect(result).toEqual({ error: null, limite: false });
     expect(mocks.resend).toHaveBeenCalledWith({
       type: "signup",
       email: "a@b.com",
@@ -366,7 +366,53 @@ describe("resendSignupEmail", () => {
     const result = await resendSignupEmail("a@b.com", "x");
     expect(result).toEqual({
       error: "Muitas tentativas. Aguarde um momento e tente de novo.",
+      limite: true,
     });
+  });
+
+  // R18rev BAIXA 5: depois de "Muitas tentativas" o botão ficava ativo e
+  // cada toque voltava 429. Agora o limite é sinalizado e a tela espera.
+  it("limite de envio por hora (429) também é sinalizado", async () => {
+    mocks.resend.mockResolvedValue({
+      data: {},
+      error: { message: "Email rate limit exceeded", status: 429 },
+    });
+    expect(await resendSignupEmail("a@b.com", "x")).toEqual({
+      error: "Muitas tentativas. Aguarde um momento e tente de novo.",
+      limite: true,
+    });
+  });
+
+  it("um 429 com texto desconhecido também é limite", async () => {
+    mocks.resend.mockResolvedValue({
+      data: {},
+      error: { message: "Too Many", status: 429 },
+    });
+    expect((await resendSignupEmail("a@b.com", "x")).limite).toBe(true);
+  });
+
+  it("outro erro não é limite: a pessoa pode tentar de novo já", async () => {
+    mocks.resend.mockResolvedValue({
+      data: {},
+      error: { message: "some obscure supabase error", status: 500 },
+    });
+    expect(await resendSignupEmail("a@b.com", "x")).toEqual({
+      error: "Não foi possível concluir. Tente novamente.",
+      limite: false,
+    });
+  });
+
+  it("a tela: no limite, a espera começa como num envio (botão em 'Reenviar em N s')", () => {
+    const src = readFileSync(
+      join(process.cwd(), "app/login/page.tsx"),
+      "utf8"
+    ).replace(/\r\n/g, "\n");
+    expect(src).toMatch(
+      /const \{ error, limite \} = await resendSignupEmail\(/
+    );
+    expect(src).toMatch(
+      /if \(error\) \{\s*toast\.error\(error\);[\s\S]{0,300}if \(limite\) \{[\s\S]{0,120}onEnviado\(quando\);\s*\}\s*return;\s*\}/
+    );
   });
 });
 

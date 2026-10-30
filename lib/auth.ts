@@ -35,17 +35,19 @@ export function mapAuthErrorMessage(
     return erro.senhaVazada;
   }
   if (m.includes("password") && m.includes("weak")) return erro.senhaFraca;
-  if (
+  if (ehLimiteDeTentativas(m)) return erro.muitasTentativas;
+  if (m.includes("email") && m.includes("invalid")) return erro.emailInvalido;
+  return erro.generico;
+}
+
+function ehLimiteDeTentativas(m: string): boolean {
+  return (
     m.includes("rate limit") ||
     m.includes("too many requests") ||
     // Pedido repetido antes do intervalo do Supabase ("For security
     // purposes, you can only request this after N seconds").
     m.includes("for security purposes")
-  ) {
-    return erro.muitasTentativas;
-  }
-  if (m.includes("email") && m.includes("invalid")) return erro.emailInvalido;
-  return erro.generico;
+  );
 }
 
 /** Lê os grupos de caracteres que o Supabase exige ("…of each: abc…, 012…"). */
@@ -127,20 +129,31 @@ export function segundosParaReenviar(
   agora: number
 ): number {
   if (ultimoEnvio == null) return 0;
-  return Math.max(0, Math.ceil((ultimoEnvio + ESPERA_REENVIO_MS - agora) / 1000));
+  return Math.max(
+    0,
+    Math.ceil((ultimoEnvio + ESPERA_REENVIO_MS - agora) / 1000)
+  );
 }
 
-/** Manda de novo o e-mail de confirmação do cadastro. */
+/** Manda de novo o e-mail de confirmação do cadastro. `limite`: o Supabase
+ * recusou por excesso de pedidos ("Muitas tentativas"); a tela espera o
+ * intervalo antes de deixar tentar de novo (R18rev BAIXA 5). */
 export async function resendSignupEmail(
   email: string,
   emailRedirectTo: string
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; limite: boolean }> {
   const { error } = await supabase.auth.resend({
     type: "signup",
     email,
     options: { emailRedirectTo },
   });
-  return { error: error ? traduzirErro(error) : null };
+  if (!error) return { error: null, limite: false };
+  return {
+    error: traduzirErro(error),
+    limite:
+      (error as { status?: unknown }).status === 429 ||
+      ehLimiteDeTentativas(error.message.toLowerCase()),
+  };
 }
 
 export async function requestPasswordReset(
