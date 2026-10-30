@@ -48,7 +48,7 @@ describe("textos do plano em constante", () => {
     expect(TEXTOS_PLANOS.ajustesValor.terminou).toBe("Teste terminou");
     expect(TEXTOS_PLANOS.ajustesValor.ativa).toBe("Ativa");
     expect(ajustes).toMatch(
-      /TEXTOS_PLANOS\.ajustesValor\.teste\(estadoAssinatura\.diasRestantes\)/
+      /TEXTOS_PLANOS\.ajustesValor\.teste\(\s*estadoAssinatura\.diasRestantes \?\? 0\s*\)/
     );
     expect(ajustes).toMatch(/TEXTOS_PLANOS\.ajustesValor\.terminou/);
     expect(ajustes).toMatch(/TEXTOS_PLANOS\.ajustesValor\.ativa/);

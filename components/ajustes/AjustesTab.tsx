@@ -522,7 +522,7 @@ export function AjustesTab({
 
   const assinaturaValor =
     estadoAssinatura?.status === "trial"
-      ? TEXTOS_PLANOS.ajustesValor.teste(estadoAssinatura.diasRestantes)
+      ? TEXTOS_PLANOS.ajustesValor.teste(estadoAssinatura.diasRestantes ?? 0)
       : estadoAssinatura?.status === "vencida"
         ? TEXTOS_PLANOS.ajustesValor.terminou
         : estadoAssinatura?.status === "ativa"
