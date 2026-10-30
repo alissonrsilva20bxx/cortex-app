@@ -1,5 +1,12 @@
 /** Texto visível do login, do cadastro e da troca de senha. */
 export const TEXTOS_AUTH = {
+  /** A apresentação embaixo do formulário de entrar. */
+  vitrine: {
+    titulo: "Trabalho em ordem.",
+    destaque: "Rede por perto.",
+    texto:
+      "Gerencie atendimentos, agenda e recebimentos. Na Rede, troque indicações e encontre novas oportunidades.",
+  },
   erro: {
     credenciais: "E-mail ou senha incorretos.",
     emailNaoConfirmado: "Confirme seu e-mail antes de entrar.",

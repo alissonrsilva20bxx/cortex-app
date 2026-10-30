@@ -413,13 +413,11 @@ export default function LoginPage() {
           aria-label="Rotina e comunidade na Arcelle"
         >
           <p>
-            Trabalho em ordem. <span>Rede por perto.</span>
+            {TEXTOS_AUTH.vitrine.titulo}{" "}
+            <span>{TEXTOS_AUTH.vitrine.destaque}</span>
           </p>
           <i aria-hidden="true" />
-          <small>
-            Gerencie jobs, agenda e recebimentos. Na Rede, troque indicações e
-            encontre novas oportunidades.
-          </small>
+          <small>{TEXTOS_AUTH.vitrine.texto}</small>
         </section>
 
         <footer className={styles.screenFooter}>
