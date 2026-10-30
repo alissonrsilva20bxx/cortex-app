@@ -33,8 +33,14 @@ const ganchos = vi.hoisted(() => {
     r: number;
     renderizar: () => void;
     agendado: boolean;
+    desmontada: boolean;
   }
   let atual: Instancia | null = null;
+  /** Erros de um render fora do teste (timer ou promessa que voltou
+   * depois): ficam anotados para o teste ver, e seguem soltos para o
+   * vitest também ver. */
+  const errosDeRender: unknown[] = [];
+  const montadas = new Set<Instancia>();
   const instancia = () => {
     if (!atual) throw new Error("gancho fora do render");
     return atual;
@@ -50,6 +56,8 @@ const ganchos = vi.hoisted(() => {
         typeof inicial === "function" ? (inicial as () => T)() : inicial;
     const set = (v: T | ((antes: T) => T)) => {
       const antes = inst.valores[i] as T;
+      // Como no React: tela desmontada não muda nem renderiza mais.
+      if (inst.desmontada) return;
       const novo = typeof v === "function" ? (v as (antes: T) => T)(antes) : v;
       if (Object.is(novo, antes)) return;
       inst.valores[i] = novo;
@@ -57,7 +65,13 @@ const ganchos = vi.hoisted(() => {
       inst.agendado = true;
       queueMicrotask(() => {
         inst.agendado = false;
-        inst.renderizar();
+        if (inst.desmontada) return;
+        try {
+          inst.renderizar();
+        } catch (e) {
+          errosDeRender.push(e);
+          throw e;
+        }
       });
     };
     return [inst.valores[i] as T, set] as const;
@@ -91,6 +105,7 @@ const ganchos = vi.hoisted(() => {
       e: 0,
       r: 0,
       agendado: false,
+      desmontada: false,
       renderizar() {
         inst.i = inst.e = inst.r = 0;
         inst.pendentes = [];
@@ -107,11 +122,30 @@ const ganchos = vi.hoisted(() => {
         }
       },
     };
+    montadas.add(inst);
     inst.renderizar();
     return { arvore: () => arvore };
   }
 
-  return { useState, useEffect, useRef, montar };
+  /** Desmonta tudo o que o teste montou, como o React: roda a limpeza de
+   * cada efeito (com o `window` falso ainda no lugar) e para os renders. */
+  function desmontarTudo() {
+    for (const inst of montadas) {
+      inst.desmontada = true;
+      for (const efeito of inst.efeitos)
+        if (typeof efeito?.limpar === "function") efeito.limpar();
+    }
+    montadas.clear();
+  }
+
+  return {
+    useState,
+    useEffect,
+    useRef,
+    montar,
+    desmontarTudo,
+    errosDeRender,
+  };
 });
 
 vi.mock("react", async (original) => ({
@@ -175,6 +209,7 @@ let armazenamento: ReturnType<typeof armazenamentoFalso>;
 
 beforeEach(() => {
   rejeicoes.length = 0;
+  ganchos.errosDeRender.length = 0;
   process.on("unhandledRejection", ouvirRejeicao);
   armazenamento = armazenamentoFalso();
   vi.stubGlobal("localStorage", armazenamento);
@@ -188,10 +223,15 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => {
+/** O fim de cada teste (o afterEach): desmonta as telas antes de tirar o
+ * `window` e o `localStorage` falsos. */
+function fimDoTeste() {
+  ganchos.desmontarTudo();
   process.off("unhandledRejection", ouvirRejeicao);
   vi.unstubAllGlobals();
-});
+}
+
+afterEach(fimDoTeste);
 
 /** Página http: o navegador não expõe `crypto.subtle`. */
 const semConexaoSegura = () => vi.stubGlobal("crypto", {});
@@ -299,6 +339,20 @@ describe("PinScreen com https (comportamento de antes)", () => {
     await esperar(250);
     expect(t.onUnlock).toHaveBeenCalledTimes(1);
     expect(rejeicoes).toEqual([]);
+  });
+
+  // R19rev #5: o PIN errado deixa um timer de 700 ms. Ele voltava depois
+  // do fim do teste, sem o `window` falso, e o render dava "window is not
+  // defined" (erro solto na suíte inteira). Como no React, o fim do teste
+  // desmonta a tela antes de tirar o `window`, e a tela desmontada não
+  // renderiza mais.
+  it("PIN errado: o timer que volta depois do fim do teste não renderiza sem window", async () => {
+    const t = abrirTrava(await hashPin("1234"));
+    await t.digitar("9999");
+    expect(t.mensagem()).toBe("Esse PIN não confere. Tente de novo.");
+    fimDoTeste();
+    await esperar(800);
+    expect(ganchos.errosDeRender).toEqual([]);
   });
 
   it("PIN errado avisa e conta o erro", async () => {
