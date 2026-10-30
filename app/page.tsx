@@ -45,6 +45,7 @@ import { AppTour } from "@/components/onboarding/AppTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
+import { useAvisoErroDeEntrada } from "@/components/useAvisoErroDeEntrada";
 import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
 import { EspacoDaPilula } from "@/components/assinatura/EspacoDaPilula";
 import {
@@ -104,6 +105,8 @@ function isNetworkError(error: { name?: string; status?: number }): boolean {
 
 export default function Page() {
   const toast = useToast();
+  // Volta do Google que falhou (?error=): o aviso fica até a pessoa agir.
+  useAvisoErroDeEntrada();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [redeReselect, setRedeReselect] = useState(0);
   const [fabOpen, setFabOpen] = useState(false);

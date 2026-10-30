@@ -50,6 +50,7 @@ import type { RedeAcessoTour } from "@/lib/appTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
+import { useAvisoErroDeEntrada } from "@/components/useAvisoErroDeEntrada";
 import { sairDaConta } from "@/lib/sairDaConta";
 import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
 import { EspacoDaPilula } from "@/components/assinatura/EspacoDaPilula";
@@ -176,6 +177,8 @@ export default function DevPreviewApp() {
   }
 
   const toast = useToast();
+  // Volta do Google que falhou (?error=): o aviso fica até a pessoa agir.
+  useAvisoErroDeEntrada();
   // `?jornada=agora|ano`: a usuária do protótipo da Jornada (Bella), pra a
   // tela sair igual à referência; sem o parâmetro, a usuária dos mockups.
   const [usuario] = useState(() => {

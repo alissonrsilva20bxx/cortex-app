@@ -56,7 +56,7 @@ function AuthErrorNotice() {
 
   useEffect(() => {
     if (!searchParams.get("error")) return;
-    toast.error("Não foi possível concluir a autenticação. Tente de novo.");
+    toast.error(TEXTOS_AUTH.erro.entrada);
     router.replace("/login");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

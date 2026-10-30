@@ -18,6 +18,8 @@ export const TEXTOS_AUTH = {
     muitasTentativas: "Muitas tentativas. Aguarde um momento e tente de novo.",
     emailInvalido: "E-mail inválido.",
     generico: "Não foi possível concluir. Tente novamente.",
+    /** A volta do Google ou do link falhou (`?error=` do /auth/callback). */
+    entrada: "Não foi possível concluir a autenticação. Tente de novo.",
   },
   /** O Sair quando o Supabase não consegue sair (R18rev BAIXA 3). */
   sair: {

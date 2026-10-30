@@ -10,9 +10,15 @@ interface ToastItem {
   type: ToastType;
 }
 
+/** `ateAgir`: o aviso não some sozinho; fica até a pessoa tocar na tela ou
+ * digitar (para erro que ela não pode perder, como a volta do Google). */
+interface ToastOpcoes {
+  ateAgir?: boolean;
+}
+
 interface ToastCtx {
   success: (message: string) => void;
-  error: (message: string) => void;
+  error: (message: string, opcoes?: ToastOpcoes) => void;
 }
 
 const ToastContext = createContext<ToastCtx>({
@@ -26,20 +32,47 @@ export function useToast() {
 
 let _id = 0;
 
+type AlvoDeAcao = {
+  addEventListener: (tipo: string, fn: () => void) => void;
+  removeEventListener: (tipo: string, fn: () => void) => void;
+};
+
+/** Chama `fn` uma vez, no primeiro toque ou tecla depois de agora. Começa a
+ * ouvir no próximo ciclo: o toque que abriu o aviso não o fecha. */
+export function ouvirPrimeiraAcao(alvo: AlvoDeAcao, fn: () => void): void {
+  const agir = () => {
+    alvo.removeEventListener("pointerdown", agir);
+    alvo.removeEventListener("keydown", agir);
+    fn();
+  };
+  setTimeout(() => {
+    alvo.addEventListener("pointerdown", agir);
+    alvo.addEventListener("keydown", agir);
+  }, 0);
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const show = useCallback((message: string, type: ToastType) => {
-    const id = ++_id;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(
-      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      3200
-    );
-  }, []);
+  const show = useCallback(
+    (message: string, type: ToastType, opcoes?: ToastOpcoes) => {
+      const id = ++_id;
+      setToasts((prev) => [...prev, { id, message, type }]);
+      const fechar = () => setToasts((prev) => prev.filter((t) => t.id !== id));
+      if (opcoes?.ateAgir) {
+        ouvirPrimeiraAcao(window, fechar);
+        return;
+      }
+      setTimeout(fechar, 3200);
+    },
+    []
+  );
 
   const success = useCallback((msg: string) => show(msg, "success"), [show]);
-  const error = useCallback((msg: string) => show(msg, "error"), [show]);
+  const error = useCallback(
+    (msg: string, opcoes?: ToastOpcoes) => show(msg, "error", opcoes),
+    [show]
+  );
 
   return (
     <ToastContext.Provider value={{ success, error }}>

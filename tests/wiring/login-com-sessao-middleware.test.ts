@@ -42,6 +42,35 @@ describe("middleware — /login com sessão ativa", () => {
     expect(new URL(response.headers.get("location")!).pathname).toBe("/");
   });
 
+  it("logada: /login sem erro vai ao início sem parâmetro nenhum", async () => {
+    sessao.user = { id: "u1" };
+    const { middleware } = await import("../../middleware");
+    const response = await middleware(requestTo("/login?x=1"));
+    expect(new URL(response.headers.get("location")!).search).toBe("");
+  });
+
+  // R18rev BAIXA 4: a volta do Google que falhou (reconfirmação do PIN)
+  // cai em /login?error=auth_failed. Logada, ela ia ao início sem o aviso.
+  it("logada: o aviso de erro (?error=) vai junto para o início", async () => {
+    sessao.user = { id: "u1" };
+    const { middleware } = await import("../../middleware");
+    const response = await middleware(requestTo("/login?error=auth_failed"));
+    const destino = new URL(response.headers.get("location")!);
+    expect(destino.pathname).toBe("/");
+    expect(destino.search).toBe("?error=auth_failed");
+  });
+
+  it("logada: o valor do ?error= nunca é repassado, só o código genérico", async () => {
+    sessao.user = { id: "u1" };
+    const { middleware } = await import("../../middleware");
+    const response = await middleware(
+      requestTo("/login?error=%3Cscript%3E&outro=1")
+    );
+    expect(new URL(response.headers.get("location")!).search).toBe(
+      "?error=auth_failed"
+    );
+  });
+
   it("logada: /login/nova-senha continua abrindo", async () => {
     sessao.user = { id: "u1" };
     const { middleware } = await import("../../middleware");
@@ -59,8 +88,6 @@ describe("middleware — /login com sessão ativa", () => {
     const { middleware } = await import("../../middleware");
     const response = await middleware(requestTo("/"));
     expect(response.status).toBe(307);
-    expect(new URL(response.headers.get("location")!).pathname).toBe(
-      "/login"
-    );
+    expect(new URL(response.headers.get("location")!).pathname).toBe("/login");
   });
 });

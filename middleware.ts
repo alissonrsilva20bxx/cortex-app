@@ -84,11 +84,15 @@ export async function middleware(request: NextRequest) {
 
   // Quem já está logada e abre /login (voltar do celular, favorito, app
   // instalado) ia para "Bom ter você de volta" e parecia ter saído da conta
-  // (R17 M2). Leva os cookies renovados junto com o redirect.
+  // (R17 M2). Leva os cookies renovados junto com o redirect. O aviso de
+  // erro da volta do Google (`?error=`, do /auth/callback) vai junto, para o
+  // início mostrar (R18rev BAIXA 4); só o código genérico, nunca o valor.
   if (user && path === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    url.search = "";
+    url.search = request.nextUrl.searchParams.has("error")
+      ? "?error=auth_failed"
+      : "";
     const redirect = NextResponse.redirect(url);
     supabaseResponse.cookies
       .getAll()
