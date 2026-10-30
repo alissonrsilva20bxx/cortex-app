@@ -61,7 +61,18 @@ function oQueFaltaNaSenha(message: string): string[] {
   return itens;
 }
 
+/**
+ * O fetch nem chegou ao servidor (sem internet): o auth-js devolve
+ * AuthRetryableFetchError com status 0. Erro 5xx vem com o mesmo nome, mas
+ * com o status do servidor, e fica no genérico (R21).
+ */
+function ehSemConexao(error: object): boolean {
+  const { name, status } = error as { name?: unknown; status?: unknown };
+  return name === "AuthRetryableFetchError" && status === 0;
+}
+
 function traduzirErro(error: { message: string }): string {
+  if (ehSemConexao(error)) return TEXTOS_AUTH.erro.semConexao;
   const reasons = (error as { reasons?: unknown }).reasons;
   return mapAuthErrorMessage(
     error.message,

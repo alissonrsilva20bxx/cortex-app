@@ -25,6 +25,8 @@ export const TEXTOS_AUTH = {
     muitasTentativas: "Muitas tentativas. Aguarde um momento e tente de novo.",
     emailInvalido: "E-mail inválido.",
     generico: "Não foi possível concluir. Tente novamente.",
+    /** O pedido nem chegou ao servidor (sem internet), R21. */
+    semConexao: "Sem conexão. Confira a internet e tente de novo.",
     /** A volta do Google ou do link falhou (`?error=` do /auth/callback). */
     entrada: "Não foi possível concluir a autenticação. Tente de novo.",
   },
