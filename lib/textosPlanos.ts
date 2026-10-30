@@ -25,4 +25,13 @@ export const TEXTOS_PLANOS = {
     `Para seguir com a Rede, você escolhe um plano, a partir de ${precoPorMes} por mês.`,
   /** Ajustes › Conta: a linha do plano pago (o plano se chama só "Rede"). */
   ajustesLinha: "Plano Rede",
+  /** Ajustes › Conta: o valor ao lado de "Plano Rede". */
+  ajustesValor: {
+    teste: (dias: number) =>
+      `Teste grátis · ${dias} ${dias === 1 ? "dia" : "dias"}`,
+    terminou: "Teste terminou",
+    ativa: "Ativa",
+  },
+  /** Pagamento (app/api/pagamento/assinatura): pedir o plano já pago. */
+  jaAtiva: "Seu Plano Rede já está ativo.",
 } as const;

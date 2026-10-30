@@ -6,6 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { resolveGateAuth } from "../../../../lib/devPreview/serverAuth";
 import { lerMoeda } from "../../../../lib/moeda";
 import { PLANOS, type PlanoId } from "../../../../lib/planos";
+import { TEXTOS_PLANOS } from "../../../../lib/textosPlanos";
 import { cenarioDaCobranca } from "../../../../lib/pagamento/regras";
 import {
   ErroDoStripe,
@@ -67,10 +68,7 @@ export async function POST(request: NextRequest) {
     .eq("user_id", userId)
     .maybeSingle();
   if (cfg?.assinatura_status === "ativa")
-    return NextResponse.json(
-      { error: "Sua assinatura já está ativa." },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: TEXTOS_PLANOS.jaAtiva }, { status: 409 });
   const cenario = cenarioDaCobranca(cfg?.trial_started_at ?? null);
 
   const { data: quem } = await supabase.auth.getUser();
@@ -100,7 +98,7 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     if (e instanceof ErroJaAtiva)
       return NextResponse.json(
-        { error: "Sua assinatura já está ativa." },
+        { error: TEXTOS_PLANOS.jaAtiva },
         { status: 409 }
       );
     const status = e instanceof ErroDoStripe ? 502 : 500;

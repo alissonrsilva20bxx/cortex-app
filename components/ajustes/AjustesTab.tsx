@@ -522,11 +522,11 @@ export function AjustesTab({
 
   const assinaturaValor =
     estadoAssinatura?.status === "trial"
-      ? `Teste grátis · ${estadoAssinatura.diasRestantes} ${estadoAssinatura.diasRestantes === 1 ? "dia" : "dias"}`
+      ? TEXTOS_PLANOS.ajustesValor.teste(estadoAssinatura.diasRestantes)
       : estadoAssinatura?.status === "vencida"
-        ? "Teste terminou"
+        ? TEXTOS_PLANOS.ajustesValor.terminou
         : estadoAssinatura?.status === "ativa"
-          ? "Ativa"
+          ? TEXTOS_PLANOS.ajustesValor.ativa
           : undefined;
 
   const linhasApp = [
