@@ -79,6 +79,7 @@ import {
   buildMockAppSeed,
   MOCK_APP_USUARIO,
   aplicarCasoFinanceiro,
+  aplicarContaNova,
   ehCasoFinanceiro,
 } from "@/lib/mockAppData";
 import type {
@@ -141,12 +142,18 @@ export default function DevPreviewApp() {
     const testeAcabou =
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("teste") === "acabou";
+    // `?conta=nova` — a pessoa que acabou de criar a conta: nada dela, o
+    // teste começa agora e a Jornada é a da conta nova (estados vazios).
+    const contaNova =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("conta") === "nova";
+    const semente = aplicarCasoFinanceiro(
+      buildMockAppSeed({ objetivosCount, testeAcabou }),
+      ehCasoFinanceiro(financeiroParam) ? financeiroParam : null
+    );
     __setMockSupabaseClient(
       createMockSupabaseClient(
-        aplicarCasoFinanceiro(
-          buildMockAppSeed({ objetivosCount, testeAcabou }),
-          ehCasoFinanceiro(financeiroParam) ? financeiroParam : null
-        ),
+        contaNova ? aplicarContaNova(semente) : semente,
         MOCK_APP_USUARIO.id,
         semMigracoes
           ? {
@@ -167,7 +174,7 @@ export default function DevPreviewApp() {
         : null;
     usarTransporteDeLaboratorio(
       criarTransporteJornadaLaboratorio(
-        jornadaParam === "nova"
+        jornadaParam === "nova" || contaNova
           ? estadoJornadaContaNova()
           : jornadaParam === "ano"
             ? estadoJornadaAno()

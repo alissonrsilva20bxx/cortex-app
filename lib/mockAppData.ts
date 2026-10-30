@@ -881,3 +881,48 @@ export function aplicarCasoFinanceiro(
     },
   };
 }
+
+/**
+ * `?conta=nova` do laboratório: a pessoa que acabou de criar a conta, para
+ * ver o estado vazio de cada tela sem banco. Nada dela (atendimentos,
+ * metas, despesas, Desejos, Cofre, perfil, amizades e conversas da Rede);
+ * o teste grátis começa agora. As publicações das outras continuam, como
+ * numa Rede de verdade.
+ */
+export function aplicarContaNova(seed: MockSupabaseSeed): MockSupabaseSeed {
+  const uid = MOCK_APP_USER_ID;
+  const t = seed.tables;
+  const vazias = [
+    "jobs",
+    "metas",
+    "despesas",
+    "receitas_avulsas",
+    "objetivos",
+    "notas",
+    "rede_wishlist",
+    "rede_clientes",
+    "rede_livelinks",
+    "rede_amizades",
+    "rede_conversas",
+    "rede_conversas_participantes",
+    "rede_mensagens",
+  ];
+  return {
+    tables: {
+      ...t,
+      ...Object.fromEntries(vazias.map((nome) => [nome, []])),
+      rede_perfis: (t.rede_perfis ?? []).filter((p) => p.user_id !== uid),
+      rede_posts: (t.rede_posts ?? []).filter((p) => p.autor_id !== uid),
+      rede_curtidas: (t.rede_curtidas ?? []).filter((c) => c.user_id !== uid),
+      rede_comentarios: (t.rede_comentarios ?? []).filter(
+        (c) => c.autor_id !== uid
+      ),
+      configuracoes: (t.configuracoes ?? []).map((c) => ({
+        ...c,
+        trial_started_at: new Date().toISOString(),
+        assinatura_status: "trial",
+      })),
+    },
+    cofreFiles: [],
+  };
+}
