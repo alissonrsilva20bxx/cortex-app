@@ -61,6 +61,16 @@ interface Props {
    * escopo deste ticket. Só o Cofre (`UploadSheet`) passa `true`.
    */
   largeCloseTarget?: boolean;
+  /**
+   * R23 (achado B1 da R21rev): a folha já cabe acima do teclado, mas quem
+   * não tem área de rolagem própria (Publicar, LiveLink, Editar perfil,
+   * Upload do Cofre, reautenticação) ficava com o fim do conteúdo atrás do
+   * teclado, sem como rolar. Com `true`, o conteúdo ganha rolagem própria
+   * (o mesmo `overflow-y-auto flex-1` do MetaForm) e o rodapé com o botão
+   * continua fixo. As folhas que já rolam por dentro (Comentários…) ficam
+   * sem a prop, para não ter rolagem dupla.
+   */
+  scrollContent?: boolean;
 }
 
 export function BottomSheet({
@@ -70,6 +80,7 @@ export function BottomSheet({
   children,
   footer,
   largeCloseTarget = false,
+  scrollContent = false,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -294,7 +305,11 @@ export function BottomSheet({
           </button>
         </div>
 
-        {children}
+        {scrollContent ? (
+          <div className="overflow-y-auto flex-1">{children}</div>
+        ) : (
+          children
+        )}
 
         {footer && (
           <div

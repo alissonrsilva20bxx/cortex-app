@@ -55,6 +55,7 @@ export function ProfileEditForm({ open, initial, onClose, onSave }: Props) {
       onClose={onClose}
       title="Editar perfil"
       largeCloseTarget
+      scrollContent
       footer={
         <button
           onClick={() => onSave(form)}

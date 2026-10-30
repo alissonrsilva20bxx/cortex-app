@@ -162,6 +162,7 @@ export function PostComposer({
       }}
       title={editingPost ? "Editar publicação" : "Nova publicação"}
       largeCloseTarget
+      scrollContent
       footer={
         <button
           onClick={handlePublish}

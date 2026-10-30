@@ -285,6 +285,7 @@ export function ReauthModal({
       onClose={onClose}
       title="Confirme que é você"
       largeCloseTarget
+      scrollContent
     >
       <div style={{ padding: "4px 20px 20px" }}>{corpo}</div>
     </BottomSheet>

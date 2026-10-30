@@ -57,6 +57,7 @@ export function LiveLinkForm({ open, link, onClose, onSave }: Props) {
       open={open}
       onClose={onClose}
       largeCloseTarget
+      scrollContent
       title={link ? "Editar LiveLink" : "Novo LiveLink"}
       footer={
         <button

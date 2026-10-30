@@ -61,6 +61,7 @@ export function UploadSheet({ open, userId, onClose, onUploaded }: Props) {
       onClose={handleClose}
       title="Enviar arquivo"
       largeCloseTarget
+      scrollContent
       footer={
         <button
           onClick={handleUpload}
