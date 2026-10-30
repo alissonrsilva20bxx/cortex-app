@@ -9,7 +9,8 @@
 //      denúncia olham a outra pessoa pela regra); a 0040 impede esticar o
 //      teste; código e beta não são mais chamáveis pela sessão;
 //   C. o rollback (supabase/migrations-rollback) volta ao "só convite", e
-//      a 0049 aplica de novo depois dele;
+//      a 0049 aplica de novo depois dele; com uma conta excluída entre o
+//      rollback e a 0049, o Desejo dela some junto e tudo aplica de novo;
 //   D. sem a 0040, a 0049 para com erro e não aplica nada;
 //   E. com a 0040 desligada ou incompleta (um gatilho fora, desligado, com
 //      outra função ou sem o update), a 0049 também para.
@@ -466,6 +467,63 @@ try {
   ok("0049 de novo: teste acabou cria Desejo", !r.erro, r.erro);
 } catch (e) {
   ok("0049 aplica de novo depois do rollback", false, e.message);
+}
+
+// ── C2. conta excluída entre o rollback e a 0049 de novo ──
+// O rollback deixa o Desejo de quem não tem perfil (nada apagado), mas ele
+// segue preso à conta: excluir a conta apaga o Desejo (sem órfão), e a 0049
+// e o rollback aplicam de novo sem erro.
+const fkConta = () =>
+  semJwt(
+    "select coalesce(array_agg(conname::text order by conname), '{}') as nomes from pg_constraint where conrelid = 'public.rede_wishlist_items'::regclass and contype = 'f' and confrelid = 'auth.users'::regclass"
+  ).then((x) => x.rows[0].nomes);
+const X = await conta({ status: "vencida", inicio: dias(40) });
+r = await desejo(
+  X,
+  `insert into public.rede_wishlist_items (user_id, nome, cor, valor_alvo) values ('${X}', 'Mesa', '#000', 300) returning id`
+);
+ok("ciclo: sem perfil, cria Desejo com a 0049", !r.erro, r.erro);
+const DX = r.linhas[0]?.id;
+const contaDesejo = async () =>
+  (
+    await semJwt(
+      `select count(*)::int as n from public.rede_wishlist_items where id = '${DX}'`
+    )
+  ).rows[0].n;
+try {
+  await db.exec(readFileSync(ROLLBACK, "utf-8"));
+  ok("ciclo: rollback deixa o Desejo", (await contaDesejo()) === 1);
+  await semJwt(`delete from auth.users where id = '${X}'`);
+  ok(
+    "ciclo: excluir a conta depois do rollback apaga o Desejo (sem órfão)",
+    (await contaDesejo()) === 0
+  );
+} catch (e) {
+  ok("ciclo: rollback e exclusão da conta", false, e.message);
+}
+try {
+  await db.exec(
+    readFileSync(join(DIR, "0049_rede_acesso_por_teste.sql"), "utf-8")
+  );
+  const nomes = await fkConta();
+  ok(
+    "ciclo: 0049 aplica de novo, com uma só chave para a conta",
+    nomes.length === 1 && nomes[0] === "rede_wishlist_items_user_id_fkey",
+    nomes
+  );
+} catch (e) {
+  ok("ciclo: 0049 aplica de novo depois da conta excluída", false, e.message);
+}
+try {
+  await db.exec(readFileSync(ROLLBACK, "utf-8"));
+  const nomes = await fkConta();
+  ok(
+    "ciclo: rollback de novo, com a chave direta para a conta",
+    nomes.length === 1 && nomes[0] === "rede_wishlist_items_user_id_conta_fkey",
+    nomes
+  );
+} catch (e) {
+  ok("ciclo: rollback de novo", false, e.message);
 }
 
 // ── D. sem a 0040, a 0049 para e não aplica nada ──

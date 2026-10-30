@@ -184,7 +184,9 @@ grant execute on function public.rede_aprovar_solicitacao_beta(uuid)
 -- 6. Desejos como na 0021: o insert volta a exigir a Rede e a dona volta a
 -- ser o perfil da Rede. A chave volta "not valid": os Desejos criados sem
 -- perfil enquanto a 0049 valia ficam (nada é apagado); só os novos precisam
--- de perfil.
+-- de perfil. Esses Desejos não têm perfil que leve a exclusão da conta até
+-- eles, então fica também uma chave direta para auth.users (nome próprio):
+-- excluir a conta apaga os Desejos dela, sem órfão, e a 0049 aplica de novo.
 drop policy if exists "rede_wishlist_items: owner insert"
   on public.rede_wishlist_items;
 drop policy if exists "rede_wishlist_items: owner insert requires invite"
@@ -200,6 +202,11 @@ create policy "rede_wishlist_items: owner insert requires invite"
 
 alter table public.rede_wishlist_items
   drop constraint if exists rede_wishlist_items_user_id_fkey;
+alter table public.rede_wishlist_items
+  drop constraint if exists rede_wishlist_items_user_id_conta_fkey;
+alter table public.rede_wishlist_items
+  add constraint rede_wishlist_items_user_id_conta_fkey
+  foreign key (user_id) references auth.users(id) on delete cascade;
 alter table public.rede_wishlist_items
   add constraint rede_wishlist_items_user_id_fkey
   foreign key (user_id) references public.rede_perfis(user_id)

@@ -329,6 +329,9 @@ revoke execute on function public.rede_aprovar_solicitacao_beta(uuid)
 --     eram só da dona (0021) e não mudam. Ninguém lê o Desejo de outra.
 --   - Publicar ou compartilhar no feed é rede_posts, que segue exigindo a
 --     Rede (rede_is_member, acima).
+--   - Depois de um rollback existe também a chave direta
+--     rede_wishlist_items_user_id_conta_fkey; ela sai e fica só a de nome
+--     certo, para a conta.
 do $$
 declare
   fk record;
@@ -345,6 +348,9 @@ begin
       fk.conname
     );
   end loop;
+
+  alter table public.rede_wishlist_items
+    drop constraint if exists rede_wishlist_items_user_id_conta_fkey;
 
   if not exists (
     select 1
