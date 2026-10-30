@@ -30,7 +30,7 @@ export const TEXTOS_PLANOS = {
     teste: (dias: number) =>
       `Teste grátis · ${dias} ${dias === 1 ? "dia" : "dias"}`,
     terminou: "Teste terminou",
-    ativa: "Ativa",
+    ativo: "Ativo",
   },
   /** Pagamento (app/api/pagamento/assinatura): pedir o plano já pago. */
   jaAtiva: "Seu Plano Rede já está ativo.",

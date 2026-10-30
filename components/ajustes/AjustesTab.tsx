@@ -526,7 +526,7 @@ export function AjustesTab({
       : estadoAssinatura?.status === "vencida"
         ? TEXTOS_PLANOS.ajustesValor.terminou
         : estadoAssinatura?.status === "ativa"
-          ? TEXTOS_PLANOS.ajustesValor.ativa
+          ? TEXTOS_PLANOS.ajustesValor.ativo
           : undefined;
 
   const linhasApp = [

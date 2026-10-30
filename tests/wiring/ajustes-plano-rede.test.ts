@@ -46,13 +46,19 @@ describe("textos do plano em constante", () => {
     expect(TEXTOS_PLANOS.ajustesValor.teste(4)).toBe("Teste grátis · 4 dias");
     expect(TEXTOS_PLANOS.ajustesValor.teste(1)).toBe("Teste grátis · 1 dia");
     expect(TEXTOS_PLANOS.ajustesValor.terminou).toBe("Teste terminou");
-    expect(TEXTOS_PLANOS.ajustesValor.ativa).toBe("Ativa");
+    expect(TEXTOS_PLANOS.ajustesValor.ativo).toBe("Ativo");
     expect(ajustes).toMatch(
       /TEXTOS_PLANOS\.ajustesValor\.teste\(\s*estadoAssinatura\.diasRestantes \?\? 0\s*\)/
     );
     expect(ajustes).toMatch(/TEXTOS_PLANOS\.ajustesValor\.terminou/);
-    expect(ajustes).toMatch(/TEXTOS_PLANOS\.ajustesValor\.ativa/);
+    expect(ajustes).toMatch(/TEXTOS_PLANOS\.ajustesValor\.ativo/);
     expect(ajustes).not.toMatch(/Teste grátis ·|"Teste terminou"|"Ativa"/);
+  });
+
+  // R20, seção 5: "Plano" é masculino. A linha dizia "Plano Rede · Ativa".
+  it("o plano pago aparece como 'Plano Rede · Ativo'", () => {
+    expect(TEXTOS_PLANOS.ajustesValor).not.toHaveProperty("ativa");
+    expect(Object.values(TEXTOS_PLANOS.ajustesValor)).not.toContain("Ativa");
   });
 
   it("o erro de plano já ativo fala da Rede e vem da constante", () => {
