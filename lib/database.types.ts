@@ -1121,15 +1121,7 @@ export type Database = {
           valor_alvo?: number;
           valor_atual?: number;
         };
-        Relationships: [
-          {
-            foreignKeyName: "rede_wishlist_items_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "rede_perfis";
-            referencedColumns: ["user_id"];
-          },
-        ];
+        Relationships: [];
       };
     };
     Views: {
