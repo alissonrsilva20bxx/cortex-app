@@ -47,6 +47,15 @@ describe("PlanosTela durante o teste", () => {
     expect(html).toContain("O resto do app continua liberado.");
     expect(html).not.toContain("Para seguir usando");
   });
+
+  // R19 (achado fora da tarefa) e R21: quem teve 14 dias lia "Foi uma boa
+  // semana.". A frase da semana só vale para o teste de 7 dias.
+  it("com 14 dias não diz 'Foi uma boa semana'; com 7 dias diz", () => {
+    expect(tela(null, 14)).not.toContain("Foi uma boa semana");
+    expect(tela(null, 7)).toContain(
+      "Foi uma boa semana. Para seguir com a Rede, renove"
+    );
+  });
 });
 
 describe("Depois do teste só a Rede para: nenhum texto diz que o app inteiro para", () => {

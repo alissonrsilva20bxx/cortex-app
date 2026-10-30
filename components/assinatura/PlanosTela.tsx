@@ -65,7 +65,7 @@ export function PlanosTela({
         }
       : {
           titulo: TEXTOS_PLANOS.fim.titulo(diasDoTeste),
-          texto: TEXTOS_PLANOS.fim.texto,
+          texto: TEXTOS_PLANOS.fim.texto(diasDoTeste),
         };
 
   return (
@@ -148,7 +148,8 @@ export function PlanosTela({
           onClick={() => onEscolherPlano(plano)}
           data-escolher-plano
         >
-          Continuar com {plano.nome} · {formatMoeda(precoDoPlano(plano, moeda), "auto")}
+          Continuar com {plano.nome} ·{" "}
+          {formatMoeda(precoDoPlano(plano, moeda), "auto")}
         </button>
         <button type="button" className={styles.cta2} onClick={onAgoraNao}>
           Agora não

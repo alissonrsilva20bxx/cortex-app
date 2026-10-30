@@ -15,8 +15,10 @@ export const TEXTOS_PLANOS = {
   /** O teste acabou. */
   fim: {
     titulo: (diasDoTeste: number) => `Seus ${diasDoTeste} dias terminaram`,
-    texto:
-      "Foi uma boa semana. Para seguir com a Rede, renove escolhendo um plano. O resto do app continua liberado.",
+    /** "Foi uma boa semana." só no teste de 7 dias (quem começou antes
+     * do corte teve 14). */
+    texto: (diasDoTeste: number) =>
+      `${diasDoTeste === 7 ? "Foi uma boa semana. " : ""}Para seguir com a Rede, renove escolhendo um plano. O resto do app continua liberado.`,
   },
   /** O aviso no Início quando faltam 2 dias. */
   aviso: "Depois, a Rede pede um plano. O resto do app continua liberado.",
