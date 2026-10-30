@@ -16,8 +16,8 @@ Para cada item: abrir o SQL Editor, colar o arquivo inteiro, clicar **Run**, dep
 
 ### 1. `0040_assinatura_so_servidor.sql`
 Faz: só o servidor (Stripe) muda o status da assinatura. A usuária não consegue se dar "ativa" nem reiniciar o teste grátis apagando a própria linha.
-- Já aplicada? `select tgname from pg_trigger where tgname in ('configuracoes_assinatura_so_servidor','configuracoes_sem_delete_pela_sessao');` Se voltar as 2 linhas, já está.
-- Conferência depois: a mesma consulta deve devolver as 2 linhas.
+- Já aplicada? `select tgname, tgenabled from pg_trigger where tgrelid = 'public.configuracoes'::regclass and tgname in ('configuracoes_assinatura_so_servidor','configuracoes_sem_delete_pela_sessao');` Se voltar as 2 linhas, já está.
+- Conferência depois: a mesma consulta deve devolver as 2 linhas, as duas com `tgenabled` = `O` (ligado). `D` é desligado: a 0049 não aplica assim.
 
 ### 2. `0042_desejo_objetivo_consolidado.sql`
 Faz: Desejo e Objetivo de dinheiro viram um só (`rede_wishlist_items`) e ganha o campo `prazo`.
@@ -46,10 +46,10 @@ Faz: a curtida numa publicação da categoria Dica passa a contar como "Sua dica
 - Se der problema: o próprio arquivo tem o `drop trigger` / `drop function` / `drop table` para desfazer.
 
 ### 7. `0049_rede_acesso_por_teste.sql`
-Faz: a Rede passa a abrir para quem está no teste grátis (7 dias; 14 para quem começou antes de 09/10/2026), para quem assina e para quem já usou um convite. Sem código e sem beta: resgatar, gerar e aprovar convite deixam de ser chamados pela sessão da usuária. Corrige o N1 (conversa e denúncia olhavam o convite da outra pessoa). **Precisa da 0040 antes** (item 1): sem ela, o arquivo para com erro e não aplica nada. Aplicar antes de publicar o app sem beta; o app de hoje segue funcionando com ela.
+Faz: a Rede passa a abrir para quem está no teste grátis (7 dias; 14 para quem começou antes de 09/10/2026), para quem assina e para quem já usou um convite. Sem código e sem beta: resgatar, gerar e aprovar convite deixam de ser chamados pela sessão da usuária. Corrige o N1 (conversa e denúncia olhavam o convite da outra pessoa). Desejos passam a ser de Finanças: a dona cria o próprio Desejo sem a Rede (publicar no feed segue pedindo a Rede). **Precisa da 0040 antes** (item 1), com os dois gatilhos ligados: sem isso, o arquivo para com erro e não aplica nada. Aplicar antes de publicar o app sem beta; o app de hoje segue funcionando com ela.
 - Já aplicada? `select proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'private' and proname like 'rede_usuario_e_membro%';` Se voltar 2 linhas, já está.
 - Conferência depois: a mesma consulta devolve 2 linhas, e `select has_function_privilege('authenticated', 'public.rede_resgatar_convite(text, text)', 'execute');` devolve `false`.
-- Para desfazer: rodar `supabase/migrations-rollback/0049_rede_acesso_por_teste.rollback.sql` e voltar o app junto (o banco volta a exigir convite).
+- Para desfazer: rodar `supabase/migrations-rollback/0049_rede_acesso_por_teste.rollback.sql` e voltar o app junto (o banco volta a exigir convite, e criar Desejo volta a pedir a Rede; os Desejos já criados ficam).
 - Antes da produção: aplicar no homolog e rodar os testes de `tests/rede` com `SUPABASE_TEST_URL` (o novo é `tests/rede/rls/rede-acesso-0049.rls.test.ts`).
 
 ### Migrations que vierem depois nesta noite

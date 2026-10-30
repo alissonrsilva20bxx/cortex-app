@@ -10,7 +10,9 @@
 //      teste; código e beta não são mais chamáveis pela sessão;
 //   C. o rollback (supabase/migrations-rollback) volta ao "só convite", e
 //      a 0049 aplica de novo depois dele;
-//   D. sem a 0040, a 0049 para com erro e não aplica nada.
+//   D. sem a 0040, a 0049 para com erro e não aplica nada;
+//   E. com a 0040 desligada ou incompleta (um gatilho fora, desligado, com
+//      outra função ou sem o update), a 0049 também para.
 // NÃO aplica nada em lugar nenhum: é um Postgres em memória.
 // Uso (da raiz do repositório):
 //   npx -y -p @electric-sql/pglite@0.2 node tests/rede/acesso-0049-pglite.mjs .
@@ -79,14 +81,16 @@ const arquivos = readdirSync(DIR)
   .filter((f) => f.endsWith(".sql"))
   .sort();
 
-/** Um Postgres novo com as migrations (menos as de `pular`). */
-async function banco(pular = []) {
+/** Um Postgres novo com as migrations (menos as de `pular`). `antes`: SQL
+ * de administrador rodado logo antes de uma migration ({ arquivo: sql }). */
+async function banco(pular = [], antes = {}) {
   const db = new PGlite();
   await db.exec(BASE);
   const erros = {};
   for (const f of arquivos) {
     if (pular.includes(f)) continue;
     try {
+      if (antes[f]) await db.exec(antes[f]);
       await db.exec(readFileSync(join(DIR, f), "utf-8"));
     } catch (e) {
       erros[f] = e.message;
@@ -480,6 +484,71 @@ ok(
     funcoes.rows[0].f === 0,
   { erro0049, outros, funcoes: funcoes.rows[0].f }
 );
+
+// ── E. a 0040 aplicada mas desligada ou incompleta: a 0049 também para ──
+// A guarda confere os DOIS gatilhos da 0040, ligados (pg_trigger.tgenabled),
+// na tabela certa, com a função certa e os eventos certos.
+const ANTES_0049 = "0049_rede_acesso_por_teste.sql";
+for (const [caso, sql] of [
+  [
+    "gatilho da assinatura desligado",
+    "alter table public.configuracoes disable trigger configuracoes_assinatura_so_servidor;",
+  ],
+  [
+    "gatilho da assinatura só em réplica",
+    "alter table public.configuracoes enable replica trigger configuracoes_assinatura_so_servidor;",
+  ],
+  [
+    "gatilho do delete ausente",
+    "drop trigger configuracoes_sem_delete_pela_sessao on public.configuracoes;",
+  ],
+  [
+    "gatilho do delete desligado",
+    "alter table public.configuracoes disable trigger configuracoes_sem_delete_pela_sessao;",
+  ],
+  [
+    "gatilho da assinatura com outra função",
+    `drop trigger configuracoes_assinatura_so_servidor on public.configuracoes;
+     create function public.gatilho_que_deixa_passar() returns trigger
+       language plpgsql as $$ begin return new; end; $$;
+     create trigger configuracoes_assinatura_so_servidor
+       before insert or update on public.configuracoes
+       for each row execute function public.gatilho_que_deixa_passar();`,
+  ],
+  [
+    "gatilho da assinatura só no insert (sem update)",
+    `drop trigger configuracoes_assinatura_so_servidor on public.configuracoes;
+     create trigger configuracoes_assinatura_so_servidor
+       before insert on public.configuracoes
+       for each row execute function public.configuracoes_assinatura_so_servidor();`,
+  ],
+]) {
+  const b = await banco([], { [ANTES_0049]: sql });
+  const erro = b.erros[ANTES_0049] ?? "";
+  const outrosErros = Object.keys(b.erros).filter((f) => f !== ANTES_0049);
+  const f = await b.db.query(
+    "select count(*)::int as f from pg_proc p join pg_namespace s on s.oid = p.pronamespace where s.nspname = 'private' and p.proname like 'rede_usuario_e_membro%'"
+  );
+  ok(
+    `0040 ${caso}: a 0049 para com o aviso e não cria nada`,
+    /aplique antes a 0040/.test(erro) &&
+      outrosErros.length === 0 &&
+      f.rows[0].f === 0,
+    { erro, outrosErros, funcoes: f.rows[0].f }
+  );
+}
+// O "ligado sempre" (enable always) também protege: a 0049 aplica.
+{
+  const b = await banco([], {
+    [ANTES_0049]:
+      "alter table public.configuracoes enable always trigger configuracoes_assinatura_so_servidor;",
+  });
+  ok(
+    "0040 com gatilho ligado sempre (always): a 0049 aplica",
+    Object.keys(b.erros).length === 0,
+    b.erros
+  );
+}
 
 console.log(falhas ? `${falhas} falha(s)` : "0049: tudo certo");
 process.exit(falhas ? 1 : 0);

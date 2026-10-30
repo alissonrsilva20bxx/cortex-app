@@ -13,9 +13,9 @@
 --   1. 0040_assinatura_so_servidor.sql aplicada e conferida. Sem ela a
 --      própria usuária grava assinatura_status = 'ativa' ou empurra
 --      trial_started_at para o futuro e tem a Rede de graça para sempre
---      (achado N2). Este arquivo confere o gatilho da 0040 e PARA com erro
---      se ele não existir (nada é aplicado: o SQL Editor roda tudo numa
---      transação só).
+--      (achado N2). Este arquivo confere os dois gatilhos da 0040 (ligados,
+--      com a função e os eventos certos) e PARA com erro se faltar algum
+--      (nada é aplicado: o SQL Editor roda tudo numa transação só).
 --   2. Este arquivo (0049).
 --   3. Conferir (consultas no fim deste cabeçalho).
 --   4. Só então publicar o app com o commit "Rede: entra pelo teste ou pela
@@ -74,16 +74,32 @@
 -- Comportamento num Postgres em memória (com a tabela de casos, a RLS, o
 -- N1, a 0040 e o rollback): tests/rede/acesso-0049-pglite.mjs.
 
--- 1. A 0040 tem de estar aplicada antes (N2).
+-- 1. A 0040 tem de estar aplicada antes, e valendo (N2). Os DOIS gatilhos
+-- dela em public.configuracoes, ligados (tgenabled 'O' ou 'A'; 'D' é
+-- desligado e 'R' só vale em réplica), cada um com a própria função e
+-- os próprios eventos. tgtype: 1 = por linha, 2 = before, 4 = insert,
+-- 8 = delete, 16 = update.
 do $$
 begin
-  if not exists (
-    select 1
+  if (
+    select count(*)
     from pg_catalog.pg_trigger t
-    where t.tgname = 'configuracoes_assinatura_so_servidor'
-      and t.tgrelid = 'public.configuracoes'::regclass
-  ) then
-    raise exception '0049: aplique antes a 0040_assinatura_so_servidor.sql (sem ela a Rede fica de graça para sempre). Nada foi aplicado.'
+    join pg_catalog.pg_proc p on p.oid = t.tgfoid
+    join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+    where t.tgrelid = 'public.configuracoes'::regclass
+      and not t.tgisinternal
+      and t.tgenabled in ('O', 'A')
+      and n.nspname = 'public'
+      and (
+        (t.tgname = 'configuracoes_assinatura_so_servidor'
+          and p.proname = 'configuracoes_assinatura_so_servidor'
+          and (t.tgtype & 23) = 23)
+        or (t.tgname = 'configuracoes_sem_delete_pela_sessao'
+          and p.proname = 'configuracoes_sem_delete_pela_sessao'
+          and (t.tgtype & 11) = 11)
+      )
+  ) <> 2 then
+    raise exception '0049: aplique antes a 0040_assinatura_so_servidor.sql, com os dois gatilhos dela ligados (sem eles a Rede fica de graça para sempre). Nada foi aplicado.'
       using errcode = 'P0001';
   end if;
 end;

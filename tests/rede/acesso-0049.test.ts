@@ -40,15 +40,26 @@ describe("0049: entrada na Rede pelo teste ou pela assinatura", () => {
     expect(MIGRATION).toMatch(/Conferência/);
   });
 
-  it("para com erro se a 0040 não estiver aplicada (N2)", () => {
-    // O nome do gatilho tem de ser o que a 0040 cria.
-    expect(ler("supabase/migrations/0040_assinatura_so_servidor.sql")).toMatch(
+  it("para com erro se a 0040 não estiver aplicada e ligada (N2, R19rev #4)", () => {
+    // Os nomes dos gatilhos têm de ser os que a 0040 cria.
+    const sql0040 = ler("supabase/migrations/0040_assinatura_so_servidor.sql");
+    expect(sql0040).toMatch(
       /create trigger configuracoes_assinatura_so_servidor/
     );
-    const guarda = SQL.slice(0, SQL.indexOf("create schema"));
-    expect(guarda).toMatch(
-      /t\.tgname = 'configuracoes_assinatura_so_servidor'/
+    expect(sql0040).toMatch(
+      /create trigger configuracoes_sem_delete_pela_sessao/
     );
+    const guarda = SQL.slice(0, SQL.indexOf("create schema"));
+    // Os DOIS gatilhos, ligados, com a função e os eventos certos. O
+    // comportamento (desligado, ausente, outra função) está no PGlite.
+    expect(guarda).toMatch(
+      /t\.tgname = 'configuracoes_assinatura_so_servidor'[\s\S]*?p\.proname = 'configuracoes_assinatura_so_servidor'[\s\S]*?\(t\.tgtype & 23\) = 23/
+    );
+    expect(guarda).toMatch(
+      /t\.tgname = 'configuracoes_sem_delete_pela_sessao'[\s\S]*?p\.proname = 'configuracoes_sem_delete_pela_sessao'[\s\S]*?\(t\.tgtype & 11\) = 11/
+    );
+    expect(guarda).toMatch(/t\.tgenabled in \('O', 'A'\)/);
+    expect(guarda).toMatch(/\) <> 2 then/);
     expect(guarda).toMatch(/raise exception '0049: aplique antes a 0040/);
   });
 
