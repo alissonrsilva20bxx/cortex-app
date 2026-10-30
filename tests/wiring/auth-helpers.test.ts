@@ -40,6 +40,7 @@ import {
   signUpWithEmail,
   updatePassword,
 } from "../../lib/auth";
+import { TEXTOS_AUTH } from "../../lib/textosAuth";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -179,6 +180,47 @@ describe("senha recusada pelo servidor", () => {
     const result = await updatePassword("senhasenha");
     expect(result.error).toBe(
       "A senha precisa ter pelo menos uma letra minúscula, uma letra maiúscula, um número e um símbolo."
+    );
+  });
+});
+
+// R18rev MÉDIA 1: os testes acima mandam junto o texto padrão do Supabase,
+// e é o texto que acerta a mensagem. Aqui o texto é genérico: só os
+// `reasons` (lib/auth.ts, traduzirErro) decidem. Se o Supabase mudar o
+// texto, estes testes seguram a mensagem certa.
+describe("senha recusada: os motivos decidem sozinhos", () => {
+  function recusa(reasons: unknown) {
+    return {
+      data: { user: null, session: null },
+      error: { message: "Password is too weak", reasons },
+    };
+  }
+
+  it("pwned: senha vazada", async () => {
+    mocks.signUp.mockResolvedValue(recusa(["pwned"]));
+    expect((await signUpWithEmail("a@b.com", "x", "y")).error).toBe(
+      TEXTOS_AUTH.erro.senhaVazada
+    );
+  });
+
+  it("characters: pede variedade, nunca 'curta' nem 'fraca'", async () => {
+    mocks.updateUser.mockResolvedValue(recusa(["characters"]));
+    expect((await updatePassword("senhasenha")).error).toBe(
+      "A senha precisa misturar letras e números."
+    );
+  });
+
+  it("length: senha curta, sem número quando o texto não diz", async () => {
+    mocks.signUp.mockResolvedValue(recusa(["length"]));
+    expect((await signUpWithEmail("a@b.com", "x", "y")).error).toBe(
+      "Senha muito curta."
+    );
+  });
+
+  it("motivos que não são lista são ignorados: cai em senha fraca", async () => {
+    mocks.signUp.mockResolvedValue(recusa("pwned"));
+    expect((await signUpWithEmail("a@b.com", "x", "y")).error).toBe(
+      TEXTOS_AUTH.erro.senhaFraca
     );
   });
 });
