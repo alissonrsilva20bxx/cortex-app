@@ -131,6 +131,7 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
             return (
               <button
                 key={c.id}
+                aria-pressed={active}
                 onClick={() => setCategoria(c.id)}
                 className="flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all"
                 style={{
@@ -179,6 +180,7 @@ export function ReceitaForm({ open, userId, onClose, onSaved }: Props) {
           />
           <input
             type="date"
+            aria-label="Data"
             value={data}
             onChange={(e) => setData(e.target.value)}
             className="rounded-xl px-4 py-3 text-sm font-medium outline-none"

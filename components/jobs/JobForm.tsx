@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
@@ -86,6 +86,18 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Cada rótulo aponta para o seu campo (leitor de tela).
+  const base = useId();
+  const ids = {
+    cliente: `${base}-cliente`,
+    data: `${base}-data`,
+    hora: `${base}-hora`,
+    valor: `${base}-valor`,
+    modalidade: `${base}-modalidade`,
+    local: `${base}-local`,
+    status: `${base}-status`,
+    observacoes: `${base}-observacoes`,
+  };
   // #176: mantém o campo focado visível com o teclado aberto.
   const painelRef = useRef<HTMLDivElement>(null);
   useCampoVisivelComTeclado(painelRef, open);
@@ -235,8 +247,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
         <div className="overflow-y-auto flex-1 px-5 py-5 space-y-4">
           {/* Cliente */}
           <div>
-            <label style={labelStyle}>Cliente</label>
+            <label htmlFor={ids.cliente} style={labelStyle}>
+              Cliente
+            </label>
             <input
+              id={ids.cliente}
               style={inputStyle}
               placeholder="Nome do cliente"
               value={form.clienteNome}
@@ -247,8 +262,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
           {/* Data + Hora */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label style={labelStyle}>Data</label>
+              <label htmlFor={ids.data} style={labelStyle}>
+                Data
+              </label>
               <input
+                id={ids.data}
                 type="date"
                 style={inputStyle}
                 value={form.data}
@@ -256,8 +274,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
               />
             </div>
             <div>
-              <label style={labelStyle}>Hora</label>
+              <label htmlFor={ids.hora} style={labelStyle}>
+                Hora
+              </label>
               <input
+                id={ids.hora}
                 type="time"
                 style={inputStyle}
                 value={form.hora}
@@ -268,8 +289,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
 
           {/* Valor */}
           <div>
-            <label style={labelStyle}>Valor ({simboloMoeda(moeda)})</label>
+            <label htmlFor={ids.valor} style={labelStyle}>
+              Valor ({simboloMoeda(moeda)})
+            </label>
             <input
+              id={ids.valor}
               type="number"
               min="0"
               step="0.01"
@@ -282,11 +306,18 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
 
           {/* Modalidade */}
           <div>
-            <label style={labelStyle}>Modalidade</label>
-            <div className="flex gap-2">
+            <span id={ids.modalidade} style={labelStyle}>
+              Modalidade
+            </span>
+            <div
+              role="group"
+              aria-labelledby={ids.modalidade}
+              className="flex gap-2"
+            >
               {(["presencial", "online"] as Modalidade[]).map((m) => (
                 <button
                   key={m}
+                  aria-pressed={form.modalidade === m}
                   onClick={() => set("modalidade", m)}
                   className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all capitalize"
                   style={{
@@ -310,8 +341,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
           {/* Local (condicional) */}
           {form.modalidade === "presencial" && (
             <div>
-              <label style={labelStyle}>Local</label>
+              <label htmlFor={ids.local} style={labelStyle}>
+                Local
+              </label>
               <input
+                id={ids.local}
                 style={inputStyle}
                 placeholder="Endereço ou local"
                 value={form.local}
@@ -322,8 +356,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
 
           {/* Status */}
           <div>
-            <label style={labelStyle}>Status</label>
+            <label htmlFor={ids.status} style={labelStyle}>
+              Status
+            </label>
             <select
+              id={ids.status}
               style={{ ...inputStyle, appearance: "none" }}
               value={form.status}
               onChange={(e) => set("status", e.target.value as JobStatus)}
@@ -343,8 +380,11 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
 
           {/* Observações */}
           <div>
-            <label style={labelStyle}>Observações</label>
+            <label htmlFor={ids.observacoes} style={labelStyle}>
+              Observações
+            </label>
             <textarea
+              id={ids.observacoes}
               rows={3}
               style={{ ...inputStyle, resize: "none" }}
               placeholder="Só deste atendimento: cor escolhida, alergia, sinal pago…"
