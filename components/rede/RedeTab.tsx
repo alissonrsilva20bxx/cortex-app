@@ -55,6 +55,7 @@ import {
   reordenarLiveLinks,
   excluirLiveLink,
   buscarPessoas,
+  LiveLinkInvalidoError,
   type PessoaResumo,
 } from "@/lib/rede/perfis";
 import { listarWishlistItems, type WishlistItem } from "@/lib/rede/wishlist";
@@ -1776,7 +1777,9 @@ export function RedeTab({
       setEditingLiveLink(null);
     } catch (e) {
       toast.error(
-        e instanceof Error ? e.message : "Não foi possível salvar o LiveLink."
+        e instanceof LiveLinkInvalidoError
+          ? e.message
+          : "Não foi possível salvar o LiveLink."
       );
     }
   }

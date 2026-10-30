@@ -209,15 +209,24 @@ export async function atualizarPerfil(
   return data;
 }
 
+/** Título ou URL do LiveLink fora da regra: o texto (em português) diz o
+ * que corrigir e pode ir para a tela; os outros erros (banco, rede) não. */
+export class LiveLinkInvalidoError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LiveLinkInvalidoError";
+  }
+}
+
 function validarTituloUrlLiveLink(titulo: string, url: string) {
   if (titulo.length === 0 || titulo.length > LIVELINK_TITULO_MAX_LENGTH) {
-    throw new Error(
+    throw new LiveLinkInvalidoError(
       `Título do LiveLink deve ter entre 1 e ${LIVELINK_TITULO_MAX_LENGTH} caracteres`
     );
   }
 
   if (url.length === 0 || url.length > LIVELINK_URL_MAX_LENGTH) {
-    throw new Error(
+    throw new LiveLinkInvalidoError(
       `URL do LiveLink deve ter entre 1 e ${LIVELINK_URL_MAX_LENGTH} caracteres`
     );
   }
@@ -226,7 +235,9 @@ function validarTituloUrlLiveLink(titulo: string, url: string) {
   try {
     parsedUrl = new URL(url);
   } catch {
-    throw new Error("URL do LiveLink deve ser uma URL HTTPS absoluta");
+    throw new LiveLinkInvalidoError(
+      "URL do LiveLink deve ser uma URL HTTPS absoluta"
+    );
   }
 
   if (
@@ -234,7 +245,9 @@ function validarTituloUrlLiveLink(titulo: string, url: string) {
     parsedUrl.username !== "" ||
     parsedUrl.password !== ""
   ) {
-    throw new Error("URL do LiveLink deve ser uma URL HTTPS absoluta");
+    throw new LiveLinkInvalidoError(
+      "URL do LiveLink deve ser uma URL HTTPS absoluta"
+    );
   }
 }
 
