@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 
 import { stepsDoTour, tourPlacement, type RedeAcessoTour } from "@/lib/appTour";
 import { isPushSubscribed, isPushSupported, subscribeToPush } from "@/lib/push";
+import { TEXTOS_ERRO } from "@/lib/textosErro";
 import type { TabId } from "@/lib/types";
 
 interface Rect {
@@ -179,9 +180,9 @@ export function AppTour({
     try {
       await subscribeToPush(userId);
       setPush("on");
-    } catch (e) {
+    } catch {
       setPush("off");
-      setPushErro(e instanceof Error ? e.message : "Não deu pra ativar agora.");
+      setPushErro(TEXTOS_ERRO.notificacao.ativar);
     }
   }
 

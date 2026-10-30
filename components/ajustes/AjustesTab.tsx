@@ -19,6 +19,7 @@ import { totalEarnings } from "@/lib/finance";
 import { SeletorMoeda } from "@/components/moeda/SeletorMoeda";
 import { TEXTOS_MOEDA } from "@/lib/textosMoeda";
 import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
+import { TEXTOS_ERRO } from "@/lib/textosErro";
 import { useFormatMoeda } from "@/lib/useMoeda";
 import { exportarDadosCSV } from "@/lib/exportarDados";
 import { isIOS, isStandalone } from "@/lib/platform";
@@ -423,10 +424,8 @@ export function AjustesTab({
     try {
       await unsubscribeFromPush(userId);
       setPushEnabled(false);
-    } catch (err) {
-      setPushError(
-        err instanceof Error ? err.message : "Não foi possível desativar."
-      );
+    } catch {
+      setPushError(TEXTOS_ERRO.notificacao.desativar);
     } finally {
       setPushBusy(false);
     }
@@ -439,10 +438,8 @@ export function AjustesTab({
       await subscribeToPush(userId);
       setPushEnabled(true);
       setNotifSheetOpen(false);
-    } catch (err) {
-      setPushError(
-        err instanceof Error ? err.message : "Não foi possível ativar."
-      );
+    } catch {
+      setPushError(TEXTOS_ERRO.notificacao.ativar);
     } finally {
       setPushBusy(false);
     }
