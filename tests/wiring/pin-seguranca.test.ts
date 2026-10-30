@@ -200,9 +200,13 @@ describe("Regra 3: limite de tentativas", () => {
 
   it("sair da conta zera o contador (para voltar é preciso a senha ou o Google)", () => {
     // O botão Sair é o sairDaConta (tests/wiring/sair-da-conta.test.ts).
-    expect(page).toMatch(/function handleSignOut\(\) \{\s*return sairDaConta\(/);
+    expect(page).toMatch(
+      /function handleSignOut\(\) \{\s*return sairDaConta\(/
+    );
+    // Depois que o Supabase saiu: se ele não sair, a sessão segue e o
+    // limite do PIN também (tests/wiring/sair-da-conta.test.ts).
     expect(ler("lib", "sairDaConta.ts")).toMatch(
-      /LIMPEZAS[\s\S]{0,300}zerarTodasAsTentativas,/
+      /if \(!saiu\) \{[\s\S]{0,120}return;\s*\}\s*try \{\s*zerarTodasAsTentativas\(\);/
     );
   });
 

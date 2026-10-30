@@ -420,13 +420,15 @@ export default function Page() {
   }, [locked, usuario]);
 
   // Sair: apaga do aparelho o que é da conta (Rede, Cofre, PIN, Jornada)
-  // ANTES de sair do Supabase, e vai para o login (lib/sairDaConta.ts).
+  // ANTES de sair do Supabase, e vai para o login (lib/sairDaConta.ts). Se
+  // o Supabase não sair, fica aqui com o aviso.
   function handleSignOut() {
     return sairDaConta({
       signOut: () => supabase.auth.signOut(),
       irPara: (rota) => {
         window.location.href = rota;
       },
+      avisarFalha: toast.error,
     });
   }
 

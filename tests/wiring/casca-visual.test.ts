@@ -111,11 +111,16 @@ describe("§1-P0-6 — handleSignOut é real (supabase.auth.signOut + redirect),
     // O fluxo mora em lib/sairDaConta.ts (tests/wiring/sair-da-conta.test.ts
     // roda ele de verdade); a página passa o signOut do Supabase e a troca
     // de endereço.
-    expect(page).toMatch(/function handleSignOut\(\) \{\s*return sairDaConta\(/);
+    expect(page).toMatch(
+      /function handleSignOut\(\) \{\s*return sairDaConta\(/
+    );
     expect(page).toMatch(/signOut: \(\) => supabase\.auth\.signOut\(\),/);
     expect(page).toMatch(/window\.location\.href = rota;/);
     const sair = read("lib/sairDaConta.ts");
-    expect(sair).toMatch(/await signOut\(\);\s*irPara\("\/login"\);/);
+    // Só vai ao login se o Supabase saiu (sem sair, fica com o aviso).
+    expect(sair).toMatch(
+      /saiu = !\(await signOut\(\)\)\.error;[\s\S]{0,300}irPara\("\/login"\);/
+    );
   });
 
   it("AjustesTab recebe handleSignOut real via prop onSignOut, não um handler decorativo local", () => {

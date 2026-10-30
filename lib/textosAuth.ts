@@ -19,6 +19,10 @@ export const TEXTOS_AUTH = {
     emailInvalido: "E-mail inválido.",
     generico: "Não foi possível concluir. Tente novamente.",
   },
+  /** O Sair quando o Supabase não consegue sair (R18rev BAIXA 3). */
+  sair: {
+    falhou: "Não foi possível sair. Confira a internet e tente de novo.",
+  },
   /** "Reenviar e-mail" de confirmação do cadastro (R17 M5). */
   reenvio: {
     pergunta: "Não chegou o e-mail?",

@@ -50,6 +50,7 @@ import type { RedeAcessoTour } from "@/lib/appTour";
 import { RecapSheet } from "@/components/recap/RecapSheet";
 import { InstallBanner } from "@/components/install/InstallBanner";
 import { useToast } from "@/components/Toast";
+import { sairDaConta } from "@/lib/sairDaConta";
 import { AssinaturaNoApp } from "@/components/assinatura/AssinaturaNoApp";
 import { EspacoDaPilula } from "@/components/assinatura/EspacoDaPilula";
 import { PagamentoTela } from "@/components/pagamento/PagamentoTela";
@@ -458,6 +459,14 @@ export default function DevPreviewApp() {
   }, [locked, objetivosRefreshKey, usuario.id]);
 
   function handleSignOut() {
+    // `?sair=falha`: o Supabase não consegue sair (sem rede, 5xx, 429), para
+    // ver o aviso; o app fica onde está (lib/sairDaConta.ts).
+    if (new URLSearchParams(window.location.search).get("sair") === "falha")
+      return sairDaConta({
+        signOut: async () => ({ error: new Error("laboratório") }),
+        irPara: () => {},
+        avisarFalha: toast.error,
+      });
     toast.success("Preview não tem sessão real — recarregando do zero.");
     window.location.reload();
   }

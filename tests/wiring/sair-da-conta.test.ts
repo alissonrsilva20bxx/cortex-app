@@ -17,7 +17,10 @@ import { join } from "node:path";
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 import { sairDaConta } from "@/lib/sairDaConta";
-import { lojaDaUsuaria, usarTransporteDeLaboratorio } from "@/lib/jornada/cliente";
+import {
+  lojaDaUsuaria,
+  usarTransporteDeLaboratorio,
+} from "@/lib/jornada/cliente";
 import * as cache from "@/lib/jornada/cache";
 import { lerDescansos } from "@/lib/jornada/descansos";
 import { diaDoRelogio } from "@/lib/relogio";
@@ -26,7 +29,12 @@ import * as redeCache from "@/lib/rede/redeCache";
 import * as redeCachePersist from "@/lib/rede/redeCachePersist";
 import * as cofreCache from "@/lib/cofre/cofreCache";
 import * as pinHashCache from "@/lib/pinHashCache";
-import { gravarTentativas, lerTentativas, SEM_TENTATIVAS } from "@/lib/pinTentativas";
+import {
+  gravarTentativas,
+  lerTentativas,
+  SEM_TENTATIVAS,
+} from "@/lib/pinTentativas";
+import { TEXTOS_AUTH } from "@/lib/textosAuth";
 
 function disco() {
   const m = new Map<string, string>();
@@ -88,8 +96,10 @@ describe("Sair da conta apaga a Jornada do aparelho", () => {
       signOut: async () => {
         chavesNoSignOut = s.chaves();
         ordem.push("signOut");
+        return { error: null };
       },
       irPara: (rota) => ordem.push(rota),
+      avisarFalha: (texto) => ordem.push(texto),
     });
 
     expect(ordem).toEqual(["signOut", "/login"]);
@@ -127,11 +137,14 @@ describe("Sair da conta apaga a Jornada do aparelho", () => {
     await sairDaConta({
       signOut: async () => {
         chavesNoSignOut = s.chaves();
+        return { error: null };
       },
       irPara: () => {},
+      avisarFalha: () => {},
     });
 
-    expect(chavesNoSignOut).toEqual(["tema"]);
+    // As tentativas do PIN só zeram depois que o Supabase saiu de verdade.
+    expect(chavesNoSignOut).toEqual(["pin:tentativas:u-sai", "tema"]);
     expect(redeCache.ler("u-sai", "perfil")).toBeNull();
     expect(redeCache.acessoLembrado("u-sai")).toBeUndefined();
     expect(redeCachePersist.carregarAcesso("u-sai")).toBeNull();
@@ -142,11 +155,69 @@ describe("Sair da conta apaga a Jornada do aparelho", () => {
 
   it("app/page.tsx: o botão Sair (handleSignOut) é o sairDaConta com o signOut do Supabase e o login", () => {
     const page = ler("app/page.tsx");
-    expect(page).toMatch(/import \{ sairDaConta \} from "@\/lib\/sairDaConta";/);
     expect(page).toMatch(
-      /function handleSignOut\(\) \{\s*return sairDaConta\(\{\s*signOut: \(\) => supabase\.auth\.signOut\(\),\s*irPara: \(rota\) => \{\s*window\.location\.href = rota;\s*\},\s*\}\);\s*\}/
+      /import \{ sairDaConta \} from "@\/lib\/sairDaConta";/
+    );
+    expect(page).toMatch(
+      /function handleSignOut\(\) \{\s*return sairDaConta\(\{\s*signOut: \(\) => supabase\.auth\.signOut\(\),\s*irPara: \(rota\) => \{\s*window\.location\.href = rota;\s*\},\s*avisarFalha: toast\.error,\s*\}\);\s*\}/
     );
     expect(page).toMatch(/onSair=\{handleSignOut\}/);
     expect(page).toMatch(/onSignOut=\{handleSignOut\}/);
+  });
+});
+
+/**
+ * R18rev BAIXA 3: sem rede, com erro 5xx ou 429, o `signOut` do Supabase
+ * devolve erro e NÃO apaga a sessão (auth-js 2.108.2). Ir para o login
+ * fingia que a pessoa saiu: o middleware a mandava de volta ao início, sem
+ * aviso nenhum. Agora ela fica no app, vê o aviso e pode tentar de novo.
+ */
+describe("Sair quando o signOut falha", () => {
+  async function sairComFalha(signOut: () => Promise<{ error: unknown }>) {
+    gravarTentativas("u-sai", { erros: 3, esperaAte: null });
+    const rotas: string[] = [];
+    const avisos: string[] = [];
+    await sairDaConta({
+      signOut,
+      irPara: (rota) => rotas.push(rota),
+      avisarFalha: (texto) => avisos.push(texto),
+    });
+    return { rotas, avisos };
+  }
+
+  it("o Supabase devolve erro: não vai ao login e avisa que não saiu", async () => {
+    const { rotas, avisos } = await sairComFalha(async () => ({
+      error: { name: "AuthRetryableFetchError", status: 0 },
+    }));
+    expect(rotas).toEqual([]);
+    expect(avisos).toEqual([TEXTOS_AUTH.sair.falhou]);
+  });
+
+  it("o signOut lança (sem rede): também não vai ao login e avisa", async () => {
+    const { rotas, avisos } = await sairComFalha(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    expect(rotas).toEqual([]);
+    expect(avisos).toEqual([TEXTOS_AUTH.sair.falhou]);
+  });
+
+  it("a sessão continua: as tentativas do PIN não zeram (Sair não desfaz o limite do PIN)", async () => {
+    await sairComFalha(async () => ({ error: { status: 503 } }));
+    expect(lerTentativas("u-sai").erros).toBe(3);
+  });
+
+  it("o aviso é em português e diz para tentar de novo", () => {
+    expect(TEXTOS_AUTH.sair.falhou).toBe(
+      "Não foi possível sair. Confira a internet e tente de novo."
+    );
+  });
+
+  it("deu certo: vai ao login sem aviso", async () => {
+    const { rotas, avisos } = await sairComFalha(async () => ({
+      error: null,
+    }));
+    expect(rotas).toEqual(["/login"]);
+    expect(avisos).toEqual([]);
+    expect(lerTentativas("u-sai")).toEqual(SEM_TENTATIVAS);
   });
 });
