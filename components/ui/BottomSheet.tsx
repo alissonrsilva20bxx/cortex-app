@@ -9,6 +9,7 @@ import {
 import { X } from "lucide-react";
 import { getFocusCycleTarget } from "./focusTrap";
 import { rubberBandSheet, shouldDismissSheet } from "@/lib/sheetDrag";
+import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 
 const EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
 
@@ -87,6 +88,10 @@ export function BottomSheet({
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+  // R21: o mesmo ajuste do #176 (Novo atendimento) para todas as folhas.
+  // Sem ele o teclado do iPhone cobria a data do Novo Desejo e a bio do
+  // Editar perfil.
+  useCampoVisivelComTeclado(panelRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -226,7 +231,12 @@ export function BottomSheet({
         aria-label={title}
         className="fixed left-0 right-0 z-[60] flex flex-col ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
-          bottom: 0,
+          // Com o teclado aberto, o painel sobe acima dele e cabe em 90% da
+          // área que sobrou (variáveis do useCampoVisivelComTeclado), como o
+          // Novo atendimento. Sem teclado as variáveis não existem: bottom 0
+          // e o fallback enorme deixa a altura sem limite, como antes.
+          bottom: "var(--teclado-inset, 0px)",
+          maxHeight: "calc(var(--teclado-altura-util, 100000px) * 0.9)",
           transform: open ? "translateY(0)" : "translateY(105%)",
           visibility: open ? "visible" : "hidden",
           pointerEvents: open ? "auto" : "none",
