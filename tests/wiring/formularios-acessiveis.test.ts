@@ -43,7 +43,11 @@ describe("Nova Despesa e Nova Entrada", () => {
   ]) {
     const src = ler(f);
     it(`${f}: a data tem nome e a categoria marcada diz que está marcada`, () => {
-      expect(src).toMatch(/type="date"\s+aria-label="Data"/);
+      // R23: o nome do campo saiu do código e mora na constante; o valor
+      // continua "Data" (tests/wiring/financeiro-aria-constantes.test.ts).
+      expect(src).toMatch(
+        /type="date"\s+aria-label=\{TEXTOS_FINANCEIRO\.data\}/
+      );
       expect(src).toMatch(/const active = categoria === c\.id;/);
       expect(src).toMatch(/key=\{c\.id\}\s+aria-pressed=\{active\}/);
     });

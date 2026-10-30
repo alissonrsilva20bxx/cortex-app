@@ -10,6 +10,7 @@ import { simboloMoeda } from "@/lib/moeda";
 import { useMoeda } from "@/lib/useMoeda";
 import { useCampoVisivelComTeclado } from "@/lib/useCampoVisivelComTeclado";
 import { useJornada } from "@/components/jornada/useJornada";
+import { TEXTOS_FINANCEIRO } from "@/lib/textosFinanceiro";
 
 const CATEGORIAS = [
   { id: "alimentacao", label: "Alimentação", emoji: "🍽️" },
@@ -86,7 +87,7 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
         ref={painelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Nova Despesa"
+        aria-label={TEXTOS_FINANCEIRO.despesa.titulo}
         aria-hidden={!open || undefined}
         className="fixed left-0 right-0 z-[200] px-4 pt-5 pb-8 overflow-y-auto transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
@@ -189,7 +190,7 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
           />
           <input
             type="date"
-            aria-label="Data"
+            aria-label={TEXTOS_FINANCEIRO.data}
             value={data}
             onChange={(e) => setData(e.target.value)}
             className="rounded-xl px-4 py-3 text-sm font-medium outline-none"
