@@ -10,6 +10,7 @@
  */
 import type { Moeda } from "@/lib/moeda";
 import type { Plano } from "@/lib/planos";
+import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
 
 /** A chave publicável (pk_…), embutida no build. Sem ela: "pagamento
  * ainda não disponível". */
@@ -140,13 +141,13 @@ async function pedirAssinatura(
     return {
       ok: false,
       indisponivel: Boolean(json.indisponivel),
-      erro: json.error ?? "Não foi possível iniciar o pagamento agora.",
+      erro: json.error ?? TEXTOS_PLANOS.pagamento.naoIniciou,
     };
   } catch {
     return {
       ok: false,
       indisponivel: false,
-      erro: "Sem conexão. Tente de novo.",
+      erro: TEXTOS_PLANOS.pagamento.semConexao,
     };
   }
 }

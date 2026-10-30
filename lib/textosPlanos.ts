@@ -34,4 +34,11 @@ export const TEXTOS_PLANOS = {
   },
   /** Pagamento (app/api/pagamento/assinatura): pedir o plano já pago. */
   jaAtiva: "Seu Plano Rede já está ativo.",
+  /** Pagamento: os outros erros da rota da assinatura e do lado do
+   * aparelho (lib/pagamento/cliente). */
+  pagamento: {
+    planoInvalido: "Plano inválido",
+    naoIniciou: "Não foi possível iniciar o pagamento agora.",
+    semConexao: "Sem conexão. Tente de novo.",
+  },
 } as const;

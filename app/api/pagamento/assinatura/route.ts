@@ -59,7 +59,10 @@ export async function POST(request: NextRequest) {
       : randomUUID();
   const plano = PLANOS.find((p) => p.id === (corpo?.plano as PlanoId));
   if (!plano)
-    return NextResponse.json({ error: "Plano inválido" }, { status: 400 });
+    return NextResponse.json(
+      { error: TEXTOS_PLANOS.pagamento.planoInvalido },
+      { status: 400 }
+    );
 
   const { supabase, userId } = auth;
   const { data: cfg } = await supabase
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
       );
     const status = e instanceof ErroDoStripe ? 502 : 500;
     return NextResponse.json(
-      { error: "Não foi possível iniciar o pagamento agora." },
+      { error: TEXTOS_PLANOS.pagamento.naoIniciou },
       { status }
     );
   }
