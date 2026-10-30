@@ -1,7 +1,8 @@
 /** Texto visível sobre os planos: o topo da tela de planos
- * (components/assinatura/PlanosTela), o aviso dos 2 dias (AvisoTeste) e o
- * passo "O teste termina" das boas-vindas (OnboardingFlow). Depois do
- * teste só a Rede para; o resto do app segue liberado (capitão, 27/10). */
+ * (components/assinatura/PlanosTela), o aviso dos 2 dias (AvisoTeste), o
+ * passo "O teste termina" das boas-vindas (OnboardingFlow) e a linha do
+ * plano nos Ajustes (AjustesTab). Depois do teste só a Rede para; o resto
+ * do app segue liberado (capitão, 27/10). */
 export const TEXTOS_PLANOS = {
   /** Aberta pelo "Ver planos" com o teste ainda valendo. */
   noTeste: {
@@ -22,4 +23,6 @@ export const TEXTOS_PLANOS = {
   /** Boas-vindas, passo "O teste termina": o menor preço por mês. */
   onboardingFim: (precoPorMes: string) =>
     `Para seguir com a Rede, você escolhe um plano, a partir de ${precoPorMes} por mês.`,
+  /** Ajustes › Conta: a linha do plano pago (o plano se chama só "Rede"). */
+  ajustesLinha: "Plano Rede",
 } as const;

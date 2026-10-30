@@ -18,6 +18,7 @@ import { computeAssinatura } from "@/lib/assinatura";
 import { totalEarnings } from "@/lib/finance";
 import { SeletorMoeda } from "@/components/moeda/SeletorMoeda";
 import { TEXTOS_MOEDA } from "@/lib/textosMoeda";
+import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
 import { useFormatMoeda } from "@/lib/useMoeda";
 import { exportarDadosCSV } from "@/lib/exportarDados";
 import { isIOS, isStandalone } from "@/lib/platform";
@@ -586,7 +587,7 @@ export function AjustesTab({
             >
               {assinaturaValor ? (
                 <Linha
-                  title="Assinatura"
+                  title={TEXTOS_PLANOS.ajustesLinha}
                   valor={assinaturaValor}
                   last={!onVerPlanos || estadoAssinatura?.status === "ativa"}
                 />
