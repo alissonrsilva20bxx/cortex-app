@@ -1,3 +1,4 @@
+import type { RedeAcessoTour } from "@/lib/appTour";
 import type { AssinaturaStatus } from "@/lib/types";
 
 /** Duração do teste grátis de quem começa a partir do onboarding "Linha do
@@ -83,4 +84,26 @@ export function estadoDaPilula(estado: EstadoAssinatura | null): {
   const total = estado.diasDoTeste;
   const faltam = Math.min(Math.max(estado.diasRestantes, 1), total);
   return { faltam, feitos: total + 1 - faltam, total, ultimo: faltam === 1 };
+}
+
+/**
+ * O teste acabou: a tela dos planos abre sozinha (uma vez por dia) só na aba
+ * Rede, e só quando a regra de acesso da Rede (lib/rede/acessoRede: teste,
+ * assinatura ou convite já usado) diz que ela está fechada. Início, Finanças
+ * e Agenda nunca abrem os planos sozinhos (só a Rede para; capitão, 27/10);
+ * lá eles abrem só por toque (Ajustes). Quem entrou por convite (N4) tem a
+ * Rede liberada e nunca vê a renovação sozinha.
+ */
+export function abrePlanosSozinho(p: {
+  podeMostrar: boolean;
+  naRede: boolean;
+  redeAcesso: RedeAcessoTour;
+  status: AssinaturaStatus | null | undefined;
+}): boolean {
+  return (
+    p.podeMostrar &&
+    p.naRede &&
+    p.redeAcesso === "bloqueado" &&
+    p.status === "vencida"
+  );
 }

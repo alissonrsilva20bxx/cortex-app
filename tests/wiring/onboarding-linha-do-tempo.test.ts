@@ -96,10 +96,9 @@ describe("AssinaturaNoApp nas duas páginas", () => {
     );
   });
 
-  it("teste vencido abre os planos sozinho uma vez por dia", () => {
-    expect(noApp).toMatch(
-      /if \(!podeMostrarPlanos \|\| efetivo\?\.status !== "vencida"\) return;/
-    );
+  // Só na Rede fechada (R19rev #2): tests/wiring/planos-so-na-rede.test.ts.
+  it("teste vencido abre os planos sozinho uma vez por dia (só na Rede)", () => {
+    expect(noApp).toMatch(/!abrePlanosSozinho\(\{/);
     expect(noApp).toMatch(
       /localStorage\.getItem\(chavePlanosVistos\(userId\)\) === hoje\(\)\) return;/
     );
@@ -134,9 +133,7 @@ describe("PlanosTela e PilulaTeste", () => {
     expect(pilula).toMatch(
       /import \{ PILULA_TESTE_BOTTOM as BOTTOM \} from "@\/lib\/bottomNavCompactStyle";/
     );
-    expect(
-      ler("lib/bottomNavCompactStyle.ts")
-    ).toMatch(
+    expect(ler("lib/bottomNavCompactStyle.ts")).toMatch(
       /PILULA_TESTE_BOTTOM =\s*BOTTOM_NAV_OFFSET \+ BOTTOM_NAV_FAB_SIZE \+ 14;/
     );
     expect(pilula).toMatch(/"--ob-pilula-bottom": `\$\{BOTTOM\}px`/);

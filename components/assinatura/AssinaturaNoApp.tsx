@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import type { RedeAcessoTour } from "@/lib/appTour";
 import {
+  abrePlanosSozinho,
   AVISO_FALTAM_DIAS,
   computeAssinatura,
   estadoDaPilula,
@@ -32,6 +34,11 @@ interface Props {
   /** Pode mostrar a tela do fim do teste (o app está aberto, sem trava nem
    * onboarding por cima). */
   podeMostrarPlanos: boolean;
+  /** A aba Rede está na tela: só nela os planos abrem sozinhos. */
+  naRede: boolean;
+  /** O acesso à Rede pela regra (teste, assinatura ou convite usado), como
+   * o `RedeGatedTab` informa. */
+  redeAcesso: RedeAcessoTour;
   jobs: Job[];
   /** Ponto de entrada do Pagamento (ver `OnEscolherPlano` em lib/planos). */
   onEscolherPlano: OnEscolherPlano;
@@ -47,7 +54,8 @@ interface Props {
 /**
  * O teste grátis dentro do app (onboarding "Linha do tempo", telas 4 e 5):
  * a pílula do contador no Início e a tela de escolha de plano quando o
- * teste termina (uma vez por dia) ou pelo "Ver planos" do último dia.
+ * teste termina (uma vez por dia, só ao abrir a Rede fechada) ou por toque
+ * ("Ver planos" da pílula, do aviso, da Rede e dos Ajustes).
  *
  * O estado vem de `configuracoes` (trial_started_at, assinatura_status), a
  * mesma leitura dos Ajustes, e o cálculo é o `computeAssinatura` de sempre.
@@ -57,6 +65,8 @@ export function AssinaturaNoApp({
   userId,
   noInicio,
   podeMostrarPlanos,
+  naRede,
+  redeAcesso,
   jobs,
   onEscolherPlano,
   estadoForcado,
@@ -92,9 +102,18 @@ export function AssinaturaNoApp({
 
   const efetivo = estadoForcado !== undefined ? estadoForcado : estado;
 
-  // Teste terminou: a tela dos planos abre sozinha uma vez por dia.
+  // Teste terminou: a tela dos planos abre sozinha uma vez por dia, só ao
+  // abrir a Rede fechada (nunca no Início, em Finanças ou na Agenda).
   useEffect(() => {
-    if (!podeMostrarPlanos || efetivo?.status !== "vencida") return;
+    if (
+      !abrePlanosSozinho({
+        podeMostrar: podeMostrarPlanos,
+        naRede,
+        redeAcesso,
+        status: efetivo?.status,
+      })
+    )
+      return;
     try {
       if (localStorage.getItem(chavePlanosVistos(userId)) === hoje()) return;
       localStorage.setItem(chavePlanosVistos(userId), hoje());
@@ -102,7 +121,7 @@ export function AssinaturaNoApp({
       /* sem storage: abre, e "Agora não" fecha */
     }
     setPlanosAbertos(true);
-  }, [podeMostrarPlanos, efetivo?.status, userId]);
+  }, [podeMostrarPlanos, naRede, redeAcesso, efetivo?.status, userId]);
 
   useEffect(() => {
     if (abrirPlanosSinal) setPlanosAbertos(true);

@@ -859,6 +859,8 @@ export default function Page() {
             activeTab === "home" && !tourOpen && !jornadaAberta && !fabOpen
           }
           podeMostrarPlanos={dataLoaded && !tourOpen}
+          naRede={activeTab === "rede"}
+          redeAcesso={redeAcesso}
           jobs={jobs}
           onEscolherPlano={escolherPlano}
           abrirPlanosSinal={reabrirPlanos}
