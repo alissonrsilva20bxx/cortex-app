@@ -16,6 +16,7 @@ import { ERRO_FORM_STATUS } from "./textosAgenda";
 import { simboloMoeda } from "@/lib/moeda";
 import { useMoeda } from "@/lib/useMoeda";
 import type { Job, JobStatus, Modalidade } from "@/lib/types";
+import { TEXTOS_ERRO } from "@/lib/textosErro";
 
 interface FormState {
   clienteNome: string;
@@ -169,7 +170,7 @@ export function JobForm({ open, job, userId, onClose, onSaved }: Props) {
     }
 
     setSaving(false);
-    if (err) return setError(err.message);
+    if (err) return setError(TEXTOS_ERRO.salvar);
     // O dia só conta quando o atendimento vira concluído (aqui, no
     // formulário, ou nos botões do detalhe / "Aconteceu?"), não ao criar.
     if (contaComoDiaAtivo(job?.status ?? null, form.status)) {

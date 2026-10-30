@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { FilterChips } from "@/components/ui/FilterChips";
 import { useJornada } from "@/components/jornada/useJornada";
+import { TEXTOS_ERRO } from "@/lib/textosErro";
 
 type Categoria = "comprovantes" | "conversas" | "documentos" | "pessoal";
 
@@ -47,7 +48,7 @@ export function UploadSheet({ open, userId, onClose, onUploaded }: Props) {
       .from("cofre")
       .upload(path, file, { contentType: file.type });
     setUploading(false);
-    if (err) return setError(err.message);
+    if (err) return setError(TEXTOS_ERRO.enviarArquivo);
     if (categoria === "comprovantes") void registrar("comprovante_cofre");
     setFile(null);
     onUploaded();

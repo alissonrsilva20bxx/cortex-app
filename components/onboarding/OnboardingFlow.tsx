@@ -22,6 +22,7 @@ import {
 import type { Job, Meta, Usuario } from "@/lib/types";
 import styles from "./linhaDoTempo.module.css";
 import { Icone } from "./obIcones";
+import { TEXTOS_ERRO } from "@/lib/textosErro";
 
 /**
  * Fluxo guiado do 1º uso (§6 do spec): boas-vindas do teste grátis → 1ª
@@ -312,7 +313,7 @@ export function OnboardingFlow({
         { onConflict: "user_id,periodo" }
       );
     setSavingGoal(false);
-    if (error) return setGoalError(error.message);
+    if (error) return setGoalError(TEXTOS_ERRO.salvar);
     onMetaSaved();
     setGoalStepDone(true);
   }

@@ -477,8 +477,13 @@ describe("UploadSheet.tsx keeps the real upload contract", () => {
     expect(src).toContain("`${userId}/${categoria}/${Date.now()}.${ext}`");
   });
 
-  it("still surfaces the real Supabase error message, not a generic one", () => {
-    expect(src).toContain("setError(err.message)");
+  // R21: o erro continua aparecendo, mas em português (TEXTOS_ERRO): a
+  // mensagem crua do Supabase vinha em inglês. Ver
+  // tests/wiring/erro-cru-do-banco.test.ts.
+  it("still surfaces the upload error, in Portuguese", () => {
+    expect(src).toContain(
+      "if (err) return setError(TEXTOS_ERRO.enviarArquivo);"
+    );
   });
 
   it("keeps the real open/userId/onClose/onUploaded prop contract", () => {

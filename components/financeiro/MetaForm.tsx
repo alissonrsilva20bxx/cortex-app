@@ -7,6 +7,7 @@ import { SheetBackdrop } from "@/components/ui/SheetBackdrop";
 import { simboloMoeda, type Moeda } from "@/lib/moeda";
 import { useMoeda } from "@/lib/useMoeda";
 import type { PeriodoMeta } from "@/lib/types";
+import { TEXTOS_ERRO } from "@/lib/textosErro";
 
 interface MetaValues {
   dia: string;
@@ -112,7 +113,7 @@ export function MetaForm({ open, userId, onClose, onSaved }: Props) {
       .upsert(rows, { onConflict: "user_id,periodo" });
 
     setSaving(false);
-    if (err) return setError(err.message);
+    if (err) return setError(TEXTOS_ERRO.salvar);
     onSaved();
     onClose();
   }
