@@ -42,5 +42,9 @@ export const TEXTOS_PLANOS = {
     planoInvalido: "Plano inválido",
     naoIniciou: "Não foi possível iniciar o pagamento agora.",
     semConexao: "Sem conexão. Tente de novo.",
+    /** Cartão recusado (tela de erro do PagamentoTela): no lugar da
+     * mensagem crua do Stripe, que vem no idioma dele (R22). */
+    recusa:
+      "Confira os dados do cartão e tente de novo. Se continuar, use outro cartão.",
   },
 } as const;

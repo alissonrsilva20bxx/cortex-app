@@ -29,6 +29,7 @@ import {
   type StripeJs,
 } from "@/lib/pagamento/cliente";
 import { aparenciaDoApp, FONTES_DO_STRIPE } from "@/lib/pagamento/aparencia";
+import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
 import styles from "./pagamento.module.css";
 
 /**
@@ -41,7 +42,7 @@ import styles from "./pagamento.module.css";
  *    DD/MM; a primeira cobrança é nessa data") e o formulário do Stripe.
  *    Sem teste grátis na tela, sem Pix (só cartão). O cartão vai direto do
  *    aparelho para o Stripe: a Arcelle não vê nem guarda.
- *  - Tela 3, Confirmação; tela 4, Erro (a mensagem do Stripe, traduzida).
+ *  - Tela 3, Confirmação; tela 4, Erro (o motivo da recusa em português).
  *
  * Sem a chave do Stripe (o operador ainda não tem): o bloco do Stripe vira
  * "pagamento ainda não disponível" e o botão fica desativado; nada quebra.
@@ -524,23 +525,7 @@ export function PagamentoTela({
               Nada foi cobrado.
             </p>
             <div className={styles.stripeMsg}>
-              Mensagem do Stripe, traduzida:{" "}
-              <b>
-                &quot;{erro?.message ?? "O pagamento não foi aprovado."}&quot;
-              </b>
-              {erro?.code && (
-                <>
-                  {" "}
-                  (código <code>{erro.code}</code>
-                  {erro.decline_code && (
-                    <>
-                      {" "}
-                      · <code>{erro.decline_code}</code>
-                    </>
-                  )}
-                  )
-                </>
-              )}
+              {TEXTOS_PLANOS.pagamento.recusa}
             </div>
             <div className={styles.safe}>
               {ICONE.escudo}
