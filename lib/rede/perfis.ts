@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../database.types";
 import { listarIdsBloqueados } from "./bloqueios";
+import { TEXTOS_LIVELINK } from "./textosLiveLink";
 
 type RedeClient = SupabaseClient<Database>;
 type Perfil = Database["public"]["Tables"]["rede_perfis"]["Row"];
@@ -221,13 +222,13 @@ export class LiveLinkInvalidoError extends Error {
 function validarTituloUrlLiveLink(titulo: string, url: string) {
   if (titulo.length === 0 || titulo.length > LIVELINK_TITULO_MAX_LENGTH) {
     throw new LiveLinkInvalidoError(
-      `Título do LiveLink deve ter entre 1 e ${LIVELINK_TITULO_MAX_LENGTH} caracteres`
+      TEXTOS_LIVELINK.avisos.tituloTamanho(LIVELINK_TITULO_MAX_LENGTH)
     );
   }
 
   if (url.length === 0 || url.length > LIVELINK_URL_MAX_LENGTH) {
     throw new LiveLinkInvalidoError(
-      `URL do LiveLink deve ter entre 1 e ${LIVELINK_URL_MAX_LENGTH} caracteres`
+      TEXTOS_LIVELINK.avisos.urlTamanho(LIVELINK_URL_MAX_LENGTH)
     );
   }
 
@@ -235,9 +236,7 @@ function validarTituloUrlLiveLink(titulo: string, url: string) {
   try {
     parsedUrl = new URL(url);
   } catch {
-    throw new LiveLinkInvalidoError(
-      "URL do LiveLink deve ser uma URL HTTPS absoluta"
-    );
+    throw new LiveLinkInvalidoError(TEXTOS_LIVELINK.avisos.urlHttps);
   }
 
   if (
@@ -245,9 +244,7 @@ function validarTituloUrlLiveLink(titulo: string, url: string) {
     parsedUrl.username !== "" ||
     parsedUrl.password !== ""
   ) {
-    throw new LiveLinkInvalidoError(
-      "URL do LiveLink deve ser uma URL HTTPS absoluta"
-    );
+    throw new LiveLinkInvalidoError(TEXTOS_LIVELINK.avisos.urlHttps);
   }
 }
 

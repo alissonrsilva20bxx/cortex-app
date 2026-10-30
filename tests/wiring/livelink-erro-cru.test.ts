@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { criarLiveLink, LiveLinkInvalidoError } from "@/lib/rede/perfis";
+import { TEXTOS_LIVELINK } from "@/lib/rede/textosLiveLink";
 
 /**
  * R21 (auditoria, erro e sem internet): salvar um LiveLink punha na tela
@@ -25,11 +26,13 @@ describe("LiveLink: a mensagem crua do banco não vai para a tela", () => {
 
   it("a Rede mostra só o aviso da validação; o resto vira texto genérico", () => {
     const src = ler("components/rede/RedeTab.tsx");
-    expect(src).not.toMatch(
-      /e instanceof Error \? e\.message : "Não foi possível salvar o LiveLink\."/
-    );
+    expect(src).not.toMatch(/e instanceof Error \? e\.message/);
     expect(src).toMatch(
-      /e instanceof LiveLinkInvalidoError\s*\?\s*e\.message\s*:\s*"Não foi possível salvar o LiveLink\."/
+      /e instanceof LiveLinkInvalidoError\s*\?\s*e\.message\s*:\s*TEXTOS_LIVELINK\.erroSalvar/
+    );
+    // R23: o texto genérico saiu do código e mora na constante.
+    expect(TEXTOS_LIVELINK.erroSalvar).toBe(
+      "Não foi possível salvar o LiveLink."
     );
   });
 });

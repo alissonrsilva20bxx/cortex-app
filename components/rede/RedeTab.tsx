@@ -59,6 +59,7 @@ import {
   type PessoaResumo,
 } from "@/lib/rede/perfis";
 import { listarWishlistItems, type WishlistItem } from "@/lib/rede/wishlist";
+import { TEXTOS_LIVELINK } from "@/lib/rede/textosLiveLink";
 import { progressoDesejo } from "@/lib/desejo/desejo";
 import { useAoMudarDesejos } from "@/lib/desejo/eventos";
 import { TEXTOS_DESEJO } from "@/lib/desejo/textos";
@@ -1743,7 +1744,7 @@ export function RedeTab({
       });
       setLiveLinks(updated);
     } catch {
-      toast.error("Não foi possível reordenar os LiveLinks.");
+      toast.error(TEXTOS_LIVELINK.erroReordenar);
     }
   }
   function shareProfile() {
@@ -1763,7 +1764,7 @@ export function RedeTab({
         setLiveLinks((prev) =>
           prev.map((l) => (l.id === updated.id ? updated : l))
         );
-        toast.success("LiveLink atualizado!");
+        toast.success(TEXTOS_LIVELINK.atualizado);
       } else {
         const created = await criarLiveLink(supabase, {
           titulo: data.titulo,
@@ -1771,7 +1772,7 @@ export function RedeTab({
           ordem: liveLinks.length,
         });
         setLiveLinks((prev) => [...prev, created]);
-        toast.success("LiveLink adicionado!");
+        toast.success(TEXTOS_LIVELINK.adicionado);
       }
       setLiveLinkFormOpen(false);
       setEditingLiveLink(null);
@@ -1779,7 +1780,7 @@ export function RedeTab({
       toast.error(
         e instanceof LiveLinkInvalidoError
           ? e.message
-          : "Não foi possível salvar o LiveLink."
+          : TEXTOS_LIVELINK.erroSalvar
       );
     }
   }
@@ -1787,9 +1788,9 @@ export function RedeTab({
     try {
       await excluirLiveLink(supabase, { livelinkId: id });
       setLiveLinks((prev) => prev.filter((l) => l.id !== id));
-      toast.success("LiveLink excluído");
+      toast.success(TEXTOS_LIVELINK.excluido);
     } catch {
-      toast.error("Não foi possível excluir o LiveLink.");
+      toast.error(TEXTOS_LIVELINK.erroExcluir);
     }
   }
   async function saveProfile(data: { nomeExibicao: string; bio: string }) {

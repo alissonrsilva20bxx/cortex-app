@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import type { LiveLink } from "./LiveLinksSection";
+import { TEXTOS_LIVELINK } from "@/lib/rede/textosLiveLink";
 
 interface FormState {
   titulo: string;
@@ -58,7 +59,9 @@ export function LiveLinkForm({ open, link, onClose, onSave }: Props) {
       onClose={onClose}
       largeCloseTarget
       scrollContent
-      title={link ? "Editar LiveLink" : "Novo LiveLink"}
+      title={
+        link ? TEXTOS_LIVELINK.form.tituloEditar : TEXTOS_LIVELINK.form.tituloNovo
+      }
       footer={
         <button
           onClick={() => onSave(form, link)}
@@ -66,25 +69,27 @@ export function LiveLinkForm({ open, link, onClose, onSave }: Props) {
           className="w-full py-3.5 rounded-2xl font-semibold text-base transition-opacity active:opacity-80 disabled:opacity-50"
           style={{ background: "var(--accent)", color: "white" }}
         >
-          {link ? "Salvar alterações" : "Adicionar LiveLink"}
+          {link
+            ? TEXTOS_LIVELINK.form.botaoSalvar
+            : TEXTOS_LIVELINK.form.botaoAdicionar}
         </button>
       }
     >
       <div className="px-5 py-5 space-y-4">
         <div>
-          <label style={labelStyle}>Título</label>
+          <label style={labelStyle}>{TEXTOS_LIVELINK.form.campo.titulo}</label>
           <input
             style={inputStyle}
-            placeholder="Ex: Meu Instagram"
+            placeholder={TEXTOS_LIVELINK.form.exemplo.titulo}
             value={form.titulo}
             onChange={(e) => set("titulo", e.target.value)}
           />
         </div>
         <div>
-          <label style={labelStyle}>Link</label>
+          <label style={labelStyle}>{TEXTOS_LIVELINK.form.campo.link}</label>
           <input
             style={inputStyle}
-            placeholder="https://instagram.com/seuusuario"
+            placeholder={TEXTOS_LIVELINK.form.exemplo.url}
             value={form.url}
             onChange={(e) => set("url", e.target.value)}
           />
