@@ -235,11 +235,18 @@ export function FAB({
       {/* Bottom sheet -- material igual ao de components/ui/BottomSheet.tsx:
           gradiente opaco sobre --bg do tema, sem blur; raio do topo usa
           --radius-sheet (26px), não o rounded-t-3xl (24px fixo do Tailwind). */}
+      {/* Fechado, o painel some também do leitor de tela e do Tab (R21):
+          só o `transform` deixava o botão de dentro alcançável, invisível.
+          A `visibility` desliga depois do deslize, como no BottomSheet. */}
       <div
-        className="fixed left-0 right-0 z-50 px-5 pt-3 pb-8 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed left-0 right-0 z-50 px-5 pt-3 pb-8 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{
           bottom: "calc(82px + env(safe-area-inset-bottom, 0px))",
           transform: open ? "translateY(0)" : "translateY(calc(100% + 100px))",
+          visibility: open ? "visible" : "hidden",
+          transitionProperty: "transform, visibility",
+          transitionDuration: "300ms, 0s",
+          transitionDelay: open ? "0s, 0s" : "0s, 300ms",
           background: `linear-gradient(180deg, rgb(var(--bg-rgb) / 0.97), rgb(var(--bg-rgb) / 0.995) 70%)`,
           border: "1px solid var(--card-border)",
           borderBottom: "none",
