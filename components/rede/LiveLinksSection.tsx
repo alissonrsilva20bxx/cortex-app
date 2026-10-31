@@ -9,6 +9,7 @@ import {
   Plus,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { TEXTOS_LIVELINK } from "@/lib/rede/textosLiveLink";
 import type { Database } from "@/lib/database.types";
 
 export type LiveLink = Database["public"]["Tables"]["rede_livelinks"]["Row"];
@@ -113,7 +114,7 @@ export function LiveLinksEditor({
           }}
         >
           <Plus size={15} />
-          Adicionar LiveLink
+          {TEXTOS_LIVELINK.form.botaoAdicionar}
         </button>
       )}
     </div>

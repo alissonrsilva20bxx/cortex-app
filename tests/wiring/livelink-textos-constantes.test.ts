@@ -21,6 +21,7 @@ const ler = (f: string) =>
 const perfis = ler("lib/rede/perfis.ts");
 const redeTab = ler("components/rede/RedeTab.tsx");
 const formulario = ler("components/rede/LiveLinkForm.tsx");
+const secao = ler("components/rede/LiveLinksSection.tsx");
 
 describe("LiveLink: o texto visível mora na constante", () => {
   it("os textos são os mesmos de antes", () => {
@@ -96,5 +97,13 @@ describe("LiveLink: o texto visível mora na constante", () => {
   it("o formulário usa a constante", () => {
     expect(formulario).toMatch(/TEXTOS_LIVELINK\.form\./);
     expect(formulario).not.toMatch(/"Novo LiveLink"|"Adicionar LiveLink"/);
+  });
+
+  // R25: o botão de adicionar da lista (Meu espaço > Gerenciar LiveLinks)
+  // também tinha o texto escrito no código, com a constante já pronta.
+  it("o botão de adicionar da lista usa a constante", () => {
+    expect(secao).toMatch(/TEXTOS_LIVELINK\.form\.botaoAdicionar/);
+    expect(secao).not.toMatch(/"Adicionar LiveLink"/);
+    expect(secao).not.toMatch(/^\s*Adicionar LiveLink\s*$/m);
   });
 });
