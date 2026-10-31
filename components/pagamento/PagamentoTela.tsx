@@ -23,13 +23,13 @@ import {
 import {
   motivoDaRecusa,
   pagamentoAtual,
+  recadoDaRecusa,
   type ErroDoStripeJs,
   type InicioDoPagamento,
   type StripeElements,
   type StripeJs,
 } from "@/lib/pagamento/cliente";
 import { aparenciaDoApp, FONTES_DO_STRIPE } from "@/lib/pagamento/aparencia";
-import { TEXTOS_PLANOS } from "@/lib/textosPlanos";
 import styles from "./pagamento.module.css";
 
 /**
@@ -525,7 +525,7 @@ export function PagamentoTela({
               Nada foi cobrado.
             </p>
             <div className={styles.stripeMsg}>
-              {TEXTOS_PLANOS.pagamento.recusa}
+              {recadoDaRecusa(erro)}
             </div>
             <div className={styles.safe}>
               {ICONE.escudo}

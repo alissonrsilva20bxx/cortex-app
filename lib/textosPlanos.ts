@@ -46,5 +46,9 @@ export const TEXTOS_PLANOS = {
      * mensagem crua do Stripe, que vem no idioma dele (R22). */
     recusa:
       "Confira os dados do cartão e tente de novo. Se continuar, use outro cartão.",
+    /** Saldo/limite insuficiente (R25): o cartão está certo, falta limite --
+     * "confira os dados" mandaria a pessoa conferir o que já está certo. */
+    recusaSaldo:
+      "O cartão não tem limite disponível para esta cobrança. Tente outro cartão.",
   },
 } as const;

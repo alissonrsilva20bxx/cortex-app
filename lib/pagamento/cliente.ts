@@ -161,11 +161,19 @@ export function pagamentoAtual(): PagamentoAdapter {
   return atual;
 }
 
+/** O código que decide o texto da recusa: o `decline_code` do banco manda;
+ * sem ele vale o `code` do Stripe. */
+function codigoDaRecusa(
+  erro: ErroDoStripeJs | null | undefined
+): string | undefined {
+  return erro?.decline_code ?? erro?.code;
+}
+
 /** "saldo insuficiente": o motivo da recusa, no texto da tela de erro. */
 export function motivoDaRecusa(
   erro: ErroDoStripeJs | null | undefined
 ): string {
-  switch (erro?.decline_code ?? erro?.code) {
+  switch (codigoDaRecusa(erro)) {
     case "insufficient_funds":
       return "saldo insuficiente";
     case "expired_card":
@@ -185,4 +193,22 @@ export function motivoDaRecusa(
     default:
       return "cartão recusado";
   }
+}
+
+/** O cartão está certo, falta limite. É o único motivo em que "confira os
+ * dados do cartão" é conselho errado (R25). */
+export function ehSaldoInsuficiente(
+  erro: ErroDoStripeJs | null | undefined
+): boolean {
+  return codigoDaRecusa(erro) === "insufficient_funds";
+}
+
+/** O recado que fecha a tela de erro do pagamento: o mesmo para toda
+ * recusa, menos saldo insuficiente, que ganhou texto próprio (R25). */
+export function recadoDaRecusa(
+  erro: ErroDoStripeJs | null | undefined
+): string {
+  return ehSaldoInsuficiente(erro)
+    ? TEXTOS_PLANOS.pagamento.recusaSaldo
+    : TEXTOS_PLANOS.pagamento.recusa;
 }

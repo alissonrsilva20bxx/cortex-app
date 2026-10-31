@@ -17,6 +17,7 @@ const ler = (f: string) =>
 
 const tela = ler("components/pagamento/PagamentoTela.tsx");
 const css = ler("components/pagamento/pagamento.module.css");
+const cliente = ler("lib/pagamento/cliente.ts");
 
 describe("o erro do pagamento não mostra a mensagem crua do Stripe", () => {
   it("a mensagem do Stripe e os códigos técnicos saem da tela", () => {
@@ -27,8 +28,12 @@ describe("o erro do pagamento não mostra a mensagem crua do Stripe", () => {
   });
 
   it("no lugar entra o texto nosso, em português", () => {
-    expect(tela).toMatch(/TEXTOS_PLANOS\.pagamento\.recusa/);
-    expect(tela).toContain('import { TEXTOS_PLANOS } from "@/lib/textosPlanos";');
+    // R25: quem escolhe o recado é recadoDaRecusa (lib/pagamento/cliente),
+    // porque saldo insuficiente ganhou texto próprio. A tela só mostra o
+    // recado; o texto em português continua na constante.
+    expect(tela).toMatch(/recadoDaRecusa\(erro\)/);
+    expect(cliente).toMatch(/TEXTOS_PLANOS\.pagamento\.recusaSaldo/);
+    expect(cliente).toMatch(/TEXTOS_PLANOS\.pagamento\.recusa\b/);
     expect(TEXTOS_PLANOS.pagamento.recusa).toBe(
       "Confira os dados do cartão e tente de novo. Se continuar, use outro cartão."
     );
