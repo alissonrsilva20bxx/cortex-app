@@ -1747,9 +1747,6 @@ export function RedeTab({
       toast.error(TEXTOS_LIVELINK.erroReordenar);
     }
   }
-  function shareProfile() {
-    toast.success("Link do perfil copiado!");
-  }
   async function saveLiveLink(
     data: { titulo: string; url: string },
     existing: LiveLink | null
@@ -2197,7 +2194,6 @@ export function RedeTab({
                 if (perfil?.avatar_url) setAvatarOptionsOpen(true);
                 else avatarFileInputRef.current?.click();
               }}
-              onShareProfile={shareProfile}
               onPublish={() => setComposerOpen(true)}
               onOpenWishlist={() => push({ type: "wishlist" })}
               onOpenClientes={() => push({ type: "clientes" })}

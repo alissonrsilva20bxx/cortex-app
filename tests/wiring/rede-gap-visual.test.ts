@@ -132,12 +132,17 @@ describe("§6.7-P0-2 — bloqueio a partir do Perfil Público exige confirmaçã
   });
 });
 
-describe('§6.7-P1-2 — "Compartilhar perfil" continua no-op (toast, sem clipboard real), sem piorar', () => {
-  it("RedeTab.shareProfile() só mostra um toast de sucesso, nenhuma chamada de clipboard", () => {
-    expect(redeTab).toMatch(
-      /function shareProfile\(\) \{\s*\r?\n\s*toast\.success\("Link do perfil copiado!"\);\s*\r?\n\s*\}/
-    );
+describe('§6.7-P1-2 — "Compartilhar perfil" era no-op (toast, sem clipboard real) e SAIU (R24)', () => {
+  it("RedeTab não tem mais shareProfile() nem o toast falso, e segue sem clipboard", () => {
+    expect(redeTab).not.toContain("shareProfile");
+    expect(redeTab).not.toContain("Link do perfil copiado");
     expect(redeTab).not.toMatch(/navigator\.clipboard/);
+  });
+
+  it("MeuEspacoScreen não renderiza mais o botão nem recebe a prop", () => {
+    const screen = read("components/rede/MeuEspacoScreen.tsx");
+    expect(screen).not.toContain("Compartilhar perfil");
+    expect(screen).not.toContain("onShareProfile");
   });
 
   it('a string quebrada "share-profile" do laboratório não sobreviveu em nenhuma tela migrada', () => {

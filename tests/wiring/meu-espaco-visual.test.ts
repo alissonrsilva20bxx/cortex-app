@@ -82,7 +82,7 @@ describe("MeuEspacoScreen — LiveLinks discretos entre bio e ações (regra nã
   });
 });
 
-describe("MeuEspacoScreen — ações Editar perfil / Publicar / Compartilhar apontam pros fluxos reais (#139)", () => {
+describe("MeuEspacoScreen — ações Editar perfil / Publicar apontam pros fluxos reais (#139); Compartilhar perfil saiu (R24)", () => {
   it("Editar perfil chama o handler real (ProfileEditForm, já existente)", () => {
     expect(screenSrc).toContain("onClick={onEditProfile}");
   });
@@ -92,9 +92,19 @@ describe("MeuEspacoScreen — ações Editar perfil / Publicar / Compartilhar ap
     expect(redeTabSrc).toMatch(/onPublish=\{\(\) => setComposerOpen\(true\)\}/);
   });
 
-  it("Compartilhar chama o handler real de compartilhamento de perfil", () => {
-    expect(screenSrc).toContain("onClick={onShareProfile}");
-    expect(redeTabSrc).toContain("onShareProfile={shareProfile}");
+  // R24: "Compartilhar perfil" mostrava o toast "Link do perfil copiado!"
+  // sem copiar nada e sem página pública em app/ — botão sem efeito sai
+  // (regra do capitão), em vez de ganhar tela nova.
+  it("Compartilhar perfil saiu de vez: sem botão, sem prop e sem handler de toast falso", () => {
+    expect(screenSrc).not.toContain("Compartilhar perfil");
+    expect(screenSrc).not.toContain("onShareProfile");
+    expect(screenSrc).not.toMatch(/Share2/);
+    expect(redeTabSrc).not.toContain("shareProfile");
+    expect(redeTabSrc).not.toContain("Link do perfil copiado");
+  });
+
+  it("a linha de ações ficou com 2 botões (Editar perfil / Publicar), sem coluna vazia de 44px", () => {
+    expect(screenSrc).toMatch(/gridTemplateColumns:\s*"1fr 1fr"\s*\}/);
   });
 });
 

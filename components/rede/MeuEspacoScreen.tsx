@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Share2,
   Pencil,
   Plus,
   MoreHorizontal,
@@ -51,7 +50,6 @@ interface Props {
   onAddLiveLink: () => void;
   onEditProfile: () => void;
   onEditAvatar: () => void;
-  onShareProfile: () => void;
   /** Abre o composer real de novo post — mesmo `setComposerOpen` que o FAB
    * já usa (RedeTab), nenhum fluxo de publicação paralelo. */
   onPublish: () => void;
@@ -70,7 +68,7 @@ interface Props {
 }
 
 /**
- * Botão de ação da linha Editar perfil / Publicar / Compartilhar —
+ * Botão de ação da linha Editar perfil / Publicar —
  * geometria portada de IosPrototypeApp.module.css `.profileActions`
  * (grid 1fr 1fr 44px, botões 44px, radius 12px), cor sempre tokens de
  * tema (nunca a borda/fundo fixos do protótipo).
@@ -79,12 +77,10 @@ function ProfileActionButton({
   icon,
   label,
   onClick,
-  iconOnly,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
-  iconOnly?: boolean;
 }) {
   return (
     <button
@@ -100,7 +96,7 @@ function ProfileActionButton({
       }}
     >
       {icon}
-      {!iconOnly && label}
+      {label}
     </button>
   );
 }
@@ -124,7 +120,6 @@ export function MeuEspacoScreen({
   onAddLiveLink,
   onEditProfile,
   onEditAvatar,
-  onShareProfile,
   onPublish,
   onOpenWishlist,
   onOpenClientes,
@@ -202,13 +197,16 @@ export function MeuEspacoScreen({
             <LiveLinksPreview links={liveLinks} />
           </div>
 
-          {/* Ações — Editar perfil / Publicar / Compartilhar (contrato de
-              paridade § Meu perfil, ponto 4). Todos os 3 apontam pros
-              fluxos reais já existentes (ProfileEditForm, PostComposer via
-              o mesmo setComposerOpen do FAB, compartilhamento real). */}
+          {/* Ações — Editar perfil / Publicar (contrato de paridade § Meu
+              perfil, ponto 4). As duas apontam pros fluxos reais já
+              existentes (ProfileEditForm, PostComposer via o mesmo
+              setComposerOpen do FAB). O terceiro botão, de compartilhar
+              perfil, saiu (R24): só mostrava um toast dizendo que o link
+              foi copiado, sem copiar nada, porque não existe página
+              pública de perfil. */}
           <div
             className="grid gap-2 mb-6"
-            style={{ gridTemplateColumns: "1fr 1fr 44px" }}
+            style={{ gridTemplateColumns: "1fr 1fr" }}
           >
             <ProfileActionButton
               icon={<Pencil size={15} />}
@@ -219,12 +217,6 @@ export function MeuEspacoScreen({
               icon={<Plus size={16} />}
               label="Publicar"
               onClick={onPublish}
-            />
-            <ProfileActionButton
-              icon={<Share2 size={16} />}
-              label="Compartilhar perfil"
-              onClick={onShareProfile}
-              iconOnly
             />
           </div>
 
