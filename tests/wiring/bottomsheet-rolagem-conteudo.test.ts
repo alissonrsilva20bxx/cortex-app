@@ -36,6 +36,18 @@ const FOLHAS_ALTAS = [
   "components/pin/ReauthModal.tsx",
 ];
 
+/** Quantas folhas o arquivo abre e quantas pedem a rolagem do conteúdo.
+ * A conta por arquivo é o que pega a folha que PERDE a prop: um regex
+ * solto (`/<BottomSheet[\s\S]*?scrollContent/`) também passa quando o
+ * `scrollContent` é de outra folha do mesmo arquivo, ou quando só sobrou
+ * a palavra num comentário. */
+function folhasDoArquivo(src: string) {
+  return {
+    folhas: (src.match(/<BottomSheet\b/g) ?? []).length,
+    rolagem: (src.match(/(?:^|\n)\s*scrollContent\b/g) ?? []).length,
+  };
+}
+
 describe("BottomSheet: conteúdo alto rola por dentro da folha", () => {
   it("com scrollContent, o conteúdo ganha rolagem própria", () => {
     const html = htmlDoSheet({
@@ -56,6 +68,10 @@ describe("BottomSheet: conteúdo alto rola por dentro da folha", () => {
   });
 
   it.each(FOLHAS_ALTAS)("%s pede a rolagem do conteúdo", (arquivo) => {
-    expect(ler(arquivo)).toMatch(/<BottomSheet[\s\S]*?scrollContent/);
+    const { folhas, rolagem } = folhasDoArquivo(ler(arquivo));
+    // Cada folha do arquivo precisa pedir a rolagem: sem a prop, o fim do
+    // conteúdo fica atrás do teclado (achado B1 da R21rev).
+    expect(folhas).toBeGreaterThan(0);
+    expect(rolagem).toBe(folhas);
   });
 });
