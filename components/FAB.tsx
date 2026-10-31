@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Briefcase, PenSquare, TrendingUp, Upload } from "lucide-react";
 import { collidesWithAny, type Rect } from "@/lib/rectCollision";
 import type { TabId } from "@/lib/types";
+import { TEXTOS_FINANCEIRO } from "@/lib/textosFinanceiro";
 import {
   BOTTOM_NAV_DURATION_MS,
   BOTTOM_NAV_EASE,
@@ -124,7 +125,9 @@ const FINANCEIRO_SHEET_ACTIONS: Record<string, SheetAction> = {
     Icon: TrendingUp,
   },
   saidas: {
-    label: "Nova Despesa",
+    // R25: o mesmo texto do título do sheet vindo da constante, para o
+    // rótulo do FAB e o nome do formulário não divergirem na tradução.
+    label: TEXTOS_FINANCEIRO.despesa.titulo,
     description: "Registrar uma despesa",
     Icon: TrendingUp,
   },

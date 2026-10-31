@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { TEXTOS_FINANCEIRO } from "@/lib/textosFinanceiro";
 
 /**
  * Achado P1 (rodada de preflight 2026-09-04, testado ao vivo no deploy de
@@ -46,11 +47,30 @@ const financeiroSheetActionsSrc = extractBody(
   "const FINANCEIRO_SHEET_ACTIONS: Record<string, SheetAction> ="
 );
 
+/** O rótulo é o texto que a pessoa lê na folha: pode estar escrito no
+ * código ou vir da constante de textos (R25: "Nova Despesa" passou a vir
+ * de `TEXTOS_FINANCEIRO.despesa.titulo`, para o rótulo do FAB e o título do
+ * formulário não divergirem). A função resolve os dois casos. */
 function fabLabelFor(subTab: string): string {
-  const re = new RegExp(`${subTab}:\\s*\\{[^}]*label:\\s*"([^"]+)"`);
+  const re = new RegExp(
+    `${subTab}:\\s*\\{[^}]*label:\\s*(?:"([^"]+)"|([A-Z_]+(?:\\.[A-Za-z0-9_]+)+))`
+  );
   const match = financeiroSheetActionsSrc.match(re);
   if (!match) throw new Error(`Sem entrada FINANCEIRO_SHEET_ACTIONS.${subTab}`);
-  return match[1];
+  if (match[1]) return match[1];
+
+  const [constante, ...caminho] = match[2].split(".");
+  if (constante !== "TEXTOS_FINANCEIRO") {
+    throw new Error(`Constante não resolvida no teste: ${match[2]}`);
+  }
+  let valor: unknown = TEXTOS_FINANCEIRO;
+  for (const parte of caminho) {
+    valor = (valor as Record<string, unknown>)[parte];
+  }
+  if (typeof valor !== "string") {
+    throw new Error(`A constante ${match[2]} não é texto`);
+  }
+  return valor;
 }
 
 describe("FAB do Financeiro — rótulo do sheet bate com o form que realmente abre", () => {

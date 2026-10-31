@@ -116,7 +116,7 @@ export function DespesaForm({ open, userId, onClose, onSaved }: Props) {
             className="font-bold text-[18px]"
             style={{ color: "var(--text)" }}
           >
-            Nova Despesa
+            {TEXTOS_FINANCEIRO.despesa.titulo}
           </h3>
           {/* 44×44px — alvo de toque mínimo; era 34×34px (achado P1-5). */}
           <button
