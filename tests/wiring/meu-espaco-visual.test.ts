@@ -103,6 +103,13 @@ describe("MeuEspacoScreen — ações Editar perfil / Publicar apontam pros flux
     expect(redeTabSrc).not.toContain("Link do perfil copiado");
   });
 
+  // R25: o texto pode sumir e a linha continuar com 1 ou 3 botões. A
+  // conta fecha o contrato: Editar perfil e Publicar, e mais nenhum.
+  it("a linha de ações tem exatamente 2 ProfileActionButton (Editar perfil e Publicar)", () => {
+    const botoes = screenSrc.match(/<ProfileActionButton\b/g) ?? [];
+    expect(botoes).toHaveLength(2);
+  });
+
   it("a linha de ações ficou com 2 botões (Editar perfil / Publicar), sem coluna vazia de 44px", () => {
     expect(screenSrc).toMatch(/gridTemplateColumns:\s*"1fr 1fr"\s*\}/);
   });
