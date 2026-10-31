@@ -70,7 +70,7 @@ interface Props {
 /**
  * Botão de ação da linha Editar perfil / Publicar —
  * geometria portada de IosPrototypeApp.module.css `.profileActions`
- * (grid 1fr 1fr 44px, botões 44px, radius 12px), cor sempre tokens de
+ * (grid 1fr 1fr, botões 44px, radius 12px; o protótipo tem uma 3ª coluna de 44px que saiu em R24), cor sempre tokens de
  * tema (nunca a borda/fundo fixos do protótipo).
  */
 function ProfileActionButton({

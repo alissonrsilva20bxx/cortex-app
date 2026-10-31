@@ -99,7 +99,7 @@ O visual aprovado segue a hierarquia inspirada no Instagram:
 1. avatar e números derivados de dados existentes;
 2. nome e bio;
 3. LiveLinks discretos;
-4. ações Editar perfil, Publicar e Compartilhar;
+4. ações Editar perfil e Publicar (Compartilhar perfil saiu em R24: não havia perfil público);
 5. grade das próprias publicações.
 
 Preservar no menu de ferramentas do perfil:
